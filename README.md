@@ -1,2 +1,2 @@
 # PinkRigs
-Shared code for processing data on the pink rigs
+Shared code for running experiments and processing data on the pink rigs
