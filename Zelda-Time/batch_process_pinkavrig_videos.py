@@ -15,7 +15,7 @@ from io import StringIO
 # For accessing files on server
 # The dependencies are not obvious,
 # see: https://askubuntu.com/questions/80448/what-would-cause-the-gi-module-to-be-missing-from-python
-from gi.repository import Gio
+# from gi.repository import Gio
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -796,11 +796,13 @@ def compress_video(video_fpath, ffmpeg_path='/usr/bin/ffmpeg', crf=1, output_vid
 
 def main():
 
+    num_videos_to_run_per_call = 1
+    num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
     align_to_timeline = False
     plot_results = False
-    run_video_compression = True
-    load_from_server = True
+    run_video_compression = False
+    load_from_server = False
     video_ext = '.mj2'
 
     print('Running batch processing of pink rig videos...')
@@ -811,9 +813,14 @@ def main():
 
     # TODO: think about video compression as well
 
-    main_info_folder_in_server = True
-    mouse_info_folder = 'smb://zserver.local/code/AVrig/'
-    default_server_path = 'smb://128.40.224.65/subjects/'
+    main_info_folder_in_server = False
+    # mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+    # default_server_path = 'smb://128.40.224.65/subjects/'
+
+    # On Zelda-4 timeline machine
+    mouse_info_folder = '//zserver/Code/AVrig'
+    default_server_path = '//128.40.224.65/subjects/'
+
     if main_info_folder_in_server:
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
@@ -837,12 +844,18 @@ def main():
         mouse_name = os.path.basename(csv_path).split('.')[0]
         mouse_info['subject'] = mouse_name
 
-        if 'server_name' not in mouse_info.columns:
+        if 'path' not in mouse_info.columns:
             mouse_info['server_path'] = default_server_path
+        else:
+            mouse_info['server_path'] = ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
 
         all_mouse_info.append(mouse_info)
 
     all_mouse_info = pd.concat(all_mouse_info)
+
+    # Tim temp hack to try running this for one experiment
+    all_mouse_info = all_mouse_info.loc[1:2]
+
     # make a fake main_csv_df for now to test things
     """
     main_csv_df = pd.DataFrame.from_dict({
@@ -912,9 +925,10 @@ def main():
 
             if exp_info['main_folder'] is None:
                 print('WARNING: main folder not file for server path: %s' % exp_info['server_path'])
+        else:
+            main_folder = exp_info['server_path']
+            exp_info['main_folder'] = main_folder
 
-        # load facemap parameter based on which rig was used
-        proc = rig_procs[exp_info['rigName']]
 
         exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
                                   exp_info['expDate'], str(exp_info['expNum']))
@@ -925,15 +939,22 @@ def main():
         video_files = [x for x in video_files if 'lastFrames' not in x]
         video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
 
-        # Temp hack by Tim to test video
-        #exp_folder = os.path.join(exp_info['main_folder'], 'TS011', '2021-07-26', '1')
-        #video_files = [os.path.join(exp_folder, '2021-07-26_1_TS011_eyeCam_lastFrames.mj2')]
+        print('Candidate videos to look over')
+        print('\n'.join(video_files))
 
-        exp_folder = os.path.join(exp_info['main_folder'], 'AH002', '2021-10-29', '2')
-        video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye.mj2')]
+        # Temp hack by Tim to test video
+        # exp_folder = os.path.join(exp_info['main_folder'], 'TS011', '2021-07-26', '1')
+        # video_files = [os.path.join(exp_folder, '2021-07-26_1_TS011_eyeCam_lastFrames.mj2')]
+
+        # exp_folder = os.path.join(exp_info['main_folder'], 'AH002', '2021-10-29', '2')
+        # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye.mj2')]
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye_compressed_crf0.mp4')]
 
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
+
+            if num_videos_ran == num_videos_to_run_per_call:
+                print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
+                break
 
             if run_video_compression:
                 start = time.time()
@@ -941,7 +962,8 @@ def main():
                 end = time.time()
                 print('Elapsed time for video compression: %.3f' % (end - start))
 
-            pdb.set_trace()
+            # load facemap parameter based on which rig was used
+            proc = rig_procs[exp_info['rigName']]
 
             # look for facemap processed file
             processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
@@ -954,6 +976,7 @@ def main():
                 # save_path = os.path.join(exp_folder, '%s_proc.npy' % video_path_basename)
                 # still not quite sure needs this list in a list...
                 run_facemap_mod([[video_fpath]], proc=proc)
+                num_videos_ran += 1
                 # run_facemap(video_fpath)
 
                 if plot_results:
