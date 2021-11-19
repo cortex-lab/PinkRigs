@@ -24,6 +24,8 @@ mpl.use('Agg')  # to play nicely with pyqt: see: https://stackoverflow.com/quest
 
 import subprocess as sp
 
+import datetime
+
 def run_facemap(video_fpath):
     # this is just a copy of the code here:
     # https://github.com/MouseLand/facemap/blob/main/tutorial.ipynb
@@ -793,6 +795,65 @@ def compress_video(video_fpath, ffmpeg_path='/usr/bin/ffmpeg', crf=1, output_vid
     return output_path
 
 
+def update_file_list(all_mouse_info, file_list_csv_path, load_from_server=False):
+    """
+    Write a shared file to server to list which facemap files are
+    (1) processed
+    (2) to be processed
+    (3) processing
+    Parameters
+    ----------
+    all_mouse_info
+    file_list_csv_path
+    load_from_server
+
+    Returns
+    -------
+
+    """
+
+    if not os.path.exists(file_list_csv_path):
+        print('No file list found, creating one in specified path')
+
+        file_list_df = pd.DataFrame()
+
+        # By default assumes none of the files are being processed at this instant
+        file_list_df['running_facemap'] = False
+
+        # Go through each file and check if facemap already ran
+        for row_idx, exp_info in all_mouse_info.iterrows():
+            # get list of files from the exp folder
+            if load_from_server:
+                gvfs = Gio.Vfs.get_default()
+                main_folder = exp_info['server_path']
+                exp_info['main_folder'] = gvfs.get_file_for_uri(main_folder).get_path()
+
+                if exp_info['main_folder'] is None:
+                    print('WARNING: main folder not file for server path: %s' % exp_info['server_path'])
+            else:
+                main_folder = exp_info['server_path']
+                exp_info['main_folder'] = main_folder
+
+
+            exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
+                                      exp_info['expDate'], str(exp_info['expNum']))
+            # look for video files
+            video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+
+            # remove the *lastFrames.mj2 videos
+            video_files = [x for x in video_files if 'lastFrames' not in x]
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+
+
+        for video_fpath, video_fov in zip(video_files, video_file_fov_names):
+
+            # look for facemap processed file
+            processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
+    else:
+        print('Found info about list of files to process')
+
+    return all_file_info
 
 def main():
 
@@ -804,6 +865,9 @@ def main():
     run_video_compression = False
     load_from_server = False
     video_ext = '.mj2'
+
+    # spreadsheet to keep track of which files are done and which are not
+    file_list_csv_path = '//zserver/Code/AVrig/facemap_file_list.csv'
 
     print('Running batch processing of pink rig videos...')
 
@@ -914,7 +978,8 @@ def main():
         )
     }
     # loop through the experiments and see if there are videos with no corresponding facemap output
-
+    file_skipped = 0
+    tot_video_files = 0
     for row_idx, exp_info in all_mouse_info.iterrows():
         # get list of files from the exp folder
         if load_from_server:
@@ -941,6 +1006,8 @@ def main():
         print('Candidate videos to look over')
         print('\n'.join(video_files))
 
+        tot_video_files += len(video_files)
+
         # Temp hack by Tim to test video
         # exp_folder = os.path.join(exp_info['main_folder'], 'TS011', '2021-07-26', '1')
         # video_files = [os.path.join(exp_folder, '2021-07-26_1_TS011_eyeCam_lastFrames.mj2')]
@@ -948,6 +1015,7 @@ def main():
         # exp_folder = os.path.join(exp_info['main_folder'], 'AH002', '2021-10-29', '2')
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye.mj2')]
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye_compressed_crf0.mp4')]
+
 
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
 
@@ -967,9 +1035,18 @@ def main():
             # look for facemap processed file
             processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
 
-            if len(processed_facemap_path) == 0:
+            # look for text file that says that the video is being processed
+            processing_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processing.txt') % video_fov)
+
+            if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0):
 
                 print('%s not processed yet, will run facemap on it now' % video_fov)
+
+                # make an empty text file saying that the facemap file is being processed
+                e = datetime.datetime.now()
+                dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
+                processing_facemap_txt_file = os.path.join(exp_folder, '%s_%s_processing.txt' % (dt_string, video_fov))
+                open(processing_facemap_txt_file, 'a').close()
 
                 video_path_basename = os.path.basename(video_fpath).split('.')[0]
                 # save_path = os.path.join(exp_folder, '%s_proc.npy' % video_path_basename)
@@ -977,6 +1054,12 @@ def main():
                 run_facemap_mod([[video_fpath]], proc=proc)
                 num_videos_ran += 1
                 # run_facemap(video_fpath)
+
+                # finished processing, and so rename the text file to processed
+                e = datetime.datetime.now()
+                dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
+                processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
+                os.rename(processing_facemap_txt_file, processed_txt_file_name)
 
                 if plot_results:
                     # load facemap results
@@ -998,6 +1081,20 @@ def main():
 
                     plt.close(fig)
                     pdb.set_trace()
+            else:
+                file_skipped += 1
+                e = datetime.datetime.now()
+                dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
+                video_folder = os.path.dirname(video_fpath)
+                processed_txt_file = glob.glob(os.path.join(video_folder, '*%s_processed.txt') % video_fov)
+                processed_noted = len(processed_txt_file) > 0
+                if not processed_noted:
+                    processed_txt_file_name = os.path.join(video_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
+                    open(processed_txt_file_name, 'a').close()
+
+    if file_skipped == tot_video_files:
+        print('Looks like all files are processed or being processed! Taking a break now...')
+        time.sleep(1800)
 
 
 if __name__ == '__main__':
