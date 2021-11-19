@@ -901,6 +901,12 @@ def main():
     else:
         mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
+    files_to_exclude = ['aMasterMouseList.csv']
+
+    for path in mouse_info_csv_paths:
+        if os.path.basename(path) in files_to_exclude:
+            mouse_info_csv_paths.remove(path)
+
     all_mouse_info = []
 
     for csv_path in mouse_info_csv_paths:
@@ -994,7 +1000,6 @@ def main():
             main_folder = exp_info['server_path']
             exp_info['main_folder'] = main_folder
 
-
         exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
                                   exp_info['expDate'], str(exp_info['expNum']))
         # look for video files
@@ -1034,10 +1039,10 @@ def main():
             proc = rig_procs[exp_info['rigName']]
 
             # look for facemap processed file
-            processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
+            processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy' % video_fov))
 
             # look for text file that says that the video is being processed
-            processing_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processing.txt') % video_fov)
+            processing_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processing.txt' % video_fov))
 
             if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0):
 
