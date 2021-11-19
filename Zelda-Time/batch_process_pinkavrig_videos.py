@@ -825,7 +825,7 @@ def main():
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    subset_mice_to_use = ['TS011']
+    subset_mice_to_use = ['TS011', 'SP013']
 
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
@@ -835,7 +835,6 @@ def main():
             )
     else:
         mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
-
 
     all_mouse_info = []
 
@@ -854,7 +853,7 @@ def main():
     all_mouse_info = pd.concat(all_mouse_info)
 
     # Tim temp hack to try running this for one experiment
-    all_mouse_info = all_mouse_info.loc[1:2]
+    # all_mouse_info = all_mouse_info.loc[1:2]
 
     # make a fake main_csv_df for now to test things
     """

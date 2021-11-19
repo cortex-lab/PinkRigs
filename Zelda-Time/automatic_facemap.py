@@ -12,7 +12,11 @@ def main():
     while continue_running:
         e = datetime.datetime.now()
         print("The time is now: %s:%s:%s" % (e.hour, e.minute, e.second))
-        if (e.hour < 8) & (e.hour > 20):
+
+        hour_str = '%s' % e.hour
+        hour_int = int(hour_str)
+
+        if (hour_int < 8) | (hour_int >= 20):
             print('It is prime time to run some facemap!')
             bprocess.main()
 
