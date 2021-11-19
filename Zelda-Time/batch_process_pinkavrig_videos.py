@@ -889,7 +889,8 @@ def main():
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    subset_mice_to_use = ['TS011', 'SP013']
+    # subset_mice_to_use = ['TS011', 'SP013']
+    subset_mice_to_use = None
 
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
