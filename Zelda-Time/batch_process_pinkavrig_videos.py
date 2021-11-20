@@ -586,6 +586,8 @@ def run_facemap_mod(filenames, motSVD=True, movSVD=False, GUIobject=None, parent
     LYbin,LXbin,sybin,sxbin = utils.video_placement(Lybin, Lxbin)
     nroi = 0
 
+    # TODO: may be good to check video corruption around here
+    # eg. error on AN022 2021-06-16 experiment 2 eye/side camera
 
     if rois is not None:
         for r in rois:
@@ -1044,6 +1046,9 @@ def main():
             # look for text file that says that the video is being processed
             processing_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processing.txt' % video_fov))
 
+            # look for text file that says that the video is processed
+            processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
+
             if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0):
 
                 print('%s not processed yet, will run facemap on it now' % video_fov)
@@ -1092,9 +1097,12 @@ def main():
                 e = datetime.datetime.now()
                 dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
                 video_folder = os.path.dirname(video_fpath)
-                processed_txt_file = glob.glob(os.path.join(video_folder, '*%s_processed.txt') % video_fov)
+                processed_txt_file = glob.glob(os.path.join(video_folder, '*%s_processed.txt' % video_fov))
                 processed_noted = len(processed_txt_file) > 0
-                if not processed_noted:
+                is_processing = len(processing_facemap_txt_path) > 0
+
+                if (not processed_noted) and (not is_processing):
+                    print('Filed already processed but not noted, noting it now')
                     processed_txt_file_name = os.path.join(video_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
                     open(processed_txt_file_name, 'a').close()
 
