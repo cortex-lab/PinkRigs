@@ -674,19 +674,19 @@ def run_facemap_mod(filenames, motSVD=True, movSVD=False, GUIobject=None, parent
     tqdm.write('Computed motSVD projection at %0.2fs'%(time.time() - tic))
 
     # smooth pupil and blinks and running  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    for p in pups:
-        if 'area' in p:
-            p['area_smooth'],_ = pupil.smooth(p['area'].copy())
-            p['com_smooth'] = p['com'].copy()
-            p['com_smooth'][:,0],_ = pupil.smooth(p['com_smooth'][:,0].copy())
-            p['com_smooth'][:,1],_ = pupil.smooth(p['com_smooth'][:,1].copy())
-    for b in blinks:
-        b,_ = pupil.smooth(b.copy())
+    #for p in pups:
+    #    if 'area' in p:
+    #        p['area_smooth'],_ = pupil.smooth(p['area'].copy())
+    #        p['com_smooth'] = p['com'].copy()
+    #        p['com_smooth'][:,0],_ = pupil.smooth(p['com_smooth'][:,0].copy())
+    #        p['com_smooth'][:,1],_ = pupil.smooth(p['com_smooth'][:,1].copy())
+    #for b in blinks:
+    #    b,_ = pupil.smooth(b.copy())
 
-    if parent is not None:
-        parent.update_status_bar("Computed projection")
-    if GUIobject is not None:
-        GUIobject.QApplication.processEvents()
+    #if parent is not None:
+    #    parent.update_status_bar("Computed projection")
+    #if GUIobject is not None:
+    #    GUIobject.QApplication.processEvents()
 
     # Save output  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     proc = {
@@ -714,10 +714,10 @@ def run_facemap_mod(filenames, motSVD=True, movSVD=False, GUIobject=None, parent
     savename = facemap_save(proc, savepath)
     utils.close_videos(containers)
 
-    if parent is not None:
-        parent.update_status_bar("Output saved in "+savepath)
-    if GUIobject is not None:
-        GUIobject.QApplication.processEvents()
+    #if parent is not None:
+    #    parent.update_status_bar("Output saved in "+savepath)
+    #if GUIobject is not None:
+    #    GUIobject.QApplication.processEvents()
     tqdm.write('run time %0.2fs'%(time.time() - start))
 
     return savename
