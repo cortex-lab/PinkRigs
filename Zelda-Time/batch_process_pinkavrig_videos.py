@@ -983,7 +983,49 @@ def main():
                     'saturation': 255,
                     'pupil_sigma': 2,  # again does not matter I think
                     'ellipse': 'full',  # np.zeros((Ly[0], Lx[0])).astype(bool)
-                }
+                },
+            ],
+            sbin=1,
+            fullSVD=False,
+            save_mat=False,
+            sy=None,
+            sx=None,
+        ),
+        'zelda-stim2': dict(
+            rois=[
+                {
+                    'rind': 1,
+                    'rtype': 'motion_SVD',
+                    'iROI': 0,
+                    'ivid': 0,
+                    'color': (78.32401579229648, 15.276705546609746, 100.90024790442232),
+                    'yrange': 'full',  # np.arange(0, Ly[0]).astype(np.int32),
+                    'xrange': 'full',  # np.arange(0, Lx[0]).astype(np.int32),
+                    'saturation': 255,
+                    'pupil_sigma': 2,  # again does not matter I think
+                    'ellipse': 'full',  # np.zeros((Ly[0], Lx[0])).astype(bool)
+                },
+            ],
+            sbin=1,
+            fullSVD=False,
+            save_mat=False,
+            sy=None,
+            sx=None,
+        ),
+        'zelda-stim1': dict(
+            rois=[
+                {
+                    'rind': 1,
+                    'rtype': 'motion_SVD',
+                    'iROI': 0,
+                    'ivid': 0,
+                    'color': (78.32401579229648, 15.276705546609746, 100.90024790442232),
+                    'yrange': 'full',  # np.arange(0, Ly[0]).astype(np.int32),
+                    'xrange': 'full',  # np.arange(0, Lx[0]).astype(np.int32),
+                    'saturation': 255,
+                    'pupil_sigma': 2,  # again does not matter I think
+                    'ellipse': 'full',  # np.zeros((Ly[0], Lx[0])).astype(bool)
+                },
             ],
             sbin=1,
             fullSVD=False,
