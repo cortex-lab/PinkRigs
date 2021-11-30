@@ -926,10 +926,10 @@ def main():
     all_mouse_info = pd.concat(all_mouse_info)
 
     # 2021-11-25 Adding subset mouse to process Flora's mice first
-    subset_mice = ['FT039']
-    all_mouse_info = all_mouse_info.loc[
-        all_mouse_info['subject'].isin(subset_mice)
-    ]
+    #subset_mice = ['FT039']
+    #all_mouse_info = all_mouse_info.loc[
+    #    all_mouse_info['subject'].isin(subset_mice)
+    #]
 
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
