@@ -7,11 +7,11 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     % - etc.
     
     %%
-    %movieName = [thisDate '_' num2str(expNum) '_' mouseName '_' cam];
-    movieName=cam;
+    movieName = [thisDate '_' num2str(expNum) '_' mouseName '_' cam];
+    
     timelineExpNums = expNum;
     tlSyncName = 'camSync';
-    recompute = true;
+    recompute = false;
     nFramesToLoad = 3000;
     if ~isempty(varargin)
         params = varargin{1};
@@ -159,6 +159,8 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     % there aren't...
     numTheoFramesFoundBetweenSyncs_Rate = timeFoundBetweenSyncs/mean(diff(A.data(:,end)));
     
+    IFI = diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end));
+    
     % find the strobe times for the camera
     strobeIndex = find(strcmp({Timeline.hw.inputs.name}, strobeName));
     if ~isempty(strobeIndex)
@@ -170,25 +172,28 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
         % framesMissed = numFramesFoundBetweenSyncs - numTheoFramesFoundBetweenSyncs_Count;
         % maybe do it differently: try to see of any IFI is bigger than
         % expected
-        IFI = diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end));
         largeIFI = find(IFI>1.4*median(IFI)); % supposes there's not a majority of lost frames :)
         % check that have been compensated for in the next frame
         framesMissed = IFI(largeIFI(find((IFI(largeIFI)-median(IFI)+sum(IFI(largeIFI+1:2))-median(IFI) > 0.9*median(IFI)))))/median(IFI); % maybe won't be exactly that number??
         if isempty(framesMissed)
             framesMissed = 0;
         end
-        figure; hold all
-        plot(IFI)
-        axis tight
-        %hline(median(diff(A.data(:,end))))
-       % hline(2*median(diff(A.data(:,end))))
-%         for l = 1:numel(largeIFI)
-%             vline(largeIFI)
-%         end
-        figure; 
-        scatter(IFI(largeIFI)-median(IFI),IFI(largeIFI+1)-median(IFI));
+        
+        %     figure;
+        %     scatter(IFI(largeIFI)-median(IFI),IFI(largeIFI+1)-median(IFI));
     end
     
+    f = figure('visible','off'); hold all
+    plot(IFI)
+    axis tight
+    plot([1 numel(IFI)], [median(diff(A.data(:,end))) median(diff(A.data(:,end)))],'k--')
+    plot([1 numel(IFI)], 2*[median(diff(A.data(:,end))) median(diff(A.data(:,end)))],'k--')
+    ylabel('inter-frame interval')
+    xlabel('frame')
+    title(sprintf('Missed frames: %s',num2str(framesMissed)))
+    saveas(f,fullfile(server, mouseName, thisDate, num2str(expNum), [movieName '_alignment.png'],'png')
+
+        
     fprintf(1, 'missed frames: %d \n', framesMissed);
     if framesMissed
         % check if we can find them
@@ -241,5 +246,4 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     fprintf(1, 'saving to %s\n', saveName)
     
     save(saveName, 'tVid', 'vidFs');
-    close all; 
 end
