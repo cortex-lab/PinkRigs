@@ -9,7 +9,6 @@ kilosortworkfolder='C:\Users\Flora\Documents\KSworkfolder'; % local folder on ss
 kilosortoutputfolder='C:\Users\Flora\Documents\kilosort'; % local temporal folder for output (rootZ)
 defaultP3Bchanmap='C:\Users\Flora\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2\neuropixPhase3B2_kilosortChanMap.mat';
 
-
 %% the rest 
 % check which days from the mice's folder contain ephys data
 if ~exist(kilosortworkfolder, 'dir')
