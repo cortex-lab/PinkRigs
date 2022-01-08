@@ -8,6 +8,7 @@ import facemap
 from facemap import utils, process
 from tqdm import tqdm
 import time
+import cv2
 
 # some facemap process stuff
 from io import StringIO
@@ -25,6 +26,36 @@ mpl.use('Agg')  # to play nicely with pyqt: see: https://stackoverflow.com/quest
 import subprocess as sp
 
 import datetime
+
+
+def check_file_corrupted(vid_path):
+    """
+    Checks if vid_path (tested on mj2 videos) is corrupted
+    by reading a frame from it and see if anything returns
+    Parameters
+    ----------
+    vid_path
+
+    Returns
+    -------
+
+    """
+    vid_corrupted = 0
+    try:
+        vid = cv2.VideoCapture(vid_path)
+        if not vid.isOpened():
+            vid_corrupted = 1
+
+        # read (next) frame
+        ret, frame = vid.read()
+
+        if not ret:
+            vid_corrupted = 1
+    except:
+        vid_corrupted = 1
+
+    return vid_corrupted
+
 
 def run_facemap(video_fpath):
     # this is just a copy of the code here:
@@ -926,10 +957,10 @@ def main():
     all_mouse_info = pd.concat(all_mouse_info)
 
     # 2021-11-25 Adding subset mouse to process Flora's mice first
-    #subset_mice = ['FT039']
-    #all_mouse_info = all_mouse_info.loc[
-    #    all_mouse_info['subject'].isin(subset_mice)
-    #]
+    subset_mice = ['CB016']
+    all_mouse_info = all_mouse_info.loc[
+        all_mouse_info['subject'].isin(subset_mice)
+    ]
 
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
@@ -1050,6 +1081,9 @@ def main():
             main_folder = exp_info['server_path']
             exp_info['main_folder'] = main_folder
 
+        if type(exp_info['expNum']) is not int:
+            exp_info['expNum'] = int(exp_info['expNum'])
+
         exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
                                   exp_info['expDate'], str(exp_info['expNum']))
         # look for video files
@@ -1059,7 +1093,7 @@ def main():
         video_files = [x for x in video_files if 'lastFrames' not in x]
         video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
 
-        print('Candidate videos to look over')
+        print('%.f Candidate videos to look over' % len(video_files))
         print('\n'.join(video_files))
 
         tot_video_files += len(video_files)
@@ -1071,7 +1105,6 @@ def main():
         # exp_folder = os.path.join(exp_info['main_folder'], 'AH002', '2021-10-29', '2')
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye.mj2')]
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye_compressed_crf0.mp4')]
-
 
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
 
@@ -1097,15 +1130,34 @@ def main():
             # look for text file that says that the video is processed
             processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
 
-            if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0):
+            # check whether file was already marked as corrupted
+            vid_corrupted = check_file_corrupted(vid_path=video_fpath)
+            corrupted_txt_file = os.path.join(exp_folder, '%s_corrupted.txt' % video_fov)
+            corrupted_txt_file_not_found = len(glob.glob(corrupted_txt_file)) == 0
+            if (not corrupted_txt_file_not_found) & (not vid_corrupted):
+                # false alarm, delete the corruption files
+                os.remove(corrupted_txt_file)
+
+            if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0) & (corrupted_txt_file_not_found):
 
                 print('%s not processed yet, will run facemap on it now' % video_fov)
+
+                # Check file is not corrupted
+
+                vid_corrupted = check_file_corrupted(vid_path=video_fpath)
+                if vid_corrupted:
+                    open(corrupted_txt_file, 'a').close()
+                    print('%s is corrupted, skipping...' % video_fov)
+                    pdb.set_trace()
+                    continue
 
                 # make an empty text file saying that the facemap file is being processed
                 e = datetime.datetime.now()
                 dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
                 processing_facemap_txt_file = os.path.join(exp_folder, '%s_%s_processing.txt' % (dt_string, video_fov))
                 open(processing_facemap_txt_file, 'a').close()
+
+
 
                 video_path_basename = os.path.basename(video_fpath).split('.')[0]
                 # save_path = os.path.join(exp_folder, '%s_proc.npy' % video_path_basename)
