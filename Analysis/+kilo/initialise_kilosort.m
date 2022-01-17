@@ -27,7 +27,7 @@ idx=find(csvData.sortedTag==0);
 % loop over recordings to be sorted 
 for recidx=1:numel(activeSortQueue)
 % identify parent folder where we will push the output
-    myAPdata=[activeSortQueue{1}]; 
+    myAPdata=[activeSortQueue{recidx}]; 
     [ephys_folder,b,c]=fileparts(myAPdata); myapbin=strcat(b,c);
     
     if ~exist(kilosortoutputfolder, 'dir')
@@ -65,7 +65,7 @@ for recidx=1:numel(activeSortQueue)
         probesortedfolder=[ephys_folder '\\kilosort'];
         d=dir([probesortedfolder '\**\sync.mat']);
         if numel(d)<1            
-            syncFT(myAPdata, 385, probesortedfolder);
+            kilo.syncFT(myAPdata, 385, probesortedfolder);
         else 
             disp('sync extracted already.');
         end
