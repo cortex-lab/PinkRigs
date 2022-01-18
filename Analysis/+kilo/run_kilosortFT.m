@@ -59,7 +59,7 @@ function []=run_kilosortFT(ephys_folder)
             end
             
             
-            FT_kilosortFN2(probesortedfolder,kilosortworkfolder,channelmapdir)
+            Kilosort2Matlab(probesortedfolder,kilosortworkfolder,channelmapdir)
             delete([probesortedfolder '\' myapbin]); % delete if you also
             %CAR the data
             % copy all other output to znas  

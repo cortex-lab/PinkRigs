@@ -1,10 +1,11 @@
 %% you need to change most of the paths in this block
-function FT_kilosortFN2(rootZ,rootH,chanMapFile)
-addpath(genpath('C:\Users\Flora\Documents\GitHub\KiloSort2')) % path to kilosort folder
-addpath('C:\Users\Flora\Documents\GitHub\npy-matlab') % for converting to Phy
+function Kilosort2Matlab(rootZ,rootH,chanMapFile,KSconfig)
 %rootZ = 'G:\drift_simulations\test'; % the raw data binary file is in this folder
 %rootH = 'H:\'; % path to temporary binary file (same size as data, should be on fast SSD)
-pathToYourConfigFile = 'C:\Users\Flora\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2'; % take from Github folder and put it somewhere else (together with the master_file)
+%pathToYourConfigFile = 'C:\Users\Flora\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2'; % take from Github folder and put it somewhere else (together with the master_file)
+
+pathToYourConfigFile=KSconfig; 
+
 %chanMapFile = 'neuropixPhase3A_kilosortChanMap.mat';
 
 
