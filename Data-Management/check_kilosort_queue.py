@@ -73,6 +73,9 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                     else:
                         KS_done=KS_started
 
+                    # check if even if it wasn't completed, it might have errored and cannot be sorted
+                    
+
                     # add to queue if not    
                     if not KS_done:                  
                         # get the ap file that ought to be sorted 
