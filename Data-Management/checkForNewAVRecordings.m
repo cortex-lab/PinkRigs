@@ -147,6 +147,7 @@ for subject = mice2Update'
         fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
     end
 end
+exit;
 end
 
 

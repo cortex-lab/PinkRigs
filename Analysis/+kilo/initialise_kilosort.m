@@ -42,7 +42,7 @@ for recidx=1:numel(activeSortQueue)
     elseif contains(meta.imDatPrb_type,'2')
         % create channelmap (good for all phase2, even single shank) or copy P3B map?    
         fprintf('creating custom channelmap...') 
-        [~]=kilo.create_channelmapMultishank(myAPdata,ephys_folder,0);        
+        [~]=kilo.create_channelmapMultishank(myAPdata,ephys_folder,1);        
         channelmapfile=dir([ephys_folder '\\**\\*_channelmap.mat*']);
         channelmapdir=[channelmapfile(1).folder '\' channelmapfile(1).name]; % channelmap for the probe - should be in the same folder
     end
@@ -85,4 +85,5 @@ for recidx=1:numel(activeSortQueue)
     writetable(csvData,csvLocation,'Delimiter',',');
 end
 close all; 
+exit;
 end
