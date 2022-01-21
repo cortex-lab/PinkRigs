@@ -16,7 +16,9 @@ To set up regular deletion of camera data on timeline/ephys computers on Windows
 1. Select `Create a basic task...`
 2. Select the relevant timings and when prompted to select the task to schedule, select, the relevant batch file e.g.
 `\Github\PinkRigs\Zelda-Time\delete_expData.bat`
-
+### Analysis
+## histology 
+ - '\Analysis\+hist\Save_images_run_brainreg.ipynb' automatically runs brainreg. To run, open jupyter notebook in evironment where you installed brainreg. 
 ## Using python scripts
 ### Install for the first time
 1. After cloning the environment,open anaconda prompt. 
