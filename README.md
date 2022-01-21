@@ -6,7 +6,7 @@ Shared code for running experiments and processing data on the pink rigs
 - 8pm: push daily camera data to server and deletion of all *copied* data that is >2 days old. ('Zelda-Time\delete_expData.bat')
 - 8pm: facemap 
 ### ephys
-- 8pm: push daily camera data to server and deletion of all *copied* data that is >2 days old. ('Zelda-Ephys\delete_expData.bat') 
+- 8pm: push daily ephys data to server and deletion of all *copied* data that is >2 days old. ('Zelda-Ephys\delete_expData.bat') 
 ### data manager
 - 6.30pm inform users of training ('Data-Management\check_training.bat')
 - 9pm: check for new experiments, new ephys data to sort, initialise kilosort ('Data-Management\check_exps.bat') 
