@@ -1,7 +1,7 @@
 # PinkRigs
 Shared code for running experiments and processing data on the pink rigs
 ## Standard variable names (format)
-- "subect": Name of the subject (string)
+- "subject": Name of the subject (string)
 - "expDate": Date of the experiment as yyyy-mm-dd (string)
 - "expNum": Experiment number on a given day (string)
 
