@@ -10,19 +10,17 @@ function align_Master(subject, expDate, expNum)
 %% Align the block timings to timeline
 %  This function will load the timeline and block for that experiment and
 %  align one with another using 1) the wheel or 2) the photodiode.
-
-[blockTime, timelineTime] = align.block_AVrigs(subject, expDate, expNum);
+[blockTime, timelineTime] = block_AVrigs(subject, expDate, expNum);
 
 
 %% Align the video frame times to timeline
-%  This function will align all cameras' frame times with the experiment's
+%  This function will align all camera frame times with the experiment's
 %  timeline.
-
-% get cameras' names
-expPath = getExpPath(subject, expDate, expNum);
-vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
-for v = 1:numel(vids)
-    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vids(v), varargin);
+expPath = getExpPath(subject, expDate, expNum)
+cams = 
+for c = 1:numel(cams)
+    cam = cams(c);
+    [frameTimes, missedFrames] = video_AVrigs(subject, expDate, expNum, cam, varargin);
 end
 
 %% Align microphone to timeline
