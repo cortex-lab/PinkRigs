@@ -1,4 +1,8 @@
 function align_Master(subject, expDate, expNum)
+    
+%%% Should the functions output the times? Or save it and we load it 
+%%% somewhere else?    
+    
 %% Align spike times to timeline and save results in experiment folder
 %  This function will load the timeline flipper from the experiment and
 %  check this against all ephys files recorded on the same date. If it
@@ -18,11 +22,14 @@ function align_Master(subject, expDate, expNum)
 %  This function will align all cameras' frame times with the experiment's
 %  timeline.
 
+%%% should check that it's been done -- or inside the functions?
+
 % get cameras' names
 expPath = getExpPath(subject, expDate, expNum);
 vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
 for v = 1:numel(vids)
-    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vids(v), varargin);
+    [~,vidName,~]=fileparts(vids(v).name);
+    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vidName, varargin);
 end
 
 %% Align microphone to timeline
