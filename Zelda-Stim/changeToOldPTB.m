@@ -2,7 +2,12 @@
 p_array = strsplit(path(), pathsep); % array of paths
 new_ptb_folder = 'C:\toolbox\Psychtoolbox';
 if any(strcmp(p_array, new_ptb_folder))
-    rmpath(genpath(new_ptb_folder))
+    % rmpath(genpath(new_ptb_folder))
+    for pathIdx = 1:length(p_array)
+        if contains(p_array{pathIdx}, new_ptb_folder)
+            rmpath(p_array{pathIdx});
+        end 
+    end 
 end 
 
 old_ptb_folder = 'C:\Users\Experiment\Documents\MATLAB\Psychtoolbox'; 
