@@ -1,22 +1,19 @@
-function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
+function [] = video_AVrigs(subject, expDate, expNum, vid, varargin)
+    %%% This function will align the time frames of the input video to the
+    %%% corresponding timeline.
+    %%% This code is inspired by the code from kilotrode
+    %%% (https://github.com/cortex-lab/kilotrodeRig).
     
     %%
-    % Need to make it much more general, including:
-    % - file names
-    % - video types
-    % - etc.
+    movieName = vid;
     
-    %%
-    movieName = [thisDate '_' num2str(expNum) '_' mouseName '_' cam];
-    
-    timelineExpNums = expNum;
     tlSyncName = 'camSync';
     recompute = false;
     nFramesToLoad = 3000;
+    
     if ~isempty(varargin)
         params = varargin{1};
         if isfield(params, 'recompute')
-            
             recompute = params.recompute;
         end
         if isfield(params, 'nFramesToLoad')
@@ -29,14 +26,14 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     % but isn't working with the current split in servers...
     % Should insist a bit more though)
     server = '\\znas.cortexlab.net\Subjects\';
-    if ~exist(fullfile(server,mouseName, thisDate, num2str(expNum)),'dir')
+    if ~exist(fullfile(server,subject, expDate, num2str(expNum)),'dir')
         server = '\\128.40.224.65\Subjects\';
     end
-    movieDir = fullfile(server, mouseName, thisDate, num2str(expNum));
-    intensFile = fullfile(server, mouseName, thisDate, num2str(expNum), ...
+    movieDir = fullfile(server, subject, expDate, num2str(expNum));
+    intensFile = fullfile(server, subject, expDate, num2str(expNum), ...
         [movieName '_avgIntensity.mat']);
     % have to deal with the "lastFrames" file. Pretty annoying.
-    intensFile_lastFrames = fullfile(server, mouseName, thisDate, num2str(expNum), ...
+    intensFile_lastFrames = fullfile(server, subject, expDate, num2str(expNum), ...
         [movieName '_lastFrames_avgIntensity.mat']);
     
     if recompute && exist(intensFile, 'file')
@@ -70,7 +67,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     
     %% first detect the pulses in the avgIntensity trace
     
-    expectedNumSyncs = numel(timelineExpNums)*2; % one at the beginning and end of each timeline file
+    expectedNumSyncs = 2; % one at the beginning and end of each timeline file
     
     vidIntensThresh = [15 20];
     [intensTimes, intensUp, intensDown] = schmittTimes(1:numel(avgIntensity), avgIntensity, vidIntensThresh);
@@ -124,7 +121,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     tlSyncThresh = [2 3];
     
     fprintf(1, 'loading timeline\n');
-    load(fullfile(server, mouseName, thisDate, num2str(expNum), [thisDate '_' num2str(expNum) '_' mouseName '_Timeline.mat']));
+    load(fullfile(server, subject, expDate, num2str(expNum), [expDate '_' num2str(expNum) '_' subject '_Timeline.mat']));
     
     % find the timeline samples where cam sync pulses started (went
     % from 0 to 5V)
@@ -135,7 +132,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     
     vidSyncOnFrames = intensDown;
     
-    A = importdata(fullfile(server, mouseName, thisDate, num2str(expNum), [movieName, '_times.txt']),'\t');
+    A = importdata(fullfile(server, subject, expDate, num2str(expNum), [movieName, '_times.txt']),'\t');
     timeFoundBetweenSyncs = A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end);
     theoTimeBetweenSyncs = diff(tt(tlSyncOnSamps));
     timeDiscr = theoTimeBetweenSyncs-timeFoundBetweenSyncs;
@@ -191,7 +188,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     ylabel('inter-frame interval')
     xlabel('frame')
     title(sprintf('Missed frames: %s',num2str(framesMissed)))
-    saveas(f,fullfile(server, mouseName, thisDate, num2str(expNum), [movieName '_alignment.png'],'png')
+    saveas(f,fullfile(server, subject, expDate, num2str(expNum), [movieName '_alignment.png'],'png')
 
         
     fprintf(1, 'missed frames: %d \n', framesMissed);
@@ -241,7 +238,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     % tVid = a*A.data(:,end) + b; % some jitter is introduced by matlab here...
     tVid = a*(A.data(vidSyncOnFrames(1),end) + ((1:size(A.data,1)) - vidSyncOnFrames(1))*vidFs) + b; % vidSyncOnFrames(1) is the one that has been properly aligned, so should be this one that is used?
     
-    saveName = fullfile(server, mouseName, thisDate, num2str(expNum), ...
+    saveName = fullfile(server, subject, expDate, num2str(expNum), ...
         [movieName '_timeStamps.mat']);
     fprintf(1, 'saving to %s\n', saveName)
     
