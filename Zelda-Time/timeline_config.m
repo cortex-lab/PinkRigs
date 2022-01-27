@@ -70,7 +70,7 @@ clearvars -except timeline
 % save to "hardware" file
 % copy backup of hardware file?
 rig = hostname;
-hardwarefile_address = fullfile('\\zserver.cortexlab.net\Code\Rigging\config', upper(hostname), 'hardware.mat');
+hardwarefile_address = fullfile('\\zserver.cortexlab.net\Code\Rigging\config', upper(rig), 'hardware.mat');
 copyfile(hardwarefile_address, ...
     [hardwarefile_address(1:end-4) '_' regexprep(regexprep(datestr(now), ' ', '_'),':','-') '.mat'])
 save(hardwarefile_address,'timeline','-append')
