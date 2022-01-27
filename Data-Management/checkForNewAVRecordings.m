@@ -3,7 +3,8 @@ function checkForNewAVRecordings(recompile)
 serverLocations = { ...
     '\\znas.cortexlab.net\Subjects\'; ...
     '\\zubjects.cortexlab.net\Subjects\'; ...
-    '\\128.40.224.65\Subjects\'};
+    '\\128.40.224.65\Subjects\'; ...
+    '\\zinu.cortexlab.net\Subjects\'};
 
 
 if ~exist('recompile', 'var'); recompile = 0; end
@@ -146,6 +147,7 @@ for subject = mice2Update'
         fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
     end
 end
+exit;
 end
 
 
