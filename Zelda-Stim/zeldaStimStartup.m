@@ -1,3 +1,3 @@
 %% Change to old version of psychtoolbox
-% changeToOldPTB; 
+changeToOldPTB; 
 fprintf('Changed to old version of PTB \n');
