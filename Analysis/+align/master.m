@@ -1,7 +1,7 @@
-function align_Master(subject, expDate, expNum)
+function master(subject, expDate, expNum)
     
-%%% Should the functions output the times? Or save it and we load it 
-%%% somewhere else?    
+%%% Should the functions output the times? Or save it and we actually load  
+%%% it somewhere else?    
     
 %% Align spike times to timeline and save results in experiment folder
 %  This function will load the timeline flipper from the experiment and
@@ -21,16 +21,32 @@ function align_Master(subject, expDate, expNum)
 %% Align the video frame times to timeline
 %  This function will align all cameras' frame times with the experiment's
 %  timeline.
+%  The resulting times for these alignments will be saved in a structure
+%  'vids' that contains all cameras.
 
-%%% should check that it's been done -- or inside the functions?
-%%% also can input directly timeline if already loaded
+% a few parameters (optional)
+pVid.recomputeAlign = false; % will recompute the alignment if true
+pVid.recomputeInt = false; % will recompute intensity file if true
+pVid.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
+pVid.adjustPercExpo = 1; % will adjust the timing of the first frame from its intensity
+pVid.plt = 1; % to plot the inter frame interval for sanity checks
+pVid.crashMissedFrames = 1; % will crash if any missed frame
 
 % get cameras' names
 expPath = getExpPath(subject, expDate, expNum);
 vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
+
+% align each of them
 for v = 1:numel(vids)
     [~,vidName,~]=fileparts(vids(v).name);
-    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vidName);
+    try
+        [vids(v).frameTimes, vids(v).missedFrames] = align.video_AVrigs(subject, expDate, expNum, vidName, pVid);
+    catch me
+        % case when it's corrupted
+        vids(v).frameTimes = [];
+        vids(v).missedFrames = [];
+        warning('Corrupted video %s: threw an error (%s)',vidName,me.message)
+    end
 end
 
 %% Align microphone to timeline
