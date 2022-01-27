@@ -3,6 +3,9 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     %%% corresponding timeline. It will try to minimize the amount of time
     %%% and computing by loading first only the beginning and end of the
     %%% file. It will then iterate until it finds both flashes.
+    %%% Additional arguments are some parameters, and the experiment's
+    %%% timeline.
+    %%%
     %%% This code is inspired by the code from kilotrode
     %%% (https://github.com/cortex-lab/kilotrodeRig).
     
@@ -11,9 +14,9 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     expPath = getExpPath(subject, expDate, expNum);
     
     % parameters for processing
-    tlSyncName = 'camSync';
-    recomputeInt = false;
-    nFramesToLoad = 3000;
+    recomputeInt = false; % will recompute intensity file if true
+    nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
+    adjustFirstFrame = 1; % will adjust the timing of the first frame from its intensity
     
     if ~isempty(varargin)
         params = varargin{1};
@@ -24,6 +27,13 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
         end
         if isfield(params, 'nFramesToLoad')
             nFramesToLoad = params.nFramesToLoad;
+        end
+        if isfield(params, 'adjustFirstFrame')
+            adjustFirstFrame = params.adjustFirstFrame;
+        end
+        
+        if numel(varargin)>1
+            Timeline = varargin{2};
         end
     end
     
@@ -40,7 +50,6 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     % file containing the last frames (due to vBox)
     intensFile_lastFrames = fullfile(expPath, ...
         [movieName '_lastFrames_avgIntensity.mat']);
-    
     
     %% get intensity files
     % This bit will compute and save the intensity of the movies.
@@ -132,57 +141,43 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     assert(numel(intensDown)==expectedNumSyncs, 'could not find correct number of syncs');
     fprintf(1, 'found the sync pulses in the video\n');
     
+    vidSyncOnFrames = intensDown;
+    
     %% now get the timings
-    % usually these are TTL and pretty much anything between 0 and 5 will work
-    % but here I use a small value because for the whisker camera I didn't have
-    % TTL so this works for that too.
-    % tlStrobeThresh = [0.08 0.15];
-    strobeName = [cam 'Strobe'];
-    tlStrobeThresh = [1 2];
     
+    % load timeline if not an input
+    if ~exist('Timeline','var')
+        fprintf(1, 'loading timeline\n');
+        Timeline = timepro.getTimeline(subject,expDate,expNum);
+    end
+    tt = timepro.extractChan(Timeline,'time');
     
-    fprintf(1, 'loading timeline\n');
-    load(fullfile(expPath, [expDate '_' num2str(expNum) '_' subject '_Timeline.mat']));
-    
-    % find the timeline samples where cam sync pulses started (went
-    % from 0 to 5V)
-    tt = extractChan(Timeline,'time');
-    tlSync = extractChan(Timeline,tlSyncName);
+    % find the timeline samples where cam sync pulses started
+    tlSync = timepro.extractChan(Timeline,'camSync');
     tlSyncThresh = [2 3];
     [~, ~, tlSyncOnSamps] = schmittTimes(1:numel(tlSync), tlSync, tlSyncThresh);
     
-    vidSyncOnFrames = intensDown;
-    
+    % get the frames times as saved by vBox
     A = importdata(fullfile(server, subject, expDate, num2str(expNum), [movieName, '_times.txt']),'\t');
-    timeFoundBetweenSyncs = A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end);
-    theoTimeBetweenSyncs = diff(tt(tlSyncOnSamps));
-    timeDiscr = theoTimeBetweenSyncs-timeFoundBetweenSyncs;
-    % time discrepancy could be due to a difference in timing (i.e., linear
-    % scaling of time). Would be great to know???
-    fprintf(1, 'time discrepancy was %ds \n', timeDiscr);
         
     % real number of frames between sync
     numFramesFoundBetweenSyncs = diff(vidSyncOnFrames);
     
-    % theoretical number of frames between sync (Frame count)
-    % supposes that if there's a missed frame, that number (A.data(:,3))
-    % will suddenly increase by more than 1 
-    numTheoFramesFoundBetweenSyncs_Count = A.data(vidSyncOnFrames(2),3)-A.data(vidSyncOnFrames(1),3);
-    
-    % theoretical number of frames between sync (based on Frame rate)
-    % pretty hard to compute!!! Because:
-    % - if there's a lost frame, will lower the computed frame rate so we
-    % won't see it
-    % - if take median gives a large number of dropped frames, even when
-    % there aren't...
-    numTheoFramesFoundBetweenSyncs_Rate = timeFoundBetweenSyncs/mean(diff(A.data(:,end)));
-    
     IFI = diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end));
     
     % find the strobe times for the camera
-    strobeIndex = find(strcmp({Timeline.hw.inputs.name}, strobeName));
-    if ~isempty(strobeIndex)
-        tlStrobe = Timeline.rawDAQData(:,strobeIndex);
+    % usually these are TTL and pretty much anything between 0 and 5 will work
+    % but here I use a small value because for the whisker camera I didn't have
+    % TTL so this works for that too.
+    % tlStrobeThresh = [0.08 0.15];
+    camName = regexp(vidName,'[a-z]*Cam','match');
+    strobeName = [camName{1} 'Strobe'];
+    tlStrobe = timepro.extractChan(Timeline,strobeName);  
+    
+
+    if ~isempty(tlStrobe)
+        % take the strobes if exist
+        tlStrobeThresh = [1 2];
         [~,strobeSamps,~] = schmittTimes(1:numel(tlStrobe), tlStrobe, tlStrobeThresh);
         numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
         framesMissed = numStrobesFoundBetweenSyncs-numFramesFoundBetweenSyncs;
@@ -196,9 +191,6 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
         if isempty(framesMissed)
             framesMissed = 0;
         end
-        
-        %     figure;
-        %     scatter(IFI(largeIFI)-median(IFI),IFI(largeIFI+1)-median(IFI));
     end
     
     f = figure('visible','off'); hold all
@@ -262,4 +254,26 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     fprintf(1, 'saving to %s\n', saveName)
     
     save(saveName, 'tVid', 'vidFs');
+    
+    
+        
+%     timeFoundBetweenSyncs = A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end);
+%     theoTimeBetweenSyncs = diff(tt(tlSyncOnSamps));
+%     timeDiscr = theoTimeBetweenSyncs-timeFoundBetweenSyncs;
+%     % time discrepancy could be due to a difference in timing (i.e., linear
+%     % scaling of time). Would be great to know???
+%     fprintf(1, 'time discrepancy was %ds \n', timeDiscr);
+%     
+%     % theoretical number of frames between sync (Frame count)
+%     % supposes that if there's a missed frame, that number (A.data(:,3))
+%     % will suddenly increase by more than 1 
+%     numTheoFramesFoundBetweenSyncs_Count = A.data(vidSyncOnFrames(2),3)-A.data(vidSyncOnFrames(1),3);
+%     
+%     % theoretical number of frames between sync (based on Frame rate)
+%     % pretty hard to compute!!! Because:
+%     % - if there's a lost frame, will lower the computed frame rate so we
+%     % won't see it
+%     % - if take median gives a large number of dropped frames, even when
+%     % there aren't...
+%     numTheoFramesFoundBetweenSyncs_Rate = timeFoundBetweenSyncs/mean(diff(A.data(:,end)));
 end

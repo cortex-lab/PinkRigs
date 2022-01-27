@@ -23,13 +23,14 @@ function align_Master(subject, expDate, expNum)
 %  timeline.
 
 %%% should check that it's been done -- or inside the functions?
+%%% also can input directly timeline if already loaded
 
 % get cameras' names
 expPath = getExpPath(subject, expDate, expNum);
 vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
 for v = 1:numel(vids)
     [~,vidName,~]=fileparts(vids(v).name);
-    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vidName, varargin);
+    [frameTimes, missedFrames] = align.video_AVrigs(subject, expDate, expNum, vidName);
 end
 
 %% Align microphone to timeline

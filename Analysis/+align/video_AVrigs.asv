@@ -1,27 +1,35 @@
 function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     %%% This function will align the time frames of the input video to the
-    %%% corresponding timeline.
+    %%% corresponding timeline. It will try to minimize the amount of time
+    %%% and computing by loading first only the beginning and end of the
+    %%% file. It will then iterate until it finds both flashes.
+    %%% Additional arguments are some parameters, and the experiment's
+    %%% timeline.
+    %%%
     %%% This code is inspired by the code from kilotrode
     %%% (https://github.com/cortex-lab/kilotrodeRig).
     
-    %%
+    %% get path and parameters
     % get experiment's path 
     expPath = getExpPath(subject, expDate, expNum);
     
     % parameters for processing
-    tlSyncName = 'camSync';
-    recompute = false;
+    recomputeInt = false;
     nFramesToLoad = 3000;
     
     if ~isempty(varargin)
         params = varargin{1};
         
         % to recompute the intensity files
-        if isfield(params, 'recompute')
-            recompute = params.recompute;
+        if isfield(params, 'recomputeInt')
+            recomputeInt = params.recomputeInt;
         end
         if isfield(params, 'nFramesToLoad')
             nFramesToLoad = params.nFramesToLoad;
+        end
+        
+        if numel(varargin)>1
+            Timeline = varargin{2};
         end
     end
     
@@ -41,8 +49,9 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     
     
     %% get intensity files
+    % This bit will compute and save the intensity of the movies.
     
-    if recompute
+    if recomputeInt
         % delete intensity files
         if exist(intensFile, 'file')
             delete(intensFile);
@@ -52,17 +61,17 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
         end
     end
     
-    % compute intensity file for the main file
+    % compute intensity file for the main file, will save it in folder
     if ~exist(intensFile, 'file')
         fprintf(1, 'computing average intensity of first/last frames...\n');
-        ROI = vidpro.getAvgMovInt(expPath, movieName, [], true, [], [], nFramesToLoad);
+        vidpro.getAvgMovInt(expPath, movieName, nFramesToLoad);
     end
     
-    % compute intensity file for the lastFrames file
+    % compute intensity file for the lastFrames file, will save it in folder
     d = dir(fullfile(expPath, [movieName '_lastFrames.mj2'])); % to check if it's there and worth loading
     if ~exist(intensFile_lastFrames, 'file')
         if d.bytes>100
-            ROI_lastFrames = vidpro.getAvgMovInt(expPath, [movieName '_lastFrames'], [], true, [], [], []);  
+            vidpro.getAvgMovInt(expPath, [movieName '_lastFrames'], []);  
         end
     end
     
@@ -70,23 +79,26 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
     fprintf(1, 'loading avg intensity\n');
     load(intensFile);
     
+    % load the lastFrames average intensity
     if d.bytes>100
         lf = load(intensFile_lastFrames);
     else
         lf.avgIntensity = [];
     end
     if ~all(lf.avgIntensity == 0)
+        % happens when video is blank
         avgIntensity = [avgIntensity lf.avgIntensity];
     end
     
-    %% first detect the pulses in the avgIntensity trace
+    %% get the two dark flashes
+    % This part will go through various methods to get the proper
+    % thresholds. It's been working quite well.
     
     expectedNumSyncs = 2; % one at the beginning and end of each timeline file
     
     vidIntensThresh = [15 20];
-    [intensTimes, intensUp, intensDown] = schmittTimes(1:numel(avgIntensity), avgIntensity, vidIntensThresh);
-    % intensDown = find(diff(avgIntensity)>10); intensDown(find(diff(intensDown)<2)+1) = []; %% that's intensUp...
-    
+    [~, ~, intensDown] = schmittTimes(1:numel(avgIntensity), avgIntensity, vidIntensThresh);
+
     attemptNum = 1; loadAttemptNum = 1;
     while(numel(intensDown)~=expectedNumSyncs)
         % try some different approaches to get the right threshold
@@ -104,12 +116,12 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
                 switch loadAttemptNum
                     case 1
                         fprintf(1, 'trying to load more frames...\n')
-                        vidpro.getAvgMovInt(expPath, movieName, [], true, [], [], 10000);
+                        vidpro.getAvgMovInt(expPath, movieName, 10000);
                         load(intensFile); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     case 2
                         fprintf(1, 'trying to load all frames...\n')
-                        vidpro.getAvgMovInt(expPath, movieName, [], true, []);
+                        vidpro.getAvgMovInt(expPath, movieName);
                         load(intensFile); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     otherwise
@@ -120,63 +132,49 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
                 loadAttemptNum = loadAttemptNum+1;
         end
         
-        [intensTimes, intensUp, intensDown] = schmittTimes(1:numel(avgIntensity), avgIntensity, vidIntensThresh);
+        [~, ~, intensDown] = schmittTimes(1:numel(avgIntensity), avgIntensity, vidIntensThresh);
         attemptNum = attemptNum +1;
     end
     assert(numel(intensDown)==expectedNumSyncs, 'could not find correct number of syncs');
     fprintf(1, 'found the sync pulses in the video\n');
     
-    %% now get the timings
-    % usually these are TTL and pretty much anything between 0 adn 5 will work
-    % but here I use a small value because for the whisker camera I didn't have
-    % TTL so this works for that too.
-    % tlStrobeThresh = [0.08 0.15];
-    strobeName = [cam 'Strobe'];
-    tlStrobeThresh = [1 2];
-    tlSyncThresh = [2 3];
-    
-    fprintf(1, 'loading timeline\n');
-    load(fullfile(server, subject, expDate, num2str(expNum), [expDate '_' num2str(expNum) '_' subject '_Timeline.mat']));
-    
-    % find the timeline samples where cam sync pulses started (went
-    % from 0 to 5V)
-    tt = Timeline.rawDAQTimestamps;
-    syncIndex = find(strcmp({Timeline.hw.inputs.name}, tlSyncName));
-    tlSync = Timeline.rawDAQData(:,syncIndex);
-    [~, ~, tlSyncOnSamps] = schmittTimes(1:numel(tlSync), tlSync, tlSyncThresh);
-    
     vidSyncOnFrames = intensDown;
     
+    %% now get the timings
+    
+    % load timeline if not an input
+    if ~exist('Timeline','var')
+        fprintf(1, 'loading timeline\n');
+        Timeline = timepro.getTimeline(subject,expDate,expNum);
+    end
+    tt = timepro.extractChan(Timeline,'time');
+    
+    % find the timeline samples where cam sync pulses started
+    tlSync = timepro.extractChan(Timeline,'camSync');
+    tlSyncThresh = [2 3];
+    [~, ~, tlSyncOnSamps] = schmittTimes(1:numel(tlSync), tlSync, tlSyncThresh);
+    
+    % get the frames times as saved by vBox
     A = importdata(fullfile(server, subject, expDate, num2str(expNum), [movieName, '_times.txt']),'\t');
-    timeFoundBetweenSyncs = A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end);
-    theoTimeBetweenSyncs = diff(tt(tlSyncOnSamps));
-    timeDiscr = theoTimeBetweenSyncs-timeFoundBetweenSyncs;
-    % time discrepancy could be due to a difference in timing (i.e., linear
-    % scaling of time). Would be great to know???
-    fprintf(1, 'time discrepancy was %ds \n', timeDiscr);
         
     % real number of frames between sync
     numFramesFoundBetweenSyncs = diff(vidSyncOnFrames);
     
-    % theoretical number of frames between sync (Frame count)
-    % supposes that if there's a missed frame, that number (A.data(:,3))
-    % will suddenly increase by more than 1 
-    numTheoFramesFoundBetweenSyncs_Count = A.data(vidSyncOnFrames(2),3)-A.data(vidSyncOnFrames(1),3);
-    
-    % theoretical number of frames between sync (based on Frame rate)
-    % pretty hard to compute!!! Because:
-    % - if there's a lost frame, will lower the computed frame rate so we
-    % won't see it
-    % - if take median gives a large number of dropped frames, even when
-    % there aren't...
-    numTheoFramesFoundBetweenSyncs_Rate = timeFoundBetweenSyncs/mean(diff(A.data(:,end)));
-    
     IFI = diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end));
     
     % find the strobe times for the camera
-    strobeIndex = find(strcmp({Timeline.hw.inputs.name}, strobeName));
-    if ~isempty(strobeIndex)
-        tlStrobe = Timeline.rawDAQData(:,strobeIndex);
+    % usually these are TTL and pretty much anything between 0 and 5 will work
+    % but here I use a small value because for the whisker camera I didn't have
+    % TTL so this works for that too.
+    % tlStrobeThresh = [0.08 0.15];
+    camName = regexp(vidName,'[a-z]*Cam','match');
+    strobeName = [camName{1} 'Strobe'];
+    tlStrobe = timepro.extractChan(Timeline,strobeName);  
+    
+
+    if ~isempty(tlStrobe)
+        % take the strobes if exist
+        tlStrobeThresh = [1 2];
         [~,strobeSamps,~] = schmittTimes(1:numel(tlStrobe), tlStrobe, tlStrobeThresh);
         numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
         framesMissed = numStrobesFoundBetweenSyncs-numFramesFoundBetweenSyncs;
@@ -190,9 +188,6 @@ function [] = video_AVrigs(subject, expDate, expNum, movieName, varargin)
         if isempty(framesMissed)
             framesMissed = 0;
         end
-        
-        %     figure;
-        %     scatter(IFI(largeIFI)-median(IFI),IFI(largeIFI+1)-median(IFI));
     end
     
     f = figure('visible','off'); hold all

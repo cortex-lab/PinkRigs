@@ -1,11 +1,11 @@
-function chan = extractChan(timeline,chanName)
+function chan = extractChan(Timeline,chanName)
     %%% Will extract specific channel from timeline.
     
     if strcmp(chanName,'time')
         % extract the time channel
-        chan = timeline.rawDAQTimestamps;
+        chan = Timeline.rawDAQTimestamps;
     else
-        syncIndex = find(strcmp({timeline.hw.inputs.name}, chanName));
+        syncIndex = find(strcmp({Timeline.hw.inputs.name}, chanName));
         if ~isempty(syncIndex)
             chan = Timeline.rawDAQData(:,syncIndex);
         else

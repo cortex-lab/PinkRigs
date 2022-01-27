@@ -1,6 +1,7 @@
 function getAvgMovInt(direc, fname, varargin)
     %%% This function will compute the average intensity of a movie, mainly
     %%% in order to extract the dark flashes.
+    %%%
     %%% This code is inspired by the code from kilotrode
     %%% (https://github.com/cortex-lab/kilotrodeRig).
     
