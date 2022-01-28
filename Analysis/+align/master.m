@@ -18,11 +18,10 @@ function master(subject, expDate, expNum)
 %  compute the events times in timeline time from times in block time using
 %  "block2tl".
 
-%%% Not ideal that this is in two functions?
+[blRefTimes, tlRefTimes] = align.block_AVrigs(subject, expDate, expNum);
 
-[blRefTime, tlRefTime] = align.block_AVrigs(subject, expDate, expNum);
-events_tlTime = align.block2tl(events_blTime, blRefTime, tlRefTime);
-
+% randEvents_blTime contains any block-time-based events
+randEvents_tlTime = align.block2tl(randEvents_blTime, blRefTimes, tlRefTimes);
 
 %% Align the video frame times to timeline
 %  This function will align all cameras' frame times with the experiment's
