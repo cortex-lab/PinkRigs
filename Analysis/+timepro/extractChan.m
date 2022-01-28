@@ -2,7 +2,7 @@ function chan = extractChan(timeline,chanName,varargin)
     %%% Will extract specific channel from timeline.
     %%% Additional argument to display or not warning when not found.
     
-    if varargin < 3
+    if nargin < 3
         dispWar = 1;
     else
         dispWar = varargin{1};
@@ -13,9 +13,9 @@ function chan = extractChan(timeline,chanName,varargin)
         % extract the time channel
         chan = timeline.rawDAQTimestamps;
     else
-        syncIndex = find(strcmp({timeline.hw.inputs.name}, chanName));
-        if ~isempty(syncIndex)
-            chan = timeline.rawDAQData(:,syncIndex);
+        chanIndex = find(strcmp({timeline.hw.inputs.name}, chanName));
+        if ~isempty(chanIndex)
+            chan = timeline.rawDAQData(:,chanIndex);
         else
             chan = [];
             if dispWar
