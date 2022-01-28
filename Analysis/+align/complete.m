@@ -1,4 +1,4 @@
-function master(subject, expDate, expNum)
+function complete(subject, expDate, expNum)
 %% Align spike times to timeline and save results in experiment folder
 %  This function will load the timeline flipper from the experiment and
 %  check this against all ephys files recorded on the same date. If it
@@ -6,7 +6,7 @@ function master(subject, expDate, expNum)
 %  corresponding spike data and save it into the experiment folder. This
 %  function will not run if there is no ephys/kilosort data
 
-
+align.ephys2timeline(subject, expDate, expNum);
 %% Align the block timings to timeline
 %  This function will...
 
