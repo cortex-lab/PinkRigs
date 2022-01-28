@@ -1,8 +1,4 @@
 function master(subject, expDate, expNum)
-    
-%%% Should the functions output the times? Or save it and we actually load  
-%%% it somewhere else?    
-    
 %% Align spike times to timeline and save results in experiment folder
 %  This function will load the timeline flipper from the experiment and
 %  check this against all ephys files recorded on the same date. If it
