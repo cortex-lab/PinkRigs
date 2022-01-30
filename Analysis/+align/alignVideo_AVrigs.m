@@ -30,7 +30,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     % Should insist a bit more though)
     server = '\\znas.cortexlab.net\Subjects\';
     if ~exist(fullfile(server,mouseName, thisDate, num2str(expNum)),'dir')
-        server = '\\128.40.224.65\Subjects\';
+        server = '\\zinu.cortexlab.net\Subjects\';
     end
     movieDir = fullfile(server, mouseName, thisDate, num2str(expNum));
     intensFile = fullfile(server, mouseName, thisDate, num2str(expNum), ...
@@ -191,7 +191,7 @@ function [] = alignVideo_AVrigs(mouseName, thisDate, expNum, cam, varargin)
     ylabel('inter-frame interval')
     xlabel('frame')
     title(sprintf('Missed frames: %s',num2str(framesMissed)))
-    saveas(f,fullfile(server, mouseName, thisDate, num2str(expNum), [movieName '_alignment.png'],'png')
+    saveas(f,fullfile(server, mouseName, thisDate, num2str(expNum), [movieName '_alignment.png']));
 
         
     fprintf(1, 'missed frames: %d \n', framesMissed);
