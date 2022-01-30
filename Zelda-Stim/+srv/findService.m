@@ -7,13 +7,18 @@ function s = findService(id, varargin)
 
 % 2013-06 CB created
 
+rig = hostname;
+rig = lower(rig);
+rigTime = regexprep(rig,'stim','time');
+rigEphys = regexprep(rig,'stim','ephys');
+
 % Checking which hosts to use, strings should be as they are 
 % known to MC (defined in Rigging/config/remote.mat)
-timelineHost = iff(any(strcmp(id, 'timeline')), {'zelda-time4'}, {''});
-micHost = iff(any(strcmp(id, 'microphone')), {'zelda-ephys4'}, {''});
-eyeCamHost = iff(any(strcmp(id, 'eyeCam')), {'zelda-time4'}, {''});
-frontCamHost = iff(any(strcmp(id, 'frontCam')), {'zelda-time4'}, {''});
-sideCamHost = iff(any(strcmp(id, 'sideCam')), {'zelda-time4'}, {''});
+timelineHost = iff(any(strcmp(id, 'timeline')), {rigTime}, {''});
+micHost = iff(any(strcmp(id, 'microphone')), {rigEphys}, {''});
+eyeCamHost = iff(any(strcmp(id, 'eyeCam')), {rigTime}, {''});
+frontCamHost = iff(any(strcmp(id, 'frontCam')), {rigTime}, {''});
+sideCamHost = iff(any(strcmp(id, 'sideCam')), {rigTime}, {''});
 timelinePort = 1001;
 micPort = 1002;
 eyePort = 1003;
