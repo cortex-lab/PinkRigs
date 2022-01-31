@@ -922,8 +922,8 @@ def main():
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    # subset_mice_to_use = ['TS011', 'SP013']
-    subset_mice_to_use = None
+    subset_mice_to_use = ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range = ['2021-12-01', '2021-12-20']
 
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
@@ -934,7 +934,9 @@ def main():
     else:
         mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
-    files_to_exclude = ['aMasterMouseList.csv']
+    files_to_exclude = ['aMasterMouseList.csv',
+                        'kilosort_queue.csv',
+                        'video_corruption_check.csv']
 
     for path in mouse_info_csv_paths:
         if os.path.basename(path) in files_to_exclude:
@@ -956,11 +958,11 @@ def main():
 
     all_mouse_info = pd.concat(all_mouse_info)
 
-    # 2021-11-25 Adding subset mouse to process Flora's mice first
-    subset_mice = ['CB016']
-    all_mouse_info = all_mouse_info.loc[
-        all_mouse_info['subject'].isin(subset_mice)
-    ]
+    if subset_date_range is not None:
+        all_mouse_info = all_mouse_info.loc[
+            (all_mouse_info['expDate'] >= subset_date_range[0]) &
+            (all_mouse_info['expDate'] <= subset_date_range[1])
+        ]
 
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
