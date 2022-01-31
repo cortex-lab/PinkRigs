@@ -28,7 +28,7 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(subject, expDate, expNum, varar
     %% Get timeline and block
     
     % Get timeline
-    if ~exist('Timeline','var')
+    if ~exist('timeline','var')
         fprintf(1, 'loading timeline\n');
         timeline = getTimeline(subject,expDate,expNum);
     end
