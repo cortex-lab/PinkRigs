@@ -1,4 +1,4 @@
-function data = getDataFromDates(subject, requestedDates, expDef)
+function data = getDataFromDates(subject, requestedDates, expNum, expDef)
 %% Function to load proessed files from dates. Works with files from the convertExpFiles funciton.
 
 %INPUTS(default values)
@@ -19,6 +19,7 @@ function data = getDataFromDates(subject, requestedDates, expDef)
 if ~exist('subject', 'var'); error('Must specify subject'); end
 if ~exist('requestedDates', 'var') || isempty(requestedDates); requestedDates = {'last'}; end
 if ~exist('expDef', 'var'); expDef = 'any'; end
+if ~exist('expNum', 'var'); expNum = 'any'; end
 if ~iscell(requestedDates); requestedDates = {requestedDates}; end
 if ~iscell(subject); subject = {subject}; end
 if iscell(requestedDates{1}); requestedDates = requestedDates{1}; end
@@ -26,8 +27,13 @@ if iscell(requestedDates{1}); requestedDates = requestedDates{1}; end
 
 expList = getMouseExpList(subject{1});
 %Get list of available experiments for selected subject, update the paths, convert dates to datenums
-availableExps = expList(strcmp(expList.expDef, expDef),:);
-if strcmpi(expDef, 'any'); availableExps = expList; end
+availableExps = expList;
+if ~strcmpi(expDef, 'any')
+    availableExps = availableExps(strcmp(expList.expDef, expDef),:);
+end
+if ~strcmpi(expNum, 'any')
+    availableExps = availableExps(strcmp(num2cell(expList.expNum), expNum),:);
+end
 if isempty(availableExps); warning(['No processed files matching criteria for' subject{1}]); return; end
 availableDateNums = datenum(availableExps.expDate);
 
