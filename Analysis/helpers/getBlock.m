@@ -1,5 +1,5 @@
 function block = getBlock(subject,expDate,expNum)
-    %%% This function will load timeline.
+    %%% This function will load the block.
     
     expPath = getExpPath(subject, expDate, expNum);
     load(fullfile(expPath, [expDate '_' num2str(expNum) '_' subject '_block.mat']),'block');
