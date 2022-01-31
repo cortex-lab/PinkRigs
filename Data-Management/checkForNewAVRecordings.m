@@ -21,18 +21,18 @@ if any(~strcmp(csvDataSort.Subject, csvData.Subject)) || nanData
     csvData = csvDataSort;
 end
 
-if recompile 
+if recompile
     cycles = 2;
     mice2Update = csvData.Subject;
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
-    paths2Check = vertcat(paths2Check{:});    
+    paths2Check = vertcat(paths2Check{:});
 else
     cycles = 1;
     mice2Update = csvData.Subject(csvData.IsActive>0);
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
     
-    past10Days = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-9:now, 'uni', 0)';
-    paths2Check = cellfun(@(y) cellfun(@(x) [y filesep x], past10Days, 'uni', 0), vertcat(paths2Check{:}), 'uni', 0);
+    past20Days = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-19:now, 'uni', 0)';
+    paths2Check = cellfun(@(y) cellfun(@(x) [y filesep x], past20Days, 'uni', 0), vertcat(paths2Check{:}), 'uni', 0);
     paths2Check = vertcat(paths2Check{:});
 end
 
@@ -67,7 +67,7 @@ for subject = mice2Update'
     newDat.ephys = [];
     newDat.frontCam = [];
     newDat.sideCam = [];
-    newDat.eyeCam = [];    
+    newDat.eyeCam = [];
     newDat.micDat = [];
     newDat.path = {};
     
@@ -88,15 +88,13 @@ for subject = mice2Update'
         expRef = cellfun(@(x,y) [x,y], dateList, expNumList, 'uni', 0);
         csvDate = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), csvDataMouse.expDate, 'uni', 0);
         csvRef = cellfun(@(x,y) [x,num2str(y)], csvDate, num2cell(csvDataMouse.expNum), 'uni', 0);
-        newExps = ~contains(expRef, csvRef);
-    else
-        newExps = ones(sum(currIdx),1);
+        csvDataMouse(contains(csvRef,expRef),:) = [];
     end
-    
+    newExps = ones(sum(currIdx),1);
     
     if ~any(newExps)
         fprintf('No new data for %s. Skipping... \n', currSub);
-        continue; 
+        continue;
     end
     
     dateList = dateList(newExps>0);
@@ -113,39 +111,45 @@ for subject = mice2Update'
         
         blk = load(blockPath{i}); blk = blk.block;
         if ~contains(blk.rigName, 'zelda'); continue; end
-        newDat.expDate = [newDat.expDate; dateList{i}];
-        newDat.expNum = [newDat.expNum; str2double(expNumList{i})];
+        if blk.duration/60<5
+            fprintf('Block < 5 mins for %s %s %s. Skipping... \n', currSub, dateList{i},expNumList{i});
+            pause(0.01);
+            continue;
+        end
         
-        [~, currExpDef] = fileparts(blk.expDef);
-        newDat.expDef = [newDat.expDef; currExpDef];
-        newDat.expDuration = [newDat.expDuration; blk.duration];
-                newDat.rigName = [newDat.rigName; blk.rigName];
+    newDat.expDate = [newDat.expDate; dateList{i}];
+    newDat.expNum = [newDat.expNum; str2double(expNumList{i})];
+    
+    [~, currExpDef] = fileparts(blk.expDef);
+    newDat.expDef = [newDat.expDef; currExpDef];
+    newDat.expDuration = [newDat.expDuration; blk.duration];
+    newDat.rigName = [newDat.rigName; blk.rigName];
+    
+    %%
+    fileContents = dir(fileparts(blockPath{i}));
+    newDat.sideCam = [newDat.sideCam; max([fileContents(contains({fileContents.name}','sideCam.mj2')).bytes 0])];
+    newDat.frontCam = [newDat.frontCam; max([fileContents(contains({fileContents.name}','frontCam.mj2')).bytes 0])];
+    newDat.eyeCam = [newDat.eyeCam; max([fileContents(contains({fileContents.name}','eyeCam.mj2')).bytes 0])];
+    newDat.micDat = [newDat.micDat; max([fileContents(contains({fileContents.name}','mic.mat')).bytes 0])];
+    newDat.path = [newDat.path; {fileparts(blockPath{i})}];
+    
+    ephysPath = fileparts(fileparts(blockPath{i}));
+    newDat.ephys = [newDat.ephys; ~isempty(dir([ephysPath filesep '**' filesep '*imec*.ap.bin']))];
+end
 
-        %%
-        fileContents = dir(fileparts(blockPath{i}));
-        newDat.sideCam = [newDat.sideCam; max([fileContents(contains({fileContents.name}','sideCam.mj2')).bytes 0])];
-        newDat.frontCam = [newDat.frontCam; max([fileContents(contains({fileContents.name}','frontCam.mj2')).bytes 0])];
-        newDat.eyeCam = [newDat.eyeCam; max([fileContents(contains({fileContents.name}','eyeCam.mj2')).bytes 0])];
-        newDat.micDat = [newDat.micDat; max([fileContents(contains({fileContents.name}','mic.mat')).bytes 0])];
-        newDat.path = [newDat.path; {fileparts(blockPath{i})}]; 
-        
-        ephysPath = fileparts(fileparts(blockPath{i}));
-        newDat.ephys = [newDat.ephys; ~isempty(dir([ephysPath filesep '**' filesep '*imec*.ap.bin']))];
-    end
-    
-    if isempty(newDat.expDate)
-        fprintf('No new data for %s. Skipping... \n', currSub);
-        continue; 
-    end
-    
-    csvDataMouse = [csvDataMouse; struct2table(newDat)]; %#ok<AGROW>
-    csvDataMouse = sortrows(csvDataMouse, 'expNum', 'ascend');
-    csvDataMouse = sortrows(csvDataMouse, 'expDate', 'ascend');
-    try
-        csvWriteClean(csvDataMouse, csvPathMouse);
-    catch
-        fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
-    end
+if isempty(newDat.expDate)
+    fprintf('No new data for %s. Skipping... \n', currSub);
+    continue;
+end
+
+csvDataMouse = [csvDataMouse; struct2table(newDat)]; %#ok<AGROW>
+csvDataMouse = sortrows(csvDataMouse, 'expNum', 'ascend');
+csvDataMouse = sortrows(csvDataMouse, 'expDate', 'ascend');
+try
+    csvWriteClean(csvDataMouse, csvPathMouse);
+catch
+    fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
+end
 end
 exit;
 end
