@@ -42,7 +42,7 @@ function [tVid,numFramesMissed] = video_AVrigs(subject, expDate, expNum, movieNa
             crashMissedFrames = params.crashMissedFrames;
         end
         
-        if numel(varargin)>1
+        if nargin > 1
             timeline = varargin{2};
         end
     end

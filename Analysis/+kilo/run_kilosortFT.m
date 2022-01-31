@@ -32,19 +32,19 @@ function []=run_kilosortFT(ephys_folder)
         
         % read metadata to decide whether to create channelmap or supply
         % from KS 
-        meta=ReadMeta_GLX(myAPdata,apbinfiles(myprobe).folder); 
+        meta = kilo.ReadMeta_GLX(myAPdata,apbinfiles(myprobe).folder);
         if contains(meta.imDatPrb_type,'0')
-        % phase 3B probe -- just load the default kilosort map
-        channelmapdir='C:\Users\Flora\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2\neuropixPhase3B2_kilosortChanMap.mat';
+            % phase 3B probe -- just load the default kilosort map
+            channelmapdir='C:\Users\Flora\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2\neuropixPhase3B2_kilosortChanMap.mat';
         elseif contains(meta.imDatPrb_type,'2')
             % create channelmap (good for all phase2, even single shank) or copy P3B map?
-            [~]=create_channelmapMultishank(myAPdata,apbinfiles(myprobe).folder,0);        
+            [~]=create_channelmapMultishank(myAPdata,apbinfiles(myprobe).folder,0);
             channelmapfile=dir([apbinfiles(myprobe).folder '\\**\\*_channelmap.mat*']);
             channelmapdir=[channelmapfile(1).folder '\' channelmapfile(1).name]; % channelmap for the probe - should be in the same folder
         end
         if ~exist([ephys_folder '\\kilosort' sprintf('\\%s\\spike_templates.npy',probename)])==1
-            proctag=1; % 
-            fprintf('need to process %s file\n',myapbin); 
+            proctag=1; %
+            fprintf('need to process %s file\n',myapbin);
             
             if ~exist(probesortedfolder, 'dir')
                mkdir(probesortedfolder)
@@ -59,10 +59,13 @@ function []=run_kilosortFT(ephys_folder)
             end
             
             
-            Kilosort2Matlab(probesortedfolder,kilosortworkfolder,channelmapdir)
+            kilo.Kilosort2Matlab(probesortedfolder,kilosortworkfolder,channelmapdir)
             delete([probesortedfolder '\' myapbin]); % delete if you also
             %CAR the data
             % copy all other output to znas  
+            
+            % Get quality metrics
+            kilo.getQualityMetrics(kilosortworkfolder, apbinfiles(myprobe).folder)
         else 
             fprintf('already processed %s file\n',myapbin);
         end
