@@ -1,4 +1,4 @@
-function [data, dataDates]  = getDataFromDates(subject, requestedDates, expNum, expDef)
+function data = getDataFromDates(subject, requestedDates, expNum, expDef)
 %% Function to load proessed files from dates. Works with files from the convertExpFiles funciton.
 
 %INPUTS(default values)
@@ -61,12 +61,10 @@ if iscell(selectedDateNums); selectedDateNums = unique(cell2mat(selectedDateNums
 
 selectedFiles = availableExps(ismember(availableDateNums, selectedDateNums),:);
 data = cell(size(selectedFiles,1),1);
-dataDates = cell(size(selectedFiles,1),1);
 for i = 1:size(selectedFiles,1)
     tDat = selectedFiles(i,:);
-    blkName = [datestr(tDat.expDate, 'yyyy-mm-dd') '_' tDat.expNum{1} '_' subject{1} '_Block.mat'];
+    blkName = [datestr(tDat.expDate, 'yyyy-mm-dd') '_' tDat.expNum '_' subject{1} '_Block.mat'];
     requestedBlock = load([tDat.path{1} '\' blkName]);
     data{i,1} = requestedBlock.block;
-    dataDates{i,1} = datestr(tDat.expDate, 'yyyy-mm-dd');
 end
 end

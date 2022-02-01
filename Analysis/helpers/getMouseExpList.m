@@ -4,6 +4,6 @@ function expList = getMouseExpList(subject)
     csvLocation = getCSVLocation(subject);
     expList = readtable(csvLocation);
     if isnumeric(expList.expNum)
-        expList.expNum = num2str(expList.expNum); 
+        expList.expNum = arrayfun(@num2str, expList.expNum, 'uni', 0);
     end
 end
