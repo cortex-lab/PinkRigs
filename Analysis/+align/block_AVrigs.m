@@ -1,13 +1,10 @@
-function [blRefTimes, tlRefTimes] = block_AVrigs(subject, expDate, expNum, varargin)
+function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
     %%% This function aligns a block file with its corresponding timeline
     %%% file.
     %%% Additional arguments are some parameters, and the experiment's
     %%% timeline.
     
-    %% Get path and parameters
-    % Get experiment's path
-    expPath = getExpPath(subject, expDate, expNum);
-    
+    %% Get parameters    
     % Parameters for processing (can be inputs in varargin{1})
     % empty for now?
     alignType = [];
@@ -30,11 +27,11 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(subject, expDate, expNum, varar
     % Get timeline
     if ~exist('timeline','var')
         fprintf(1, 'loading timeline\n');
-        timeline = getTimeline(subject,expDate,expNum);
+        timeline = getTimeline(expPath);
     end
     
     % Get block
-    block = getBlock(subject,expDate,expNum);
+    block = getBlock(expPath);
     
     % Get expDef
     % Alignment method will depend on expDef
