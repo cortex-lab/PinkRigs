@@ -1,4 +1,4 @@
-function master(subject, expDate, expNum)
+function main(subject, expDate, expNum)
 %% Align spike times to timeline and save results in experiment folder
 %  This function will load the timeline flipper from the experiment and
 %  check this against all ephys files recorded on the same date. If it
@@ -16,8 +16,8 @@ function master(subject, expDate, expNum)
 
 [blRefTimes, tlRefTimes] = align.block_AVrigs(subject, expDate, expNum);
 
-% randEvents_blTime contains any block-time-based events
-randEvents_tlTime = align.block2tl(randEvents_blTime, blRefTimes, tlRefTimes);
+% % randEvents_blTime contains any block-time-based events
+% randEvents_tlTime = align.block2tl(randEvents_blTime, blRefTimes, tlRefTimes);
 
 %% Align the video frame times to timeline
 %  This function will align all cameras' frame times with the experiment's
