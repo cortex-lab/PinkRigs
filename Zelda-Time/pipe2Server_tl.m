@@ -1,15 +1,14 @@
 %% this funtion will need to be run at the end of each experiment/day? and 
 function pipe2Server_tl()
     %% identify data
-    ops.serversource='\\128.40.224.65\Subjects'; 
-    ops.localsource='D:\LocalExpData'; % the localExpData folder where data is held
+    ops.localsource = 'D:\LocalExpData'; % the localExpData folder where data is held
     % find all folders with a relevant file like timeline
-    d=dir([ops.localsource '\**\*Timeline.mat']);  % checks what camera data is there
+    d = dir([ops.localsource '\**\*Timeline.mat']);  % checks what camera data is there
         
     %% push the data to server
     %day2check=40;
     %dToday=d([d(:).datenum]>=now-day2check & [d(:).datenum]<=now-day2check+1);
-    
+    ops.serversource = '\\128.40.224.65\Subjects';
     dToday=d([d(:).datenum]>=now-1);
     % check whether it has already been copied
     [moveDat]=assessCopy(dToday,ops);
