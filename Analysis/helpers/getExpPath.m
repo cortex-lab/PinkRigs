@@ -1,5 +1,7 @@
 function expPath = getExpPath(subject, expDate, expNum)
     %%% This function will output the exact path of an experiment.
+    %%% This is intended to be used outside of the .csv, e.g., when 
+    %%% checking if files have been pushed to the server, etc.
     
     % get current list of servers
     servers = getServersList;
