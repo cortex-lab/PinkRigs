@@ -1,43 +1,47 @@
 %% this funtion will need to be run at the end of each experiment/day? and 
 function pipe2Server_tl()
     %% identify data
-    ops.serversource='\\128.40.224.65\Subjects'; 
-    ops.localsource='D:\LocalExpData'; % the localExpData folder where data is held
+    localFolder ='D:\LocalExpData'; % the localExpData folder where data is held
     % find all folders with a relevant file like timeline
-    d=dir([ops.localsource '\**\*Timeline.mat']);  % checks what camera data is there
+    localDat = dir([localFolder '\**\*Timeline.mat']);  % checks what camera data is there
         
     %% push the data to server
-    %day2check=40;
-    %dToday=d([d(:).datenum]>=now-day2check & [d(:).datenum]<=now-day2check+1);
-    
-    dToday=d([d(:).datenum]>=now-1);
     % check whether it has already been copied
-    [moveDat]=assessCopy(dToday,ops);
+    folders = {localDat.folder};
+    splitFolders = cellfun(@(x) regexp(x,'\','split'), folders, 'uni', 0);
+
+    subjects = cellfun(@(x) x{end-2}, splitFolders, 'uni', 0)';
+    expDates = cellfun(@(x) x{end-1}, splitFolders, 'uni', 0)';
+    expNums = cellfun(@(x) x{end-0}, splitFolders, 'uni', 0)';
+    serverPath = cellfun(@(x,y,z) getExpPath(x,y,z), subjects, expDates, expNums, 'uni', 0);
+    
+    moveDat = assessCopy(localDat,serverPath);
     
     % copy the ones that haven't been 
-    toCopy=moveDat([moveDat(:).copied]==false); 
+    toCopy = moveDat([moveDat(:).copied]==false); 
  
-    for datidx=1:numel(toCopy)
-        mydat=toCopy(datidx).localfile;
-        servertarget=toCopy(datidx).servertarget;
-        copyfile(mydat,servertarget);
+    for datidx = 1:numel(toCopy)
+        disp(datidx)
+        data2Copy = toCopy(datidx).localFile;
+        serverTarget = toCopy(datidx).serverTarget;
+        copyfile(data2Copy,serverTarget);
     end
     
     
     %% deletions 
     % delete files that have been copied correctly
-    dBefore=d([d(:).datenum]<=now-2);
-    [delDat]=assessCopy(dBefore,ops);
+    oldIdx = [localDat(:).datenum]<=now-2;
+    oldDataStatus = assessCopy(localDat(oldIdx),serverPath(oldIdx));
     
     % copy the ones that haven't been 
-    toDelete=delDat([delDat(:).copied]==true); 
-    for datidx=1:numel(toDelete)
-        mydat=toDelete(datidx).localfile;
-        checkfold=dir([mydat]);
-        folders=regexp(checkfold.folder,'\','split');
-        mname=folders{numel(folders)-2}; 
+    toDelete = oldDataStatus([oldDataStatus(:).copied]==true); 
+    for i = 1:numel(toDelete)
+        localFile = toDelete(i).localFile;
+        checkFolder = dir(localFile);
+        folders = regexp(checkFolder.folder,'\','split');
+        subject = folders{numel(folders)-2}; 
         
-        mfold=[ops.localsource '\' mname];
+        mfold = [localFolder '\' subject];
         
         
         delete(mydat);
@@ -53,38 +57,32 @@ function pipe2Server_tl()
         
 end
 
-function [moveDat]=assessCopy(d,ops)
+function moveDat = assessCopy(localDat, serverPath)
 % for each camera data check all the relevant other datafiles that are
 % there
 % select the relevant target foler
 % check whether copying has occured
 
 ct=0; 
-for tlidx=1:numel(d)
-    folders=regexp(d(tlidx).folder,'\','split');
-    mname=folders{numel(folders)-2}; 
-    date=folders{numel(folders)-1}; 
-    expnum=str2double(folders{numel(folders)}); 
-
-    % target folder 
-    servertarget=[ops.serversource sprintf('\\%s\\%s\\%.d',mname,date,expnum)]; 
-
+for tlidx = 1:numel(localDat)
     % check any files that contain info relating to that camera 
-    subd=dir([d(tlidx).folder]); 
-    subd=subd([subd(:).isdir]==0);
+    subd = dir([localDat(tlidx).folder]); 
+    subd = subd([subd(:).isdir]==0);
         for fileidx=1:numel(subd)
             ct=ct+1; 
             % data source local
-            mydat=[subd(fileidx).folder '\' subd(fileidx).name];
+            localFile = [subd(fileidx).folder '\' subd(fileidx).name];
             % need to get expnum out to be able to identify relevant target folder
 
             % check if file already exists at the target
-            targetfile=[servertarget '\' subd(fileidx).name];
-            if isfile(targetfile)
+            serverFile = [serverPath{tlidx} '\' subd(fileidx).name];
+            if isfile(serverFile)
                 % check if file sizes are the same 
-                dOnServer=dir(targetfile);
-                dOnLocal=dir(mydat);
-                samesize=dOnLocal.bytes==dOnServer.bytes;
+                dOnServer = dir(serverFile);
+                dOnLocal = dir(localFile);
+                samesize = dOnLocal.bytes==dOnServer.bytes;
+            else
+                samesize = 0;
             end
 
             if samesize==1
@@ -94,16 +92,16 @@ for tlidx=1:numel(d)
             end
             
             % write the movedat struct
-            moveDat(ct).localfile=mydat;
-            moveDat(ct).servertarget=servertarget;
+            moveDat(ct).localFile=localFile;
+            moveDat(ct).serverTarget=serverPath{tlidx};
             moveDat(ct).copied=copiedOK;
         end     
 
 
 end
-if exist('moveDat')==0
-    moveDat.localfile=nan;
-    moveDat.servertarget=nan;
+if ~exist('moveDat', 'var')
+    moveDat.localFile=nan;
+    moveDat.serverTarget=nan;
     moveDat.copied=nan;
 end
 end
