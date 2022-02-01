@@ -1,7 +1,6 @@
 %% this funtion will need to be run at the end of each experiment/day? and 
 function pipe2Server_tl()
     %% identify data
-<<<<<<< HEAD
     localFolder ='D:\LocalExpData'; % the localExpData folder where data is held
     % find all folders with a relevant file like timeline
     localDat = dir([localFolder '\**\*Timeline.mat']);  % checks what camera data is there
