@@ -1,1 +1,1 @@
-batch_process_pinkavrig_videos*
+.batch_process_pinkavrig_videos*
