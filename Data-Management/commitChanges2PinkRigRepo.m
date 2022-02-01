@@ -1,7 +1,7 @@
 function commitChanges2PinkRigRepo(updateMessage)
 checkAndUpdatePinkRigRepo;
 if ~exist('updateMessage', 'var')
-    updateMessage = '"No update message provieded"';
+    updateMessage = '"No update message provided"';
 end
 if ~strcmp(updateMessage(1), '"')
     updateMessage = ['"' updateMessage];
