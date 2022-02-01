@@ -23,9 +23,9 @@ function main(p,varargin)
         
         % Get list of exp for this mouse
         expList = getMouseExpList(subject);
-           
+        
         for e = 1:numel(expList)
-            % Loop through csv to look for experiments that weren't 
+            % Loop through csv to look for experiments that weren't
             % aligned, or all if p.recompute isn't none.
             % Can also amend the csv to say whether this one has been
             % aligned or not.
