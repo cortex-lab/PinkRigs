@@ -5,4 +5,4 @@ function [subject, expDate, expNum, server] = parseExpPath(expPath)
     server = splitStr{3};
     subject = splitStr{5};
     expDate = splitStr{6};
-    expNum = str2num(splitStr{7});
+    expNum = str2double(splitStr{7});

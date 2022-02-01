@@ -1,1 +1,0 @@
-function getExpDetails(subject, expDate, expNum)
