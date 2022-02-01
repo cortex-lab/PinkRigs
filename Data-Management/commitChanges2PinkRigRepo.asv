@@ -1,5 +1,5 @@
 function commitChanges2PinkRigRepo(updateMessage)
-%% Function to updated PinkRig repo AND commit changes 
+%% Function to commit changes to Pink Rig repo
 
 checkAndUpdatePinkRigRepo;
 if ~exist('updateMessage', 'var')

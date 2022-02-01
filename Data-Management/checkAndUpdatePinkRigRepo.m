@@ -1,5 +1,5 @@
 function checkAndUpdatePinkRigRepo
-%% Function to check and update the local copy of the Pink Rig repo 
+%% Function to check and update the local copy of the PinkRig repo 
 
 % Go to the pink rig repo folder and get git status
 cd(fileparts(which('zeldaStartup')));
@@ -10,6 +10,7 @@ warnMessage1 = 'Cannot connect with GIT. PinkRig repo may be outdated!!!';
 warnMessage2 = 'Cannot pull from GIT... PinkRig repo may be outdated!!!';
 warnMessage3 = 'It looks like you have uncommited changes in the PinkRig repo... why?!';
 
+% Check status of repository and pull if not up to date
 if status == 1
     warning(warnMessage1);
 end
@@ -25,6 +26,7 @@ if status == 0
     end
 end
 
+% Check status of repository alert used to uncomitted changes
 [status, cmdout] = system('git status');
 if status == 1
     warning(warnMessage1);
