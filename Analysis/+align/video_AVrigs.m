@@ -17,7 +17,7 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
     plt = 1; % to plot the inter frame interval for sanity checks
     crashMissedFrames = 1; % will crash if any missed frame
     
-    % This is not ideal 
+    % This is not ideal? 
     if ~isempty(varargin)
         params = varargin{1};
         
