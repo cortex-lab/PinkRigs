@@ -28,7 +28,7 @@ if status == 1
     return
 end
 
-status = system('git push');
+[status, ~] = system('git push');
 if status == 1
     warning('Could not push current files from GIT'); 
     return
