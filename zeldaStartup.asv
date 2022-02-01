@@ -1,0 +1,12 @@
+[~, computerName] = system('hostname');
+
+%% Change to old version of psychtoolbox
+if contains(lower(computerName), 'stim')
+    changeToOldPTB;
+    fprintf('Changed to old version of PTB \n');
+end
+
+cd(fileparts(which('zeldaStartup')));
+[status, cmdout] = system('git status');
+if status == 1
+    error('Cannot connect with GIT. PinkRig repo may be outdated'
