@@ -15,7 +15,7 @@ if status == 1
     warning(warnMessage1);
 end
 if status == 0
-    if contains(cmdout, regexprep('Your branch is up to date','-',' '))
+    if contains(regexprep(cmdout,'-',' '), 'Your branch is up to date')
         fprintf('PinkRig repo is up to date \n');
     else
         fprintf('PinkRig repo is outdated... will pull \n');
