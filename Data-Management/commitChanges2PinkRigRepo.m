@@ -18,11 +18,7 @@ if status == 1
     return
 end
 
-status = system(['git commit -m' updateMessage]);
-if status == 1
-    warning('Could not commit files to GIT'); 
-    return
-end
+[~] = system(['git commit -m' updateMessage]);
 
 [status, ~] = system('git pull');
 if status == 1
