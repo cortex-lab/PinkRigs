@@ -18,7 +18,8 @@ if status == 1
     return
 end
 
-[~, ~] = system(['git commit -m' updateMessage]);
+[status, commitInfo] = system(['git commit -m' updateMessage]);
+fprintf([commitInfo '\n'])
 
 [status, ~] = system('git pull');
 if status == 1
