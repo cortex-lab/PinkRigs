@@ -36,5 +36,4 @@ if status == 0
         warning(warnMessage3);
     end
 end
-
 end
