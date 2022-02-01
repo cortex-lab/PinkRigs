@@ -1,7 +1,7 @@
 function commitChanges2PinkRigRepo(updateMessage)
 %% Function to updated PinkRig repo AND commit changes 
-
 checkAndUpdatePinkRigRepo;
+
 if ~exist('updateMessage', 'var')
     updateMessage = '"No update message provided"';
 end
@@ -32,4 +32,5 @@ if status == 1
     warning('Could not push current files from GIT'); 
     return
 end
+
 checkAndUpdatePinkRigRepo;
