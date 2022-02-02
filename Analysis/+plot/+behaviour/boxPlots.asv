@@ -16,7 +16,7 @@ for i = 1:length(subject)
     end
     paramSets = cellfun(@(x) x.events.selected_paramsetValues, blks);
     AVParams = arrayfun(@(x) [x.audInitialAzimuth x.visContrast], paramSets, 'uni', 0);
-    AVParams = cellfun(@(x) unique([x; x*-1], 'rows'), AVParams, 'uni', 0);
+    AVParams = cellfun(@(x) unique(x; x*-1), AVParams)
     
     eventNames = {'visInitialAzimuth'; 'audInitialAzimuth'; 'repeatNum'; ...
         'visContrast'; 'feedback'; 'correctResponse'};
