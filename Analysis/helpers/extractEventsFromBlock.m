@@ -18,9 +18,9 @@ for i = 1:length(blks)
             error('Cannot parse trial-based data');
         end
         if strcmp(eventNames{j}(end-5:end), 'Values')
-            events(i).(eventNames{j}(1:end-6)) = tDat(1:nEnded);
+            events(i,1).(eventNames{j}(1:end-6)) = tDat(1:nEnded);
         else
-            events(i).(eventNames{j}(1:end-5)) = tDat(1:nEnded);
+            events(i,1).(eventNames{j}(1:end-5)) = tDat(1:nEnded);
         end
     end
 end
