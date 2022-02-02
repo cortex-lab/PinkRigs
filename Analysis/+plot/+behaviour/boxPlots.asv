@@ -1,9 +1,7 @@
 function boxPlots(subject, expDate, plotType, sepPlots, expDef)
 %% Generate box plots for the behaviour of a mouse/mice as
-
 % INPUTS (default)
 % subject---Subject(s) to plot. Can be cell array (must provide)
-
 % expDate---expDate(s) to plot (last5)
     %        'yyyy-mm-dd'--------------A specific date
     %        'all'---------------------All data
@@ -11,15 +9,30 @@ function boxPlots(subject, expDate, plotType, sepPlots, expDef)
     %        'firstx'------------------The first x days of data
     %        'yest'--------------------The x-1 day, where x is the most recent day
     %        'yyyy-mm-dd:yyyy-mm-dd'---Load dates in this range (including the boundaries)
-    
-% plotType--Type of box plot ('res')
-    %        'res'---------------------Fraction of rightward responses
-    
-% sepPlots--Separate plots by session--only possible if 1 subject (1)
 
-% expDef----Name of required expDef ('multiSpaceWorld_checker_training')
 
-%%
+
+% OUTPUTS
+% "x.newBlock" is the new, compact, and restructured block file with the following fields:
+    %.subject---------------Name of the mouse
+    %.expDate---------------Date that the experiment was recorded
+    %.expNum----------------Session number for experiment
+    %.rigName---------------Name of the rig where the experiment took place
+    %.expType---------------Type experiment ('training, inactivation, or ephys')
+    %.expDef----------------Name of the expDef file
+    %.performanceAVM--------Performance of mouse (%) on auditory, visual, and multisensory trials
+    %.conditionParametersAV-[visDiff, audDiff], one row for each condition in the parameter set for the session
+    %.conditionLabels-------Integer labels, one for each condition
+    
+    %.trialType------------Structure with logical fields to identifying each class of trial
+        %.blank----------------Trials with auditory in the center and visual contrast is zero
+        %.auditory-------------Trials with auditory on left/right and visual contrast is zero
+        %.visual---------------Trials with auditory in the center and visual contrast is not zero
+        %.coherent-------------Trials where the auditory and visual stimuli agree (and are non-zero)
+        %.conflict-------------Trials with the auditory and visual stimuli disagree (and are non-zero)
+
+
+
 if ~exist('subject', 'var'); error('Must specify subect'); end
 if ~exist('expDate', 'var'); expDate = 'last5'; end
 if ~exist('plotType', 'var'); plotType = 'res'; end
