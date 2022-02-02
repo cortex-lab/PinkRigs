@@ -22,16 +22,20 @@ function pipe2Server_tl()
     
     % copy the ones that haven't been 
     toCopy = moveDat([moveDat(:).copied]==false); 
- 
+    
     for datidx = 1:numel(toCopy)
         disp(datidx)
         data2Copy = toCopy(datidx).localFile;
         serverTarget = toCopy(datidx).serverTarget;
-        copyfile(data2Copy,serverTarget);
+        try
+            copyfile(data2Copy,serverTarget);
+        catch
+            fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
+        end
     end
     
     
-    %% deletions 
+    %% deletions
     % delete files that have been copied correctly
     oldIdx = [localDat(:).datenum]<=now-2;
     oldDataStatus = assessCopy(localDat(oldIdx),serverPath(oldIdx));
@@ -52,12 +56,8 @@ function pipe2Server_tl()
         checkmouse=dir([mfold '\**\*.*']); 
         if sum([checkmouse(:).bytes])<10
             rmdir(mfold,'s');
-        end
-        % if folder is empty delete parent?
-        
-        
+        end    
     end
-        
 end
 
 function moveDat = assessCopy(localDat, serverPath)
