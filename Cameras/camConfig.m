@@ -30,37 +30,62 @@ function list = camConfig()
 %       large files) the master host might time out waiting for the response.
 %   cameraClass : (Not implemented yet) - will be used to use cameras other
 %       than FLIR pointgrey cameras. Will require writing a separate class 
-%       for these cameras. Currently @Camera is the only class available.
+%       for these cameras. Currently @Camera amd @BlackflyS are the only 
+%       classes available.
 % Change Log 
 % 2021-05-29 : (Tim) changing CompressionRatio from 5 to 10
 % 2021-06-01 : (Tim) turn liveViewOn Off
 
+% Fetch hostname (to get specific serial number + z4 has a different set of cameras)
+rig = hostname;
+rigNum = str2num(rig(end));
+switch rigNum
+    case 1
+        devSerialNum = [21170896 21073073 20539980]; % eye/front/side
+        camClass = @BlackflyS;
+    case 2
+        devSerialNum = [21015743 21015748 21192459]; % eye/front/side
+        camClass = @BlackflyS;
+    case 3
+        devSerialNum = [21170898 21015749 21015745]; % eye/front/side
+        camClass = @BlackflyS;
+    case 4
+        devSerialNum = [20440046 20442682 20442672]; % eye/front/side
+        camClass = @Camera;
+end
 
+% Build camera properties
 list = struct;
 
 i = 1;
-list(i).Name = 'eyeCam'; 
-list(i).DeviceSerialNumber = '20440046';
+list(i).Name = 'eyeCam';
+list(i).DeviceSerialNumber = num2str(devSerialNum(1));
 list(i).FrameRate = 60;
 list(i).LocalPort = 1003;
 list(i).CompressionRatio = 10;
+list(i).cameraClass = camClass;
 list(i).liveViewOn = false;
-list(i).copyToServer = false; 
+list(i).closingDelay = (i-1)*7.5; % to avoid closing jam?
+list(i).copyToServer = false;
 
-i = i+1;
+i = i + 1;
 list(i).Name = 'frontCam';
-list(i).DeviceSerialNumber = '20442682';
-list(i).FrameRate = 60;
+list(i).DeviceSerialNumber = num2str(devSerialNum(2));
+list(i).FrameRate = 120;
 list(i).LocalPort = 1004;
 list(i).CompressionRatio = 10;
-list(i).liveViewOn = true;
-list(i).copyToServer = false; 
+list(i).cameraClass = camClass;
+list(i).liveViewOn = false;
+list(i).closingDelay = (i-1)*7.5;
+list(i).copyToServer = false;
 
-i = i+1;
+i = i + 1;
 list(i).Name = 'sideCam';
-list(i).DeviceSerialNumber = '20442672';
-list(i).FrameRate = 60;
+list(i).DeviceSerialNumber = num2str(devSerialNum(3));
+list(i).FrameRate = 120;
 list(i).LocalPort = 1005;
 list(i).CompressionRatio = 10;
-list(i).liveViewOn = false;
-list(i).copyToServer = false; 
+list(i).cameraClass = camClass;
+list(i).liveViewOn = true;
+list(i).closingDelay = (i-1)*7.5;
+list(i).copyToServer = false;
