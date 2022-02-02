@@ -3,6 +3,7 @@ function checkAndUpdatePinkRigRepo
     
     % Go to the pink rig repo folder and get git status
     cd(fileparts(which('zeldaStartup')));
+    [~, ~] = system('git remote update');
     [status, cmdout] = system('git status');
     
     % Some warning messages to use
