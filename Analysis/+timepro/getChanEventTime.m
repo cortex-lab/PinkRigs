@@ -8,6 +8,11 @@ function evTimes = getChanEventTime(timeline,chanName)
     %% Extract events
     if ~isempty(chan)
         switch chanName
+            case 'flipper'
+                % Get flips of the flipper
+                tlFlipThresh = [2 3]; % these seem to work well
+                evTimes = schmittTimes(tt, chan, tlFlipThresh); % all flips, both up and down
+                
             case 'photoDiode'
                 % Uses k-means here to get thresholds. 
                 % Different form the shmitt times I used to use; also takes much longer!
@@ -34,14 +39,12 @@ function evTimes = getChanEventTime(timeline,chanName)
             case 'camSync'
                 % Get cam Sync events (onset of dark flash)
                 tlSyncThresh = [2 3]; % these seem to work well
-                [~, ~, evTimes] = schmittTimes(1:numel(tlSync), tlSync, tlSyncThresh);
-                evTimes = timelineTime(evTimes); % in timeline time
+                [~, ~, evTimes] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 
             case {'faceCamStrobe','eyeCamStrobe','sideCamStrobe'}
                 % Get cam strobe events
                 tlStrobeThresh = [1 2];
-                [~,evTimes,~] = schmittTimes(1:numel(tlStrobe), tlStrobe, tlStrobeThresh);
-                evTimes = timelineTime(evTimes); % in timeline time
+                [~,evTimes,~] = schmittTimes(timelineTime, chan, tlStrobeThresh);
                 
             case 'rewardEcho'
                 % Get reward events

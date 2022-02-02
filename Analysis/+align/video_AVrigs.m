@@ -275,12 +275,7 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
     % Here I cannot use matlab's timing as they have a lot of 'fake'
     % jitter. So I just recompute the times. Note that first and last
     % frames should have the same timing.
-    tVid = a*(A.data(vidSyncOnFrames(1),end) + ((1:size(A.data,1)) - vidSyncOnFrames(1))*vidFs) + b; % vidSyncOnFrames(1) is the one that has been properly aligned, so should be this one that is used?
-    
-    %% save data
-    fprintf(1, 'saving to %s\n', saveName)
-    save(saveName, 'tVid', 'vidFs', 'numFramesMissed');
-    
+    tVid = a*(A.data(vidSyncOnFrames(1),end) + ((1:size(A.data,1)) - vidSyncOnFrames(1))*vidFs) + b; % vidSyncOnFrames(1) is the one that has been properly aligned, so should be this one that is used?    
     
     %% Back up of other things we can compute to check... But doesn't work very well
     %     timeFoundBetweenSyncs = A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end);

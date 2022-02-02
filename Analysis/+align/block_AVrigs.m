@@ -1,4 +1,4 @@
-function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
+function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
     %%% This function aligns a block file with its corresponding timeline
     %%% file.
     %%% Additional arguments are some parameters, and the experiment's
@@ -6,7 +6,6 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
     
     %% Get parameters    
     % Parameters for processing (can be inputs in varargin{1})
-    % empty for now?
     alignType = [];
     
     % This is not ideal
@@ -93,11 +92,11 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
             delayValues = cellfun(@(x) finddelay(blockWheelVelocity(x), timelinehWeelVelocity(x), 1000), samplePoints)./sR;
             
             % Use a smoothed median to select the evolving delat values, and use these to calculate the evolving reference points for block and timeline
-            tlRefTimes = timelineTime(sampleCentres);
-            delayValues = interp1(timelineTime(sampleCentres(testIdx)), delayValues, tlRefTimes, 'linear', 'extrap');
+            timelineRefTimes = timelineTime(sampleCentres);
+            delayValues = interp1(timelineTime(sampleCentres(testIdx)), delayValues, timelineRefTimes, 'linear', 'extrap');
             delayValues = smooth(delayValues, 0.05, 'rlowess');
-            blRefTimes = movmedian(tlRefTimes(:)-delayValues-baseDelay, 7)';
-            blRefTimes = interp1(tlRefTimes(4:end-3), blRefTimes(4:end-3), tlRefTimes, 'linear', 'extrap');
+            blockRefTimes = movmedian(timelineRefTimes(:)-delayValues-baseDelay, 7)';
+            blockRefTimes = interp1(timelineRefTimes(4:end-3), blockRefTimes(4:end-3), timelineRefTimes, 'linear', 'extrap');
             block.alignment = 'wheel';
             
         case 'reward' % Get interpolation points using the reward data
@@ -105,12 +104,12 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
             % timesline, and use the rewardTimes from the block outputs to get reference points
             
             % Timeline Ref times
-            tlRefTimes = timepro.getChanEventTime(timeline,'rewardEcho');
+            timelineRefTimes = timepro.getChanEventTime(timeline,'rewardEcho');
             
             % Block Ref times
-            blRefTimes = block.outputs.rewardTimes(block.outputs.rewardValues > 0);
+            blockRefTimes = block.outputs.rewardTimes(block.outputs.rewardValues > 0);
             
-            if length(tlRefTimes)>length(blRefTimes); tlRefTimes = tlRefTimes(2:end); end
+            if length(timelineRefTimes)>length(blockRefTimes); timelineRefTimes = timelineRefTimes(2:end); end
             block.alignment = 'reward';
             
         case 'photoDiode' % Get interpolation points using the photodiode data
@@ -120,22 +119,22 @@ function [blRefTimes, tlRefTimes] = block_AVrigs(expPath, varargin)
             
             % Timeline Ref times
             % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
-            tlRefTimes = timepro.getChanEventTime(timeline,'photoDiode');
+            timelineRefTimes = timepro.getChanEventTime(timeline,'photoDiode');
             % tlRefTimes = tlRefTimes(diff(tlRefTimes)>0.49); % Not sure why is used to be tlRefTimes(diff(tlRefTimes)>0.49). Ask Pip.
             
             % Block Ref times
-            blRefTimes = block.stimWindowUpdateTimes;
+            blockRefTimes = block.stimWindowUpdateTimes;
             % blRefTimes = block.stimWindowUpdateTimes(diff(block.stimWindowUpdateTimes)>0.49);
             
             % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
             % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
-            if length(blRefTimes) ~= length(tlRefTimes)
-                [tlRefTimes, blRefTimes] = try2alignVectors(tlRefTimes, blRefTimes, 0.25);
-            elseif any(abs((blRefTimes-blRefTimes(1)) - (tlRefTimes-tlRefTimes(1)))>0.5)
-                [tlRefTimes, blRefTimes] = try2alignVectors(tlRefTimes, blRefTimes, 0.25);
+            if length(blockRefTimes) ~= length(timelineRefTimes)
+                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25);
+            elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
+                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25);
             end
             block.alignment = 'photodiode';
-            if length(blRefTimes) ~= length(tlRefTimes)
+            if length(blockRefTimes) ~= length(timelineRefTimes)
                 error('Photodiode alignment error');
             end
     end

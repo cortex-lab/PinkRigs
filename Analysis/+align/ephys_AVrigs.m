@@ -1,66 +1,59 @@
-function b = alignEphys_AVrigs(subject, date, P)
+function b = ephys_AVrigs(expPath)
+    %%% This function will align the flipper of the ephys data to the
+    %%% flipper taken from the timeline.
+    %%%
+    %%% This code is inspired by the code from kilotrode
+    %%% (https://github.com/cortex-lab/kilotrodeRig).
     
-    subjectsFolder = getRootDir(subject, date);
-    alignDir = fullfile(subjectsFolder, 'alignments');
+    %% Get parameters
+    % Parameters for processing (can be inputs in varargin{1})
+    ephysPath = []; % for a specific ephys
     
-    [tags, hasEphys] = getEphysTags(subject, date);
+    % This is not ideal
+    if ~isempty(varargin)
+        params = varargin{1};
+        
+        if isfield(params, 'alignType')
+            ephysPath = params.ephysPath;
+        end
+        
+        if nargin > 1
+            timeline = varargin{2};
+        end
+    end
     
-    % focus on audioVis
-    tags = tags(cellfun(@(x) ~isempty(x), strfind(tags,P.exp)));
+    %% Get timeline and ephys to loop through
     
-    % determine what exp nums exist
-    [expNums, blocks, hasBlock, pars, isMpep, tl, hasTimeline] = ...
-        whichExpNums(subject, date); % used to be dat.whichExpNums?
+    % Get timeline
+    if ~exist('timeline','var')
+        fprintf(1, 'loading timeline\n');
+        timeline = getTimeline(expPath);
+    end
+
+    % Get ephys folders
+    if isempty(ephysPath)
+        [subject, expDate, expNum, server] = parseExpPath(expPath);
+        ephysFolder = fullfile(server,'Subjects',subject,expDate,'ephys');
+        ephysData = dir(ephysFolder)
+        for e = 3:numel(ephysData)
+            
+        end
+    end
     
-    useFlipper = true; % no idea why empty
     
     %% align times (timeline to ephys)
     
-    %%% not that there should be only 1 exp. Not sure if it will work with
-    %%% several of them.
-    
-    % for any ephys, load the sync data
-    if hasEphys
-        for t = 1:length(tags)
-            if isempty(tags{t})
-                [~, pdFlips, allET] = loadSyncChronic(subject, date);
-            else
-                [~, pdFlips, allET] = loadSyncChronic(subject, date, tags{t});
-            end
-            if useFlipper
-                ephysFlips{t} = allET; % problem with big files, had to bypass spikeGLXdigitalParse
-                %             ephysFlips{t} = allET{7}{1};
-            else
-                ephysFlips{t} = pdFlips;
-            end
-        end
-    end
-        
-    % detect sync events from timelines
-    tlFlips = {};
-    for e = 1:length(expNums)
-        if hasTimeline(e)
-            Timeline = tl{e};
-            tt = Timeline.rawDAQTimestamps;
-            if useFlipper
-                evTrace = Timeline.rawDAQData(:, strcmp({Timeline.hw.inputs.name}, 'flipper'));
-                evT = schmittTimes(tt, evTrace, [3 4]); % all flips, both up and down
-            else
-                evTrace = Timeline.rawDAQData(:, strcmp({Timeline.hw.inputs.name}, 'photoDiode'));
-                evT = schmittTimes(tt, evTrace, [3 4]); % all flips, both up and down
-                evT = evT([true; diff(evT)>0.2]);
-            end
-            tlFlips{e} = evT;
-        end
-    end
-    
-    % match up ephys and timeline events:
-    % algorithm here is to go through each timeline available, figure out
+    % Detect sync events from timeline
+    timelineFlipperTimes = getChanEventTime(timeline,'flipper');
+
+    % Detect sync events for all ephys        
+
+  
+    %%  Match up ephys and timeline events
+    % Algorithm here is to go through each ephys available, figure out
     % whether the events in timeline align with any of those in the ephys. If
-    % so, we have a conversion of events in that timeline into ephys
-    %
-    % Only align to the first ephys recording, since the other ones are aligned
-    % to that
+    % so, we have a conversion of events in that ephys into timeline
+
     if hasEphys
         ef = ephysFlips{1};
         if useFlipper && ef(1)<0.001

@@ -32,12 +32,8 @@ function main(p,varargin)
             
             % Get exp info
             expInfo = expList(e,:);
-            expPath = expInfo.path{1};
+            expPath = expInfo.path;
             
-            %% --------------------------------------------------------
-            %% Will first compute or fetch the 'alignment' file. 
-            
-            %% Get the path of the alignment file and fetch it if exists
             % Define savepath for the alignment results
             savePath = fullfile(expPath,'alignment.mat');
             
@@ -48,6 +44,7 @@ function main(p,varargin)
                 alignmentOld = struct();
             end
             
+            %%
             % monitors if anything has changed
             change = 0;
             
@@ -58,7 +55,7 @@ function main(p,varargin)
             %  flipper times for both the ephys and the timeline.
             %  It will output two time series, and one can use these time series to
             %  compute the events times in timeline time from times in block time using
-            %  "event2timeline".
+            %  "ephys2timeline".
             %%% NB: not yet outputing the spike times per se -- can do
             %%% later or in another files? Feels like it would make
             %%% more sense.
@@ -70,8 +67,8 @@ function main(p,varargin)
                     [ephysFlipperTimes, timelineFlipperTimes] = align.ephys_AVrigs(expPath);
                     
                     % save it
-                    alignment.ephys.originTimes = ephysFlipperTimes;
-                    alignment.ephys.timelineTimes = timelineFlipperTimes;
+                    alignment.ephys.ephysFlipperTimes = ephysFlipperTimes;
+                    alignment.ephys.timelineFlipperTimes = timelineFlipperTimes;
                 else
                     alignment.ephys = [];
                 end
@@ -86,14 +83,14 @@ function main(p,varargin)
             %  align one with another using 1) the wheel or 2) the photodiode.
             %  It will output two time series, and one can use these time series to
             %  compute the events times in timeline time from times in block time using
-            %  "event2timeline".
+            %  "block2timeline".
             
             if contains(p.recompute,'all') || contains(p.recompute,'block') || ~isfield(alignmentOld,'block')
                 [blockRefTimes, timelineRefTimes] = align.block_AVrigs(expPath);
                 
                 % save it
-                alignment.block.originTimes = blockRefTimes;
-                alignment.block.timelineTimes = timelineRefTimes;
+                alignment.block.blockRefTimes = blockRefTimes;
+                alignment.block.timelineRefTimes = timelineRefTimes;
                 change = 1;
             else
                 % Just load it
@@ -162,16 +159,6 @@ function main(p,varargin)
                 % but I felt like keeping the date of last modifications of
                 % the files might be useful.
             end
-            
-            %% --------------------------------------------------------
-            %% Will then compute and save the processed data.
-            
-            %% ephys
-            % use align.event2timeline(alignment.block.originTimes,alignment.block.timelineTimes)
-            
-            %% block events
-            % use align.event2timeline(alignment.ephys.originTimes,alignment.ephys.timelineTimes)
-            
         end
     end
     
