@@ -1,15 +1,13 @@
-function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,varargin)
+function [ephysRefTimes, timelineRefTimes] = ephys_AVrigs(expPath)
     %%% This function will align the flipper of the ephys data to the
     %%% flipper taken from the timeline.
     %%%
     %%% This code is inspired by the code from kilotrode
-    %%% (https://github.com/cortex-lab/kilotrodeRig) and Pip's 
-    %%% ephys2timeline script.
+    %%% (https://github.com/cortex-lab/kilotrodeRig).
     
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
     ephysPath = []; % for specific ephys folders (give full path)
-    [subject, expDate, ~, server] = parseExpPath(expPath);
     
     % This is not ideal
     if ~isempty(varargin)
@@ -40,6 +38,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     % Will work only if the architecture is good.
     if isempty(ephysPath)
         % Just take them all.
+        [subject, expDate, ~, server] = parseExpPath(expPath);
         ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','*/*','*.ap.bin'));
         % % To generalize across architectures..?
         % ephysFiles2 = dir(fullfile(server,'Subjects',subject,expDate,'ephys','*','*.ap.bin'));
@@ -52,16 +51,14 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     end
     
     % Get the sync for each recording
-    ephysFlipperTimes = cell(1,numel(ephysPath));
-    
     for e = 1:numel(ephysPath)
         % Get syncData
         %%% Recheck what's its name. Also check with Flora how that thing
-        %%% is going to be computed and where it's going to be saved.
+        %%% is going to be computed.
         syncDataFile = dir(fullfile(ephysPath{e},'*sync*'));
         
         if isempty(syncDataFile)
-            warning('Couldn''t find the sync file for %s, %s. Skipping.', subject, expDate)
+            warning('Couldn''t find the sync file here: %s. Skipping.', ephysPath{e})
             ephysFlipperTimes{e} = [];
         else
             % Load sync data
@@ -73,14 +70,14 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
                 metaS = readSpikeGLXmeta(fullfile(metaDataFile.folder,metaDataFile.name));
                 Fs = metaS.sRateHz;
             else
-                warning('Couldn''t find metadata for %s, %s. Defining sampling rate as 30kHz.', subject, expDate)
+                warning('Couldn''t find metadata for %s. Defining sampling rate as 30kHz.', ephysPath{e})
                 Fs = 30000;
             end
             tmp = abs(diff(syncData));
             ephysFlipperTimes{e} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here 
         end
     end
-    % Remove empty file refs
+    % Remove empty files
     ephysPath(cellfun(@(x) isempty(x),ephysFlipperTimes)) = [];
     ephysFlipperTimes(cellfun(@(x) isempty(x),ephysFlipperTimes)) = [];
     
@@ -88,57 +85,42 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     % Algorithm here is to go through each ephys available, figure out
     % whether the events in timeline align with any of those in the ephys. If
     % so, we have a conversion of events in that ephys into timeline
-    
-    ephysRefTimes = cell(1,numel(ephysPath));
-    timelineRefTimes = cell(1,numel(ephysPath));
-    
+
     for e = 1:numel(ephysPath)
-        ephT = ephysFlipperTimes{e};
-        
-        % Check that number of flipper flips in timeline matches ephys
-        success = 0;
-        
-        numFlipsDiff = abs(diff([length(ephT) length(timelineFlipperTimes)]));
-        if numFlipsDiff>0 && numFlipsDiff<20
-            fprintf([subject ' ' expDate ': WARNING = Flipper flip times different in timeline/ephys \n']);
-            
-            if diff([length(ephT) length(timelineFlipperTimes)])<20 && length(ephT) > 500
-                fprintf([subject ' ' expDate ': Trying to account for missing flips.../ephys \n']);
+                fprintf('trying to correct timeline %d to ephys\n', expNums(e));
+                %Timeline = tl{e};
+                tlT = tlFlips{e};
                 
-                while length(timelineFlipperTimes) > length(ephT)
-                    compareVect = [ephT-(ephT(1)) timelineFlipperTimes(1:length(ephT))-timelineFlipperTimes(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>0.005,1);
-                    timelineFlipperTimes(errPoint+2) = [];
-                    ephT(errPoint-2:errPoint+2) = [];
-                    timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+                success=false;
+                if length(tlT)==length(ef)
+                    % easy case: the two are exactly coextensive
+                    [~,b] = makeCorrection(ef, tlT, true);
+                    success = true;
+                elseif length(tlT)<length(ef) && ~isempty(tlT)
+                    [~,b,success] = findCorrection(ef, tlT, false);
+                elseif length(tlT)>length(ef) && ~isempty(tlT)
+                    [~,a,success] = findCorrection(tlT, ef, false);
+                    if ~isempty(a)
+                        b = [1/a(1); -a(2)/a(1)];
+                    end
                 end
-                while length(ephT) < length(timelineFlipperTimes)
-                    compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephT(1:length(timelineFlipperTimes))-ephT(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>0.005,1);
-                    ephT(errPoint+2) = [];
-                    ephT(errPoint-2:errPoint+2) = [];
-                    timelineFlipperTimes(errPoint-2:errPoint+2) = [];
-                end
-                compareVect = [ephT-(ephT(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-                if isempty(find(abs(diff(diff(compareVect,[],2)))>0.005,1)); fprintf('Success! \n');
-                    success = 1;
+                if success
+                    %                 writeNPY(b, fullfile(alignDir, ...
+                    %                     sprintf('correct_timeline_%d_to_ephys_%s.npy', ...
+                    %                     e, tags{1})));
+                    writeNPY(b, fullfile(alignDir, ...
+                        sprintf('correct_timeline_%d_to_ephys_%s.npy', ...
+                        expNums(e), tags{1})));
+                    fprintf('success\n');
+                    eTimeline2keep = e;
+                else
+                    fprintf('could not correct timeline to ephys\n');
                 end
             end
-        elseif numFlipsDiff==0 
-            success = 1;
-        end
-        
-        if success
-            ephysRefTimes{e} = ephT;
-            timelineRefTimes{e} = timelineFlipperTimes;
-        else
-            ephysRefTimes{e} = [];
-            timelineRefTimes{e} = [];
         end
     end
     
-    %% Select only the ones that were matched
-    ephysPath(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
-    ephysRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
-    timelineRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
-  
+    TLexp = expNums(eTimeline2keep);
+    Timeline = tl{eTimeline2keep};
+    
+end

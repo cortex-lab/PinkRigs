@@ -41,10 +41,6 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
     
     %% Get files names
     
-    % File in which to save the new timestamps
-    saveName = fullfile(expPath, ...
-        [movieName '_timeStamps.mat']);
-    
     % File with the movie intensity to detect the dark flashes
     intensFile = fullfile(expPath, ...
         [movieName '_avgIntensity.mat']);

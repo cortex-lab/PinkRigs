@@ -1,10 +1,10 @@
-function main(p,varargin)
+function main(params,varargin)
     %%% This function will run the main alignment code, and save the
     %%% results in the expPath folder.
     
     %% Get missing parameters and list of mice to check
-    if isfield(p, 'recompute')
-        p.recompute = {'none'};
+    if isfield(params, 'recompute')
+        params.recompute = {'none'};
     end
     
     if nargin > 1
@@ -26,7 +26,7 @@ function main(p,varargin)
         
         for e = 1:numel(expList)
             % Loop through csv to look for experiments that weren't
-            % aligned, or all if p.recompute isn't none.
+            % aligned, or all if params.recompute isn't none.
             % Can also amend the csv to say whether this one has been
             % aligned or not.
             
@@ -59,19 +59,20 @@ function main(p,varargin)
             %  It will output two time series, and one can use these time series to
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
-            %%% NB: not yet outputing the spike times per se -- can do
-            %%% later or in another files? Feels like it would make
-            %%% more sense.
+
+            %%% Maybe update csv's 'ephys'?    
             
-            
-            if contains(p.recompute,'all') || contains(p.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
+            if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
                 if expInfo.ephys
                     % Align it
-                    [ephysFlipperTimes, timelineFlipperTimes] = align.ephys_AVrigs(expPath);
+                    [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = align.ephys_AVrigs(expPath);
                     
-                    % save it
-                    alignment.ephys.originTimes = ephysFlipperTimes;
-                    alignment.ephys.timelineTimes = timelineFlipperTimes;
+                    % Save it
+                    for p = 1:numel(ephysPath)
+                        alignment.ephys(p).originTimes = ephysFlipperTimes{p};
+                        alignment.ephys(p).timelineTimes = timelineFlipperTimes{p};
+                        alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
+                    end
                 else
                     alignment.ephys = [];
                 end
@@ -88,7 +89,7 @@ function main(p,varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(p.recompute,'all') || contains(p.recompute,'block') || ~isfield(alignmentOld,'block')
+            if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
                 [blockRefTimes, timelineRefTimes] = align.block_AVrigs(expPath);
                 
                 % save it
@@ -100,15 +101,13 @@ function main(p,varargin)
                 alignment.block = alignmentOld.block;
             end
             
-            
             %% Align the video frame times to timeline
             %  This function will align all cameras' frame times with the experiment's
             %  timeline.
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if contains(p.recompute,'all') || contains(p.recompute,'video') || ~isfield(alignmentOld,'video')
-                
+            if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
                 % Define a few parameters (optional) -- should maybe live somewhere else?
                 pVid.recomputeInt = false; % will recompute intensity file if true
                 pVid.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
@@ -145,7 +144,7 @@ function main(p,varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if contains(p.recompute,'all') || contains(p.recompute,'mic') || ~isfield(alignmentOld,'mic')
+            if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
                 % Align it
                 change = 1;
             else
@@ -160,17 +159,17 @@ function main(p,varargin)
             else
                 % Could save over it anyway even if nothing has changed,
                 % but I felt like keeping the date of last modifications of
-                % the files might be useful.
+                % the files might be useful (e.g., for debugging).
             end
             
             %% --------------------------------------------------------
             %% Will then compute and save the processed data.
             
             %% ephys
-            % use align.event2timeline(alignment.block.originTimes,alignment.block.timelineTimes)
+            % use align.event2timeline(spikeTimes,alignment.ephys(e).originTimes,alignment.ephys(e).timelineTimes)
             
             %% block events
-            % use align.event2timeline(alignment.ephys.originTimes,alignment.ephys.timelineTimes)
+            % use align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
             
         end
     end

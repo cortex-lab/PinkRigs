@@ -11,7 +11,7 @@ function evTimes = getChanEventTime(timeline,chanName)
             case 'flipper'
                 % Get flips of the flipper
                 tlFlipThresh = [2 3]; % these seem to work well
-                evTimes = schmittTimes(tt, chan, tlFlipThresh); % all flips, both up and down
+                evTimes = schmittTimes(timelineTime, chan, tlFlipThresh); % all flips, both up and down
                 
             case 'photoDiode'
                 % Uses k-means here to get thresholds. 

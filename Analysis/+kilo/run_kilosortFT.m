@@ -83,7 +83,7 @@ function []=run_kilosortFT(ephys_folder)
         probesortedfolder=[ephys_folder '\\kilosort' sprintf('\\%s',probename)];
         d=dir([probesortedfolder '\**\sync.mat']);
         if numel(d)<1            
-            syncFT(myAPdata, 385, probesortedfolder);
+            kilo.syncFT(myAPdata, 385, probesortedfolder);
         else 
             disp('sync extracted already.');
         end 
