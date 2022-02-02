@@ -1,5 +1,5 @@
 function boxPlots(subject, expDate, plotType, sepPlots, expDef)
-%% Generate box plots for the behaviour of a mouse/mice as
+%% Generate box plots for the behaviour of a mouse/mice
 
 % INPUTS (default)
 % subject---Subject(s) to plot. Can be cell array (must provide)
