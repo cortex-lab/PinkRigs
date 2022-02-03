@@ -34,7 +34,7 @@ for recidx=1:numel(activeSortQueue)
        mkdir(kilosortoutputfolder)
     end
     % indentify meta file and create channel map
-    meta=kilo.ReadMeta_GLX(myAPdata,ephys_folder); 
+    meta=readMetaData_spikeGLX(myAPdata,ephys_folder); 
     if contains(meta.imDatPrb_type,'0')
     % phase 3B probe -- just load the default kilosort map
     channelmapdir=defaultP3Bchanmap;

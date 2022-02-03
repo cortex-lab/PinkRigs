@@ -9,6 +9,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
     ephysPath = []; % for specific ephys folders (give full path)
+    toleranceThreshold = 0.005;
     [subject, expDate, ~, server] = parseExpPath(expPath);
     
     % This is not ideal
@@ -17,6 +18,9 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
         
         if isfield(params, 'alignType')
             ephysPath = params.ephysPath;
+        end
+        if isfield(params, 'toleranceThreshold')
+            toleranceThreshold = params.toleranceThreshold;
         end
         
         if nargin > 1
@@ -39,11 +43,8 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     % Get ephys folders
     % Will work only if the architecture is good.
     if isempty(ephysPath)
-        % Just take them all.
-        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','*/*','*.ap.bin'));
-        % % To generalize across architectures..?
-        % ephysFiles2 = dir(fullfile(server,'Subjects',subject,expDate,'ephys','*','*.ap.bin'));
-        % ephysFiles(end+1:end+numel(ephysFiles2)) = ephysFiles2;
+        % Just take them all, whatever the architecture..?
+        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','**','*.ap.bin'));
         if isempty(ephysFiles)
             error('No ephys file here: %s', fullfile(server,'Subjects',subject,expDate,'ephys'))
         else
@@ -68,9 +69,9 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
             syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
             
             % Extract flips
-            metaDataFile = dir(fullfile(ephysPath{e},'*ap.meta'));
-            if exist(metaDataFile,'file')
-                metaS = readSpikeGLXmeta(fullfile(metaDataFile.folder,metaDataFile.name));
+            dataFile = dir(fullfile(ephysPath{e},'*ap.bin'));
+            if exist(dataFile,'file')
+                metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
                 Fs = metaS.sRateHz;
             else
                 warning('Couldn''t find metadata for %s, %s. Defining sampling rate as 30kHz.', subject, expDate)
@@ -107,20 +108,20 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
                 
                 while length(timelineFlipperTimes) > length(ephT)
                     compareVect = [ephT-(ephT(1)) timelineFlipperTimes(1:length(ephT))-timelineFlipperTimes(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>0.005,1);
+                    errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
                     timelineFlipperTimes(errPoint+2) = [];
                     ephT(errPoint-2:errPoint+2) = [];
                     timelineFlipperTimes(errPoint-2:errPoint+2) = [];
                 end
                 while length(ephT) < length(timelineFlipperTimes)
                     compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephT(1:length(timelineFlipperTimes))-ephT(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>0.005,1);
+                    errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
                     ephT(errPoint+2) = [];
                     ephT(errPoint-2:errPoint+2) = [];
                     timelineFlipperTimes(errPoint-2:errPoint+2) = [];
                 end
                 compareVect = [ephT-(ephT(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-                if isempty(find(abs(diff(diff(compareVect,[],2)))>0.005,1)); fprintf('Success! \n');
+                if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
                     success = 1;
                 end
             end
