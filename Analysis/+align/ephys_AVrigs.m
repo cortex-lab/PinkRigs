@@ -72,7 +72,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
             dataFile = dir(fullfile(ephysPath{e},'*ap.bin'));
             if exist(dataFile,'file')
                 metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
-                Fs = metaS.sRateHz;
+                Fs = metaS.imSampRate;
             else
                 warning('Couldn''t find metadata for %s, %s. Defining sampling rate as 30kHz.', subject, expDate)
                 Fs = 30000;
