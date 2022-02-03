@@ -2,7 +2,7 @@ function boxPlots(subject, expDate, plotType, sepPlots, expDef)
 %% Generate box plots for the behaviour of a mouse/mice
 
 % INPUTS (default)
-% subject---Subject(s) to plot. Can be cell array (must provide)
+% subject---Subject(s) to plt. Can be cell array (must provide)
 
 % expDate---expDate(s) to plot (last5)
     %        'yyyy-mm-dd'--------------A specific date
@@ -103,7 +103,7 @@ for i = 1:length(extractedData)
     boxPlot.xyValues = {unique(tDat.visDiff)*100; unique(tDat.audDiff)};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
-    boxPlot.colorMap = plot.general.redBlueMap(64);
+    boxPlot.colorMap = plt.general.redBlueMap(64);
     
     switch lower(plotType(1:3))
         case 'res'
@@ -119,7 +119,7 @@ for i = 1:length(extractedData)
             colorBar.colorDirection = 'normal';
             colorBar.colorYTick = {'0'; '1'};
     end
-    plot.general.getAxes(axesOpt, i);
+    plt.general.getAxes(axesOpt, i);
     makePlot(boxPlot);
 end
 currentAxisPotision = get(gca, 'position');

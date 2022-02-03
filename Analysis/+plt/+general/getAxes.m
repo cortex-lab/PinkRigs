@@ -46,7 +46,7 @@ axesOpt.gapBetweenAxes = axesOpt.gapBetweenAxes./figureSize;
 
 %Create axes using tight_subplot (taken from here: https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w)
 %this operates like subplot in matlab, but allows you to specify more parameters easily. Reposition if requested.
-axesHandle = plot.general.tightSubplot(numOfRows, numOfCols, idx, axesOpt.gapBetweenAxes, axesOpt.btlrMargins(1:2), axesOpt.btlrMargins(3:4));
+axesHandle = plt.general.tightSubplot(numOfRows, numOfCols, idx, axesOpt.gapBetweenAxes, axesOpt.btlrMargins(1:2), axesOpt.btlrMargins(3:4));
 if axesOpt.reposition; set(gcf, 'position', [screenSize(1:2)+screenSize(3:4)-figureSize-[0 75], figureSize]); end
 figureHandle = gcf;
 end
