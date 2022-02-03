@@ -1,13 +1,9 @@
-function checkForNewAVRecordings(recompile)
-serverLocations = { ...
-    '\\znas.cortexlab.net\Subjects\'; ...
-    '\\zubjects.cortexlab.net\Subjects\'; ...
-    '\\128.40.224.65\Subjects\'; ...
-    '\\zinu.cortexlab.net\Subjects\'};
+function checkForNewAVRecordings(days2Check, recompute)
+serverLocations = getServersList;
 
-
-if ~exist('recompile', 'var'); recompile = 0; end
-csvLocation = '\\zserver.cortexlab.net\Code\AVrig\aMasterMouseList.csv';
+if ~exist('recompute', 'var'); recompute = 0; end
+if ~exist('days2Check', 'var'); days2Check = 2; end
+csvLocation = getCSVLocation('main');
 csvData = readtable(csvLocation);
 nanData = any(isnan(csvData.IsActive));
 
@@ -20,7 +16,7 @@ if any(~strcmp(csvDataSort.Subject, csvData.Subject)) || nanData
     csvData = csvDataSort;
 end
 
-if recompile
+if recompute
     cycles = 2;
     mice2Update = csvData.Subject;
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
@@ -30,7 +26,7 @@ else
     mice2Update = csvData.Subject(csvData.IsActive>0);
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
     
-    past20Days = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-19:now, 'uni', 0)';
+    past20Days = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-days2Check:now, 'uni', 0)';
     paths2Check = cellfun(@(y) cellfun(@(x) [y filesep x], past20Days, 'uni', 0), vertcat(paths2Check{:}), 'uni', 0);
     paths2Check = vertcat(paths2Check{:});
 end
@@ -56,7 +52,7 @@ subList = cellfun(@(x) x{end-2}, pathInfo, 'uni', 0);
 %%
 for subject = mice2Update'
     currSub = subject{1};
-    csvPathMouse = [fileparts(csvLocation) filesep currSub '.csv'];
+    csvPathMouse = getCSVLocation(currSub);
     
     newDat.expDate = {};
     newDat.expNum = [];
@@ -150,7 +146,6 @@ catch
     fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
 end
 end
-exit;
 end
 
 

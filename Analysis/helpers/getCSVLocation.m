@@ -5,7 +5,7 @@ function csvLocation = getCSVLocation(subject)
     csvPath = '\\zserver.cortexlab.net\Code\AVrig\';
     
     if strcmp(subject,'main')
-        subject = 'aMasterMouseList';
+        subject = '!MouseList';
     end
         
     csvLocation = fullfile(csvPath, [subject '.csv']);

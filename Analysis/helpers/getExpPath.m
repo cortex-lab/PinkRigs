@@ -15,7 +15,7 @@ function expPath = getExpPath(subject, expDate, expNum)
     found = 0;
     n = 1;
     while found == 0 && n<=numel(servers)
-        expPath = fullfile(servers{n},'Subjects',subject,expDate,expNum);
+        expPath = fullfile(servers{n},subject,expDate,expNum);
         if exist(expPath,'dir')
             found = 1;
         else
