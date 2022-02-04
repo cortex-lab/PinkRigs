@@ -1,19 +1,27 @@
-function main(params,varargin)
+function main(varargin)
     %%% This function will run the main alignment code, and save the
     %%% results in the expPath folder.
     
-    %% Get missing parameters and list of mice to check
-    if isfield(params, 'recompute')
-        params.recompute = {'none'};
-    end
+    %% Get parameters and list of mice to check
+    % Parameters for processing (can be inputs in varargin{1})
+    recompute = {'none'};
     
-    if nargin > 1
-        mouse2checkList = varargin{1};
-    else
-        % Get active mouse list from main csv
-        mainCSVLoc = getCSVLocation('main');
-        mouseList = readtable(mainCSVLoc);
-        mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
+    % This is not ideal
+    if ~isempty(varargin)
+        params = varargin{1};
+        
+        if isfield(params, 'recompute')
+            recompute = params.recompute;
+        end
+        
+        if nargin > 1
+            mouse2checkList = varargin{2};
+        else
+            % Get active mouse list from main csv
+            mainCSVLoc = getCSVLocation('main');
+            mouseList = readtable(mainCSVLoc);
+            mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
+        end
     end
     
     %% --------------------------------------------------------
@@ -30,14 +38,13 @@ function main(params,varargin)
         
         for ee = 1:numel(expList)
             % Loop through csv to look for experiments that weren't
-            % aligned, or all if params.recompute isn't none.
+            % aligned, or all if recompute isn't none.
             % Can also amend the csv to say whether this one has been
             % aligned or not.
             
             % Get exp info
             expInfo = expList(ee,:);
             expPath = expInfo.path{1};
-
             
             %% Get the path of the alignment file and fetch it if exists
             % Define savepath for the alignment results
@@ -64,7 +71,7 @@ function main(params,varargin)
 
             %%% Maybe update csv's 'ephys'?    
             
-            if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
+            if contains(recompute,'all') || contains(recompute,'ephys') || ~isfield(alignmentOld,'ephys')
                 if expInfo.ephys
                     % Align it
                     [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = align.ephys_AVrigs(expPath);
@@ -91,7 +98,7 @@ function main(params,varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
+            if contains(recompute,'all') || contains(recompute,'block') || ~isfield(alignmentOld,'block')
                 [blockRefTimes, timelineRefTimes] = align.block_AVrigs(expPath);
                 
                 % save it
@@ -109,7 +116,7 @@ function main(params,varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
+            if contains(recompute,'all') || contains(recompute,'video') || ~isfield(alignmentOld,'video')
                 % Define a few parameters (optional) -- should maybe live somewhere else?
                 pVid.recomputeInt = false; % will recompute intensity file if true
                 pVid.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
@@ -146,7 +153,7 @@ function main(params,varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
+            if contains(recompute,'all') || contains(recompute,'mic') || ~isfield(alignmentOld,'mic')
                 % Align it
                 change = 1;
             else

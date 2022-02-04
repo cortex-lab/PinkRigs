@@ -40,7 +40,7 @@ function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
     
     if ~isempty(alignType)
         % Check if this specific type would work this would work
-        
+        %%% TODO
     else
         % Chose it depending on expDef
         switch expDef
