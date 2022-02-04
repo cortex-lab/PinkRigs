@@ -29,7 +29,7 @@ function main(varargin)
         else
             compIdx = 1:numel(recList.sortedTag);
         end
-        rec2sortList = recList.ephysName(recList.sortedTag == 0);
+        rec2sortList = recList.ephysName(compIdx);
     end
     
     %% Get folders path etc.
