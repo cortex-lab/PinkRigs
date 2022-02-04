@@ -17,15 +17,11 @@ function main(varargin)
         if nargin > 1
             mouse2checkList = varargin{2};
             % Check that they are in the main csv?
+        else
+
         end
     end
     
-    if ~exist(mouse2checkList, 'var')
-        % Get active mouse list from main csv
-        mainCSVLoc = getCSVLocation('main');
-        mouseList = readtable(mainCSVLoc);
-        mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
-    end
     %% --------------------------------------------------------
     %% Will compute or fetch the 'alignment' file.
     %%% Could check it directly in csv?
@@ -70,6 +66,8 @@ function main(varargin)
             %  It will output two time series, and one can use these time series to
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
+
+            %%% Maybe update csv's 'ephys'?    
             
             if contains(recompute,'all') || contains(recompute,'ephys') || ~isfield(alignmentOld,'ephys')
                 if expInfo.ephys
