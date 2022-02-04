@@ -65,7 +65,7 @@ for recidx=1:numel(activeSortQueue)
         probesortedfolder=[ephys_folder '\\kilosort'];
         d=dir([probesortedfolder '\**\sync.mat']);
         if numel(d)<1            
-            kilo.syncFT(myAPdata, 385, probesortedfolder);
+            extractSync(myAPdata, 385, probesortedfolder);
         else 
             disp('sync extracted already.');
         end
