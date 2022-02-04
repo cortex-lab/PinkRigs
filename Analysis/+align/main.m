@@ -10,32 +10,34 @@ function main(params,varargin)
     if nargin > 1
         mouse2checkList = varargin{1};
     else
-        % Get mouse list from main csv
+        % Get active mouse list from main csv
         mainCSVLoc = getCSVLocation('main');
         mouseList = readtable(mainCSVLoc);
-        mouse2checkList = mouseList.Subject;
+        mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
     end
     
-    %% Check which experiments aren't aligned
-    for m = 1:numel(mouse2checkList)
+    %% --------------------------------------------------------
+    %% Will compute or fetch the 'alignment' file.
+    %%% Could check it directly in csv?
+    %%% Shall we trust the csv...?
+    
+    for mm = 1:numel(mouse2checkList)
         % Loop through subjects
-        subject = mouse2checkList{m};
+        subject = mouse2checkList{mm};
         
         % Get list of exp for this mouse
         expList = getMouseExpList(subject);
         
-        for e = 1:numel(expList)
+        for ee = 1:numel(expList)
             % Loop through csv to look for experiments that weren't
             % aligned, or all if params.recompute isn't none.
             % Can also amend the csv to say whether this one has been
             % aligned or not.
             
             % Get exp info
-            expInfo = expList(e,:);
+            expInfo = expList(ee,:);
             expPath = expInfo.path{1};
-            
-            %% --------------------------------------------------------
-            %% Will first compute or fetch the 'alignment' file. 
+
             
             %% Get the path of the alignment file and fetch it if exists
             % Define savepath for the alignment results
@@ -161,16 +163,17 @@ function main(params,varargin)
                 % but I felt like keeping the date of last modifications of
                 % the files might be useful (e.g., for debugging).
             end
-            
-            %% --------------------------------------------------------
-            %% Will then compute and save the processed data.
-            
-            %% ephys
-            % use align.event2timeline(spikeTimes,alignment.ephys(e).originTimes,alignment.ephys(e).timelineTimes)
-            
-            %% block events
-            % use align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
-            
         end
     end
+    
+    
+    %% --------------------------------------------------------
+    %% Will then have to compute and save the processed data.
+    %%% maybe this should belong in another function?
+    
+    %% ephys
+    % use align.event2timeline(spikeTimes,alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes)
+    
+    %% block events
+    % use align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
     

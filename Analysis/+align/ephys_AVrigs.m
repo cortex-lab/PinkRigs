@@ -55,31 +55,24 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     % Get the sync for each recording
     ephysFlipperTimes = cell(1,numel(ephysPath));
     
-    for e = 1:numel(ephysPath)
+    for ee = 1:numel(ephysPath)
         % Get syncData
-        %%% Recheck what's its name. Also check with Flora how that thing
-        %%% is going to be computed and where it's going to be saved.
-        syncDataFile = dir(fullfile(ephysPath{e},'*sync*'));
+        dataFile = dir(fullfile(ephysPath{ee},'*ap.bin'));
+        metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
         
+        % Load sync data
+        syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
-            warning('Couldn''t find the sync file for %s, %s. Skipping.', subject, expDate)
-            ephysFlipperTimes{e} = [];
-        else
-            % Load sync data
-            syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
-            
-            % Extract flips
-            dataFile = dir(fullfile(ephysPath{e},'*ap.bin'));
-            if exist(dataFile,'file')
-                metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
-                Fs = metaS.imSampRate;
-            else
-                warning('Couldn''t find metadata for %s, %s. Defining sampling rate as 30kHz.', subject, expDate)
-                Fs = 30000;
-            end
-            tmp = abs(diff(syncData));
-            ephysFlipperTimes{e} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here 
+            sprintf('Couldn''t find the sync file for %s, %s. Computing it.', subject, expDate)
+            extractSync(fullfile(dataFile.folder,dataFile.file), metaS.nSavedChans)
+            ephysFlipperTimes{ee} = [];
         end
+        syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
+        
+        % Extract flips
+        Fs = metaS.imSampRate;
+        tmp = abs(diff(syncData));
+        ephysFlipperTimes{ee} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here
     end
     % Remove empty file refs
     ephysPath(cellfun(@(x) isempty(x),ephysFlipperTimes)) = [];
@@ -93,8 +86,8 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     ephysRefTimes = cell(1,numel(ephysPath));
     timelineRefTimes = cell(1,numel(ephysPath));
     
-    for e = 1:numel(ephysPath)
-        ephT = ephysFlipperTimes{e};
+    for ee = 1:numel(ephysPath)
+        ephT = ephysFlipperTimes{ee};
         
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
@@ -130,11 +123,11 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
         end
         
         if success
-            ephysRefTimes{e} = ephT;
-            timelineRefTimes{e} = timelineFlipperTimes;
+            ephysRefTimes{ee} = ephT;
+            timelineRefTimes{ee} = timelineFlipperTimes;
         else
-            ephysRefTimes{e} = [];
-            timelineRefTimes{e} = [];
+            ephysRefTimes{ee} = [];
+            timelineRefTimes{ee} = [];
         end
     end
     
