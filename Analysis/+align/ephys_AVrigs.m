@@ -23,7 +23,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
             toleranceThreshold = params.toleranceThreshold;
         end
         
-        if nargin > 1
+        if numel(varargin) > 1
             timeline = varargin{2};
         end
     end
@@ -63,15 +63,16 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
         % Load sync data
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
-            sprintf('Couldn''t find the sync file for %s, %s. Computing it.', subject, expDate)
-            extractSync(fullfile(dataFile.folder,dataFile.file), metaS.nSavedChans)
+            fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
+            extractSync(fullfile(dataFile.folder,dataFile.name), str2num(metaS.nSavedChans))
             ephysFlipperTimes{ee} = [];
+            syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         end
         syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
         
         % Extract flips
-        Fs = metaS.imSampRate;
-        tmp = abs(diff(syncData));
+        Fs = str2num(metaS.imSampRate);
+        tmp = abs(diff(syncData.sync));
         ephysFlipperTimes{ee} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here
     end
     % Remove empty file refs
@@ -87,43 +88,62 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     timelineRefTimes = cell(1,numel(ephysPath));
     
     for ee = 1:numel(ephysPath)
-        ephT = ephysFlipperTimes{ee};
+        ephysFlipperTimes_ee = ephysFlipperTimes{ee}';
+        
+        % Find the beginning and end of the experiments
+        %%% This will work if there's no absurd time between ephys
+        %%% start/end and timeline start/end.
+        flipThresh = 1; % time between flips to define experiment gap (s)
+        flipperStEnIdx = [[1;find(diff(ephysFlipperTimes_ee) > flipThresh)+1], ...
+            [find(diff(ephysFlipperTimes_ee) > flipThresh); length(ephysFlipperTimes_ee)]];
+        if size(flipperStEnIdx,1) == 1 
+            experimentDurations = diff(ephysFlipperTimes_ee(flipperStEnIdx));
+        else
+            experimentDurations = diff(ephysFlipperTimes_ee(flipperStEnIdx),[],2);
+        end
+        % Get the current experiment (the one of which timeline duration
+        % matches best)
+        [~, currExpIdx] = min(abs(experimentDurations-timeline.rawDAQTimestamps(end)));
+        % Subselect the ephys flipper flip times
+        ephysFlipperTimes_cut = ephysFlipperTimes_ee(flipperStEnIdx(currExpIdx,1):flipperStEnIdx(currExpIdx,2));
         
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
-        
-        numFlipsDiff = abs(diff([length(ephT) length(timelineFlipperTimes)]));
+        numFlipsDiff = abs(diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)]));
         if numFlipsDiff>0 && numFlipsDiff<20
             fprintf([subject ' ' expDate ': WARNING = Flipper flip times different in timeline/ephys \n']);
             
-            if diff([length(ephT) length(timelineFlipperTimes)])<20 && length(ephT) > 500
+            if diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)])<20 && length(ephysFlipperTimes_cut) > 500
                 fprintf([subject ' ' expDate ': Trying to account for missing flips.../ephys \n']);
                 
-                while length(timelineFlipperTimes) > length(ephT)
-                    compareVect = [ephT-(ephT(1)) timelineFlipperTimes(1:length(ephT))-timelineFlipperTimes(1)];
+                while length(timelineFlipperTimes) > length(ephysFlipperTimes_cut)
+                    compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes(1:length(ephysFlipperTimes_cut))-timelineFlipperTimes(1)];
                     errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
                     timelineFlipperTimes(errPoint+2) = [];
-                    ephT(errPoint-2:errPoint+2) = [];
+                    ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
                     timelineFlipperTimes(errPoint-2:errPoint+2) = [];
                 end
-                while length(ephT) < length(timelineFlipperTimes)
-                    compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephT(1:length(timelineFlipperTimes))-ephT(1)];
+                while length(timelineFlipperTimes) < length(ephysFlipperTimes_cut)
+                    compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephysFlipperTimes_cut(1:length(timelineFlipperTimes))-ephysFlipperTimes_cut(1)];
                     errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
-                    ephT(errPoint+2) = [];
-                    ephT(errPoint-2:errPoint+2) = [];
+                    ephysFlipperTimes_cut(errPoint+2) = [];
+                    ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
                     timelineFlipperTimes(errPoint-2:errPoint+2) = [];
                 end
-                compareVect = [ephT-(ephT(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
+                compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
                 if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
                     success = 1;
                 end
             end
-        elseif numFlipsDiff==0 
-            success = 1;
+        elseif numFlipsDiff==0
+            compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
+            if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
+                success = 1;
+            end
         end
         
         if success
-            ephysRefTimes{ee} = ephT;
+            ephysRefTimes{ee} = ephysFlipperTimes_cut;
             timelineRefTimes{ee} = timelineFlipperTimes;
         else
             ephysRefTimes{ee} = [];

@@ -21,20 +21,20 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
     if ~isempty(varargin)
         params = varargin{1};
         
-        if isfield(params, 'recomputeInt') 
+        if ~isempty(params) && isfield(params, 'recomputeInt') 
             recomputeInt = params.recomputeInt;
         end
-        if isfield(params, 'nFramesToLoad')
+        if ~isempty(params) && isfield(params, 'nFramesToLoad')
             nFramesToLoad = params.nFramesToLoad;
         end
-        if isfield(params, 'adjustPercExpo')
+        if ~isempty(params) && isfield(params, 'adjustPercExpo')
             adjustPercExpo = params.adjustPercExpo;
         end
-        if isfield(params, 'adjustPercExpo')
+        if ~isempty(params) && isfield(params, 'adjustPercExpo')
             crashMissedFrames = params.crashMissedFrames;
         end
         
-        if nargin > 1
+        if numel(varargin) > 1
             timeline = varargin{2};
         end
     end
@@ -226,11 +226,11 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
         subplot(121)
         hold all
         tlSync = timepro.extractChan(timeline,'camSync');
-        plot(tlSync)
+        plot(tlTime,tlSync)
         vline(tlSyncOnSamps)
         if ~isempty(strobeSamps)
             tlStrobe = timepro.extractChan(timeline,strobeName);
-            plot(tlStrobe)
+            plot(tlTime,tlStrobe)
             vline(strobeSamps(find(strobeSamps>=tlSyncOnSamps(2),1)))
             vline(strobeSamps(find(strobeSamps<tlSyncOnSamps(2),1)))
         end
@@ -265,8 +265,8 @@ function [tVid,numFramesMissed] = video_AVrigs(expPath, movieName, varargin)
     
     % Get offset and compression coefficients.
     vidFs = mean(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end))); % computed empirically...
-    a = (tlTime(tlSyncOnSamps(2)) - tlTime(tlSyncOnSamps(1)))/(A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end));
-    b = tlTime(tlSyncOnSamps(1)) - a*(A.data(vidSyncOnFrames(1),end)) + percentExpo*vidFs;
+    a = (tlSyncOnSamps(2) - tlSyncOnSamps(1))/(A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end));
+    b = tlSyncOnSamps(1) - a*(A.data(vidSyncOnFrames(1),end)) + percentExpo*vidFs;
     
     % Here I cannot use matlab's timing as they have a lot of 'fake'
     % jitter. So I just recompute the times. Note that first and last

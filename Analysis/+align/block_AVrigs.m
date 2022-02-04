@@ -16,7 +16,7 @@ function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
             alignType = params.alignType;
         end
         
-        if nargin > 1
+        if numel(varargin) > 1
             timeline = varargin{2};
         end
     end
@@ -25,7 +25,7 @@ function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
     
     % Get timeline
     if ~exist('timeline','var')
-        fprintf(1, 'loading timeline\n');
+        fprintf(1, 'Loading timeline\n');
         timeline = getTimeline(expPath);
     end
     
@@ -48,6 +48,9 @@ function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
                 alignType = 'photoDiode';
             case 'multiSpaceWorld'
                 alignType = 'wheel';
+            otherwise 
+                fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',expDef)
+                alignType = 'photoDiode';
         end
     end
     

@@ -2,7 +2,7 @@ function evTimes = getChanEventTime(timeline,chanName)
     %%% This function will extract event times depending on the chan. 
     
     %% Extract channel
-    chan = timepro.extractChan(timeline,chanName);
+    chan = timepro.extractChan(timeline,chanName,0);
     timelineTime = timepro.extractChan(timeline,'time');
         
     %% Extract events

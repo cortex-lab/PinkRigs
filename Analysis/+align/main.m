@@ -5,6 +5,7 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
     recompute = {'none'};
+    paramsVid = []; % will take default
     
     % This is not ideal
     if ~isempty(varargin)
@@ -13,8 +14,11 @@ function main(varargin)
         if ~isempty(params) && isfield(params, 'recompute')
             recompute = params.recompute;
         end
+        if ~isempty(params) && isfield(params, 'pVid')
+            paramsVid = params.paramsVid;
+        end
         
-        if nargin > 1
+        if numel(varargin) > 1
             mouse2checkList = varargin{2};
             % Check that they are in the main csv?
         end
@@ -117,21 +121,17 @@ function main(varargin)
             %  'vids' that contains all cameras.
             
             if contains(recompute,'all') || contains(recompute,'video') || ~isfield(alignmentOld,'video')
-                % Define a few parameters (optional) -- should maybe live somewhere else?
-                pVid.recomputeInt = false; % will recompute intensity file if true
-                pVid.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
-                pVid.adjustPercExpo = 1; % will adjust the timing of the first frame from its intensity
-                pVid.plt = 1; % to plot the inter frame interval for sanity checks
-                pVid.crashMissedFrames = 1; % will crash if any missed frame
                 
                 % Get cameras' names
                 vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
+                f = fieldnames(vids);
+                vids = rmfield(vids,f(~ismember(f,'name')));
                 
                 % Align each of them
                 for v = 1:numel(vids)
-                    [~,vidName,~]=fileparts(vids(v).name);
+                    [~,vidName,~] = fileparts(vids(v).name);
                     try
-                        [vids(v).frameTimes, vids(v).missedFrames] = align.video_AVrigs(expPath, vidName, pVid);
+                        [vids(v).frameTimes, vids(v).missedFrames] = align.video_AVrigs(expPath, vidName, paramsVid);
                     catch me
                         % case when it's corrupted
                         vids(v).frameTimes = [];
