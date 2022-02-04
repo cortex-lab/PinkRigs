@@ -14,7 +14,7 @@ function main(varargin)
             recompute = params.recompute;
         end
         
-        if nargin > 1
+        if numel(varargin) > 1
             rec2sortList = varargin{2};
             % could check if in CSV and if not update CSV?
         end
