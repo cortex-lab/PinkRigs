@@ -12,7 +12,7 @@ function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
     if ~isempty(varargin)
         params = varargin{1};
         
-        if isfield(params, 'alignType')
+        if ~isempty(params) && isfield(params, 'alignType')
             alignType = params.alignType;
         end
         

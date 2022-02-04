@@ -10,7 +10,7 @@ function main(varargin)
     if ~isempty(varargin)
         params = varargin{1};
         
-        if isfield(params, 'recompute')
+        if ~isempty(params) && isfield(params, 'recompute')
             recompute = params.recompute;
         end
         

@@ -16,10 +16,10 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
     if ~isempty(varargin)
         params = varargin{1};
         
-        if isfield(params, 'alignType')
+        if ~isempty(params) && isfield(params, 'alignType')
             ephysPath = params.ephysPath;
         end
-        if isfield(params, 'toleranceThreshold')
+        if ~isempty(params) && isfield(params, 'toleranceThreshold')
             toleranceThreshold = params.toleranceThreshold;
         end
         
