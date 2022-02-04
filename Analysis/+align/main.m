@@ -20,7 +20,7 @@ function main(varargin)
         end
     end
     
-    if ~exist(mouse2checkList, 'var')
+    if ~exist('mouse2checkList', 'var')
         % Get active mouse list from main csv
         mainCSVLoc = getCSVLocation('main');
         mouseList = readtable(mainCSVLoc);

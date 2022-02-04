@@ -20,7 +20,7 @@ function main(varargin)
         end
     end
     
-    if ~exist(rec2sortList, 'var')
+    if ~exist('rec2sortList', 'var')
         % Get all the recordings in the queue
         KSqueueCSVLoc = getCSVLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
