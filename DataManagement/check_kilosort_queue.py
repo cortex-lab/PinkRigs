@@ -63,7 +63,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                     # then check kilosort 
                     #potential kilosort folder
                     KS_folders = r'\%s\%s\%s\ephys\**\kilosort\**\rez2.mat' % (server,subject,date)
-                    KS_folders = glob.glob(KS_folders)
+                    KS_folders = glob.glob(KS_folders, recursive=True)
 
                     # check if KS was sorted correctly previously
                     KS_started = len(KS_folders)>0
@@ -80,7 +80,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                     if not KS_done:                  
                         # get the ap file that ought to be sorted 
                         ephys_files = r'%s\%s\%s\ephys\**\**\*.ap.bin' % (server,subject,date)    
-                        new_recs_to_sort.append(glob.glob(ephys_files))
+                        new_recs_to_sort.append(glob.glob(ephys_files,recursive=True))
 
 
 
