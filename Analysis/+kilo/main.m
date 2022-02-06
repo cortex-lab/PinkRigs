@@ -18,7 +18,8 @@ function main(varargin)
         
         if numel(varargin) > 1
             rec2sortList = varargin{2};
-            % could check if in CSV and if not update CSV?
+            %%% Could check if in CSV and if not update CSV?
+            %%% Might also need to generate recList here?
         end
     end
     
@@ -82,31 +83,48 @@ function main(varargin)
             chanMapPath = fullfile(chanMapFile(1).folder, chanMapFile(1).name); % channelmap for the probe - should be in the same folder
         end
         
-        %% Copying to local folder
-        if ~exist(fullfile(KSOutFolder, ephysFileName),'file')
-            fprintf('Copying data to local folder...')
-            copyfile(recName,fullfile(KSOutFolder,ephysFileName));
-            fprintf('Local copy done.\n')
-        else
-            disp('Data already copied.');
-        end
-        
+        %% Main data processing
         try
-            %% Running the main algorithm
-            kilo.runMatKilosort2(KSOutFolder,KSWorkFolder,chanMapPath,pathToKSConfigFile)
+            %% Copy data to local folder.
+            if ~exist(fullfile(KSOutFolder, ephysFileName),'file')
+                fprintf('Copying data to local folder...')
+                success = copyfile(recName,fullfile(KSOutFolder,ephysFileName));
+                fprintf('Local copy done.\n')
+            else
+                disp('Data already copied.');
+                success = 1;
+            end
             
-            %% Running quality metrics
-            kilo.getQualityMetrics(KSOutFolder, KSOutFolder)
-            
-            %% Copying file to distant server
-            delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
-            movefile(KSOutFolder,fullfile(ephysPath,'kilosort2')) % copy KS output back to server
-            
-            %% Overwrite the queue
-            recList.sortedTag(compIdx(rr)) = 1;
+            if ~success
+                error('Couldn''t copy data to local folder.')
+            else
+                %% Running the main algorithm
+                kilo.runMatKilosort2(KSOutFolder,KSWorkFolder,chanMapPath,pathToKSConfigFile)
+                
+                %% Running quality metrics
+                metaFile = dir(fullfile(ephysPath,'*meta*'));
+                copyfile(fullfile(metaFile.folder, metaFile.name),fullfile(KSOutFolder,metaFile.name));
+                kilo.getQualityMetrics(KSOutFolder, KSOutFolder)
+                
+                %% Copying file to distant server
+                delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
+                delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
+                successFinal = movefile(KSOutFolder,fullfile(ephysPath,'kilosort2')); % copy KS output back to server
+                
+                if successFinal
+                    %% Overwrite the queue
+                    if exist('recList','var')
+                        recList.sortedTag(compIdx(rr)) = 1;
+                    end
+                else
+                    error('Couldn''t data to server.')
+                end
+            end
         catch
             % Sorting was not successful: write a permanent tag indicating that
-            recList.sortedTag(compIdx(rr)) = -1;
+            if exist('recList','var')
+                recList.sortedTag(compIdx(rr)) = -1;
+            end
             
             % Save error message.
             errorMsge = jsonencode(lasterror);
@@ -115,8 +133,10 @@ function main(varargin)
             fclose(fid);
         end
         
-        % Save the updated queue
-        writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+        if exist('recList','var')
+            % Save the updated queue
+            writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+        end
     end
     close all
     
