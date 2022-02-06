@@ -1,6 +1,8 @@
 function main(varargin)
     %%% This function will run the main kilosorting code, and save the
     %%% results in the sorting folder.
+    %%% Inputs can be a set of parameters (input 1) and/or a list of
+    %%% recordings (input 2), given by their paths.
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
