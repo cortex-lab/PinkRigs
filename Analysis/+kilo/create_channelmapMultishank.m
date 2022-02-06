@@ -5,7 +5,7 @@
     % savemap: 1/0 dependent on whether you want to save the channelmap to
     % path
 
-    meta=kilo.ReadMeta_GLX(binname,path); 
+    meta = readMetaData_spikeGLX(binname,path); 
     
 
     % phase 2 probe 
