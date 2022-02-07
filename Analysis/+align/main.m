@@ -16,7 +16,7 @@ function main(varargin)
         if ~isempty(params) && isfield(params, 'recompute')
             recompute = params.recompute;
         end
-        if ~isempty(params) && isfield(params, 'pVid')
+        if ~isempty(params) && isfield(params, 'paramsVid')
             paramsVid = params.paramsVid;
         end
         
