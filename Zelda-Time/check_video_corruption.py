@@ -69,7 +69,7 @@ def main():
     all_video_info = defaultdict(list)
     # subset_mice_to_use = ['TS011', 'SP013']
     subset_mice_to_use = None  # ['CB018', 'CB019', 'CB020']  # None if no subsetting
-
+    subset_date_range = ['2022-02-07', '2022-02-07']
 
     if main_info_folder_in_server:
         gvfs = Gio.Vfs.get_default()
@@ -107,6 +107,12 @@ def main():
         all_mouse_info.append(mouse_info)
 
     all_mouse_info = pd.concat(all_mouse_info)
+
+    if subset_date_range is not None:
+        all_mouse_info = all_mouse_info.loc[
+            (all_mouse_info['expDate'] >= subset_date_range[0]) &
+            (all_mouse_info['expDate'] <= subset_date_range[1])
+        ]
 
     # loop through the experiments and see if there are videos with no corresponding facemap output
     file_skipped = 0
