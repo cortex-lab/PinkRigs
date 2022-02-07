@@ -1150,7 +1150,6 @@ def main():
                 if vid_corrupted:
                     open(corrupted_txt_file, 'a').close()
                     print('%s is corrupted, skipping...' % video_fov)
-                    pdb.set_trace()
                     continue
 
                 # make an empty text file saying that the facemap file is being processed
