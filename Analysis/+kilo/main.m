@@ -111,23 +111,23 @@ function main(varargin)
                 delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
                 successFinal = movefile(KSOutFolder,fullfile(ephysPath,'kilosort2')); % copy KS output back to server
                 
-                if successFinal
+                if ~successFinal
+                    error('Couldn''t copy data to server.')
+                else
                     %% Overwrite the queue
                     if exist('recList','var')
                         recList.sortedTag(compIdx(rr)) = 1;
                     end
-                else
-                    error('Couldn''t data to server.')
                 end
             end
-        catch
+        catch me
             % Sorting was not successful: write a permanent tag indicating that
             if exist('recList','var')
                 recList.sortedTag(compIdx(rr)) = -1;
             end
             
             % Save error message.
-            errorMsge = jsonencode(lasterror);
+            errorMsge = jsonencode(me.nessage);
             fid = fopen([ephysPath '\KSerror.json'], 'w');
             fprintf(fid, '%s', errorMsge);
             fclose(fid);
