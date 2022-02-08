@@ -24,7 +24,12 @@ To set up regular deletion of camera data on timeline/ephys computers on Windows
 
 ## Analysis
 ### histology 
-- '\Analysis\\+hist\Save_images_run_brainreg.ipynb' automatically runs brainreg. To run, open jupyter notebook in evironment where you installed brainreg. 
+- `\Analysis\\+hist\Save_images_run_brainreg.ipynb` automatically runs brainreg. To run, open jupyter notebook in evironment where you installed brainreg. 
+### Alignment
+- `\Analysis\+align\main` will run the alignment for the ephys, block, videos, and microphone, to timeline. It can take a list of experiments as an input, or will go through all experiments.
+### Spikesorting
+- `\Analysis\+kilo\main` will run Kilosort2, either on a list of recordings (given as an input) or on the waiting list. 
+
 ## Using python scripts
 ### Install for the first time
 1. After cloning the environment,open anaconda prompt. 
