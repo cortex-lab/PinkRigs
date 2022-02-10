@@ -89,6 +89,7 @@ function main(varargin)
         % Load it if exists
         if exist(savePath,'file')
             load(savePath,'alignment');
+            alignmentOld = alignment; clear alignment
         else
             alignmentOld = struct();
         end
