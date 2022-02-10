@@ -64,14 +64,14 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
             fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
-            extractSync(fullfile(dataFile.folder,dataFile.name), str2num(metaS.nSavedChans))
+            extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
             ephysFlipperTimes{ee} = [];
             syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         end
         syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
         
         % Extract flips
-        Fs = str2num(metaS.imSampRate);
+        Fs = str2double(metaS.imSampRate);
         tmp = abs(diff(syncData.sync));
         ephysFlipperTimes{ee} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here
     end
@@ -119,16 +119,24 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,var
                 while length(timelineFlipperTimes) > length(ephysFlipperTimes_cut)
                     compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes(1:length(ephysFlipperTimes_cut))-timelineFlipperTimes(1)];
                     errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
-                    timelineFlipperTimes(errPoint+2) = [];
-                    ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
-                    timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+                    if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
+                        timelineFlipperTimes = timelineFlipperTimes(1:length(ephysFlipperTimes_cut));
+                    else
+                        timelineFlipperTimes(errPoint+2) = [];
+                        ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
+                        timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+                    end
                 end
                 while length(timelineFlipperTimes) < length(ephysFlipperTimes_cut)
                     compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephysFlipperTimes_cut(1:length(timelineFlipperTimes))-ephysFlipperTimes_cut(1)];
                     errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
-                    ephysFlipperTimes_cut(errPoint+2) = [];
-                    ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
-                    timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+                    if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
+                        ephysFlipperTimes_cut = ephysFlipperTimes_cut(1:length(timelineFlipperTimes));
+                    else
+                        ephysFlipperTimes_cut(errPoint+2) = [];
+                        ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
+                        timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+                    end
                 end
                 compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
                 if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
