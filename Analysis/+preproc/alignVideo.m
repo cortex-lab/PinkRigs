@@ -66,14 +66,14 @@
     % Compute intensity file for the main file, will save it in folder
     if ~exist(intensFile, 'file')
         fprintf(1, 'computing average intensity of first/last frames...\n');
-        vidpro.getAvgMovInt(expPath, movieName, nFramesToLoad);
+        vidproc.getAvgMovInt(expPath, movieName, nFramesToLoad);
     end
     
     % Compute intensity file for the lastFrames file, will save it in folder
     d = dir(fullfile(expPath, [movieName '_lastFrames.mj2'])); % to check if it's there and worth loading
     if ~exist(intensFile_lastFrames, 'file')
         if d.bytes>100
-            vidpro.getAvgMovInt(expPath, [movieName '_lastFrames'], []);
+            vidproc.getAvgMovInt(expPath, [movieName '_lastFrames'], []);
         end
     end
     
@@ -118,12 +118,12 @@
                 switch loadAttemptNum
                     case 1
                         fprintf(1, 'trying to load more frames...\n')
-                        vidpro.getAvgMovInt(expPath, movieName, 10000);
+                        vidproc.getAvgMovInt(expPath, movieName, 10000);
                         load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     case 2
                         fprintf(1, 'trying to load all frames...\n')
-                        vidpro.getAvgMovInt(expPath, movieName);
+                        vidproc.getAvgMovInt(expPath, movieName);
                         load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     otherwise

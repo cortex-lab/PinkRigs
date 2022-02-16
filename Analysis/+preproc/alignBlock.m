@@ -60,7 +60,7 @@ function [blockRefTimes, timelineRefTimes] = alignBlock(expPath, varargin)
         case 'wheel' % Get interpolation points using the wheel data
             % Unwrap the wheel trace (it is circular) and then smooth it. Smoothing is important because covariance will not work otherwise
             smthWin = sR/10+1;
-            timelinehWeelPosition = timepro.extractChan(timeline,'rotaryEncoder');
+            timelinehWeelPosition = timeproc.extractChan(timeline,'rotaryEncoder');
             timelinehWeelPosition(timelinehWeelPosition > 2^31) = timelinehWeelPosition(timelinehWeelPosition > 2^31) - 2^32;
             timelinehWeelPositionSmooth = smooth(timelinehWeelPosition,smthWin);
             
@@ -107,7 +107,7 @@ function [blockRefTimes, timelineRefTimes] = alignBlock(expPath, varargin)
             % timesline, and use the rewardTimes from the block outputs to get reference points
             
             % Timeline Ref times
-            timelineRefTimes = timepro.getChanEventTime(timeline,'rewardEcho');
+            timelineRefTimes = timeproc.getChanEventTime(timeline,'rewardEcho');
             
             % Block Ref times
             blockRefTimes = block.outputs.rewardTimes(block.outputs.rewardValues > 0);
@@ -122,7 +122,7 @@ function [blockRefTimes, timelineRefTimes] = alignBlock(expPath, varargin)
             
             % Timeline Ref times
             % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
-            timelineRefTimes = timepro.getChanEventTime(timeline,'photoDiode');
+            timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
             % tlRefTimes = tlRefTimes(diff(tlRefTimes)>0.49); % Not sure why is used to be tlRefTimes(diff(tlRefTimes)>0.49). Ask Pip.
             
             % Block Ref times

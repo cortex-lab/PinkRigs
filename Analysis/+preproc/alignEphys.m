@@ -36,7 +36,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = alignEphys(expPath,varar
         timeline = getTimeline(expPath);
     end
     % Detect sync events from timeline
-    timelineFlipperTimes = timepro.getChanEventTime(timeline,'flipper');
+    timelineFlipperTimes = timeproc.getChanEventTime(timeline,'flipper');
 
     %% Get all ephys flipper times
     

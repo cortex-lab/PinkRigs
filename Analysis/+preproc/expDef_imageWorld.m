@@ -4,11 +4,11 @@ function s = expDef_imageWorld(timeline, block, alignment)
     
     %% Extract photodiode onsets in timeline
     %%% Note that here it will correspond to the real photodiode onsets,
-    %%% which have the best precision (because photoiode is used for the
+    %%% which have the best precision (because photodiode is used for the
     %%% alignment). 
     
     blockOnsetTimes = block.stimWindowUpdateTimes;    
-    s.imageOnsetTime = align.event2timeline(blockOnsetTimes,alignment.block.originTimes,alignment.block.timelineTimes);
+    s.imageOnsetTime = preproc.alignEvent2Timeline(blockOnsetTimes,alignment.block.originTimes,alignment.block.timelineTimes);
             
     %% Get image ID
     
