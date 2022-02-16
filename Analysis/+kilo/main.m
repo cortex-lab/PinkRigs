@@ -94,7 +94,7 @@ function main(varargin)
                     success = copyfile(recName,fullfile(KSOutFolder,ephysFileName));
                     fprintf('Local copy done.\n')
                 else
-                    disp('Data already copied.\n');
+                    fprintf('Data already copied.\n');
                     success = 1;
                 end
                 
@@ -112,7 +112,7 @@ function main(varargin)
                     %% Copying file to distant server
                     delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
                     delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
-                    successFinal = movefile(KSOutFolder,fullfile(ephysPath,'kilosort2')); % copy KS output back to server
+                    successFinal = movefile(fullfile(KSOutFolder,'*'),fullfile(ephysPath,'kilosort2')); % copy KS output back to server
                     
                     if ~successFinal
                         error('Couldn''t copy data to server.')
@@ -121,6 +121,11 @@ function main(varargin)
                         if exist('recList','var')
                             recList.sortedTag(compIdx(rr)) = 1;
                         end
+                        
+                        % delete any error file related to KS
+                        if exist([ephysPath '\KSerror.json'])
+                            delete([ephysPath '\KSerror.json']);
+                        end
                     end
                 end
             catch me
@@ -128,6 +133,9 @@ function main(varargin)
                 if exist('recList','var')
                     recList.sortedTag(compIdx(rr)) = -1;
                 end
+                
+                % delete data otherwise conflict
+                delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
                 
                 % Save error message.
                 errorMsge = jsonencode(me.message);
