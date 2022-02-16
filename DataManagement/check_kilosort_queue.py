@@ -35,7 +35,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
     # check which mice are active on Master csv
     root = r'\\zserver.cortexlab.net\Code\AVrig'
-    master_csv = pd.read_csv(os.path.join(root,'aMasterMouseList.csv'))
+    master_csv = pd.read_csv(os.path.join(root,'!MasterMouseList.csv'))
     mice_to_check=master_csv[master_csv['IsActive']==1].Subject
 
     new_recs_to_sort=[]
