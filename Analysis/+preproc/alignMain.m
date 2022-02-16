@@ -1,4 +1,4 @@
-function main(varargin)
+function alignMain(varargin)
     %%% This function will run the main alignment code, and save the
     %%% results in the expPath folder.
     %%% Inputs can be a set of parameters (input 1) and/or a list of
@@ -25,6 +25,9 @@ function main(varargin)
             
             % Check that they are in the main csvs and fetch exp info
             %%% Maybe put in a function, getExpInfoFromPath ?
+            
+            %%% Should update csv ffirst?
+            
             subjectList = cell(1,numel(numel(expPath2checkList)));
             expDateList = cell(1,numel(numel(expPath2checkList)));
             expNumList = cell(1,numel(numel(expPath2checkList)));
@@ -43,7 +46,7 @@ function main(varargin)
                     if ~isempty(expIdx)
                         exp2checkList = [exp2checkList; expList(expIdx,:)];
                     else 
-                        %%% should update csv or throw an error
+                        %%% should throw an error
                     end
                 end
             end
