@@ -1,4 +1,4 @@
-function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys_AVrigs(expPath,varargin)
+function [ephysRefTimes, timelineRefTimes, ephysPath] = alignEphys(expPath,varargin)
     %%% This function will align the flipper of the ephys data to the
     %%% flipper taken from the timeline.
     %%%

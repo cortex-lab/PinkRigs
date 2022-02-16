@@ -1,4 +1,4 @@
-function [blockRefTimes, timelineRefTimes] = block_AVrigs(expPath, varargin)
+function [blockRefTimes, timelineRefTimes] = alignBlock(expPath, varargin)
     %%% This function aligns a block file with its corresponding timeline
     %%% file.
     %%% Additional arguments are some parameters, and the experiment's

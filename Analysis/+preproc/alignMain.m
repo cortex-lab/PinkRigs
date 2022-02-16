@@ -109,7 +109,7 @@ function main(varargin)
         if contains(recompute,'all') || contains(recompute,'ephys') || ~isfield(alignmentOld,'ephys')
             if expInfo.ephys
                 % Align it
-                [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = align.ephys_AVrigs(expPath);
+                [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.alignEphys(expPath);
                 
                 % Save it
                 for p = 1:numel(ephysPath)
@@ -134,7 +134,7 @@ function main(varargin)
         %  "event2timeline".
         
         if contains(recompute,'all') || contains(recompute,'block') || ~isfield(alignmentOld,'block')
-            [blockRefTimes, timelineRefTimes] = align.block_AVrigs(expPath);
+            [blockRefTimes, timelineRefTimes] = preproc.alignBlock(expPath);
             
             % save it
             alignment.block.originTimes = blockRefTimes;
@@ -162,7 +162,7 @@ function main(varargin)
             for v = 1:numel(vids)
                 [~,vidName,~] = fileparts(vids(v).name);
                 try
-                    [vids(v).frameTimes, vids(v).missedFrames] = align.video_AVrigs(expPath, vidName, paramsVid);
+                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.alignVideo(expPath, vidName, paramsVid);
                 catch me
                     % case when it's corrupted
                     vids(v).frameTimes = [];
