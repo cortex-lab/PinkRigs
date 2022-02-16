@@ -6,7 +6,7 @@ echo %FreeSpace:~0,-10%
 if %FreeSpace:~0,-10% gtr %GBTest% echo "Free space more than 500GB. Opening SpikeGLX"
 if %FreeSpace:~0,-10% leq %GBTest% echo "Free space less than 500GB. Delete some files"
 
-if %FreeSpace:~0,-10% gtr %GBTest% cd C:\Users\Experiment\Documents\Release_v20201103-phase30\SpikeGLX 
+if %FreeSpace:~0,-10% gtr %GBTest% cd C:\Users\Experiment\Documents\SpikeGLX\Release_v20201103-phase30\SpikeGLX 
 if %FreeSpace:~0,-10% gtr %GBTest% (start SpikeGLX.exe)
 
 if %FreeSpace:~0,-10% leq %GBTest% PAUSE
