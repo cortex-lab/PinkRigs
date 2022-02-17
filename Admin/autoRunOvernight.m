@@ -23,6 +23,3 @@ switch lower(computerType)
         fprintf('Running "checkForNewAVRecordings"... \n')
         checkForNewAVRecordings;
 end
-
-pause(10);
-exit
