@@ -6,14 +6,19 @@ function main(varargin)
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
-    recompute = 0;
+    recomputeKilo = 0;
+    recomputeQMetrics= 0;
     
     % This is not ideal
     if ~isempty(varargin)
         params = varargin{1};
         
-        if ~isempty(params) && isfield(params, 'recompute')
-            recompute = params.recompute;
+        if ~isempty(params) && isfield(params, 'recomputeKilo')
+            recomputeKilo = params.recomputeKilo;
+        end
+        
+        if ~isempty(params) && isfield(params, 'recomputeQMetrics')
+            recomputeQMetrics = params.recomputeQMetrics;
         end
         
         if numel(varargin) > 1
@@ -27,7 +32,7 @@ function main(varargin)
         % Get all the recordings in the queue
         KSqueueCSVLoc = getCSVLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
-        if ~recompute
+        if ~recomputeKilo
             compIdx = find(recList.sortedTag == 0);
         else
             compIdx = 1:numel(recList.sortedTag);
@@ -65,7 +70,7 @@ function main(varargin)
         [ephysPath,b,c] = fileparts(recName);
         ephysFileName = strcat(b,c);
         
-        if exist(fullfile(ephysPath,'kilosort2'),'dir') && ~isempty(dir(fullfile(ephysPath,'kilosort2','*npy'))) && ~recompute
+        if exist(fullfile(ephysPath,'kilosort2'),'dir') && ~isempty(dir(fullfile(ephysPath,'kilosort2','*npy'))) && ~recomputeKilo
             fprintf('Ephys %s already sorted. Skipping.\n', ephysFileName)
         else
             % Get meta data
@@ -103,16 +108,14 @@ function main(varargin)
                 else
                     %% Running the main algorithm
                     kilo.runMatKilosort2(KSOutFolder,KSWorkFolder,chanMapPath,pathToKSConfigFile)
-                    
-                    %% Running quality metrics
-                    metaFile = dir(fullfile(ephysPath,'*meta*'));
-                    copyfile(fullfile(metaFile.folder, metaFile.name),fullfile(KSOutFolder,metaFile.name));
-                    kilo.getQualityMetrics(KSOutFolder, KSOutFolder)
-                    
+                                        
                     %% Copying file to distant server
                     delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
                     delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
                     successFinal = movefile(fullfile(KSOutFolder,'*'),fullfile(ephysPath,'kilosort2')); % copy KS output back to server
+                    
+                    %% Running quality metrics (directly on the server)
+                    kilo.getQualityMetrics(fullfile(ephysPath,'kilosort2'), fullfile(ephysPath,'kilosort2'))
                     
                     if ~successFinal
                         error('Couldn''t copy data to server.')
