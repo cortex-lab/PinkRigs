@@ -1,5 +1,6 @@
-function copyEphysData2ServerAndDelete
+function copyEphysData2ServerAndDelete(ignoreSubjectMismatch)
 %% This funtion will need to be run at the end of each experiment/day? and
+if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end 
 %% identify data
 localFolder ='D:\ephysData'; % the localExpData folder where data is held
 % find all folders with bin files
@@ -38,6 +39,11 @@ else
 end
 
 %%
+if ignoreSubjectMismatch && any(subjectMismatch)
+    warning('Ignoring subject mismatch..?!?!')
+    subjectMismatch = subjectMismatch*0;
+    expectedSubject = subjectFromBinName;
+end
 validIdx = ~subjectMismatch & ~dateMismatch;
 validEphysFiles = localEphysFiles(validIdx);
 validSubjects = expectedSubject(validIdx);
