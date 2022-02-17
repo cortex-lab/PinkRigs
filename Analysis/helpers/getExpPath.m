@@ -4,7 +4,12 @@ function expPath = getExpPath(subject, expDate, expNum)
     %%% checking if files have been pushed to the server, etc.
     
     % get current list of servers
-    servers = getServersList;
+    servers = getServersList;  
+    
+    % this allows to search for folder without expNum (useful for ephys)
+    if ~exist('expNum', 'var')
+        expNum = ''; 
+    end
     
     % convert if input as double
     if isa(expNum,'double')

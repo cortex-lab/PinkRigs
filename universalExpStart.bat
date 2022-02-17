@@ -1,37 +1,48 @@
 @ECHO OFF
-if not x%COMPUTERNAME:EPHYS=%==x%COMPUTERNAME% (
-    echo "Detected ephys computer." 
-    echo "Checking for free space on the disk..."
-    timeout 1
-    for /f "usebackq delims== tokens=2" %%x in (`wmic logicaldisk where "DeviceID='D:'" get FreeSpace /format:value`) do set FreeSpace=%%x
-    SET /A GBTest = 500
-    echo %FreeSpace:~0,-10%
-    if %FreeSpace:~0,-10% gtr %GBTest% (
-         echo "Free space more than 500GB. Opening SpikeGLX"
-         timeout 1
-         cd C:\Users\Experiment\Documents\SpikeGLX\Release_v20201103-phase30\SpikeGLX 
-         start SpikeGLX.exe
-        )
-    if %FreeSpace:~0,-10% leq %GBTest% ( 
-        echo "Free space less than 500GB. Delete some files"
-        PAUSE
-        )
-)
+for /f "usebackq delims== tokens=2" %%x in (`wmic logicaldisk where "DeviceID='D:'" get FreeSpace /format:value`) do SET FreeSpace=%%x
+echo Free space on D: drive is %FreeSpace:~0,-10%
 
-if not x%COMPUTERNAME:TIME=%==x%COMPUTERNAME% (
-    echo "Detected timeline computer." 
-    echo "Checking for free space on the disk..."
-    timeout 1
-    for /f "usebackq delims== tokens=2" %%x in (`wmic logicaldisk where "DeviceID='D:'" get FreeSpace /format:value`) do set FreeSpace=%%x
-    SET /A GBTest = 100
-    echo %FreeSpace:~0,-10%
-    if %FreeSpace:~0,-10% gtr %GBTest% (
-         echo "Free space more than 100GB. Starting timeline and cameras..."
-         timeout 1
-         matlab -nodisplay -nosplash -r "cd('C:\Users\Experiment\Documents\Github\PinkRigs\Zelda-Time'); open_all_tl" 
-        )
-    if %FreeSpace:~0,-10% leq %GBTest% ( 
-        echo "Free space less than 500GB. Delete some files"
-        PAUSE
-        )
+if not x%COMPUTERNAME:TIME=%==x%COMPUTERNAME% (goto :timelineCompStart)
+if not x%COMPUTERNAME:EPHYS=%==x%COMPUTERNAME% (goto :ephysCompStart)
+goto :endfunction
+
+:timelineCompStart
+echo "Detected timeline computer." 
+echo "Checking there is enough space on the disk..."
+timeout /T 1 /NOBREAK > nul
+SET /A GBTest = 100
+if %FreeSpace:~0,-10% gtr %GBTest% (
+	echo "Free space more than %GBTest%GB. Opening Timeline"
+	matlab -nodisplay -nosplash -r "cd('C:\Users\Experiment\Documents\Github\PinkRigs\Zelda-Time'); open_all_tl"
+	timeout /T 3 /NOBREAK > nul
 )
+if %FreeSpace:~0,-10% leq %GBTest% (
+	echo "Free space less than %GBTest%GB. Delete some files"
+	PAUSE
+)
+goto :endfunction
+
+:ephysCompStart
+echo "Detected ephys computer." 
+echo "Checking there is enough space on the disk..."
+timeout /T 1 /NOBREAK > nul
+SET /A GBTest = 500
+if %FreeSpace:~0,-10% gtr %GBTest% (
+	echo "Free space more than %GBTest%GB. Opening SpikeGLX"
+        cd C:\Users\Experiment\Documents\SpikeGLX\Release_v20201103-phase30\SpikeGLX 
+        start SpikeGLX.exe
+)
+if %FreeSpace:~0,-10% leq %GBTest% (
+	echo "Free space less than %GBTest%GB. Delete some files"
+	PAUSE
+)
+SETLOCAL EnableExtensions
+set EXE=matlab.exe
+FOR /F %%x IN ('tasklist /NH /FI "IMAGENAME eq %EXE%"') DO IF /I NOT %%x == %EXE% (
+  echo %EXE% is not Running so will start the microphone listener...
+  matlab -nodisplay -nosplash -r "cd('D:\Dropbox (Personal)\XMatlabProg\GitHub\PinkRigs\Microphone'); micListener"
+)
+PAUSE
+goto :endfunction
+
+:endfunction
