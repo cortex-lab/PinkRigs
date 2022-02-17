@@ -5,7 +5,7 @@ localFolder ='D:\LocalExpData'; % the localExpData folder where data is held
 % find all folders with a relevant file like timeline
 files2Check = {'Timeline.mat';'block.mat';'eyeCam*';'frontCam*';'sideCam*';'mic.mat'};
 localDat = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), files2Check, 'uni', 0));
-
+localDat(strcmp({localDat.folder}, localFolder)) = [];
 %% push the data to server
 % check whether it has already been copied
 localFolders = unique({localDat.folder})';
