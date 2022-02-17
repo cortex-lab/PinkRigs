@@ -1,4 +1,4 @@
- function [tVid,numFramesMissed] = alignVideo(expPath, movieName, varargin)
+ function [tVid,numFramesMissed] = video(expPath, movieName, varargin)
     %%% This function will align the time frames of the input video to the
     %%% corresponding timeline. It will try to minimize the amount of time
     %%% and computing by loading first only the beginning and end of the

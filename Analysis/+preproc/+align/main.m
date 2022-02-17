@@ -1,4 +1,4 @@
-function alignMain(varargin)
+function main(varargin)
     %%% This function will run the main alignment code, and save the
     %%% results in the expPath folder.
     %%% Inputs can be a set of parameters (input 1) and/or a list of
@@ -112,7 +112,7 @@ function alignMain(varargin)
         if contains(recompute,'all') || contains(recompute,'ephys') || ~isfield(alignmentOld,'ephys')
             if expInfo.ephys
                 % Align it
-                [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.alignEphys(expPath);
+                [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
                 
                 % Save it
                 for p = 1:numel(ephysPath)
@@ -137,7 +137,7 @@ function alignMain(varargin)
         %  "event2timeline".
         
         if contains(recompute,'all') || contains(recompute,'block') || ~isfield(alignmentOld,'block')
-            [blockRefTimes, timelineRefTimes] = preproc.alignBlock(expPath);
+            [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
             
             % save it
             alignment.block.originTimes = blockRefTimes;
@@ -165,7 +165,7 @@ function alignMain(varargin)
             for v = 1:numel(vids)
                 [~,vidName,~] = fileparts(vids(v).name);
                 try
-                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.alignVideo(expPath, vidName, paramsVid);
+                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, paramsVid);
                 catch me
                     % case when it's corrupted
                     vids(v).frameTimes = [];
@@ -212,8 +212,8 @@ function alignMain(varargin)
     %%% maybe this should belong in another function?
     
     %% ephys
-    % use align.event2timeline(spikeTimes,alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes)
+    % use preproc.align.event2timeline(spikeTimes,alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes)
     
     %% block events
-    % use align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
+    % use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
     
