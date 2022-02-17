@@ -5,7 +5,7 @@ if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end
 localFolder ='D:\ephysData'; % the localExpData folder where data is held
 % find all folders with bin files
 localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
-metaData = arrayfun(@(x) readMetaData_spikeGLX(x.name, x.folder), localEphysFiles);
+metaData = arrayfun(@(x) readMetaData_spikeGLX(x.name, x.folder), localEphysFiles, 'uni', 0);
 %%
 subjectFromBinName = arrayfun(@(x) x.name(1:5), localEphysFiles, 'uni', 0);
 dateFromBinName = arrayfun(@(x) cell2mat(regexp(x.name, '\d\d\d\d-\d\d-\d\d', 'match')), localEphysFiles, 'uni', 0);
@@ -21,7 +21,7 @@ else
 end
 
 fprintf('Checking subject in file name against probe serials in CSV... \n')
-serialsFromMeta = cellfun(@str2double, {metaData(:).imDatPrb_sn}');
+serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
 
 [uniqueProbes, ~, uniIdx] = unique(serialsFromMeta);
 matchedSubjects = getCurrentSubjectFromProbeSerial(uniqueProbes);
