@@ -10,6 +10,8 @@ elseif contains(lower(computerName), 'time')
     computerType = 'time';
 elseif contains(lower(computerName), 'mc')
     computerType = 'mc';
+elseif contains(lower(computerName), 'kilo1')
+    computerType = 'kilo1';
 else
     warning('Computer type not recognized?!')
     computerType = 'Unrecognized';
