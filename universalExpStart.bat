@@ -35,9 +35,3 @@ if not x%COMPUTERNAME:TIME=%==x%COMPUTERNAME% (
         PAUSE
         )
 )
-
-if not x%COMPUTERNAME:STIM=%==x%COMPUTERNAME% (
-    echo "Detected stimulus computer." 
-    echo "Am I supposed to do something on a stimulus computer...?"
-    timeout 1
-)
