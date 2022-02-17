@@ -7,6 +7,7 @@ localFolder ='D:\ephysData'; % the localExpData folder where data is held
 localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
 if isempty(localEphysFiles)
     fprintf('There are no ephys files in the local directory. Returning... \n');
+    pause(1);
     return;
 end
 metaData = arrayfun(@(x) readMetaData_spikeGLX(x.name, x.folder), localEphysFiles, 'uni', 0);
