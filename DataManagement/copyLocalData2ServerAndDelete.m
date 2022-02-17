@@ -21,8 +21,8 @@ allLocalFiles = cellfun(@dir, localFolders, 'uni', 0);
 if isempty(allLocalFiles)
     fprintf('NOTE: No files in local folder ... will clean any empty folders \n');
 else
-    serverFolders = cellfun(@(x,y) repmat(x,length(y),1), serverFolders, allLocalFiles, 'uni', 0);
-    serverFolders = num2cell(cell2mat(serverFolders),2);
+    serverFolders = cellfun(@(x,y) num2cell(repmat(x,length(y),1),2), serverFolders, allLocalFiles, 'uni', 0);
+    serverFolders = vertcat(serverFolders{:});
     
     allLocalFiles = cell2mat(allLocalFiles);
     allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
