@@ -1,2 +1,2 @@
 @ECHO OFF
-matlab -nodisplay -nosplash -r "autoRunOvernight.m"
+matlab -nodisplay -nosplash -r "autoRunOvernight"
