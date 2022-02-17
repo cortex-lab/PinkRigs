@@ -13,7 +13,7 @@ timeout /T 1 /NOBREAK > nul
 SET /A GBTest = 100
 if %FreeSpace:~0,-10% gtr %GBTest% (
 	echo "Free space more than %GBTest%GB. Opening Timeline"
-	matlab -nodisplay -nosplash -r "cd('C:\Users\Experiment\Documents\Github\PinkRigs\Zelda-Time'); open_all_tl"
+	matlab -nodisplay -nosplash -r "open_all_tl;"
 	timeout /T 3 /NOBREAK > nul
 )
 if %FreeSpace:~0,-10% leq %GBTest% (
@@ -40,7 +40,7 @@ SETLOCAL EnableExtensions
 set EXE=matlab.exe
 FOR /F %%x IN ('tasklist /NH /FI "IMAGENAME eq %EXE%"') DO IF /I NOT %%x == %EXE% (
   echo %EXE% is not Running so will start the microphone listener...
-  matlab -nodisplay -nosplash -r "cd('D:\Dropbox (Personal)\XMatlabProg\GitHub\PinkRigs\Microphone'); micListener"
+  matlab -nodisplay -nosplash -r "micListener;"
 )
 PAUSE
 goto :endfunction
