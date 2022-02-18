@@ -17,7 +17,7 @@ def send_email(mname):
 Subject: Mouse training completed
 
 Hello, 
-The following mice have completed their training: 
+The following mice have been trained recently: 
 {}
 """.format(address,mname)
 
@@ -29,6 +29,8 @@ The following mice have completed their training:
 basepath = r'\\zserver.cortexlab.net\Code\AVrig'
 mouseList = pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice = mouseList['Subject'][mouseList['IsActive']==1].values
+
+deltaDays2Check = 7;
 
 readyMice = []
 for mname in activeMice:
@@ -56,17 +58,15 @@ for mname in activeMice:
         stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage'] 
             
         # check whether they were trained recently
-        yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
-        for i,expDate in enumerate(sess2check['expDate']): 
-            mydate = dateutil.parser.parse(expDate)
-            if mydate >= yesterday:
-                trainedthisweek=1
-            else: 
-                trainedthisweek=0
-                   
-            
+        previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
+        dateParsed = dateutil.parser.parse(expDate)
+        if dateParsed >= previousDays:
+            trainedthisweek=1
+        else: 
+            trainedthisweek=0
+                      
         if trainedthisweek==1:
-            readyMice.append('%s - Stage %.0d' % (mname,stage))
+            readyMice.append('%s - Stage %.0d on day %s' % (mname,stage,expDate))
     
 if len(readyMice)>0:
     print('sending email ...')
