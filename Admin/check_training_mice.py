@@ -19,6 +19,8 @@ Subject: Mouse training completed
 Hello, 
 The following mice have been trained recently: 
 {}
+Cheers!
+AVrig
 """.format(address,mname)
 
 
@@ -37,14 +39,10 @@ for mname in activeMice:
     expinfo = pd.read_csv(r'%s\%s.csv' % (basepath,mname))
 
     # check whether the mouse is trained on the task
-    
     sess2check = expinfo[(expinfo['expDef']=='multiSpaceWorld_checker_training') & (expinfo['expDuration']>600)][-1:]
 
-    
     if (sess2check.shape[0]>0):
-
-        # maybe send email about current training stage
-
+        # take the last day for the update
         expPath = sess2check['path'].iloc[0]
         expDate = sess2check['expDate'].iloc[0]
         try: # date formats aren't homogeneous...
