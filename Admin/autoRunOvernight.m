@@ -25,20 +25,20 @@ switch lower(computerType)
         checkForNewAVRecordings;
         
         fprintf('Update on training... \n')
-        % call batch script
+        checkTrainingPath = which('check_training_mice.py');
         [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
-            'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\check_training_mice.py ' ...
-            '&& conda deactivate']);
-        if statusTraining > 0
+            'python ' checkTrainingPath ' &&' ...
+            'conda deactivate']);
+        if statusTrain > 0
             fprintf('Updating on training failed with error "%s".\n', resultTrain)
         end
         
         fprintf('Getting kilosort queue... \n')
-        % call batch script
+        stageKSPath = which('stageKS.py');
         [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
-            'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\stageKS.py && ' ...
+            'python ' stageKSPath ' && ' ...
             'conda deactivate']);
-        if statusUpdateQueue > 0
+        if statusQueue > 0
             fprintf('Updating the queue failed with error "%s".\n', resultQueue)
         end
         
