@@ -28,14 +28,14 @@ def check_date_selection(date_selection,date):
     return Out
 
 def stage_KS_queue(mouse_selection='',date_selection='last3'):
-    # the fuction will have a kwarg input structure where you can overwrite MasterMouseList with
+    # the function will have a kwarg input structure where you can overwrite MasterMouseList with
     # which mice to sort -- FT or FT032
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
     # check 
 
     # check which mice are active on Master csv
     root = r'\\zserver.cortexlab.net\Code\AVrig'
-    master_csv = pd.read_csv(os.path.join(root,'!MasterMouseList.csv'))
+    master_csv = pd.read_csv(os.path.join(root,'!MouseList.csv'))
     mice_to_check=master_csv[master_csv['IsActive']==1].Subject
 
     new_recs_to_sort=[]
@@ -51,8 +51,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
             server = mp.parts[0][:-1]
             subject= mp.parts[1]
             date = mp.parts[2]
-
-
 
             # only add the mice that need to be sorted if all criteria is fulfilled
             # that is: 
@@ -75,7 +73,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
                     # check if even if it wasn't completed, it might have errored and cannot be sorted
                     
-
                     # add to queue if not    
                     if not KS_done:                  
                         # get the ap file that ought to be sorted 
