@@ -7,6 +7,8 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
     recomputeKilo = 0;
+    recomputeQMetrics = 0; % made the two independent
+    checkTime = 0;
     
     % This is not ideal
     if ~isempty(varargin)
@@ -14,6 +16,9 @@ function main(varargin)
         
         if ~isempty(params) && isfield(params, 'recomputeKilo')
             recomputeKilo = params.recomputeKilo;
+        end
+        if ~isempty(params) && isfield(params, 'recomputeQMetrics')
+            recomputeQMetrics = params.recomputeQMetrics;
         end
         
         if numel(varargin) > 1
@@ -35,6 +40,9 @@ function main(varargin)
         rec2sortList = recList.ephysName(compIdx);
     end
     
+    % get day on which the script has been started
+    startClock = datetime('now');
+    
     %% Get folders path etc.
     % These things won't be used anywhere else, so should be alright.
     
@@ -46,7 +54,7 @@ function main(varargin)
     end
         
     % Local Kilosort output folder (rootZ)
-    KSOutFolder = 'C:\Users\Experiment\Documents\kilosort'; % local temporal folder for output
+    KSOutFolderLocGen = 'C:\Users\Experiment\Documents\kilosort'; % local temporal folder for output
         
     % KS2 config file
     pathToKSConfigFile = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2';
@@ -65,8 +73,20 @@ function main(varargin)
         [ephysPath,b,c] = fileparts(recName);
         ephysFileName = strcat(b,c);
         
-        if exist(fullfile(ephysPath,'kilosort2'),'dir') && ~isempty(dir(fullfile(ephysPath,'kilosort2','*npy'))) && ~recomputeKilo
-            fprintf('Ephys %s already sorted. Skipping.\n', ephysFileName)
+        KSOutFolderLoc = fullfile(KSOutFolderLocGen,ephysFileName(1:end-13));
+        KSOutFolderServer = fullfile(ephysPath,'kilosort2');
+        
+        if checkTime
+            % To avoid running too long. Will stop after ~20h + 1 proc.
+            nowClock = datetime('now');
+            if nowClock > startClock + 20/24
+                return
+            end
+        end
+        
+        if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~recomputeKilo
+            fprintf('Ephys %s already sorted.\n', ephysFileName)
+            successFinal = 1;
         else
             % Get meta data
             metaData = readMetaData_spikeGLX(ephysFileName,ephysPath);
@@ -86,12 +106,13 @@ function main(varargin)
             %% Main data processing
             try
                 %% Copy data to local folder.
-                if ~exist(fullfile(KSOutFolder, ephysFileName),'file')
+                if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file')
                     fprintf('Copying data to local folder...')
-                    if ~exist(KSOutFolder, 'dir')
-                        mkdir(KSOutFolder)
+                    
+                    if ~exist(KSOutFolderLoc, 'dir')
+                        mkdir(KSOutFolderLoc)
                     end
-                    success = copyfile(recName,fullfile(KSOutFolder,ephysFileName));
+                    success = copyfile(recName,fullfile(KSOutFolderLoc,ephysFileName));
                     fprintf('Local copy done.\n')
                 else
                     fprintf('Data already copied.\n');
@@ -102,15 +123,12 @@ function main(varargin)
                     error('Couldn''t copy data to local folder.')
                 else
                     %% Running the main algorithm
-                    kilo.runMatKilosort2(KSOutFolder,KSWorkFolder,chanMapPath,pathToKSConfigFile)
+                    kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
                                         
                     %% Copying file to distant server
                     delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
                     delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
-                    successFinal = movefile(fullfile(KSOutFolder,'*'),fullfile(ephysPath,'kilosort2')); % copy KS output back to server
-                    
-                    %% Running quality metrics (directly on the server)
-                    kilo.getQualityMetrics(fullfile(ephysPath,'kilosort2'), fullfile(ephysPath,'kilosort2'))
+                    successFinal = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
                     
                     if ~successFinal
                         error('Couldn''t copy data to server.')
@@ -120,20 +138,18 @@ function main(varargin)
                             recList.sortedTag(compIdx(rr)) = 1;
                         end
                         
-                        % delete any error file related to KS
+                        % Delete any error file related to KS
                         if exist([ephysPath '\KSerror.json'])
                             delete([ephysPath '\KSerror.json']);
                         end
                     end
                 end
+                
             catch me
                 % Sorting was not successful: write a permanent tag indicating that
                 if exist('recList','var')
                     recList.sortedTag(compIdx(rr)) = -1;
                 end
-                
-                % delete data otherwise conflict
-                delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
                 
                 % Save error message.
                 errorMsge = jsonencode(me.message);
@@ -141,6 +157,20 @@ function main(varargin)
                 fprintf(fid, '%s', errorMsge);
                 fclose(fid);
             end
+                    
+            if exist('KSOutFolderLoc','dir')
+                % Delete data otherwise will crowd up
+                delete(KSOutFolderLoc); % delete .bin file from KS output
+            end
+        end
+                
+        
+        if successFinal && (~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || recomputeQMetrics)
+            %% Running quality metrics (directly on the server)
+            % Independent of previous block to be able to run one or the
+            % other (it's likely we might want to recompute only the qM)
+            fprintf('Running quality metrics...\n')
+            kilo.getQualityMetrics(KSOutFolderServer, KSOutFolderServer)
         end
         
         if exist('recList','var')

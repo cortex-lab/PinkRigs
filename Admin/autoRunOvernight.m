@@ -43,5 +43,6 @@ switch lower(computerType)
         end
         
         fprintf('Running kilosort on the queue... \n')
-        kilo.main()
+        param.checkTime = 1; % to stop it after about 20h
+        kilo.main(param)
 end
