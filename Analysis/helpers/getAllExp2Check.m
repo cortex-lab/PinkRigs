@@ -21,6 +21,7 @@ function exp2checkList = getAllExp2Check(varargin)
     
     todayDate = datenum(date);
     
+    %% --------------------------------------------------------
     %% Fetch exp
     % Get active mouse list from main csv
     mainCSVLoc = getCSVLocation('main');

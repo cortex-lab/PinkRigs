@@ -30,6 +30,7 @@ function extractExpData(varargin)
     end
     
     if ~exist('exp2checkList', 'var')
+        % Will get all the exp for the active mice.
         exp2checkList = getAllExp2Check();
     end
     
@@ -58,14 +59,16 @@ function extractExpData(varargin)
                 load(alignmentFile, 'alignment');
                 
                 %% Extract spikes and clusters info (depth, etc.)
-                % Get spikes
-                
-                % Align them
-                for probeNum = 1:numel(alignment.ephys)
-                    spikeTimesAligned{probeNum} = preproc.align.event2timeline(spikeTimes, ...
-                        alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                if ~isempty(alignment.ephys)
+                    % Get spikes
                     
-                    % Subselect the ones that are within this experiment
+                    % Align them
+                    for probeNum = 1:numel(alignment.ephys)
+                        spikeTimesAligned{probeNum} = preproc.align.event2timeline(spikeTimes, ...
+                            alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                        
+                        % Subselect the ones that are within this experiment
+                    end
                 end
                 
                 %% Extract important info from timeline or block
