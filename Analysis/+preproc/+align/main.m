@@ -21,60 +21,23 @@ function main(varargin)
         end
         
         if numel(varargin) > 1
-            expPath2checkList = varargin{2};
-            
-            % Check that they are in the main csvs and fetch exp info
-            %%% Maybe put in a function, getExpInfoFromPath ?
-            
-            %%% Should update csv ffirst?
-            
-            subjectList = cell(1,numel(numel(expPath2checkList)));
-            expDateList = cell(1,numel(numel(expPath2checkList)));
-            expNumList = cell(1,numel(numel(expPath2checkList)));
-            for ee = 1:numel(expPath2checkList)
-               [subjectList{ee},expDateList{ee},expNumList{ee}] = parseExpPath(expPath2checkList{ee});
-            end
-            
-            exp2checkList = table();
-            subjects = unique(subjectList);
-            for ss = 1:numel(subjects)
-                expList = getMouseExpList(subjects{ss});
-                idx4thisSubject = find(contains(subjectList,subjects{ss}));
-                for idx = 1:numel(idx4thisSubject)
-                    expIdx = find(contains(cellstr(datestr(expList.expDate,29)),expDateList{idx4thisSubject(idx)}) & ...
-                        contains(expList.expNum,num2str(expNumList{idx4thisSubject(idx)})));
-                    if ~isempty(expIdx)
-                        exp2checkList = [exp2checkList; expList(expIdx,:)];
-                    else 
-                        %%% should throw an error
-                    end
-                end
+            if istable(varargin{2})
+                % already in the right format, with all the info
+                exp2checkList = varargin{2};
+            else
+                % format is just a cell with paths, go fetch info
+                expPath2checkList = varargin{2};
+                exp2checkList = getExpInfoFromPath(expPath2checkList);
             end
         end
     end
     
     if ~exist('exp2checkList', 'var')
-        % Get active mouse list from main csv
-        mainCSVLoc = getCSVLocation('main');
-        mouseList = readtable(mainCSVLoc);
-        mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
-        
-        % Loop through csv to look for experiments that weren't
-        % aligned, or all if recompute isn't none.
-        exp2checkList = table();
-        for mm = 1:numel(mouse2checkList)
-            % Loop through subjects
-            subject = mouse2checkList{mm};
-            
-            % Get list of exp for this mouse
-            exp2checkList = [exp2checkList; getMouseExpList(subject)];
-        end
+        exp2checkList = getAllExp2Check();
     end
     
     %% --------------------------------------------------------
-    %% Will compute or fetch the 'alignment' file.
-    %%% Could check it directly in csv?
-    %%% Shall we trust the csv...?
+    %% Will compute the 'alignment' file for each experiment.
     
     for ee = 1:size(exp2checkList,1)
         
@@ -189,6 +152,11 @@ function main(varargin)
         
         if contains(recompute,'all') || contains(recompute,'mic') || ~isfield(alignmentOld,'mic')
             % Align it
+            if expInfo.micDat > 0
+                %%% TODO
+            else
+                alignment.mic = nan;
+            end
             change = 1;
         else
             % Just load it
@@ -204,16 +172,12 @@ function main(varargin)
             % but I felt like keeping the date of last modifications of
             % the files might be useful (e.g., for debugging).
         end
+        
+        %% Amend the csv 
+        % to say that alignment has been computed, and which
+        % ephys corresponds to that experiment.
+        
+        %%% TO DO
     end
 
-
-    %% --------------------------------------------------------
-    %% Will then have to compute and save the processed data.
-    %%% maybe this should belong in another function?
-    
-    %% ephys
-    % use preproc.align.event2timeline(spikeTimes,alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes)
-    
-    %% block events
-    % use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
     
