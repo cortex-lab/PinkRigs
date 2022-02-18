@@ -1,8 +1,8 @@
-function copyEphysData2ServerAndDelete(ignoreSubjectMismatch)
+function copyEphysData2ServerAndDelete(localFolder, ignoreSubjectMismatch)
 %% This funtion will need to be run at the end of each experiment/day? and
 if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end 
-%% identify data
-localFolder ='D:\ephysData'; % the localExpData folder where data is held
+if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
+
 % find all folders with bin files
 localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
 if isempty(localEphysFiles)
