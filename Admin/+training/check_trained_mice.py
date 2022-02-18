@@ -24,7 +24,7 @@ The following mice have completed their training:
 
 
 basepath=r'\\zserver.cortexlab.net\Code\AVrig'
-mouseList=pd.read_csv(r'%s\aMasterMouseList.csv' % basepath)
+mouseList=pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice=mouseList['Subject'][mouseList['IsActive']==1].values
 
 numExpToCheck=3

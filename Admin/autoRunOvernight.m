@@ -22,4 +22,15 @@ switch lower(computerType)
         
         fprintf('Running "checkForNewAVRecordings"... \n')
         checkForNewAVRecordings;
+        
+        fprintf('Sending training summary... \n')
+        % call batch script
+        statusTraining = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\+training\check_training.bat');
+        
+        fprintf('Getting kilosort queue... \n')
+        % call batch script
+        statusUpdateQueue = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\updateKilosortQueue');
+        
+        fprintf('Running "checkForNewAVRecordings"... \n')
+        kilo.main()
 end

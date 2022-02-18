@@ -9,12 +9,12 @@ def send_email(mname):
     server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
     server.login('pinkAVrigs@gmail.com', 'xpr!mnt1')
 
-    receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com']
+    receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
     message = """From: AVrigs <pinkAVrigs@gmail.com>
 Subject: Mouse training today
 
 Hello, 
-Training porogress of the mice in the multiSpaceWorld_checker task is as follows: 
+Training progress of the mice in the multiSpaceWorld_checker task is as follows: 
 {}
 """.format(mname)
 
@@ -24,7 +24,7 @@ Training porogress of the mice in the multiSpaceWorld_checker task is as follows
 
 
 basepath=r'\\zserver.cortexlab.net\Code\AVrig'
-mouseList=pd.read_csv(r'%s\aMasterMouseList.csv' % basepath)
+mouseList=pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice=mouseList['Subject'][mouseList['IsActive']==1].values
 
 numExpToCheck=3

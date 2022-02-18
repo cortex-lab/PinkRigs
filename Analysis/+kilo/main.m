@@ -7,7 +7,6 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
     recomputeKilo = 0;
-    recomputeQMetrics= 0;
     
     % This is not ideal
     if ~isempty(varargin)
@@ -15,10 +14,6 @@ function main(varargin)
         
         if ~isempty(params) && isfield(params, 'recomputeKilo')
             recomputeKilo = params.recomputeKilo;
-        end
-        
-        if ~isempty(params) && isfield(params, 'recomputeQMetrics')
-            recomputeQMetrics = params.recomputeQMetrics;
         end
         
         if numel(varargin) > 1
