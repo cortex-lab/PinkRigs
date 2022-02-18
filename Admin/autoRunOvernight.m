@@ -26,20 +26,20 @@ switch lower(computerType)
         
         fprintf('Update on training... \n')
         % call batch script
-        statusTraining = system(['conda activate PinkRigs && ' ...
+        [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
             'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\check_training_mice.py ' ...
             '&& conda deactivate']);
-        if statusTraining == 0
-            fprintf('Update on training failed.\n')
+        if statusTraining > 0
+            fprintf('Updating on training failed with error "%s".\n', resultTrain)
         end
         
         fprintf('Getting kilosort queue... \n')
         % call batch script
-        statusUpdateQueue = system(['activate PinkRigs && ' ...
+        [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
             'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\stageKS.py && ' ...
             'conda deactivate']);
-        if statusUpdateQueue == 0
-            fprintf('Updating kilosort queue failed.\n')
+        if statusUpdateQueue > 0
+            fprintf('Updating the queue failed with error "%s".\n', resultQueue)
         end
         
         fprintf('Running kilosort on the queue... \n')
