@@ -11,6 +11,7 @@ switch lower(computerType)
         
     case 'ephys'
         fprintf('Detected ephys computer... \n')
+        
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete;
         
@@ -23,14 +24,24 @@ switch lower(computerType)
         fprintf('Running "checkForNewAVRecordings"... \n')
         checkForNewAVRecordings;
         
-        fprintf('Sending training summary... \n')
+        fprintf('Update on training... \n')
         % call batch script
-        statusTraining = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\+training\check_training.bat');
+        statusTraining = system(['conda activate PinkRigs && ' ...
+            'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\check_training_mice.py ' ...
+            '&& conda deactivate']);
+        if statusTraining == 0
+            fprintf('Update on training failed.\n')
+        end
         
         fprintf('Getting kilosort queue... \n')
         % call batch script
-        statusUpdateQueue = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\updateKilosortQueue.bat');
+        statusUpdateQueue = system(['activate PinkRigs && ' ...
+            'python C:\Users\Experiment\Documents\Github\PinkRigs\Admin\stageKS.py && ' ...
+            'conda deactivate']);
+        if statusUpdateQueue == 0
+            fprintf('Updating kilosort queue failed.\n')
+        end
         
-        fprintf('Running "checkForNewAVRecordings"... \n')
+        fprintf('Running kilosort on the queue... \n')
         kilo.main()
 end
