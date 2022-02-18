@@ -6,3 +6,4 @@ end
 
 %% Check PinkRig repo and update if needed
 checkAndUpdatePinkRigRepo
+addpath(genpath('C:\Users\Experiment\Documents\Github\PinkRigs'));

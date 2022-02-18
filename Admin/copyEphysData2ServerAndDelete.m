@@ -1,10 +1,16 @@
-function copyEphysData2ServerAndDelete
+function copyEphysData2ServerAndDelete(ignoreSubjectMismatch)
 %% This funtion will need to be run at the end of each experiment/day? and
+if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end 
 %% identify data
 localFolder ='D:\ephysData'; % the localExpData folder where data is held
 % find all folders with bin files
 localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
-metaData = arrayfun(@(x) readMetaData_spikeGLX(x.name, x.folder), localEphysFiles);
+if isempty(localEphysFiles)
+    fprintf('There are no ephys files in the local directory. Returning... \n');
+    pause(1);
+    return;
+end
+metaData = arrayfun(@(x) readMetaData_spikeGLX(x.name, x.folder), localEphysFiles, 'uni', 0);
 %%
 subjectFromBinName = arrayfun(@(x) x.name(1:5), localEphysFiles, 'uni', 0);
 dateFromBinName = arrayfun(@(x) cell2mat(regexp(x.name, '\d\d\d\d-\d\d-\d\d', 'match')), localEphysFiles, 'uni', 0);
@@ -20,7 +26,7 @@ else
 end
 
 fprintf('Checking subject in file name against probe serials in CSV... \n')
-serialsFromMeta = cellfun(@str2double, {metaData(:).imDatPrb_sn}');
+serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
 
 [uniqueProbes, ~, uniIdx] = unique(serialsFromMeta);
 matchedSubjects = getCurrentSubjectFromProbeSerial(uniqueProbes);
@@ -38,6 +44,11 @@ else
 end
 
 %%
+if ignoreSubjectMismatch && any(subjectMismatch)
+    warning('Ignoring subject mismatch..?!?!')
+    subjectMismatch = subjectMismatch*0;
+    expectedSubject = subjectFromBinName;
+end
 validIdx = ~subjectMismatch & ~dateMismatch;
 validEphysFiles = localEphysFiles(validIdx);
 validSubjects = expectedSubject(validIdx);
