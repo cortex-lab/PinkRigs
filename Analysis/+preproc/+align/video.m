@@ -11,28 +11,15 @@
     
     %% get path and parameters    
     % Parameters for processing (can be inputs in varargin{1})
-    recomputeInt = false; % will recompute intensity file if true
-    nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
-    adjustPercExpo = 1; % will adjust the timing of the first frame from its intensity
-    plt = 1; % to plot the inter frame interval for sanity checks
-    crashMissedFrames = 1; % will crash if any missed frame
+    params.recomputeInt = false; % will recompute intensity file if true
+    params.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
+    params.adjustPercExpo = 1; % will adjust the timing of the first frame from its intensity
+    params.plt = 1; % to plot the inter frame interval for sanity checks
+    params.crashMissedFrames = 1; % will crash if any missed frame
     
-    % This is not ideal? 
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'recomputeInt') 
-            recomputeInt = params.recomputeInt;
-        end
-        if ~isempty(params) && isfield(params, 'nFramesToLoad')
-            nFramesToLoad = params.nFramesToLoad;
-        end
-        if ~isempty(params) && isfield(params, 'adjustPercExpo')
-            adjustPercExpo = params.adjustPercExpo;
-        end
-        if ~isempty(params) && isfield(params, 'adjustPercExpo')
-            crashMissedFrames = params.crashMissedFrames;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             timeline = varargin{2};
@@ -53,7 +40,7 @@
     %% Get intensity files
     % This bit will compute and save the intensity of the movies.
     
-    if recomputeInt
+    if params.recomputeInt
         % Delete intensity files
         if exist(intensFile, 'file')
             delete(intensFile);
@@ -66,7 +53,7 @@
     % Compute intensity file for the main file, will save it in folder
     if ~exist(intensFile, 'file')
         fprintf(1, 'computing average intensity of first/last frames...\n');
-        vidproc.getAvgMovInt(expPath, movieName, nFramesToLoad);
+        vidproc.getAvgMovInt(expPath, movieName, params.nFramesToLoad);
     end
     
     % Compute intensity file for the lastFrames file, will save it in folder
@@ -171,14 +158,14 @@
         numFramesMissed = 0;
     end
     
-    if numFramesMissed && crashMissedFrames
+    if numFramesMissed && params.crashMissedFrames
         % Then error the whole thing to make sure you don't miss it
         error('missed frames: %d \n', numFramesMissed)
     else
         fprintf(1, 'missed frames: %d \n', numFramesMissed);
     end
     
-    if plt
+    if params.plt
         % Plot and save a figure with the inter frame interval, for any
         % post-processing checks
         f = figure('visible','off'); hold all
@@ -218,7 +205,7 @@
         numMissedFrames_wStrobes = nan;
     end
     
-    if numFramesMissed && plt
+    if numFramesMissed && params.plt
         % Check which ones have been lost to further understand the issue
         % missedidx = find(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),3))>1) + vidSyncOnFrames(1)-1;
         missedidx = largeIFI;
@@ -255,7 +242,7 @@
     % Try to realign a bit better with the percentage of exposition.
     % Could maybe use the strobes if they're here?
     
-    if adjustPercExpo
+    if params.adjustPercExpo
         % Will adjust the first post-dark flash frame depending on its
         % intensity compared to the previous ones.
         percentExpo = (avgIntensity(vidSyncOnFrames(1))-avgIntensity(vidSyncOnFrames(1)-2))/(avgIntensity(vidSyncOnFrames(1)+2)-avgIntensity(vidSyncOnFrames(1)-2));

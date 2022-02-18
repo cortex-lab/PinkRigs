@@ -6,15 +6,12 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
     
     %% Get parameters    
     % Parameters for processing (can be inputs in varargin{1})
-    alignType = [];
+    params.alignType = [];
     
     % This is not ideal
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'alignType')
-            alignType = params.alignType;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             timeline = varargin{2};
@@ -37,8 +34,10 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
     expDef = regexp(block.expDef,'\w*\.m','match'); expDef = expDef{1}(1:end-2);
     
     %% Get alignment type
-    
-    if ~isempty(alignType)
+
+    if ~isempty(params.alignType)
+        alignType = params.alignType;
+        
         % Check if this specific type would work this would work
         %%% TODO
     else

@@ -9,13 +9,9 @@ function extractExpData(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     recompute = 0;
     
-    % This is not ideal
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'recompute')
-            recompute = params.recompute;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             if istable(varargin{2})

@@ -8,25 +8,19 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
-    ephysPath = []; % for specific ephys folders (give full path)
-    toleranceThreshold = 0.005;
-    [subject, expDate, ~, server] = parseExpPath(expPath);
+    params.ephysPath = []; % for specific ephys folders (give full path)
+    params.toleranceThreshold = 0.005;
     
-    % This is not ideal
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'alignType')
-            ephysPath = params.ephysPath;
-        end
-        if ~isempty(params) && isfield(params, 'toleranceThreshold')
-            toleranceThreshold = params.toleranceThreshold;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             timeline = varargin{2};
         end
     end
+    
+    [subject, expDate, ~, server] = parseExpPath(expPath);
     
     %% Get timeline flipper times
     
@@ -39,6 +33,8 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     timelineFlipperTimes = timeproc.getChanEventTime(timeline,'flipper');
 
     %% Get all ephys flipper times
+    
+    ephysPath = params.ephysPath;
     
     % Get ephys folders
     % Will work only if the architecture is good.
@@ -118,7 +114,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
                 
                 while length(timelineFlipperTimes) > length(ephysFlipperTimes_cut)
                     compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes(1:length(ephysFlipperTimes_cut))-timelineFlipperTimes(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
+                    errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
                     if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
                         timelineFlipperTimes = timelineFlipperTimes(1:length(ephysFlipperTimes_cut));
                     else
@@ -129,7 +125,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
                 end
                 while length(timelineFlipperTimes) < length(ephysFlipperTimes_cut)
                     compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephysFlipperTimes_cut(1:length(timelineFlipperTimes))-ephysFlipperTimes_cut(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1);
+                    errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
                     if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
                         ephysFlipperTimes_cut = ephysFlipperTimes_cut(1:length(timelineFlipperTimes));
                     else
@@ -139,13 +135,13 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
                     end
                 end
                 compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-                if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
+                if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
                     success = 1;
                 end
             end
         elseif numFlipsDiff==0
             compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-            if isempty(find(abs(diff(diff(compareVect,[],2)))>toleranceThreshold,1)); fprintf('Success! \n');
+            if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
                 success = 1;
             end
         end

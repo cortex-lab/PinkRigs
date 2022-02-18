@@ -6,19 +6,13 @@ function main(varargin)
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
-    recompute = {'none'};
-    paramsVid = []; % will take default
+    params.recompute = {'none'};
+    params.paramsVid = []; % will take default
     
     % This is not ideal
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'recompute')
-            recompute = params.recompute;
-        end
-        if ~isempty(params) && isfield(params, 'paramsVid')
-            paramsVid = params.paramsVid;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             if istable(varargin{2})
@@ -73,7 +67,7 @@ function main(varargin)
         %  compute the events times in timeline time from times in block time using
         %  "event2timeline".
         
-        if contains(recompute,'all') || contains(recompute,'ephys') || ~isfield(alignmentOld,'ephys')
+        if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
             if expInfo.ephys
                 % Align it
                 [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
@@ -100,7 +94,7 @@ function main(varargin)
         %  compute the events times in timeline time from times in block time using
         %  "event2timeline".
         
-        if contains(recompute,'all') || contains(recompute,'block') || ~isfield(alignmentOld,'block')
+        if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
             [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
             
             % save it
@@ -118,7 +112,7 @@ function main(varargin)
         %  The resulting times for these alignments will be saved in a structure
         %  'vids' that contains all cameras.
         
-        if contains(recompute,'all') || contains(recompute,'video') || ~isfield(alignmentOld,'video')
+        if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
             
             % Get cameras' names
             vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
@@ -129,7 +123,7 @@ function main(varargin)
             for v = 1:numel(vids)
                 [~,vidName,~] = fileparts(vids(v).name);
                 try
-                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, paramsVid);
+                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
                 catch me
                     % case when it's corrupted
                     vids(v).frameTimes = [];
@@ -151,7 +145,7 @@ function main(varargin)
         %  to the low frequency microphone that records directly into the timeline
         %  channel. Saved as a 1Hz version of the envelope of both.
         
-        if contains(recompute,'all') || contains(recompute,'mic') || ~isfield(alignmentOld,'mic')
+        if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
             % Align it
             if expInfo.micDat > 0
                 %%% TODO

@@ -4,23 +4,13 @@ function main(varargin)
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
-    paramsAlign = [];
-    days2Check = inf;
-    mice2Check = 'active';
-    
-    % This is not ideal
+    params.paramsAlign = [];
+    params.days2Check = inf;
+    params.mice2Check = 'active';
+
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'days2Check')
-            days2Check = params.days2Check;
-        end
-        if ~isempty(params) && isfield(params, 'mice2Check')
-            mice2Check = params.mice2Check;
-        end
-        if ~isempty(params) && isfield(params, 'paramsAlign')
-            paramsAlign = params.paramsAlign;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             if istable(varargin{2})
@@ -35,15 +25,13 @@ function main(varargin)
     end
     
     if ~exist('exp2checkList', 'var')
-        p.days2Check = days2Check;
-        p.mice2Check = mice2Check;
-        exp2checkList = getAllExp2Check(p);
+        exp2checkList = getAllExp2Check(params);
     end
     
     %% --------------------------------------------------------
     %% Compute and save alignment
     
-    preproc.align.main(paramsAlign, exp2checkList)
+    preproc.align.main(params.paramsAlign, exp2checkList)
     
     %% Get and save processed chunk of data
     

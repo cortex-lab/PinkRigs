@@ -6,20 +6,14 @@ function main(varargin)
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
-    recomputeKilo = 0;
-    recomputeQMetrics = 0; % made the two independent
-    checkTime = 0;
+    params.recomputeKilo = 0;
+    params.recomputeQMetrics = 0; % made the two independent
+    params.checkTime = 0;
     
     % This is not ideal
     if ~isempty(varargin)
-        params = varargin{1};
-        
-        if ~isempty(params) && isfield(params, 'recomputeKilo')
-            recomputeKilo = params.recomputeKilo;
-        end
-        if ~isempty(params) && isfield(params, 'recomputeQMetrics')
-            recomputeQMetrics = params.recomputeQMetrics;
-        end
+        paramsIn = varargin{1};
+        params = parseInputParams(params,paramsIn);
         
         if numel(varargin) > 1
             rec2sortList = varargin{2};
@@ -32,7 +26,7 @@ function main(varargin)
         % Get all the recordings in the queue
         KSqueueCSVLoc = getCSVLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
-        if ~recomputeKilo
+        if ~params.recomputeKilo
             compIdx = find(recList.sortedTag == 0);
         else
             compIdx = 1:numel(recList.sortedTag);
@@ -76,7 +70,7 @@ function main(varargin)
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,ephysFileName(1:end-13));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
-        if checkTime
+        if params.checkTime
             % To avoid running too long. Will stop after ~20h + 1 proc.
             nowClock = datetime('now');
             if nowClock > startClock + 20/24
@@ -84,7 +78,7 @@ function main(varargin)
             end
         end
         
-        if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~recomputeKilo
+        if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successFinal = 1;
         else
@@ -165,7 +159,7 @@ function main(varargin)
         end
                 
         
-        if successFinal && (~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || recomputeQMetrics)
+        if successFinal && (~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics)
             %% Running quality metrics (directly on the server)
             % Independent of previous block to be able to run one or the
             % other (it's likely we might want to recompute only the qM)
