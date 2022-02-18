@@ -29,7 +29,7 @@ switch lower(computerType)
         
         fprintf('Getting kilosort queue... \n')
         % call batch script
-        statusUpdateQueue = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\updateKilosortQueue');
+        statusUpdateQueue = system('C:\Users\Experiment\Documents\Github\PinkRigs\Admin\updateKilosortQueue.bat');
         
         fprintf('Running "checkForNewAVRecordings"... \n')
         kilo.main()

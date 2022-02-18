@@ -46,8 +46,7 @@ for mname in activeMice:
         expDate=sess2check['expDate'].iloc[0]
         expNum=sess2check['expNum'].iloc[0]
 
-        block=scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),
-                                squeeze_me=True)
+        block=scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),squeeze_me=True)
         # for now get some random shit 
         #stage[i]=block['block']['events'].item()['randIdxValues'].item()[0]
 
