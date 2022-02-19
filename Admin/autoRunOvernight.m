@@ -7,16 +7,16 @@ switch lower(computerType)
         fprintf('Detected timeline computer... \n')
         
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
-        copyLocalData2ServerAndDelete;
+        copyLocalData2ServerAndDelete('D:\LocalExpData');
         
     case 'ephys'
         fprintf('Detected ephys computer... \n')
         
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
-        copyLocalData2ServerAndDelete;
+        copyLocalData2ServerAndDelete('D:\LocalExpData');
         
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
-        copyEphysData2ServerAndDelete;
+        copyEphysData2ServerAndDelete('D:\ephysData');
         
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')

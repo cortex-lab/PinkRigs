@@ -1,7 +1,8 @@
-function copyLocalData2ServerAndDelete
+function copyLocalData2ServerAndDelete(localFolder)
 %% This funtion will need to be run at the end of each experiment/day? and
 %% identify data
-localFolder ='D:\LocalExpData'; % the localExpData folder where data is held
+if ~exist('localFolder', 'var'); localFolder = 'D:\LocalExpData'; end
+
 % find all folders with a relevant file like timeline
 files2Check = {'Timeline.mat';'block.mat';'eyeCam*';'frontCam*';'sideCam*';'mic.mat'};
 localDat = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), files2Check, 'uni', 0));
