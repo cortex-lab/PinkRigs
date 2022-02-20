@@ -67,8 +67,10 @@ for mname in activeMice:
             readyMice.append('%s - Stage %.0d on day %s' % (mname,stage,expDate))
     
 if len(readyMice)>0:
-    print('sending email ...')
-    send_email('\n'.join(readyMice))
+    now = datetime.datetime.today()
+    if not now.strftime("%A") in ["Saturday", "Sunday"]:
+        print('sending email ...')
+        send_email('\n'.join(readyMice))
 else: 
     print('no mice are fully trained')
     #send_email('no mice are fully trained')
