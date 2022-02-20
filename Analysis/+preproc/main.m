@@ -5,6 +5,7 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
     params.paramsAlign = [];
+    params.paramsExtract = [];
     params.days2Check = inf;
     params.mice2Check = 'active';
 
@@ -35,4 +36,4 @@ function main(varargin)
     
     %% Get and save processed chunk of data
     
-    preproc.extractExpData(paramsExtract, exp2checkList)
+    preproc.extractExpData(params.paramsExtract, exp2checkList)

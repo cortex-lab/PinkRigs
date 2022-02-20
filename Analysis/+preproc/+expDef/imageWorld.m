@@ -1,4 +1,4 @@
-function ev = expDef_imageWorld(timeline, block, alignment)
+function ev = imageWorld(timeline, block, alignment)
     %%% This function will fetch all important information from the expDef
     %%% imageWorld.
     
@@ -8,7 +8,8 @@ function ev = expDef_imageWorld(timeline, block, alignment)
     %%% alignment). 
     
     blockOnsetTimes = block.stimWindowUpdateTimes;    
-    ev.imageOnsetTime = preproc.alignEvent2Timeline(blockOnsetTimes,alignment.block.originTimes,alignment.block.timelineTimes);
+    ev.imageOnsetTime = preproc.align.event2Timeline(block.events.stimulusOnTimes(block.events.stimulusOnValues), ...
+        alignment.block.originTimes,alignment.block.timelineTimes);
             
     %% Get image ID
     

@@ -7,7 +7,7 @@ function extractExpData(varargin)
     
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
-    recompute = 0;
+    params.recompute = 0;
     
     if ~isempty(varargin)
         paramsIn = varargin{1};
@@ -31,7 +31,7 @@ function extractExpData(varargin)
     end
     
     %% --------------------------------------------------------
-    %% Will compute the 'alignment' file for each experiment.   
+    %% Will compute the 'preprocData' file for each experiment.   
     
     for ee = 1:size(exp2checkList,1)
         
@@ -46,7 +46,7 @@ function extractExpData(varargin)
         
         savePath = fullfile(expPath,'preprocData.m');
         
-        if ~exist(savePath,'file') || recompute
+        if ~exist(savePath,'file') || params.recompute
             % get alignment file location
             alignmentFile = fullfile(expInfo.path{1},'alignment.mat');
             
@@ -54,30 +54,19 @@ function extractExpData(varargin)
                 %% Load alignment file
                 load(alignmentFile, 'alignment');
                 
-                %% Extract spikes and clusters info (depth, etc.)
-                if ~isempty(alignment.ephys)
-                    % Get spikes
-                    
-                    % Align them
-                    for probeNum = 1:numel(alignment.ephys)
-                        spikeTimesAligned{probeNum} = preproc.align.event2timeline(spikeTimes, ...
-                            alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
-                        
-                        % Subselect the ones that are within this experiment
-                    end
-                end
-                
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
                 % Get Block and Timeline
                 timeline = getTimeline(expPath);
                 block = getBlock(expPath);
-    
+                
                 % Extract exp def that was used
                 expDef = expInfo.expDef{1};
                 if contains(expDef,'imageWorld')
                     expDefRef = 'imageWorld';
+                elseif contains(expDef,'spontaneousActivity')
+                    expDefRef = 'spontaneous';
                 else
                     %%% TODO fill in that part with you own expDefs...
                 end
@@ -85,9 +74,33 @@ function extractExpData(varargin)
                 % Call specific preprocessing function
                 ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
                 
-                %% Save all
-                save(savePath,'sp','ev')
+                %% Extract spikes and clusters info (depth, etc.)
+                if ~isempty(alignment.ephys)
+                    for probeNum = 1:numel(alignment.ephys)
+                        KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
+                        % Get spikes times & cluster info
+                        spk(probeNum) = loadKSdir(KSFolder);
+
+                        %%% compute depth?
+                        
+                        % Align them
+                        spk(probeNum).st = preproc.align.event2Timeline(spk(probeNum).st, ...
+                            alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                        
+                        % Subselect the ones that are within this experiment
+                        expLength = block.duration;
+                        spk2keep = spk(probeNum).st>0 && spk(probeNum).st<expLength;
+                        spk(probeNum).st = spk(probeNum).st(spk2keep);
+                        spk(probeNum).spikeTemplates = spk(probeNum).spikeTemplates(spk2keep);
+                        spk(probeNum).clu = spk(probeNum).clu(spk2keep);
+                        spk(probeNum).tempScalingAmps = spk(probeNum).tempScalingAmps(spk2keep);
+                    end
+                else
+                    spk = [];
+                end
                 
+                %% Save all
+                save(savePath,'spk','ev')
             else
                 frprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
             end
