@@ -26,7 +26,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     
     % Get timeline
     if ~exist('timeline','var')
-        fprintf(1, 'loading timeline\n');
+        fprintf(1, 'Loading timeline\n');
         timeline = getTimeline(expPath);
     end
     % Detect sync events from timeline
@@ -68,8 +68,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         
         % Extract flips
         Fs = str2double(metaS.imSampRate);
-        tmp = abs(diff(syncData.sync));
-        ephysFlipperTimes{ee} = find(tmp>=median(tmp(tmp>0)))/Fs; % there can be sometimes spiky noise that creates problems here
+        ephysFlipperTimes{ee} = (find(diff(syncData.sync)~=0)/Fs);
     end
     % Remove empty file refs
     ephysPath(cellfun(@(x) isempty(x),ephysFlipperTimes)) = [];
@@ -106,47 +105,58 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
         numFlipsDiff = abs(diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)]));
-        if numFlipsDiff>0 && numFlipsDiff<20
-            fprintf([subject ' ' expDate ': WARNING = Flipper flip times different in timeline/ephys \n']);
-            
-            if diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)])<20 && length(ephysFlipperTimes_cut) > 500
-                fprintf([subject ' ' expDate ': Trying to account for missing flips.../ephys \n']);
-                
-                while length(timelineFlipperTimes) > length(ephysFlipperTimes_cut)
-                    compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes(1:length(ephysFlipperTimes_cut))-timelineFlipperTimes(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
-                    if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
-                        timelineFlipperTimes = timelineFlipperTimes(1:length(ephysFlipperTimes_cut));
-                    else
-                        timelineFlipperTimes(errPoint+2) = [];
-                        ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
-                        timelineFlipperTimes(errPoint-2:errPoint+2) = [];
-                    end
-                end
-                while length(timelineFlipperTimes) < length(ephysFlipperTimes_cut)
-                    compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephysFlipperTimes_cut(1:length(timelineFlipperTimes))-ephysFlipperTimes_cut(1)];
-                    errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
-                    if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
-                        ephysFlipperTimes_cut = ephysFlipperTimes_cut(1:length(timelineFlipperTimes));
-                    else
-                        ephysFlipperTimes_cut(errPoint+2) = [];
-                        ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
-                        timelineFlipperTimes(errPoint-2:errPoint+2) = [];
-                    end
-                end
-                compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-                if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
-                    success = 1;
-                end
-            end
-        elseif numFlipsDiff==0
-            compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
-            if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
-                success = 1;
-            end
+        
+        try
+            [timelineFlipperTimes, ephysFlipperTimes_cut] = ...
+                try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold);
+            success = 1;
+        catch
+            success = 0;
         end
         
+        %%% BELOW TO REMOVE IF NO ERROR
+%         if numFlipsDiff>0 && numFlipsDiff<20
+%             fprintf([subject ' ' expDate ': WARNING = Flipper flip times different in timeline/ephys \n']);
+%             
+%             if diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)])<20 && length(ephysFlipperTimes_cut) > 500
+%                 fprintf([subject ' ' expDate ': Trying to account for missing flips.../ephys \n']);
+%                 
+%                 while length(timelineFlipperTimes) > length(ephysFlipperTimes_cut)
+%                     compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes(1:length(ephysFlipperTimes_cut))-timelineFlipperTimes(1)];
+%                     errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
+%                     if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
+%                         timelineFlipperTimes = timelineFlipperTimes(1:length(ephysFlipperTimes_cut));
+%                     else
+%                         timelineFlipperTimes(errPoint+2) = [];
+%                         ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
+%                         timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+%                     end
+%                 end
+%                 while length(timelineFlipperTimes) < length(ephysFlipperTimes_cut)
+%                     compareVect = [timelineFlipperTimes-(timelineFlipperTimes(1)) ephysFlipperTimes_cut(1:length(timelineFlipperTimes))-ephysFlipperTimes_cut(1)];
+%                     errPoint = find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1);
+%                     if isempty(errPoint) % This condition wasn't here in Pip's script. Not sure why?
+%                         ephysFlipperTimes_cut = ephysFlipperTimes_cut(1:length(timelineFlipperTimes));
+%                     else
+%                         ephysFlipperTimes_cut(errPoint+2) = [];
+%                         ephysFlipperTimes_cut(errPoint-2:errPoint+2) = [];
+%                         timelineFlipperTimes(errPoint-2:errPoint+2) = [];
+%                     end
+%                 end
+%                 compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
+%                 if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
+%                     success = 1;
+%                 end
+%             end
+%         elseif numFlipsDiff==0
+%             compareVect = [ephysFlipperTimes_cut-(ephysFlipperTimes_cut(1)) timelineFlipperTimes-timelineFlipperTimes(1)];
+%             if isempty(find(abs(diff(diff(compareVect,[],2))) > params.toleranceThreshold,1)); fprintf('Success! \n');
+%                 success = 1;
+%             end
+%         end
+        
         if success
+            fprintf('Success! \n')
             ephysRefTimes{ee} = ephysFlipperTimes_cut;
             timelineRefTimes{ee} = timelineFlipperTimes;
         else

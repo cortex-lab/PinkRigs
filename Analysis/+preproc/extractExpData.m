@@ -61,14 +61,21 @@ function extractExpData(varargin)
                 timeline = getTimeline(expPath);
                 block = getBlock(expPath);
                 
-                % Extract exp def that was used
+                % Get the appropriate ref for the exp def
                 expDef = expInfo.expDef{1};
                 if contains(expDef,'imageWorld')
                     expDefRef = 'imageWorld';
+                    
                 elseif contains(expDef,'spontaneousActivity')
                     expDefRef = 'spontaneous';
+                    
                 elseif contains(expDef,'sparseNoise')
                     expDefRef = 'sparseNoise';
+                    
+                elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
+                        contains(expDef, 'AVPassive_checkerboard_postactive')
+                    expDefRef = 'AVprotocol';
+                    
                 else
                     %%% TODO fill in that part with you own expDefs...
                 end

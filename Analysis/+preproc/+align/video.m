@@ -184,18 +184,18 @@
     %% IN TIMELINE
     % Load timeline if not an input
     if ~exist('Timeline','var')
-        fprintf(1, 'loading timeline\n');
+        fprintf(1, 'Loading timeline\n');
         timeline = getTimeline(expPath);
     end
-    tlTime = timepro.extractChan(timeline,'time');
+    tlTime = timeproc.extractChan(timeline,'time');
     
     % Find the timeline samples where cam sync pulses started
-    tlSyncOnSamps = timepro.getChanEventTime(timeline,'camSync');
+    tlSyncOnSamps = timeproc.getChanEventTime(timeline,'camSync');
     
     % If exist, find the strobe times for the camera
     camName = regexp(movieName,'[a-z]*Cam','match');
     strobeName = [camName{1} 'Strobe'];
-    strobeSamps = timepro.getChanEventTime(timeline,strobeName);
+    strobeSamps = timeproc.getChanEventTime(timeline,strobeName);
     if ~isempty(strobeSamps)
         % Take the strobes if exist
         numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
@@ -212,11 +212,11 @@
         figure;
         subplot(121)
         hold all
-        tlSync = timepro.extractChan(timeline,'camSync');
+        tlSync = timeproc.extractChan(timeline,'camSync');
         plot(tlTime,tlSync)
         vline(tlSyncOnSamps)
         if ~isempty(strobeSamps)
-            tlStrobe = timepro.extractChan(timeline,strobeName);
+            tlStrobe = timeproc.extractChan(timeline,strobeName);
             plot(tlTime,tlStrobe)
             vline(strobeSamps(find(strobeSamps>=tlSyncOnSamps(2),1)))
             vline(strobeSamps(find(strobeSamps<tlSyncOnSamps(2),1)))
