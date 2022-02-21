@@ -76,24 +76,21 @@ function extractExpData(varargin)
                 
                 %% Extract spikes and clusters info (depth, etc.)
                 if ~isempty(alignment.ephys)
+                    spk = cell(1,numel(alignment.ephys));
                     for probeNum = 1:numel(alignment.ephys)
-                        KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
                         % Get spikes times & cluster info
-                        spk(probeNum) = loadKSdir(KSFolder);
-
-                        %%% compute depth?
+                        spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
                         
                         % Align them
-                        spk(probeNum).st = preproc.align.event2Timeline(spk(probeNum).st, ...
-                            alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
-                        
-                        % Subselect the ones that are within this experiment
-                        expLength = block.duration;
-                        spk2keep = spk(probeNum).st>0 && spk(probeNum).st<expLength;
-                        spk(probeNum).st = spk(probeNum).st(spk2keep);
-                        spk(probeNum).spikeTemplates = spk(probeNum).spikeTemplates(spk2keep);
-                        spk(probeNum).clu = spk(probeNum).clu(spk2keep);
-                        spk(probeNum).tempScalingAmps = spk(probeNum).tempScalingAmps(spk2keep);
+                        for clu = 1:numel(spk{probeNum})
+                            spk{probeNum}(clu).spikeTimes = preproc.align.event2Timeline(spk{probeNum}(clu).spikeTimes, ...
+                                alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                            
+                            % Subselect the ones that are within this experiment
+                            expLength = block.duration;
+                            spk2keep = (spk{probeNum}(clu).spikeTimes>0) & (spk{probeNum}(clu).spikeTimes<expLength);
+                            spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
+                        end
                     end
                 else
                     spk = [];

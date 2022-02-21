@@ -3,9 +3,9 @@ function chan = extractChan(timeline,chanName,varargin)
     %%% Additional argument to display or not warning when not found.
     
     if nargin < 3
-        dispWar = 1;
+        dispWaring = 1;
     else
-        dispWar = varargin{1};
+        dispWaring = varargin{1};
     end
     
     
@@ -18,7 +18,7 @@ function chan = extractChan(timeline,chanName,varargin)
             chan = timeline.rawDAQData(:,chanIndex);
         else
             chan = [];
-            if dispWar
+            if dispWaring
                 warning('Couldn''t find channel %s in timeline.',chanName)
             end
         end

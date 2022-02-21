@@ -6,7 +6,7 @@ function main(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     params.paramsAlign = [];
     params.paramsExtract = [];
-    params.days2Check = inf;
+    params.days2Check = inf; % back in time from today
     params.mice2Check = 'active';
 
     if ~isempty(varargin)
