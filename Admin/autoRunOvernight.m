@@ -15,7 +15,7 @@ switch lower(computerType)
             'python ' eveningFacemapPath ' &&' ...
             'conda deactivate']);
         if statusFacemap > 0
-            fprintf('Updating on training failed with error "%s".\n', resultFacemap)
+            fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
         
     case 'ephys'
