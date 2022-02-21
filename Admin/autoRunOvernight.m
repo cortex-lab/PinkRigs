@@ -9,6 +9,15 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Running "runFacemap" ... \n')
+        eveningFacemapPath = which('evening_facemap.py');
+        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+            'python ' eveningFacemapPath ' &&' ...
+            'conda deactivate']);
+        if statusFacemap > 0
+            fprintf('Updating on training failed with error "%s".\n', resultFacemap)
+        end
+        
     case 'ephys'
         fprintf('Detected ephys computer... \n')
         
