@@ -6,7 +6,8 @@ function exp2checkList = getAllExp2Check(varargin)
     %%% Parameters to tell how far in the past to look for.
     params.days2Check = inf;
     params.mice2Check = 'active';
-   
+    params.expDef2Check = 'all';
+    
     if ~isempty(varargin)
         paramsIn = varargin{1};
         params = parseInputParams(params,paramsIn);
@@ -37,8 +38,27 @@ function exp2checkList = getAllExp2Check(varargin)
         subject = mouse2checkList{mm};
         
         expListMouse = getMouseExpList(subject);
-        dates2Check = todayDate - datenum(expListMouse.expDate) <= params.days2Check;
+        
+        % Get specific dates
+        if strcmp(class(params.days2Check),'double')
+            dates2Check = todayDate - datenum(expListMouse.expDate) <= params.days2Check;
+        elseif  strcmp(class(params.days2Check),'char')
+            dates2Check = ismember(datenum(expListMouse.expDate),datenum(params.days2Check));
+        else
+            warning('Couldn''t find correspond dates for mouse %s', subject)
+            dates2Check = [];
+        end
+        
+        % Get specific expDefs
+        if strcmp(params.expDef2Check,'all')
+            expDef2Check = true(1,numel(expListMouse));
+        else
+            expDef2Check = contains(expListMouse.expDef,params.expDef2Check);
+        end
+        
+        % Get indices
+        exp2Check = dates2Check & expDef2Check;
         
         % Get list of exp for this mouse
-        exp2checkList = [exp2checkList; expListMouse(dates2Check,:)];
+        exp2checkList = [exp2checkList; expListMouse(exp2Check,:)];
     end

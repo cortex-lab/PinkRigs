@@ -70,7 +70,9 @@ function main(varargin)
         if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
             if expInfo.ephys
                 % Align it
+                fprintf(1, '*** Aligning ephys... ***\n');
                 [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
+                fprintf(1, '*** Ephys alignment done. ***\n');
                 
                 % Save it
                 for p = 1:numel(ephysPath)
@@ -95,7 +97,9 @@ function main(varargin)
         %  "event2timeline".
         
         if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
+            fprintf(1, '*** Aligning block... ***\n');
             [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
+            fprintf(1, '*** Block alignment done. ***\n');
             
             % save it
             alignment.block.originTimes = blockRefTimes;
@@ -114,6 +118,7 @@ function main(varargin)
         
         if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
             
+            fprintf(1, '*** Aligning videos... ***\n');
             % Get cameras' names
             vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
             f = fieldnames(vids);
@@ -131,6 +136,7 @@ function main(varargin)
                     warning('Corrupted video %s: threw an error (%s)',vidName,me.message)
                 end
             end
+            fprintf(1, '*** Video alignment done. ***\n');
             
             % save it
             alignment.video = vids;
@@ -149,6 +155,8 @@ function main(varargin)
             % Align it
             if expInfo.micDat > 0
                 %%% TODO
+                fprintf(1, '*** Aligning mic... ***\n');
+                fprintf(1, '*** Mic alignment done. ***\n');
             else
                 alignment.mic = nan;
             end
