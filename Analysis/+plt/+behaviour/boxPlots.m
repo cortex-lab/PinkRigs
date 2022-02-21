@@ -32,16 +32,19 @@ if length(subject) > 1
     sepPlots = 0;
 end
 
+blkDates = cell(length(subject),1);
+rigNames = cell(length(subject),1);
+
 for i = 1:length(subject)
-    [blks, blkDates] = getDataFromDates(subject{i}, expDate, 'any', expDef);
-    if length(unique(blkDates)) ~= length(blkDates)
+    [blks, extractedDates] = getDataFromDates(subject{i}, expDate, 'any', expDef);
+    if length(unique(extractedDates)) ~= length(extractedDates)
         expDurations = cellfun(@(x) x.duration, blks);
-        [~, ~, uniIdx] = unique(blkDates);
+        [~, ~, uniIdx] = unique(extractedDates);
         keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
         blks = blks(keepIdx);
     end
-    blkDates = cellfun(@(x) datestr(x.endDateTime, 'yyyy-mm-dd'), blks, 'uni', 0);
-    rigNames = cellfun(@(x) [upper(x.rigName(1)) x.rigName(end)], blks, 'uni', 0);
+    blkDates{i} = cellfun(@(x) datestr(x.endDateTime, 'yyyy-mm-dd'), blks, 'uni', 0);
+    rigNames{i} = cellfun(@(x) [upper(x.rigName(1)) x.rigName(end)], blks, 'uni', 0);
     
     paramSets = cellfun(@(x) x.events.selected_paramsetValues, blks, 'uni', 0);
     AVParams = cellfun(@(x) [x.audInitialAzimuth(x.numRepeats>0) x.visContrast(x.numRepeats>0)], paramSets, 'uni', 0);
@@ -59,8 +62,11 @@ for i = 1:length(subject)
         end
         names = fieldnames(taskEvents);
         cellData = cellfun(@(f) {vertcat(taskEvents(modeIdx).(f))}, names);
+        
         taskEvents = cell2struct(cellData, names);
         taskEvents.nExperiments = sum(modeIdx);
+        blkDates{i} = blkDates{i}(modeIdx);
+        rigNames{i} = blkDates{i}(modeIdx);
     end
     
     for j = 1:length(taskEvents)
@@ -87,12 +93,15 @@ axesOpt.totalNumOfAxes = length(extractedData);
 
 for i = 1:length(extractedData)
     if isfield(extractedData(i), 'nExperiments')
+        if extractedData(i).nExperiments == 1
+            boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
+        end
         tDat = rmfield(extractedData(i), 'nExperiments');
         boxPlot.nExperiments = extractedData(i).nExperiments;
     else
         tDat = extractedData(i);
         boxPlot.nExperiments = 1;
-        boxPlot.extraInf = [blkDates{i} ' on ' rigNames{i}];
+        boxPlot.extraInf = [blkDates{1}{i} ' on ' rigNames{1}{i}];
     end
     
     if length(subject) == 1
