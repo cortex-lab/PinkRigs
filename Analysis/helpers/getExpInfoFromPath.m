@@ -1,14 +1,7 @@
 function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
     %%% This function will go fetch the exp info from the csv, given the
     %%% exp path.
-    
-    %% Maybe update CSV first
-    if ~exist('skipCSVUpdate','var') || (skipCSVUpdate == 0)
-        days2Check = 3;
-        recompute = 0;
-        checkForNewAVRecordings(days2Check, recompute)
-    end
-    
+       
     %% Get the exp info from list of paths
     % Will check if currently in the csv, and crash if not.
     
@@ -30,8 +23,22 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
             if ~isempty(expIdx)
                 expInfoList = [expInfoList; expList(expIdx,:)];
             else
-                %%% Should throw an error if not in the CSV!
-                error('Exp. ''%s'' not found in csv. Have a look?', expList(expIdx,:).path{1})
+                % Exp not in the csv. Update and recheck, or error.
+                if ~skipCSVUpdate
+                    days2Check = 3;
+                    recompute = 0;
+                    checkForNewAVRecordings(days2Check, recompute)
+                    expList = getMouseExpList(subjects{ss});
+                end
+                
+                % retry
+                expIdx = find(contains(cellstr(datestr(expList.expDate,29)),expDateList{idx4thisSubject(idx)}) & ...
+                    contains(expList.expNum,num2str(expNumList{idx4thisSubject(idx)})));
+                if ~isempty(expIdx)
+                    expInfoList = [expInfoList; expList(expIdx,:)];
+                else
+                    error('Exp. ''%s'' not found in csv. Have a look?', expList(expIdx,:).path{1})
+                end
             end
         end
     end

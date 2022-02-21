@@ -44,7 +44,7 @@ function extractExpData(varargin)
         expInfo = exp2checkList(ee,:);
         expPath = expInfo.path{1};
         
-        savePath = fullfile(expPath,'preprocData.m');
+        savePath = fullfile(expPath,'preprocData.mat');
         
         if ~exist(savePath,'file') || params.recompute
             % get alignment file location
@@ -67,6 +67,8 @@ function extractExpData(varargin)
                     expDefRef = 'imageWorld';
                 elseif contains(expDef,'spontaneousActivity')
                     expDefRef = 'spontaneous';
+                elseif contains(expDef,'sparseNoise')
+                    expDefRef = 'sparseNoise';
                 else
                     %%% TODO fill in that part with you own expDefs...
                 end
