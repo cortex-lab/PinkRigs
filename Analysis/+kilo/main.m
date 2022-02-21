@@ -67,7 +67,7 @@ function main(varargin)
         [ephysPath,b,c] = fileparts(recName);
         ephysFileName = strcat(b,c);
         
-        KSOutFolderLoc = fullfile(KSOutFolderLocGen,ephysFileName(1:end-13));
+        KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
         if params.checkTime
@@ -80,25 +80,25 @@ function main(varargin)
         
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
-            successFinal = 1;
+            successKS = 1;
         else
-            % Get meta data
-            metaData = readMetaData_spikeGLX(ephysFileName,ephysPath);
-            
-            % Get channel map
-            if contains(metaData.imDatPrb_type,'0')
-                % phase 3B probe -- just load the default kilosort map
-                chanMapPath = defaultP3Bchanmap;
-            elseif contains(metaData.imDatPrb_type,'2')
-                % create channelmap (good for all phase2, even single shank) or copy P3B map?
-                fprintf('Creating custom channelmap...\n')
-                kilo.create_channelmapMultishank(recName,ephysPath,1);
-                chanMapFile = dir(fullfile(ephysPath, '**','*_channelmap.mat*'));
-                chanMapPath = fullfile(chanMapFile(1).folder, chanMapFile(1).name); % channelmap for the probe - should be in the same folder
-            end
-            
-            %% Main data processing
             try
+                %% Getting meta data
+                % Get meta data
+                metaData = readMetaData_spikeGLX(ephysFileName,ephysPath);
+                
+                % Get channel map
+                if contains(metaData.imDatPrb_type,'0')
+                    % phase 3B probe -- just load the default kilosort map
+                    chanMapPath = defaultP3Bchanmap;
+                elseif contains(metaData.imDatPrb_type,'2')
+                    % create channelmap (good for all phase2, even single shank) or copy P3B map?
+                    fprintf('Creating custom channelmap...\n')
+                    kilo.create_channelmapMultishank(recName,ephysPath,1);
+                    chanMapFile = dir(fullfile(ephysPath, '**','*_channelmap.mat*'));
+                    chanMapPath = fullfile(chanMapFile(1).folder, chanMapFile(1).name); % channelmap for the probe - should be in the same folder
+                end
+                
                 %% Copy data to local folder.
                 if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file')
                     fprintf('Copying data to local folder...')
@@ -107,7 +107,9 @@ function main(varargin)
                         mkdir(KSOutFolderLoc)
                     end
                     success = copyfile(recName,fullfile(KSOutFolderLoc,ephysFileName));
-                    fprintf('Local copy done.\n')
+                    if success
+                        fprintf('Local copy done.\n')
+                    end
                 else
                     fprintf('Data already copied.\n');
                     success = 1;
@@ -117,59 +119,82 @@ function main(varargin)
                     error('Couldn''t copy data to local folder.')
                 else
                     %% Running the main algorithm
+                    fprintf('Running kilosort...\n')
                     kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
-                                        
-                    %% Copying file to distant server
-                    delete([KSOutFolder '\' ephysFileName]); % delete .bin file from KS output
-                    delete([KSOutFolder '\' metaFile.name]); % delete .bin file from KS output
-                    successFinal = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
+                    fprintf('Kilosort done.\n')
                     
-                    if ~successFinal
-                        error('Couldn''t copy data to server.')
+                    %% Copying file to distant server
+                    fprintf('Copying to server (and deleting local copy)...\n')
+                    delete(fullfile(KSOutFolderLoc, ephysFileName)); % delete .bin file from KS output
+                    successKS = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
+                    
+                    if ~successKS
+                        error('Error when copying data to server.')
                     else
-                        %% Overwrite the queue
-                        if exist('recList','var')
-                            recList.sortedTag(compIdx(rr)) = 1;
-                        end
+                        fprintf('Copying done.\n')
                         
                         % Delete any error file related to KS
-                        if exist([ephysPath '\KSerror.json'])
-                            delete([ephysPath '\KSerror.json']);
+                        if exist(fullfile(ephysPath, 'KSerror.json'))
+                            delete(fullfile(ephysPath, 'KSerror.json'));
                         end
                     end
                 end
                 
             catch me
-                % Sorting was not successful: write a permanent tag indicating that
-                if exist('recList','var')
-                    recList.sortedTag(compIdx(rr)) = -1;
-                end
+                successKS = 0;
                 
                 % Save error message.
-                errorMsge = jsonencode(me.message);
-                fid = fopen([ephysPath '\KSerror.json'], 'w');
-                fprintf(fid, '%s', errorMsge);
+                errorMsgeKS = jsonencode(me.message);
+                fid = fopen(fullfile(ephysPath, 'KSerror.json'), 'w');
+                fprintf(fid, '%s', errorMsgeKS);
                 fclose(fid);
             end
                     
-            if exist('KSOutFolderLoc','dir')
+            if exist(KSOutFolderLoc,'dir')
                 % Delete data otherwise will crowd up
-                delete(KSOutFolderLoc); % delete .bin file from KS output
+                rmdir(KSOutFolderLoc); % delete whole folder whatever happens
             end
         end
-                
         
-        if successFinal && (~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics)
-            %% Running quality metrics (directly on the server)
-            % Independent of previous block to be able to run one or the
-            % other (it's likely we might want to recompute only the qM)
-            fprintf('Running quality metrics...\n')
-            kilo.getQualityMetrics(KSOutFolderServer, KSOutFolderServer)
+        if successKS
+            if ~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics
+                %% Running quality metrics (directly on the server)
+                % Independent of previous block to be able to run one or the
+                % other (it's likely we might want to recompute only the qM)
+                fprintf('Running quality metrics...\n')
+                try
+                    kilo.getQualityMetrics(KSOutFolderServer, ephysPath)
+                    successFinal = 1;
+                    
+                    if exist(fullfile(ephysPath, 'QMerror.json'),'file')
+                        delete(fullfile(ephysPath, 'QMerror.json'))
+                    end
+                catch me
+                    successFinal = -2; % fails at quality metrics stage
+                    
+                    % Save error message.
+                    errorMsgeQM = jsonencode(me.message);
+                    fid = fopen(fullfile(ephysPath, 'QMerror.json'), 'w');
+                    fprintf(fid, '%s', errorMsgeQM);
+                    fclose(fid);
+                end
+            else
+                successFinal = 1;
+            end
+        else 
+            successFinal = -1;
         end
-        
+                
         if exist('recList','var')
+            %% Overwrite the queue
+            recList.sortedTag(compIdx(rr)) = successFinal; % 1 for all done / -1 for KS failed / -2 for qMetrics failed / 0 for not done
+            
             % Save the updated queue
-            writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+            try
+                writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+            catch
+                warning('Can''t write the csv (it must be open somewhere?). Will do next time?')
+            end
         end
     end
     close all
