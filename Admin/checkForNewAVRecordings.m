@@ -4,7 +4,14 @@ serverLocations = getServersList;
 if ~exist('recompute', 'var'); recompute = 0; end
 if ~exist('days2Check', 'var'); days2Check = 2; end
 csvLocation = getCSVLocation('main');
-csvData = readtable(csvLocation);
+opts = detectImportOptions(csvLocation);
+dateFields = opts.VariableNames(strcmp(opts.VariableTypes, 'datetime'));
+
+for i = 1:length(dateFields)
+    opts = setvaropts(opts, dateFields{i}, 'InputFormat','dd/MM/uuuu');
+end
+
+csvData = readtable(csvLocation, opts);
 nanData = any(isnan(csvData.IsActive));
 
 csvData.IsActive(isnan(csvData.IsActive)) = 0;
@@ -59,6 +66,8 @@ for subject = mice2Update'
     newDat.expDef = {};
     newDat.expDuration = [];
     newDat.rigName = {};
+    newDat.block = [];
+    newDat.timeline = [];
     newDat.ephys = [];
     newDat.frontCam = [];
     newDat.sideCam = [];
@@ -66,7 +75,7 @@ for subject = mice2Update'
     newDat.micDat = [];
     newDat.path = {};
     
-    if ~exist(csvPathMouse, 'file')
+    if ~exist(csvPathMouse, 'file') || recompute
         csvDataMouse = struct2table(newDat);
         writetable(csvDataMouse,csvPathMouse,'Delimiter',',');
     end
@@ -112,39 +121,41 @@ for subject = mice2Update'
             continue;
         end
         
-    newDat.expDate = [newDat.expDate; dateList{i}];
-    newDat.expNum = [newDat.expNum; str2double(expNumList{i})];
+        newDat.expDate = [newDat.expDate; dateList{i}];
+        newDat.expNum = [newDat.expNum; str2double(expNumList{i})];
+        
+        [~, currExpDef] = fileparts(blk.expDef);
+        newDat.expDef = [newDat.expDef; currExpDef];
+        newDat.expDuration = [newDat.expDuration; blk.duration];
+        newDat.rigName = [newDat.rigName; blk.rigName];
+        
+        %%
+        fileContents = dir(fileparts(blockPath{i}));
+        newDat.block = [newDat.block; max([fileContents(contains({fileContents.name}','Block.mat')).bytes 0])];
+        newDat.timeline = [newDat.timeline; max([fileContents(contains({fileContents.name}','Timeline.mat')).bytes 0])];
+        newDat.sideCam = [newDat.sideCam; max([fileContents(contains({fileContents.name}','sideCam.mj2')).bytes 0])];
+        newDat.frontCam = [newDat.frontCam; max([fileContents(contains({fileContents.name}','frontCam.mj2')).bytes 0])];
+        newDat.eyeCam = [newDat.eyeCam; max([fileContents(contains({fileContents.name}','eyeCam.mj2')).bytes 0])];
+        newDat.micDat = [newDat.micDat; max([fileContents(contains({fileContents.name}','mic.mat')).bytes 0])];
+        newDat.path = [newDat.path; {fileparts(blockPath{i})}];
+        
+        ephysPath = fileparts(fileparts(blockPath{i}));
+        newDat.ephys = [newDat.ephys; ~isempty(dir([ephysPath filesep '**' filesep '*imec*.ap.bin']))];
+    end
     
-    [~, currExpDef] = fileparts(blk.expDef);
-    newDat.expDef = [newDat.expDef; currExpDef];
-    newDat.expDuration = [newDat.expDuration; blk.duration];
-    newDat.rigName = [newDat.rigName; blk.rigName];
+    if isempty(newDat.expDate)
+        fprintf('No new data for %s. Skipping... \n', currSub);
+        continue;
+    end
     
-    %%
-    fileContents = dir(fileparts(blockPath{i}));
-    newDat.sideCam = [newDat.sideCam; max([fileContents(contains({fileContents.name}','sideCam.mj2')).bytes 0])];
-    newDat.frontCam = [newDat.frontCam; max([fileContents(contains({fileContents.name}','frontCam.mj2')).bytes 0])];
-    newDat.eyeCam = [newDat.eyeCam; max([fileContents(contains({fileContents.name}','eyeCam.mj2')).bytes 0])];
-    newDat.micDat = [newDat.micDat; max([fileContents(contains({fileContents.name}','mic.mat')).bytes 0])];
-    newDat.path = [newDat.path; {fileparts(blockPath{i})}];
-    
-    ephysPath = fileparts(fileparts(blockPath{i}));
-    newDat.ephys = [newDat.ephys; ~isempty(dir([ephysPath filesep '**' filesep '*imec*.ap.bin']))];
-end
-
-if isempty(newDat.expDate)
-    fprintf('No new data for %s. Skipping... \n', currSub);
-    continue;
-end
-
-csvDataMouse = [csvDataMouse; struct2table(newDat)]; %#ok<AGROW>
-csvDataMouse = sortrows(csvDataMouse, 'expNum', 'ascend');
-csvDataMouse = sortrows(csvDataMouse, 'expDate', 'ascend');
-try
-    csvWriteClean(csvDataMouse, csvPathMouse);
-catch
-    fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
-end
+    csvDataMouse = [csvDataMouse; struct2table(newDat)]; %#ok<AGROW>
+    csvDataMouse = sortrows(csvDataMouse, 'expNum', 'ascend');
+    csvDataMouse = sortrows(csvDataMouse, 'expDate', 'ascend');
+    try
+        csvWriteClean(csvDataMouse, csvPathMouse);
+    catch
+        fprintf('Issue writing new exps for %s. May be in use. Skipping... \n', currSub);
+    end
 end
 end
 

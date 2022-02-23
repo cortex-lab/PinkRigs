@@ -10,7 +10,7 @@ serialsFromCSV = cell2mat(cellfun(@(x) csvData.(x), csvFields(contains(csvFields
 implantDatesFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'implant')), 'uni', 0)';
 implantDatesFromCSV = cat(2,implantDatesFromCSV{:});
 
-probeDates = arrayfun(@(x) min(implantDatesFromCSV(serialsFromCSV == x)), probeSerial, 'uni', 0);
+probeDates = arrayfun(@(x) max(implantDatesFromCSV(serialsFromCSV == x)), probeSerial, 'uni', 0);
 probeDates(cellfun(@isempty, probeDates)) = deal({datetime('tomorrow', 'Format', 'yyyy-MM-dd')});
 
 csvIdx = arrayfun(@(x,y) sum(implantDatesFromCSV == x{1} & serialsFromCSV == y,2), probeDates, probeSerial, 'uni', 0);
