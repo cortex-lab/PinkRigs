@@ -168,7 +168,7 @@ function main(varargin)
                 % update csv
             catch me
                 warning(me.identifier,'Couldn''t align videos: threw an error (%s)',me.message)
-                alignment.ephys = [];
+                alignment.video = [];
                 
                 % Save error message locally
                 saveErrMess(me.message,fullfile(expPath, 'AlignVideoError.json'))
