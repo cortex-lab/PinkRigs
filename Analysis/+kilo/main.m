@@ -138,7 +138,7 @@ function main(varargin)
                         fprintf('Copying done.\n')
                         
                         % Delete any error file related to KS
-                        if exist(fullfile(ephysPath, 'KSerror.json'))
+                        if exist(fullfile(ephysPath, 'KSerror.json'),'file')
                             delete(fullfile(ephysPath, 'KSerror.json'));
                         end
                     end
@@ -147,11 +147,8 @@ function main(varargin)
             catch me
                 successKS = 0;
                 
-                % Save error message.
-                errorMsgeKS = jsonencode(me.message);
-                fid = fopen(fullfile(ephysPath, 'KSerror.json'), 'w');
-                fprintf(fid, '%s', errorMsgeKS);
-                fclose(fid);
+                % Save error message locally
+                saveErrMess(me.message,fullfile(ephysPath, 'KSerror.json'))
             end
                     
             if exist(KSOutFolderLoc,'dir')
@@ -176,11 +173,8 @@ function main(varargin)
                 catch me
                     successFinal = -2; % fails at quality metrics stage
                     
-                    % Save error message.
-                    errorMsgeQM = jsonencode(me.message);
-                    fid = fopen(fullfile(ephysPath, 'QMerror.json'), 'w');
-                    fprintf(fid, '%s', errorMsgeQM);
-                    fclose(fid);
+                    % Save error message locally
+                    saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
                 end
             else
                 successFinal = 1;

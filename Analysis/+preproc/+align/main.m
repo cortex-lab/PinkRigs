@@ -16,10 +16,10 @@ function main(varargin)
         
         if numel(varargin) > 1
             if istable(varargin{2})
-                % already in the right format, with all the info
+                % Already in the right format, with all the info
                 exp2checkList = varargin{2};
             else
-                % format is just a cell with paths, go fetch info
+                % Format is just a cell with paths, go fetch info
                 expPath2checkList = varargin{2};
                 exp2checkList = getExpInfoFromPath(expPath2checkList);
             end
@@ -58,6 +58,8 @@ function main(varargin)
         % monitors if anything has changed
         change = 0;
         
+        fprintf(1, '*** Aligning experiment %s... ***\n', expPath);
+        
         %% Align spike times to timeline and save results in experiment folder
         %  This function will load the timeline flipper from the experiment and
         %  check this against all ephys files recorded on the same date. If it
@@ -69,16 +71,28 @@ function main(varargin)
         
         if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
             if expInfo.ephys
-                % Align it
-                fprintf(1, '*** Aligning ephys... ***\n');
-                [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
-                fprintf(1, '*** Ephys alignment done. ***\n');
-                
-                % Save it
-                for p = 1:numel(ephysPath)
-                    alignment.ephys(p).originTimes = ephysFlipperTimes{p};
-                    alignment.ephys(p).timelineTimes = timelineFlipperTimes{p};
-                    alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
+                try
+                    % Align it
+                    fprintf(1, '* Aligning ephys... *\n');
+                    [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
+                    fprintf(1, '* Ephys alignment done. *\n');
+                    
+                    % Save it
+                    for p = 1:numel(ephysPath)
+                        alignment.ephys(p).originTimes = ephysFlipperTimes{p};
+                        alignment.ephys(p).timelineTimes = timelineFlipperTimes{p};
+                        alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
+                    end
+                    
+                    % Update csv
+                    %%% TODO
+                    
+                catch me
+                    warning(me.identifier,'Couldn''t align ephys: threw an error (%s)',me.message)
+                    alignment.ephys = [];
+                    
+                    % Save error message locally
+                    saveErrMess(me.message,fullfile(expPath, 'AlignEphysError.json'))
                 end
             else
                 alignment.ephys = [];
@@ -97,13 +111,22 @@ function main(varargin)
         %  "event2timeline".
         
         if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
-            fprintf(1, '*** Aligning block... ***\n');
-            [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
-            fprintf(1, '*** Block alignment done. ***\n');
-            
-            % save it
-            alignment.block.originTimes = blockRefTimes;
-            alignment.block.timelineTimes = timelineRefTimes;
+            try
+                fprintf(1, '* Aligning block... *\n');
+                [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
+                fprintf(1, '* Block alignment done. *\n');
+                
+                % Save it
+                alignment.block.originTimes = blockRefTimes;
+                alignment.block.timelineTimes = timelineRefTimes;
+                
+            catch me
+                warning(me.identifier,'Couldn''t align block: threw an error (%s)',me.message)
+                alignment.block = [];
+                
+                % Save error message locally
+                saveErrMess(me.message,fullfile(expPath, 'AlignBlockError.json'))
+            end
             change = 1;
         else
             % Just load it
@@ -118,28 +141,38 @@ function main(varargin)
         
         if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
             
-            fprintf(1, '*** Aligning videos... ***\n');
-            % Get cameras' names
-            vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
-            f = fieldnames(vids);
-            vids = rmfield(vids,f(~ismember(f,'name')));
-            
-            % Align each of them
-            for v = 1:numel(vids)
-                [~,vidName,~] = fileparts(vids(v).name);
-                try
-                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
-                catch me
-                    % case when it's corrupted
-                    vids(v).frameTimes = [];
-                    vids(v).missedFrames = [];
-                    warning('Corrupted video %s: threw an error (%s)',vidName,me.message)
+            try
+                fprintf(1, '* Aligning videos... *\n');
+                % Get cameras' names
+                vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
+                f = fieldnames(vids);
+                vids = rmfield(vids,f(~ismember(f,'name')));
+
+                % Align each of them
+                for v = 1:numel(vids)
+                    [~,vidName,~] = fileparts(vids(v).name);
+                    try
+                        [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
+                    catch me
+                        % case when it's corrupted
+                        vids(v).frameTimes = [];
+                        vids(v).missedFrames = [];
+                        warning('Corrupted video %s: threw an error (%s)',vidName,me.message)
+                    end
                 end
+                fprintf(1, '* Video alignment done. *\n');
+
+                % Save it
+                alignment.video = vids;
+                
+                % update csv
+            catch me
+                warning(me.identifier,'Couldn''t align videos: threw an error (%s)',me.message)
+                alignment.ephys = [];
+                
+                % Save error message locally
+                saveErrMess(me.message,fullfile(expPath, 'AlignVideoError.json'))
             end
-            fprintf(1, '*** Video alignment done. ***\n');
-            
-            % save it
-            alignment.video = vids;
             change = 1;
         else
             % Just load it
@@ -154,11 +187,21 @@ function main(varargin)
         if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
             % Align it
             if expInfo.micDat > 0
-                %%% TODO
-                fprintf(1, '*** Aligning mic... ***\n');
-                fprintf(1, '*** Mic alignment done. ***\n');
+                try
+                    %%% TODO
+                    fprintf(1, '* Aligning mic... *\n');
+                    fprintf(1, '* Mic alignment done. *\n');
+                    
+                    % update csv
+                catch
+                    warning(me.identifier,'Couldn''t align mic: threw an error (%s)',me.message)
+                    alignment.mic = [];
+                    
+                    % Save error message locally
+                    saveErrMess(me.message,fullfile(expPath, 'AlignMicError.json'))
+                end
             else
-                alignment.mic = nan;
+                alignment.mic = [];
             end
             change = 1;
         else
