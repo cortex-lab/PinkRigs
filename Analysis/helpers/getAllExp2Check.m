@@ -7,6 +7,7 @@ function exp2checkList = getAllExp2Check(varargin)
     params.days2Check = inf;
     params.mice2Check = 'active';
     params.expDef2Check = 'all';
+    params.timeline2Check = 0;
     
     if ~isempty(varargin)
         paramsIn = varargin{1};
@@ -39,26 +40,30 @@ function exp2checkList = getAllExp2Check(varargin)
         
         expListMouse = getMouseExpList(subject);
         
+        % Initialize indices of exp to keep
+        exp2Check = true(size(expListMouse,1),1);
+        
         % Get specific dates
-        if strcmp(class(params.days2Check),'double')
+        if isa(params.days2Check,'double')
             dates2Check = todayDate - datenum(expListMouse.expDate) <= params.days2Check;
-        elseif  strcmp(class(params.days2Check),'char')
+        elseif isa(params.days2Check,'cell')
             dates2Check = ismember(datenum(expListMouse.expDate),datenum(params.days2Check));
         else
             warning('Couldn''t find correspond dates for mouse %s', subject)
             dates2Check = [];
         end
+        exp2Check = exp2Check & dates2Check;
         
         % Get specific expDefs
-        if strcmp(params.expDef2Check,'all')
-            expDef2Check = true(1,numel(expListMouse));
-        else
+        if ~strcmp(params.expDef2Check,'all')
             expDef2Check = contains(expListMouse.expDef,params.expDef2Check);
+            exp2Check = exp2Check & expDef2Check;
         end
         
-        % Get indices
-        exp2Check = dates2Check & expDef2Check;
-        
+        if params.timeline2Check
+            exp2Check = exp2Check & expListMouse.timeline>0;
+        end
+
         % Get list of exp for this mouse
         exp2checkList = [exp2checkList; expListMouse(exp2Check,:)];
     end
