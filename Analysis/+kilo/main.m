@@ -49,7 +49,10 @@ function main(varargin)
         
     % Local Kilosort output folder (rootZ)
     KSOutFolderLocGen = 'C:\Users\Experiment\Documents\kilosort'; % local temporal folder for output
-        
+    if ~exist(KSOutFolderLocGen, 'dir')
+        mkdir(KSOutFolderLocGen)
+    end
+    
     % KS2 config file
     pathToKSConfigFile = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2';
     if ~exist(pathToKSConfigFile, 'dir')
@@ -71,7 +74,8 @@ function main(varargin)
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
         if params.checkTime
-            % To avoid running too long. Will stop after ~20h + 1 proc.
+            % To avoid running too long. Will stop after ~20h + 1 last 
+            % processing.
             nowClock = datetime('now');
             if nowClock > startClock + 20/24
                 return
