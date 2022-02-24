@@ -90,7 +90,7 @@ function main(varargin)
                     end
                 catch me
                     warning(me.identifier,'Couldn''t align ephys: threw an error (%s)',me.message)
-                    alignment.ephys = [];
+                    alignment.ephys = nan;
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'AlignEphysError.json'))
@@ -127,7 +127,7 @@ function main(varargin)
                 end
             catch me
                 warning(me.identifier,'Couldn''t align block: threw an error (%s)',me.message)
-                alignment.block = [];
+                alignment.block = nan;
                 
                 % Save error message locally
                 saveErrMess(me.message,fullfile(expPath, 'AlignBlockError.json'))
@@ -145,14 +145,13 @@ function main(varargin)
         %  'vids' that contains all cameras.
         
         if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
-            
-            try
-                fprintf(1, '* Aligning videos... *\n');
-                % Get cameras' names
-                vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
-                f = fieldnames(vids);
-                vids = rmfield(vids,f(~ismember(f,'name')));
+            fprintf(1, '* Aligning videos... *\n');
+            % Get cameras' names
+            vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
+            f = fieldnames(vids);
+            vids = rmfield(vids,f(~ismember(f,'name')));
 
+            try
                 % Align each of them
                 for v = 1:numel(vids)
                     [~,vidName,~] = fileparts(vids(v).name);
@@ -166,7 +165,7 @@ function main(varargin)
                     end
                 end
                 fprintf(1, '* Video alignment done. *\n');
-
+                
                 % Save it
                 alignment.video = vids;
                 
@@ -176,7 +175,7 @@ function main(varargin)
                 end
             catch me
                 warning(me.identifier,'Couldn''t align videos: threw an error (%s)',me.message)
-                alignment.video = [];
+                alignment.video = nan;
                 
                 % Save error message locally
                 saveErrMess(me.message,fullfile(expPath, 'AlignVideoError.json'))
@@ -206,7 +205,7 @@ function main(varargin)
                     end
                 catch
                     warning(me.identifier,'Couldn''t align mic: threw an error (%s)',me.message)
-                    alignment.mic = [];
+                    alignment.mic = nan;
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'AlignMicError.json'))
