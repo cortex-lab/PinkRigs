@@ -63,22 +63,7 @@ function extractExpData(varargin)
                 
                 % Get the appropriate ref for the exp def
                 expDef = expInfo.expDef{1};
-                if contains(expDef,'imageWorld')
-                    expDefRef = 'imageWorld';
-                    
-                elseif contains(expDef,'spontaneousActivity')
-                    expDefRef = 'spontaneous';
-                    
-                elseif contains(expDef,'sparseNoise')
-                    expDefRef = 'sparseNoise';
-                    
-                elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
-                        contains(expDef, 'AVPassive_checkerboard_postactive')
-                    expDefRef = 'AVprotocol';
-                    
-                else
-                    %%% TODO fill in that part with you own expDefs...
-                end
+                expDefRef = preproc.getExpDefRef(expDef);
                 
                 % Call specific preprocessing function
                 ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
