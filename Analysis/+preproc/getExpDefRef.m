@@ -1,7 +1,8 @@
 function expDefRef = getExpDefRef(expDef)
     %%% This function will get the exp def reference file name for each
     %%% specific expDef.
-    
+    %%% TODO fill in that part with you own expDefs...
+            
     if contains(expDef,'imageWorld')
         expDefRef = 'imageWorld';
         
@@ -14,7 +15,7 @@ function expDefRef = getExpDefRef(expDef)
     elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
             contains(expDef, 'AVPassive_checkerboard_postactive')
         expDefRef = 'AVprotocol';
-        
+
     else
-        %%% TODO fill in that part with you own expDefs...
+        error('ExpDef reference does not exist for expDef %s',expDef)
     end

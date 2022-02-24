@@ -61,30 +61,46 @@ function extractExpData(varargin)
                 timeline = getTimeline(expPath);
                 block = getBlock(expPath);
                 
-                % Get the appropriate ref for the exp def
-                expDef = expInfo.expDef{1};
-                expDefRef = preproc.getExpDefRef(expDef);
-                
-                % Call specific preprocessing function
-                ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
-                
+                try
+                    % Get the appropriate ref for the exp def
+                    expDef = expInfo.expDef{1};
+                    expDefRef = preproc.getExpDefRef(expDef);
+                    
+                    % Call specific preprocessing function
+                    ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
+                catch me
+                    warning(me.identifier,'Couldn''t get events (ev): threw an error (%s)',me.message)
+                    ev = nan;
+                    
+                    % Save error message locally
+                    saveErrMess(me.message,fullfile(expPath, 'GetEvError.json'))
+                end
+                    
                 %% Extract spikes and clusters info (depth, etc.)
                 if ~isempty(alignment.ephys)
-                    spk = cell(1,numel(alignment.ephys));
-                    for probeNum = 1:numel(alignment.ephys)
-                        % Get spikes times & cluster info
-                        spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
-                        
-                        % Align them
-                        for clu = 1:numel(spk{probeNum})
-                            spk{probeNum}(clu).spikeTimes = preproc.align.event2Timeline(spk{probeNum}(clu).spikeTimes, ...
-                                alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                    try
+                        spk = cell(1,numel(alignment.ephys));
+                        for probeNum = 1:numel(alignment.ephys)
+                            % Get spikes times & cluster info
+                            spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
                             
-                            % Subselect the ones that are within this experiment
-                            expLength = block.duration;
-                            spk2keep = (spk{probeNum}(clu).spikeTimes>0) & (spk{probeNum}(clu).spikeTimes<expLength);
-                            spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
+                            % Align them
+                            for clu = 1:numel(spk{probeNum})
+                                spk{probeNum}(clu).spikeTimes = preproc.align.event2Timeline(spk{probeNum}(clu).spikeTimes, ...
+                                    alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                                
+                                % Subselect the ones that are within this experiment
+                                expLength = block.duration;
+                                spk2keep = (spk{probeNum}(clu).spikeTimes>0) & (spk{probeNum}(clu).spikeTimes<expLength);
+                                spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
+                            end
                         end
+                    catch me
+                        warning(me.identifier,'Couldn''t get spikes (spk): threw an error (%s)',me.message)
+                        spk = nan;
+                        
+                        % Save error message locally
+                        saveErrMess(me.message,fullfile(expPath, 'GetSpkError.json'))
                     end
                 else
                     spk = [];
