@@ -150,36 +150,32 @@ function main(varargin)
             vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
             f = fieldnames(vids);
             vids = rmfield(vids,f(~ismember(f,'name')));
-
-            try
-                % Align each of them
-                for v = 1:numel(vids)
-                    [~,vidName,~] = fileparts(vids(v).name);
-                    try
-                        [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
-                    catch me
-                        % case when it's corrupted
-                        vids(v).frameTimes = [];
-                        vids(v).missedFrames = [];
-                        warning('Corrupted video %s: threw an error (%s)',vidName,me.message)
+            
+            % Align each of them
+            for v = 1:numel(vids)
+                [~,vidName,~] = fileparts(vids(v).name);
+                try
+                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
+                    
+                    % Remove any error file
+                    if exist(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)),'file')
+                        delete(fullfile(expPath, 'AlignVideoError.json'))
                     end
+                catch me
+                    warning(me.identifier,'Couldn''t align video %s: threw an error (%s)',vidName,me.message)
+                    
+                    vids(v).frameTimes = nan;
+                    vids(v).missedFrames = nan;
+                       
+                    % Save error message locally
+                    saveErrMess(me.message,fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
                 end
-                fprintf(1, '* Video alignment done. *\n');
-                
-                % Save it
-                alignment.video = vids;
-                
-                % Remove any error file
-                if exist(fullfile(expPath, 'AlignVideoError.json'),'file')
-                    delete(fullfile(expPath, 'AlignVideoError.json'))
-                end
-            catch me
-                warning(me.identifier,'Couldn''t align videos: threw an error (%s)',me.message)
-                alignment.video = nan;
-                
-                % Save error message locally
-                saveErrMess(me.message,fullfile(expPath, 'AlignVideoError.json'))
             end
+            fprintf(1, '* Video alignment done. *\n');
+            
+            % Save it
+            alignment.video = vids;
+
             change = 1;
         else
             % Just load it
@@ -197,6 +193,7 @@ function main(varargin)
                 try
                     %%% TODO
                     fprintf(1, '* Aligning mic... *\n');
+                    alignment.mic = nan; % for now
                     fprintf(1, '* Mic alignment done. *\n');
                     
                     % Remove any error file
