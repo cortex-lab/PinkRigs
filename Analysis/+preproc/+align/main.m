@@ -84,9 +84,10 @@ function main(varargin)
                         alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
                     end
                     
-                    % Update csv
-                    %%% TODO
-                    
+                    % Remove any error file
+                    if exist(fullfile(expPath, 'AlignEphysError.json'),'file')
+                        delete(fullfile(expPath, 'AlignEphysError.json'))
+                    end
                 catch me
                     warning(me.identifier,'Couldn''t align ephys: threw an error (%s)',me.message)
                     alignment.ephys = [];
@@ -120,6 +121,10 @@ function main(varargin)
                 alignment.block.originTimes = blockRefTimes;
                 alignment.block.timelineTimes = timelineRefTimes;
                 
+                % Remove any error file
+                if exist(fullfile(expPath, 'AlignBlockError.json'),'file')
+                    delete(fullfile(expPath, 'AlignBlockError.json'))
+                end
             catch me
                 warning(me.identifier,'Couldn''t align block: threw an error (%s)',me.message)
                 alignment.block = [];
@@ -165,7 +170,10 @@ function main(varargin)
                 % Save it
                 alignment.video = vids;
                 
-                % update csv
+                % Remove any error file
+                if exist(fullfile(expPath, 'AlignVideoError.json'),'file')
+                    delete(fullfile(expPath, 'AlignVideoError.json'))
+                end
             catch me
                 warning(me.identifier,'Couldn''t align videos: threw an error (%s)',me.message)
                 alignment.video = [];
@@ -192,7 +200,10 @@ function main(varargin)
                     fprintf(1, '* Aligning mic... *\n');
                     fprintf(1, '* Mic alignment done. *\n');
                     
-                    % update csv
+                    % Remove any error file
+                    if exist(fullfile(expPath, 'AlignMicError.json'),'file')
+                        delete(fullfile(expPath, 'AlignMicError.json'))
+                    end
                 catch
                     warning(me.identifier,'Couldn''t align mic: threw an error (%s)',me.message)
                     alignment.mic = [];
