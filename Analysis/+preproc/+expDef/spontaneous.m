@@ -4,4 +4,4 @@ function ev = spontaneous(timeline, block, alignment)
     
     %% Nothing to extract?
     
-    ev = [];
+    ev = nan;

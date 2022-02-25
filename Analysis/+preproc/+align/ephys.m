@@ -108,7 +108,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         
         try
             [timelineFlipperTimes, ephysFlipperTimes_cut] = ...
-                try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold);
+                try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
             success = 1;
         catch
             success = 0;

@@ -41,7 +41,7 @@ function main(varargin)
         
         % Get exp info
         expInfo = exp2checkList(ee,:);
-        expPath = expInfo.path{1};
+        expPath = expInfo.expFolder{1};
         
         %% Get the path of the alignment file and fetch it if exists
         % Define savepath for the alignment results
@@ -70,7 +70,8 @@ function main(varargin)
         %  "event2timeline".
         
         if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ~isfield(alignmentOld,'ephys')
-            if expInfo.ephys
+            ephysFolder = fullfile(fileparts(expPath),'ephys');
+            if exist(ephysFolder,'dir')
                 try
                     % Align it
                     fprintf(1, '* Aligning ephys... *\n');
@@ -78,10 +79,16 @@ function main(varargin)
                     fprintf(1, '* Ephys alignment done. *\n');
                     
                     % Save it
-                    for p = 1:numel(ephysPath)
-                        alignment.ephys(p).originTimes = ephysFlipperTimes{p};
-                        alignment.ephys(p).timelineTimes = timelineFlipperTimes{p};
-                        alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
+                    if isempty(ephysPath)
+                        % Couldn't find matching ephys for that experiment.
+                        alignment.ephys = nan;
+                    else
+                        % Found a (set of) matching ephys for that exp.
+                        for p = 1:numel(ephysPath)
+                            alignment.ephys(p).originTimes = ephysFlipperTimes{p};
+                            alignment.ephys(p).timelineTimes = timelineFlipperTimes{p};
+                            alignment.ephys(p).ephysPath = ephysPath{p}; % can have several probes
+                        end
                     end
                     
                     % Remove any error file
@@ -90,13 +97,15 @@ function main(varargin)
                     end
                 catch me
                     warning(me.identifier,'Couldn''t align ephys: threw an error (%s)',me.message)
-                    alignment.ephys = nan;
+                    alignment.ephys = 'error';
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'AlignEphysError.json'))
                 end
             else
-                alignment.ephys = [];
+                % Case where the ephys fodler did not exist. It's either
+                % because it's not supposed to exist, or wasn't copied.
+                alignment.ephys = nan;
             end
             change = 1;
         else
@@ -112,6 +121,7 @@ function main(varargin)
         %  "event2timeline".
         
         if contains(params.recompute,'all') || contains(params.recompute,'block') || ~isfield(alignmentOld,'block')
+            % Note that block file should always exist.
             try
                 fprintf(1, '* Aligning block... *\n');
                 [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
@@ -127,7 +137,7 @@ function main(varargin)
                 end
             catch me
                 warning(me.identifier,'Couldn''t align block: threw an error (%s)',me.message)
-                alignment.block = nan;
+                alignment.block = 'error';
                 
                 % Save error message locally
                 saveErrMess(me.message,fullfile(expPath, 'AlignBlockError.json'))
@@ -164,9 +174,15 @@ function main(varargin)
                 catch me
                     warning(me.identifier,'Couldn''t align video %s: threw an error (%s)',vidName,me.message)
                     
-                    vids(v).frameTimes = nan;
-                    vids(v).missedFrames = nan;
-                       
+                    if strcmp(me.message,'Failed to initialize internal resources.')
+                        % Very likely that video is corrupted. Make it a
+                        % nan because there's not much we can do for now.
+                        vids(v) = nan;
+                    else
+                        % Another error occured. Save it.
+                        vids(v) = 'error';
+                    end
+                    
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
                 end
@@ -190,25 +206,26 @@ function main(varargin)
         if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
             % Align it
             if expInfo.micDat > 0
-                try
-                    %%% TODO
+                try                    
                     fprintf(1, '* Aligning mic... *\n');
-                    alignment.mic = nan; % for now
+                    %%% TODO
+                    error('Haven''t found or coded a way to align file yet.') % for now
                     fprintf(1, '* Mic alignment done. *\n');
                     
                     % Remove any error file
                     if exist(fullfile(expPath, 'AlignMicError.json'),'file')
                         delete(fullfile(expPath, 'AlignMicError.json'))
                     end
-                catch
+                catch me
                     warning(me.identifier,'Couldn''t align mic: threw an error (%s)',me.message)
-                    alignment.mic = nan;
+                    alignment.mic = 'error';
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'AlignMicError.json'))
                 end
             else
-                alignment.mic = [];
+                % Mic data wasn't there.
+                alignment.mic = nan;
             end
             change = 1;
         else
@@ -225,12 +242,6 @@ function main(varargin)
             % but I felt like keeping the date of last modifications of
             % the files might be useful (e.g., for debugging).
         end
-        
-        %% Amend the csv 
-        % to say that alignment has been computed, and which
-        % ephys corresponds to that experiment.
-        
-        %%% TO DO
     end
 
     

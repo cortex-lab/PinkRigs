@@ -42,13 +42,13 @@ function extractExpData(varargin)
         %%% Here could also extract other info? Has it been aligned? Which
         %%% ephys goes with that one? Etc.
         expInfo = exp2checkList(ee,:);
-        expPath = expInfo.path{1};
+        expPath = expInfo.expFolder{1};
         
         savePath = fullfile(expPath,'preprocData.mat');
         
         if ~exist(savePath,'file') || params.recompute
             % get alignment file location
-            alignmentFile = fullfile(expInfo.path{1},'alignment.mat');
+            alignmentFile = fullfile(expInfo.expFolder{1},'alignment.mat');
             
             if exist(alignmentFile, 'file')
                 %% Load alignment file
@@ -70,14 +70,14 @@ function extractExpData(varargin)
                     ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
                 catch me
                     warning(me.identifier,'Couldn''t get events (ev): threw an error (%s)',me.message)
-                    ev = nan;
+                    ev = 'error';
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'GetEvError.json'))
                 end
                     
                 %% Extract spikes and clusters info (depth, etc.)
-                if ~isempty(alignment.ephys)
+                if ~isnan(alignment.ephys)
                     try
                         spk = cell(1,numel(alignment.ephys));
                         for probeNum = 1:numel(alignment.ephys)
@@ -97,13 +97,13 @@ function extractExpData(varargin)
                         end
                     catch me
                         warning(me.identifier,'Couldn''t get spikes (spk): threw an error (%s)',me.message)
-                        spk = nan;
+                        spk = 'error';
                         
                         % Save error message locally
                         saveErrMess(me.message,fullfile(expPath, 'GetSpkError.json'))
                     end
                 else
-                    spk = [];
+                    spk = nan;
                 end
                 
                 %% Save all
