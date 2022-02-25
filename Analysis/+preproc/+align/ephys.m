@@ -104,8 +104,6 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
-        numFlipsDiff = abs(diff([length(ephysFlipperTimes_cut) length(timelineFlipperTimes)]));
-        
         try
             [timelineFlipperTimes, ephysFlipperTimes_cut] = ...
                 try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
