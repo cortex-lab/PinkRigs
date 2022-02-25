@@ -131,9 +131,9 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
             % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
             % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
             if length(blockRefTimes) ~= length(timelineRefTimes)
-                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25);
+                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
             elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
-                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25);
+                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
             end
             block.alignment = 'photodiode';
             if length(blockRefTimes) ~= length(timelineRefTimes)
