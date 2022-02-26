@@ -17,11 +17,11 @@ function codeChecked = checkStatusCode(codes2Check,codeRef)
             error('Too many "~(.)" propositions. Can only take one.')
         end
         % Check if not any
-        if strcmp(parenthesisCheck{1}(end),'~')
+        if ~isempty(parenthesisCheck{1}) && strcmp(parenthesisCheck{1}(end),'~')
             % "not any"
             parStatus = 2;
             parenthesisCheck{1}(end) = [];
-        elseif strcmp(parenthesisCheck{1}(end),'x')
+        elseif ~isempty(parenthesisCheck{1}) && strcmp(parenthesisCheck{1}(end),'x')
             % "not all"
             parStatus = 3;
             parenthesisCheck{1}(end) = [];
