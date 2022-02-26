@@ -77,7 +77,7 @@ function extractExpData(varargin)
                 end
                     
                 %% Extract spikes and clusters info (depth, etc.)
-                if ~isnan(alignment.ephys)
+                if isstruct(alignment.ephys)
                     try
                         spk = cell(1,numel(alignment.ephys));
                         for probeNum = 1:numel(alignment.ephys)
@@ -102,7 +102,9 @@ function extractExpData(varargin)
                         % Save error message locally
                         saveErrMess(me.message,fullfile(expPath, 'GetSpkError.json'))
                     end
-                else
+                elseif isstring(alignment.ephys) && strcmp(alignment.ephys,'error')
+                    spk = 'error';
+                elseif isnan(alignment.ephys)
                     spk = nan;
                 end
                 

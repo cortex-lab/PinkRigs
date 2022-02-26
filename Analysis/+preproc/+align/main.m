@@ -177,10 +177,12 @@ function main(varargin)
                     if strcmp(me.message,'Failed to initialize internal resources.')
                         % Very likely that video is corrupted. Make it a
                         % nan because there's not much we can do for now.
-                        vids(v) = nan;
+                        vids(v).frameTimes = nan;
+                        vids(v).missedFrames = nan;
                     else
                         % Another error occured. Save it.
-                        vids(v) = 'error';
+                        vids(v).frameTimes = 'error';
+                        vids(v).missedFrames = 'error';
                     end
                     
                     % Save error message locally

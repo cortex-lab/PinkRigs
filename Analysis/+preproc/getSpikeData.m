@@ -44,7 +44,7 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
     
     clusterList = unique(sp.clu);
     
-    spk = struct(numel(clusterList),1);
+    spk = struct([]);
     for ii = 1:numel(clusterList)
         cl = clusterList(ii);
         spkIdx = sp.clu == cl;

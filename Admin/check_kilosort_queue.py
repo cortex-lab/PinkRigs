@@ -94,7 +94,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
         added_recs = pd.DataFrame(new_recs_to_sort,columns=[old_queue.columns[0]])
         added_recs[old_queue.columns[1]]=0
         new_queue = pd.concat([new_queue,added_recs])
-        # remove what has already been queing
+        # remove duplicates
         new_queue = new_queue.drop_duplicates('ephysName')
 
     new_queue.to_csv(queue_file,index = False)
