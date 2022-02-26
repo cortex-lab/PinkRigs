@@ -28,7 +28,7 @@ function main(varargin)
     
     if ~exist('exp2checkList', 'var')
         % Will get all the exp for the active mice.
-        exp2checkList = getAllExp2Check();
+        exp2checkList = queryExp();
     end
     
     %% --------------------------------------------------------

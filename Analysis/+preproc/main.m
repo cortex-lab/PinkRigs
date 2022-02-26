@@ -26,7 +26,7 @@ function main(varargin)
     end
     
     if ~exist('exp2checkList', 'var')
-        exp2checkList = getAllExp2Check(params);
+        exp2checkList = queryExp(params);
     end
     
     %% --------------------------------------------------------
