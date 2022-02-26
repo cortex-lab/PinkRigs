@@ -8,7 +8,10 @@ function main(varargin)
     params.paramsExtract = [];
     params.days2Check = inf; % back in time from today
     params.mice2Check = 'active';
-
+    params.mice2Check = 'active';
+    params.align2Check = '(0,0,0,0,0,0)'; % "any 0"
+    params.preproc2Check = '(0,0)';
+    
     if ~isempty(varargin)
         paramsIn = varargin{1};
         params = parseInputParams(params,paramsIn);

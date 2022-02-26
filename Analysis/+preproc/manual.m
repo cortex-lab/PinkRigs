@@ -12,7 +12,7 @@ params.preproc2Check = '*,*';
 exp2checkList = queryExp(params);
 
 %% Just run alignment
-params.recompute = {'all'};
+params.recompute = {'video'};
 preproc.align.main(params,exp2checkList)
 
 %% Just run preprocessing

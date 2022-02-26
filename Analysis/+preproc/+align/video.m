@@ -58,7 +58,7 @@
     
     % Compute intensity file for the lastFrames file, will save it in folder
     d = dir(fullfile(expPath, [movieName '_lastFrames.mj2'])); % to check if it's there and worth loading
-    if ~exist(intensFile_lastFrames, 'file')
+    if ~isempty(d) && ~exist(intensFile_lastFrames, 'file')
         if d.bytes>100
             vidproc.getAvgMovInt(expPath, [movieName '_lastFrames'], []);
         end
@@ -69,7 +69,7 @@
     load(intensFile,'avgIntensity');
     
     % Load the lastFrames average intensity
-    if d.bytes>100
+    if ~isempty(d) && d.bytes>100
         lf = load(intensFile_lastFrames,'avgIntensity');
     else
         lf.avgIntensity = [];
@@ -94,7 +94,11 @@
         % automatically...
         switch attemptNum
             case 1
-                vidIntensThresh = min(avgIntensity)*[1.2 1.4];
+                % vidIntensThresh = min(avgIntensity)*[1.2 1.4]; % if min
+                % really is too small, can detect little wiggles
+                intensMed = median(avgIntensity);
+                intensMin = min(avgIntensity);
+                vidIntensThresh = intensMin+(intensMed-intensMin)*[0.05 0.1];
             case 2
                 intensMed = median(avgIntensity);
                 intensMin = min(avgIntensity);

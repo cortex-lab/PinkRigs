@@ -169,7 +169,7 @@ function main(varargin)
                     
                     % Remove any error file
                     if exist(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)),'file')
-                        delete(fullfile(expPath, 'AlignVideoError.json'))
+                        delete(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
                     end
                 catch me
                     warning(me.identifier,'Couldn''t align video %s: threw an error (%s)',vidName,me.message)
