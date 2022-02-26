@@ -31,7 +31,7 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
                     expList = getMouseExpList(subjects{ss});
                 end
                 
-                % retry
+                % Retry
                 expIdx = find(contains(cellstr(datestr(expList.expDate,29)),expDateList{idx4thisSubject(idx)}) & ...
                     contains(expList.expNum,num2str(expNumList{idx4thisSubject(idx)})));
                 if ~isempty(expIdx)

@@ -1,4 +1,4 @@
-function exp2checkList = getAllExp2Check(varargin)
+function exp2checkList = queryExp(varargin)
     %%% This function will fetch all possible experiments to check for
     %%% computing alignment, preprocessing etc.
     
@@ -8,6 +8,8 @@ function exp2checkList = getAllExp2Check(varargin)
     params.mice2Check = 'active';
     params.expDef2Check = 'all';
     params.timeline2Check = 0;
+    params.align2Check = '(0,0,0,0,0,0)'; % "any 0"
+    params.preproc2Check = '(0,0)';
     
     if ~isempty(varargin)
         paramsIn = varargin{1};
@@ -60,10 +62,19 @@ function exp2checkList = getAllExp2Check(varargin)
             exp2Check = exp2Check & expDef2Check;
         end
         
+        % Get exp with timeline only
         if params.timeline2Check
             exp2Check = exp2Check & expListMouse.timeline>0;
         end
 
+        % Get exp with specific alignment status
+        alignCodeChecked = checkStatusCode(expListMouse.alignBlkFrontSideEyeMicEphys,params.align2Check);
+        exp2Check = exp2Check & alignCodeChecked;
+        
+        % Get exp with specific preprocessing state
+        preproc2Check = checkStatusCode(expListMouse.preProcSpkEV,params.preproc2Check);
+        exp2Check = exp2Check & all(preproc2Check,2);
+        
         % Get list of exp for this mouse
         exp2checkList = [exp2checkList; expListMouse(exp2Check,:)];
     end
