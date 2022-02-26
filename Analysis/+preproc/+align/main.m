@@ -96,7 +96,7 @@ function main(varargin)
                         delete(fullfile(expPath, 'AlignEphysError.json'))
                     end
                 catch me
-                    warning(me.identifier,'Couldn''t align ephys: threw an error (%s)',me.message)
+                    warning('Couldn''t align ephys: threw an error (%s)',me.message)
                     alignment.ephys = 'error';
                     
                     % Save error message locally
@@ -136,7 +136,7 @@ function main(varargin)
                     delete(fullfile(expPath, 'AlignBlockError.json'))
                 end
             catch me
-                warning(me.identifier,'Couldn''t align block: threw an error (%s)',me.message)
+                warning('Couldn''t align block: threw an error (%s)',me.message)
                 alignment.block = 'error';
                 
                 % Save error message locally
@@ -172,7 +172,7 @@ function main(varargin)
                         delete(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
                     end
                 catch me
-                    warning(me.identifier,'Couldn''t align video %s: threw an error (%s)',vidName,me.message)
+                    warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
                     
                     if strcmp(me.message,'Failed to initialize internal resources.')
                         % Very likely that video is corrupted. Make it a
@@ -219,7 +219,7 @@ function main(varargin)
                         delete(fullfile(expPath, 'AlignMicError.json'))
                     end
                 catch me
-                    warning(me.identifier,'Couldn''t align mic: threw an error (%s)',me.message)
+                    warning('Couldn''t align mic: threw an error (%s)',me.message)
                     alignment.mic = 'error';
                     
                     % Save error message locally
