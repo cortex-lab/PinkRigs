@@ -43,9 +43,9 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     for mouse in mice_to_check:
         my_dates = pd.DataFrame()
         subject_csv = pd.read_csv(os.path.join(root,'%s.csv' % mouse))
-        my_dates = subject_csv[subject_csv.ephys>0].drop_duplicates('expDate')
+        my_dates = subject_csv.drop_duplicates('expDate')
 
-        for my_path in my_dates.path:
+        for my_path in my_dates.expFolder:
             mp = Path(my_path)
 
             server = mp.parts[0][:-1]
