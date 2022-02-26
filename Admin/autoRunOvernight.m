@@ -26,6 +26,10 @@ switch lower(computerType)
         
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
+    
+        fprintf('Running preprocessing...\n')
+        params.mice2Check = 'AV009';
+        preproc.main(params);
         
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
