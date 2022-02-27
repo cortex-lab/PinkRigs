@@ -122,9 +122,6 @@ end
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
 faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
 
-nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeMicEphys),'\s+',',');
-nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
-
 nDat.preProcSpkEV = zeros(1,2);
 preProcFile = contains({fileContents.name}','preprocData.mat');
 if any(preProcFile)
@@ -147,8 +144,13 @@ if any(preProcFile)
         end
     end
 end
+if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && nDat.preProcSpkEV(1) == 0
+    nDat.preProcSpkEV(1) = nan;
+end
 
 nDat.preProcSpkEV = regexprep(num2str(nDat.preProcSpkEV),'\s+',',');
+nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeMicEphys),'\s+',',');
+nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
 
 csvData = struct2table(nDat, 'AsArray', 1);
 if saveData
