@@ -26,10 +26,6 @@ switch lower(computerType)
         
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
-    
-        fprintf('Running preprocessing...\n')
-        params.mice2Check = 'AV009';
-        preproc.main(params);
         
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
@@ -58,4 +54,8 @@ switch lower(computerType)
         fprintf('Running kilosort on the queue... \n')
         param.checkTime = 1; % to stop it after about 20h
         kilo.main(param)
+         
+        fprintf('Running preprocessing...\n')
+        params.mice2Check = 'AV009'; % for now to avoid crashes
+        preproc.main(params);
 end
