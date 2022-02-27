@@ -53,7 +53,6 @@ pathInfo = cellfun(@(x) split(x,filesep), paths2Check, 'uni', 0);
 subList = cellfun(@(x) x{end-2}, pathInfo, 'uni', 0);
 %%
 for i = 1:length(mice2Update)
-    disp(i);
     currSub = mice2Update{i};
     currIdx = contains(subList, currSub);
     dateList = cellfun(@(x) x{end-1}, pathInfo(currIdx), 'uni', 0);

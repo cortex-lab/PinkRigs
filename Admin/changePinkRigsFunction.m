@@ -1,5 +1,6 @@
 function changePinkRigsFunction(oldName, newName, fileExt)
-if ~exist('fileExt', 'var') fileExt = '.m'; end
+
+if ~exist('fileExt', 'var'); fileExt = '.m'; end
 
 %% Parameters
 % The directory in which to replace files. Currently this code does not modify files in
