@@ -1,4 +1,6 @@
-function changePinkRigsFunction(oldName, newName)
+function changePinkRigsFunction(oldName, newName, fileExt)
+if ~exist('fileExt', 'var') fileExt = '.m'; end
+
 %% Parameters
 % The directory in which to replace files. Currently this code does not modify files in
 % sub-directories
@@ -8,11 +10,9 @@ oldString = sprintf(oldName);
 % The replacement string
 newString = sprintf(newName);
 
-filExtension = '.m';
-
 %% Determine files to update, and update them as necessary
 % Put the details of all files and folders in that current directory into a structure
-fileList = dir([pinkRigsDir '\**\*' filExtension]);
+fileList = dir([pinkRigsDir '\**\*' fileExt]);
 % Initialise indexes for files that do and do not contain oldString
 changedIdx = zeros(length(fileList),1)>0;
 
