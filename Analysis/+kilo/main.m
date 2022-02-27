@@ -24,7 +24,7 @@ function main(varargin)
     
     if ~exist('rec2sortList', 'var')
         % Get all the recordings in the queue
-        KSqueueCSVLoc = getCSVLocation('kilosort_queue');
+        KSqueueCSVLoc = csv.getLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
         if ~params.recomputeKilo
             compIdx = find(recList.sortedTag == 0);

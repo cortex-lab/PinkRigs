@@ -30,8 +30,8 @@ switch lower(computerType)
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         
-        fprintf('Running "checkForNewAVRecordings"... \n')
-        checkForNewAVRecordings;
+        fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
+        csv.checkForNewPinkRigRecordings;
         
         fprintf('Update on training... \n')
         checkTrainingPath = which('check_training_mice.py');

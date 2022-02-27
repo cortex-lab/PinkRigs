@@ -21,7 +21,7 @@ function exp2checkList = queryExp(varargin)
     %% --------------------------------------------------------
     %% Fetch exp
     % Get active mouse list from main csv
-    mainCSVLoc = getCSVLocation('main');
+    mainCSVLoc = csv.getLocation('main');
     mouseList = readtable(mainCSVLoc);
     
     if strcmp(params.mice2Check,'active')

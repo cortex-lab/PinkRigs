@@ -2,7 +2,7 @@ function matchedSubject = getCurrentSubjectFromProbeSerial(probeSerial)
 %% Automatically detect the type of computer
 matchedSubject = cell(length(probeSerial),1);
 
-csvLocation = getCSVLocation('main');
+csvLocation = csv.getLocation('main');
 csvData = readtable(csvLocation);
 csvFields = fields(csvData);
 

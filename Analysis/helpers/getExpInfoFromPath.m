@@ -27,7 +27,7 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
                 if ~skipCSVUpdate
                     days2Check = 3;
                     recompute = 0;
-                    checkForNewAVRecordings(days2Check, recompute)
+                    csv.checkForNewPinkRigRecordings(days2Check, recompute)
                     expList = getMouseExpList(subjects{ss});
                 end
                 
