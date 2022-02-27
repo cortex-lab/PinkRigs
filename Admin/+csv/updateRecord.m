@@ -144,8 +144,12 @@ if any(preProcFile)
         end
     end
 end
+
 if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && nDat.preProcSpkEV(1) == 0
     nDat.preProcSpkEV(1) = nan;
+end
+if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && str2double(nDat.issorted) == 0
+    nDat.issorted = num2str(nan);
 end
 
 nDat.preProcSpkEV = regexprep(num2str(nDat.preProcSpkEV),'\s+',',');

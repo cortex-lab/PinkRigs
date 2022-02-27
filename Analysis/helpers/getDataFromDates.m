@@ -25,7 +25,7 @@ if ~iscell(subject); subject = {subject}; end
 if iscell(requestedDates{1}); requestedDates = requestedDates{1}; end
 %
 
-expList = getMouseExpList(subject{1});
+expList = csv.readTable(csv.getLocation(subject{1}));
 %Get list of available experiments for selected subject, update the paths, convert dates to datenums
 availableExps = expList;
 if ~strcmpi(expDef, 'any')
@@ -65,7 +65,7 @@ dataDates = cell(size(selectedFiles,1),1);
 for i = 1:size(selectedFiles,1)
     tDat = selectedFiles(i,:);
     blkName = [datestr(tDat.expDate, 'yyyy-mm-dd') '_' tDat.expNum{1} '_' subject{1} '_Block.mat'];
-    requestedBlock = load([tDat.path{1} '\' blkName]);
+    requestedBlock = load([tDat.expFolder{1} '\' blkName]);
     data{i,1} = requestedBlock.block;
     dataDates{i,1} = datestr(tDat.expDate, 'yyyy-mm-dd');
 end
