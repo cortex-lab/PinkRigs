@@ -116,9 +116,8 @@ if any(alignFile)
     end    
 end
 
-faceMapDetect = cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames');
-alignedCams = nDat.alignBlkFrontSideEyeMicEphys(2:4);
-faceMapDetect(~faceMapDetect) = alignedCams(~faceMapDetect);
+faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
+faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
 
 nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeMicEphys),'\s+',',');
 nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
