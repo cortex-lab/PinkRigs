@@ -23,7 +23,7 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
         idx4thisSubject = find(contains(subjectList,subjects{ss}));
         for idx = 1:numel(idx4thisSubject)
             expIdx = find(contains(expList.expDate,expDateList{idx4thisSubject(idx)}) & ...
-                contains(expList.expNum,num2str(expNumList{idx4thisSubject(idx)})));
+                contains(expList.expNum,expNumList{idx4thisSubject(idx)}));
             if ~isempty(expIdx)
                 expInfoList = [expInfoList; expList(expIdx,:)];
             else
@@ -37,7 +37,7 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
                 
                 % Retry
                 expIdx = find(contains(cellstr(datestr(expList.expDate,29)),expDateList{idx4thisSubject(idx)}) & ...
-                    contains(expList.expNum,num2str(expNumList{idx4thisSubject(idx)})));
+                    contains(expList.expNum,expNumList{idx4thisSubject(idx)}));
                 if ~isempty(expIdx)
                     expInfoList = [expInfoList; expList(expIdx,:)];
                 else
