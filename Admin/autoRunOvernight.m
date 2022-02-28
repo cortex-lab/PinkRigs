@@ -27,6 +27,15 @@ switch lower(computerType)
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
         
+        fprintf('Running "runFacemap" ... \n')
+        eveningFacemapPath = which('evening_facemap.py');
+        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+            'python ' eveningFacemapPath ' &&' ...
+            'conda deactivate']);
+        if statusFacemap > 0
+            fprintf('Facemap failed with error "%s".\n', resultFacemap)
+        end
+        
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         

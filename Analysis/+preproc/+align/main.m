@@ -7,8 +7,8 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin{1})
     params.recompute = {'none'};
-    params.paramsVid = []; % will take default
-    
+    params.paramsVid.videoNames = {'frontCam','sideCam','eyeCam'}; % will take default for the rest
+
     % This is not ideal
     if ~isempty(varargin)
         paramsIn = varargin{1};
@@ -45,7 +45,8 @@ function main(varargin)
         
         %% Get the path of the alignment file and fetch it if exists
         % Define savepath for the alignment results
-        savePath = fullfile(expPath,'alignment.mat');
+        [subject, expDate, expNum] = parseExpPath(expPath);
+        savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_alignment.mat']);
         
         % Load it if exists
         if exist(savePath,'file')
@@ -156,37 +157,42 @@ function main(varargin)
         
         if contains(params.recompute,'all') || contains(params.recompute,'video') || ~isfield(alignmentOld,'video')
             fprintf(1, '* Aligning videos... *\n');
-            % Get cameras' names
-            vids = dir(fullfile(expPath,'*Cam.mj2')); % there should be 3: side, front, eye
-            f = fieldnames(vids);
-            vids = rmfield(vids,f(~ismember(f,'name')));
             
             % Align each of them
-            for v = 1:numel(vids)
-                [~,vidName,~] = fileparts(vids(v).name);
-                try
-                    [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, vidName, params.paramsVid);
-                    
-                    % Remove any error file
-                    if exist(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)),'file')
-                        delete(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
+            vids = struct();
+            for v = 1:numel(params.paramsVid.videoNames)
+                vidName = params.paramsVid.videoNames{v};
+                d = dir(fullfile(expPath,['*' vidName '.mj2'])); 
+                vids(v).name = vidName;
+                if ~isempty(d)
+                    try
+                        [vids(v).frameTimes, vids(v).missedFrames] = preproc.align.video(expPath, d.name(1:end-4), params.paramsVid);
+                        
+                        % Remove any error file
+                        if exist(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)),'file')
+                            delete(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
+                        end
+                    catch me
+                        warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
+                        
+                        if strcmp(me.message,'Failed to initialize internal resources.')
+                            % Very likely that video is corrupted. Make it a
+                            % nan because there's not much we can do for now.
+                            vids(v).frameTimes = nan;
+                            vids(v).missedFrames = nan;
+                        else
+                            % Another error occured. Save it.
+                            vids(v).frameTimes = 'error';
+                            vids(v).missedFrames = 'error';
+                        end
+                        
+                        % Save error message locally
+                        saveErrMess(me.message,fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
                     end
-                catch me
-                    warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
-                    
-                    if strcmp(me.message,'Failed to initialize internal resources.')
-                        % Very likely that video is corrupted. Make it a
-                        % nan because there's not much we can do for now.
-                        vids(v).frameTimes = nan;
-                        vids(v).missedFrames = nan;
-                    else
-                        % Another error occured. Save it.
-                        vids(v).frameTimes = 'error';
-                        vids(v).missedFrames = 'error';
-                    end
-                    
-                    % Save error message locally
-                    saveErrMess(me.message,fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
+                else
+                    % Couldn't find the file. 
+                    vids(v).frameTimes = nan;
+                    vids(v).missedFrames = nan;
                 end
             end
             fprintf(1, '* Video alignment done. *\n');
@@ -248,8 +254,7 @@ function main(varargin)
         %% Update the csv
         
         if change
-            [subject, expDate, expNum] = parseExpPath(expPath);
-            csv.updateRecord(subject, expDate, expNum)
+            csv.updateRecord(subject, expDate, expNum);
         end
     end
 

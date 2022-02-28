@@ -76,7 +76,7 @@ nDat.issorted = '0';
 alignFile = contains({fileContents.name}','alignment.mat');
 
 if any(alignFile)
-    load(fullfile(fileContents(alignFile).folder, 'alignment.mat'), 'alignment');
+    load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat'], 'alignment');
     expectedFields = {'block', 'video', 'mic', 'ephys'};
     if ~all(contains(expectedFields, fields(alignment)))
         fprintf('WARNING: fields are incorrect in alignment.mat for %s %s %s. ... \n', subject, expDate, expNum);
@@ -125,7 +125,7 @@ faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
 nDat.preProcSpkEV = zeros(1,2);
 preProcFile = contains({fileContents.name}','preprocData.mat');
 if any(preProcFile)
-    load(fullfile(fileContents(alignFile).folder, 'preprocData.mat'), 'ev', 'spk');
+    load([fullfile(fileContents(alignFile).folder,nameStub) '_preprocData.mat'],'ev', 'spk');
     if ~exist('ev', 'var') || ~exist('spk', 'var')
         fprintf('WARNING: Data missing from preprocData.mat for %s %s %s. ... \n', subject, expDate, expNum);
     else
