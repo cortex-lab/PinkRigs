@@ -254,7 +254,7 @@ function main(varargin)
         
         if change
             [subject, expDate, expNum] = parseExpPath(expPath);
-            csv.updateRecord(subject, expDate, expNum)
+            csv.updateRecord(subject, expDate, expNum);
         end
     end
 
