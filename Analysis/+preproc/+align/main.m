@@ -207,7 +207,7 @@ function main(varargin)
         
         if contains(params.recompute,'all') || contains(params.recompute,'mic') || ~isfield(alignmentOld,'mic')
             % Align it
-            if expInfo.micDat > 0
+            if str2double(expInfo.micDat{1}) > 0
                 try                    
                     fprintf(1, '* Aligning mic... *\n');
                     %%% TODO
