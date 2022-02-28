@@ -113,5 +113,9 @@ function extractExpData(varargin)
             else
                 frprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
             end
+            
+            %% Update csv
+            [subject, expDate, expNum] = parseExpPath(expPath);
+            csv.updateRecord(subject, expDate, expNum)
         end
     end

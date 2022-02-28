@@ -244,6 +244,13 @@ function main(varargin)
             % but I felt like keeping the date of last modifications of
             % the files might be useful (e.g., for debugging).
         end
+        
+        %% Update the csv
+        
+        if change
+            [subject, expDate, expNum] = parseExpPath(expPath);
+            csv.updateRecord(subject, expDate, expNum)
+        end
     end
 
     

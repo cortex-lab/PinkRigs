@@ -194,6 +194,18 @@ function main(varargin)
                 warning('Can''t write the csv (it must be open somewhere?). Will do next time?')
             end
         end
+        
+        %% Update the csv for associated experiments
+
+        % Get experments
+        [partmp.mice2Check, partmp.days2Check, ~] = parseExpPath(ephysPath);
+        expList = queryExp(partmp);
+        
+        % Update
+        for ee = 1:numel(expList)
+            [subject, expDate, expNum] = parseExpPath(expList(1,:).expFolder{1});
+            csv.updateRecord(subject, expDate, expNum)
+        end
     end
     close all
     
