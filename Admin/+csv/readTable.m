@@ -3,9 +3,10 @@ function csvData = readTable(csvPath)
 opts = detectImportOptions(csvPath);
 
 dateFields = opts.VariableNames(strcmp(opts.VariableTypes, 'datetime'));
-for i = 1:length(opts.VariableNames)
-    opts = setvaropts(opts, opts.VariableNames{i}, 'Type','char');
-end
+% for i = 1:length(opts.VariableNames)
+%     opts = setvaropts(opts, opts.VariableNames{i}, 'Type','char');
+% end
+opts = setvartype(opts, 'char');
 
 csvData = readtable(csvPath, opts);
 
