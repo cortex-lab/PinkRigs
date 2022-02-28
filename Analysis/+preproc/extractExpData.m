@@ -55,7 +55,6 @@ function extractExpData(varargin)
         
         if ~(strcmp(params.recompute,'none') && strcmp(expInfo.preProcSpkEV{1},'1,1')) 
             %% If all isn't good...
-            %%% Note that it won't check if 
                         
             % monitors if anything has changed
             change = 0;
@@ -67,7 +66,7 @@ function extractExpData(varargin)
 
             if ~isempty(alignmentFile)
                 %% Load alignment file
-                load(fullfile(alignmentFile.folder,alignmentFile.name), 'alignment');
+                alignment = load(fullfile(alignmentFile.folder,alignmentFile.name), 'alignment');
                 
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
@@ -87,7 +86,7 @@ function extractExpData(varargin)
                         expDefRef = preproc.getExpDefRef(expDef);
                         
                         % Call specific preprocessing function
-                        ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
+                        ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                         
                         fprintf(1, '* Events extraction done. *\n');
                     catch me

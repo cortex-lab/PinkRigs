@@ -76,7 +76,7 @@ nDat.issorted = '0';
 alignFile = contains({fileContents.name}','alignment.mat');
 
 if any(alignFile)
-    load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat'], 'alignment');
+    alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat'], 'alignment');
     expectedFields = {'block', 'video', 'mic', 'ephys'};
     if ~all(contains(expectedFields, fields(alignment)))
         fprintf('WARNING: fields are incorrect in alignment.mat for %s %s %s. ... \n', subject, expDate, expNum);
