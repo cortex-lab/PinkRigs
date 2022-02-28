@@ -25,7 +25,7 @@ function exp2checkList = queryExp(varargin)
     mouseList = csv.readTable(mainCSVLoc);
     
     if strcmp(params.mice2Check,'active')
-        mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
+        mouse2checkList = mouseList.Subject(strcmp(mouseList.IsActive,'1'));
     elseif strcmp(params.mice2Check,'all')
         mouse2checkList = mouseList.Subject;
     else
@@ -40,7 +40,7 @@ function exp2checkList = queryExp(varargin)
         % Loop through subjects
         subject = mouse2checkList{mm};
         
-        expListMouse = getMouseExpList(subject);
+        expListMouse = csv.readTable(csv.getLocation(subject));
         
         % Initialize indices of exp to keep
         exp2Check = true(size(expListMouse,1),1);
@@ -64,7 +64,7 @@ function exp2checkList = queryExp(varargin)
         
         % Get exp with timeline only
         if params.timeline2Check
-            exp2Check = exp2Check & expListMouse.timeline>0;
+            exp2Check = exp2Check & str2double(expListMouse.timeline)>0;
         end
 
         % Get exp with specific alignment status
