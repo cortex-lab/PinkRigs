@@ -45,7 +45,8 @@ function main(varargin)
         
         %% Get the path of the alignment file and fetch it if exists
         % Define savepath for the alignment results
-        savePath = fullfile(expPath,'alignment.mat');
+        [subject, expDate, expNum] = parseExpPath(expPath);
+        savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_alignment.mat']);
         
         % Load it if exists
         if exist(savePath,'file')
@@ -253,7 +254,6 @@ function main(varargin)
         %% Update the csv
         
         if change
-            [subject, expDate, expNum] = parseExpPath(expPath);
             csv.updateRecord(subject, expDate, expNum);
         end
     end

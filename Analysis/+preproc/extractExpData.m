@@ -44,15 +44,21 @@ function extractExpData(varargin)
         expInfo = exp2checkList(ee,:);
         expPath = expInfo.expFolder{1};
         
-        savePath = fullfile(expPath,'preprocData.mat');
+        [subject, expDate, expNum] = parseExpPath(expPath);
+        savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_preprocData.mat']);
+        if exist(fullfile(expPath,'preprocData.mat'))
+            movefile(fullfile(expPath,'preprocData.mat'),savePath)
+        end
+        
+        fprintf(1, '*** Preprocessing experiment %s... ***\n', expPath);
         
         if ~exist(savePath,'file') || params.recompute
             % get alignment file location
-            alignmentFile = fullfile(expInfo.expFolder{1},'alignment.mat');
-            
-            if exist(alignmentFile, 'file')
+            alignmentFile = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
+
+            if ~isempty(alignmentFile)
                 %% Load alignment file
-                load(alignmentFile, 'alignment');
+                load(fullfile(alignmentFile.folder,alignmentFile.name), 'alignment');
                 
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
@@ -62,12 +68,14 @@ function extractExpData(varargin)
                 block = getBlock(expPath);
                 
                 try
+                    fprintf(1, '* Extracting events... *\n');
                     % Get the appropriate ref for the exp def
                     expDef = expInfo.expDef{1};
                     expDefRef = preproc.getExpDefRef(expDef);
                     
                     % Call specific preprocessing function
                     ev = preproc.expDef.(expDefRef)(timeline,block,alignment);
+                    fprintf(1, '* Events extraction done. *\n');
                 catch me
                     warning(me.identifier,'Couldn''t get events (ev): threw an error (%s)',me.message)
                     ev = 'error';
@@ -75,10 +83,12 @@ function extractExpData(varargin)
                     % Save error message locally
                     saveErrMess(me.message,fullfile(expPath, 'GetEvError.json'))
                 end
+                
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 if isstruct(alignment.ephys)
                     try
+                        fprintf(1, '* Extracting spikes... *\n');
                         spk = cell(1,numel(alignment.ephys));
                         for probeNum = 1:numel(alignment.ephys)
                             % Get spikes times & cluster info
@@ -95,6 +105,7 @@ function extractExpData(varargin)
                                 spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
                             end
                         end
+                        fprintf(1, '* Spikes extraction done. *\n');
                     catch me
                         warning(me.identifier,'Couldn''t get spikes (spk): threw an error (%s)',me.message)
                         spk = 'error';
@@ -111,11 +122,11 @@ function extractExpData(varargin)
                 %% Save all
                 save(savePath,'spk','ev')
             else
-                frprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
+                fprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
             end
             
             %% Update csv
             [subject, expDate, expNum] = parseExpPath(expPath);
-            csv.updateRecord(subject, expDate, expNum)
+            csv.updateRecord(subject, expDate, expNum);
         end
     end
