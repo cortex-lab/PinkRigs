@@ -22,7 +22,7 @@ function exp2checkList = queryExp(varargin)
     %% Fetch exp
     % Get active mouse list from main csv
     mainCSVLoc = csv.getLocation('main');
-    mouseList = readtable(mainCSVLoc);
+    mouseList = csv.readTable(mainCSVLoc);
     
     if strcmp(params.mice2Check,'active')
         mouse2checkList = mouseList.Subject(mouseList.IsActive>0);
