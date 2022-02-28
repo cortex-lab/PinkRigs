@@ -938,8 +938,8 @@ def batch_process_facemap():
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    subset_mice_to_use = ['FT030', 'FT031', 'FT032', 'FT035']
-    subset_date_range = ['2021-12-01', '2021-12-20']
+    subset_mice_to_use = None  # ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range = None  # ['2021-12-01', '2021-12-20']
 
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
@@ -967,8 +967,12 @@ def batch_process_facemap():
 
         if 'path' not in mouse_info.columns:
             mouse_info['server_path'] = default_server_path
-        else:
-            mouse_info['server_path'] = ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
+        if 'expFolder' in mouse_info.columns:
+            server_paths = ['//%s/%s' % (x.split(os.sep)[2], x.split(os.sep)[3]) for x in mouse_info['expFolder'].values]
+            mouse_info['server_path'] = server_paths
+        if 'path' in mouse_info.columns:
+            mouse_info['server_path'] = \
+                ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
 
         all_mouse_info.append(mouse_info)
 
@@ -1227,9 +1231,21 @@ def batch_process_facemap():
         time.sleep(1800)
 
 
+def summarize_progress():
+
+    progress_df = None
+
+    return progress_df
+
+
+
 def main():
     how_often_to_check = 3600
+    override_time_check = False
+    override_limit = 1  # how many times to override time checking before stopping
+    override_counter = 0
     continue_running = True
+    summarize_progress = False
 
     while continue_running:
         e = datetime.datetime.now()
@@ -1238,13 +1254,24 @@ def main():
         hour_str = '%s' % e.hour
         hour_int = int(hour_str)
 
-        if (hour_int < 8) | (hour_int >= 20):
+        if override_time_check:
+            if override_counter >= override_limit:
+                override_time_check = False
+
+        if (hour_int < 8) | (hour_int >= 20) | override_time_check:
             print('It is prime time to run some facemap!')
             batch_process_facemap()
+
+            if override_time_check:
+                override_counter += 1
 
         else:
             print('It is after 8am, will stop running facemap')
             continue_running = False
+
+            if summarize_progress:
+                summarize_progress()
+
 
 if __name__ == '__main__':
     main()
