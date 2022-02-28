@@ -87,11 +87,11 @@ if any(alignFile)
         
         for i = 1:length(camNames)
             camIdx = contains({alignment.video.name}', camNames(i));
-            if ~any(camIdx) && ~isnan(tDat(i + i))
+            if (isempty(camIdx) || ~any(camIdx)) && ~isnan(tDat(i + i))
                 fprintf('FAILED: Conflict between cameras detected by align file and CSV?! for %s %s %s. ... \n', subject, expDate, expNum);
                 return;
-            end
-            if isnan(alignment.video(camIdx).frameTimes(1)); tDat(i+1) = nan;
+            elseif isempty(camIdx) || ~any(camIdx); tDat(i+1) = nan;
+            elseif isnan(alignment.video(camIdx).frameTimes(1)); tDat(i+1) = nan;
             elseif strcmpi(alignment.video(camIdx).frameTimes, 'error'); tDat(i+1) = 2;
             elseif isnumeric(alignment.video(camIdx).frameTimes); tDat(i+1) = 1;
             end
