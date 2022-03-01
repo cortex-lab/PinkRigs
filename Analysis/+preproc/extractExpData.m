@@ -66,7 +66,7 @@ function extractExpData(varargin)
 
             if ~isempty(alignmentFile)
                 %% Load alignment file
-                alignment = load(fullfile(alignmentFile.folder,alignmentFile.name), 'alignment');
+                alignment = load(fullfile(alignmentFile.folder,alignmentFile.name),'ephys','block');
                 
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
