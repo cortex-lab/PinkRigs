@@ -88,6 +88,11 @@ function extractExpData(varargin)
                         % Call specific preprocessing function
                         ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                         
+                        % Remove any error file
+                        if exist(fullfile(expPath, 'GetEvError.json'),'file')
+                            delete(fullfile(expPath, 'GetEvError.json'))
+                        end
+                        
                         fprintf(1, '* Events extraction done. *\n');
                     catch me
                         warning(me.identifier,'Couldn''t get events (ev): threw an error (%s)',me.message)
@@ -115,6 +120,11 @@ function extractExpData(varargin)
                     if isstruct(alignment.ephys)
                         try
                             fprintf(1, '* Extracting spikes... *\n');
+                            
+                            if ~exist('block','var')
+                                block = getBlock(expPath);
+                            end
+
                             spk = cell(1,numel(alignment.ephys));
                             for probeNum = 1:numel(alignment.ephys)
                                 % Get spikes times & cluster info
@@ -131,7 +141,12 @@ function extractExpData(varargin)
                                     spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
                                 end
                             end
-
+                            
+                            % Remove any error file
+                            if exist(fullfile(expPath, 'GetSpkError.json'),'file')
+                                delete(fullfile(expPath, 'GetSpkError.json'))
+                            end
+                            
                             fprintf(1, '* Spikes extraction done. *\n');
                         catch me
                             warning(me.identifier,'Couldn''t get spikes (spk): threw an error (%s)',me.message)
