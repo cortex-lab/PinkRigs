@@ -44,19 +44,6 @@ function main(varargin)
         [subject, expDate, expNum] = parseExpPath(expPath);
         savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_alignment.mat']);
         if exist(savePath,'file')
-            % temporary, to remove later <
-            varListInFile = who('-file', savePath);
-            if ismember('alignment',varListInFile)
-                load(savePath,'alignment');
-                ephys = alignment.ephys;
-                block = alignment.block;
-                video = alignment.video;
-                mic = alignment.mic;
-                save(savePath,'ephys','block','video','mic')
-            end
-            % >
-            
-            
             % To check if anything's missing (and that the csv hasn't seen
             % for some reason)
             varListInFile = who('-file', savePath);
