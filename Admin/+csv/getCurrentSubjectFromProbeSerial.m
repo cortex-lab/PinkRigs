@@ -1,7 +1,7 @@
 function matchedSubject = getCurrentSubjectFromProbeSerial(probeSerial)
 %% Automatically detect the type of computer
 matchedSubject = cell(length(probeSerial),1);
-if isnumeric(probeSerial); probeSerial = {probeSerial}; end
+if isnumeric(probeSerial); probeSerial = num2cell(probeSerial); end
 
 csvData = csv.readTable(csv.getLocation('main'));
 csvFields = fields(csvData);
