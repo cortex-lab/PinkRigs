@@ -41,11 +41,13 @@ function ev = AVprotocol(timeline, block, alignmentBlock)
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     
     % get it from photodiode?
-    audOnset = t(find(diff(aud)>1)+1);
-    audOnset(find(diff(audOnset)<1)+1) = [];
-    [~, visOnset, ~] = schmittTimes(t, pho, max(pho)*[0.6 0.9]);
+    [~, audOnset, ~] = schmittTimes(t, aud, max(aud)*[0.5 0.8]);
+    audOnset(find(diff(audOnset)<0.5)+1) = [];
+    % audOnset = t(find(diff(aud)>1)+1);
+    % audOnset(find(diff(audOnset)<1)+1) = [];
+    [~, visOnset, ~] = schmittTimes(t, pho, max(pho)*[0.5 0.8]);
     visOnset(1) = []; % looks like something else
-    visOnset(find(diff(visOnset)<1)+1) = [];
+    visOnset(find(diff(visOnset)<0.5)+1) = [];
     nTrials = numel(block.events.stimuliOnTimes);
     visOnsetAll = nan(1,nTrials);
     audOnsetAll = nan(1,nTrials);
