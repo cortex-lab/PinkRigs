@@ -170,6 +170,9 @@ function main(varargin)
                     if exist(fullfile(ephysPath, 'QMerror.json'),'file')
                         delete(fullfile(ephysPath, 'QMerror.json'))
                     end
+                    if exist(fullfile(ephysPath, 'rawWaveforms.mat'),'file')
+                        delete(fullfile(ephysPath, 'rawWaveforms.mat'))
+                    end
                 catch me
                     successFinal = -2; % fails at quality metrics stage
                     

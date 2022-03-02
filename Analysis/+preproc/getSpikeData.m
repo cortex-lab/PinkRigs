@@ -22,7 +22,8 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
     sp = loadKSdir(KSFolder,params);
     
     %% Compute depths
-
+    %%% SHOULD FIND A BETTER WAY TO DO IT?
+    
     if isfield(sp,'pcFeat')
         pcFeat = sp.pcFeat;
         pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
