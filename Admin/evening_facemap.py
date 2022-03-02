@@ -13,6 +13,9 @@ import cv2
 # some facemap process stuff
 from io import StringIO
 
+# For matching strings to find mouse csvs (and exclude others)
+import re
+
 # For accessing files on server (if running this code on a unix-based machine)
 # The dependencies are not obvious,
 # see: https://askubuntu.com/questions/80448/what-would-cause-the-gi-module-to-be-missing-from-python
@@ -950,13 +953,20 @@ def batch_process_facemap():
     else:
         mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
+    # TODO: test the re.compile().match() code
     files_to_exclude = ['aMasterMouseList.csv',
                         'kilosort_queue.csv',
-                        'video_corruption_check.csv']
+                        'video_corruption_check.csv',
+                        '!MouseList.csv']
+
+    #pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
 
     for path in mouse_info_csv_paths:
         if os.path.basename(path) in files_to_exclude:
             mouse_info_csv_paths.remove(path)
+        #fname_without_ext = '.'.split(path)
+        #if not pattern_to_match.match(fname_without_ext):
+        #    mouse_info_csv_paths.remove(path)
 
     all_mouse_info = []
 
