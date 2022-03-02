@@ -1,4 +1,4 @@
-function spk = getSpikeData(ephysPath,varargin)
+function [spk,sp] = getSpikeData(ephysPath,varargin)
     %%% This function will load the spike data (spike time, clusters,
     %%% but also cluster info, etc.). "spk" contains a condensed summary
     %%% with spikes times & cluster info.
@@ -33,16 +33,18 @@ function spk = getSpikeData(ephysPath,varargin)
         % ycoords of those channels?
         spikeFeatYcoords = sp.ycoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
         % center of mass is sum(coords.*features)/sum(features)
-        spikeDepths = sum(spikeFeatYcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
+        sp.spikeDepths = sum(spikeFeatYcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
         
         spikeFeatXcoords = sp.xcoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
-        spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
+        sp.spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
     end
         
     %% Group it by clusters
     %%% clusterList not exactly the same as sp.cids..???
     
     clusterList = unique(sp.clu);
+    
+    spk = struct([]);
     for ii = 1:numel(clusterList)
         cl = clusterList(ii);
         spkIdx = sp.clu == cl;
@@ -50,9 +52,9 @@ function spk = getSpikeData(ephysPath,varargin)
         spk(ii).ID = sp.cids(ii)';
         spk(ii).KSLab = sp.cgs(ii);
         spk(ii).Spknum = numel(spk(ii).spikeTimes);
-        if exist('spikeDepths','var')
-            spk(ii).XPos = nanmean(spikeXPos(spkIdx)); % not sure why there can be nans here
-            spk(ii).Depth = nanmean(spikeDepths(spkIdx));
+        if isfield(sp,'spikeDepths')
+            spk(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
+            spk(ii).Depth = nanmean(sp.spikeDepths(spkIdx));
         else 
             spk(ii).XPos = nan;
             spk(ii).Depth = nan;
@@ -66,7 +68,6 @@ function spk = getSpikeData(ephysPath,varargin)
         fieldsQM = fieldnames(qMetric); fieldsQM(contains(fieldsQM,'clusterID')) = [];
         
         % /!\ qMetrics is in indexing 1, KS output is in indexing 0
-        % match cluster IDs
         for ii = 1:numel(clusterList)
             cl = double(clusterList(ii));
             clQMidx = qMetric.clusterID == cl+1;

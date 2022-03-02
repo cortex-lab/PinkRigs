@@ -1,4 +1,4 @@
-function [t1Corrected, t2Corrected] = try2alignVectors(t1, t2, diffThresh)
+function [t1Corrected, t2Corrected] = try2alignVectors(t1, t2, diffThresh,plt)
 %% A funciton that tries to align vectors of the "same time points" but there is some issue (large differences, or different numbers of points)
 
 %INPUTS(default values)
@@ -33,9 +33,13 @@ loopNumber = 0;
 
 %Loop that iterates through "compareVect" and looks for mismatches in the "jumps" between the two time series. When it finds them, it deletes the
 %surrounding points so the jumps are removed. If it detects more than 50, assume there are bigger problems and throw an error.
-cla;
+if plt
+    cla;
+end
 while find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)
-    plot(diff(diff(compareVect,[],2)), '.');
+    if plt
+        plot(diff(diff(compareVect,[],2)), '.');
+    end
     errPoint = find(abs(diff(diff(compareVect,[],2)))>diffThresh,1);
     if diff(t2(errPoint:errPoint+1)) < diff(t1(errPoint:errPoint+1))
         t2(errPoint+1) = [];

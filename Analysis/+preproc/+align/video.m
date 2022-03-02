@@ -58,7 +58,7 @@
     
     % Compute intensity file for the lastFrames file, will save it in folder
     d = dir(fullfile(expPath, [movieName '_lastFrames.mj2'])); % to check if it's there and worth loading
-    if ~exist(intensFile_lastFrames, 'file')
+    if ~isempty(d) && ~exist(intensFile_lastFrames, 'file')
         if d.bytes>100
             vidproc.getAvgMovInt(expPath, [movieName '_lastFrames'], []);
         end
@@ -69,7 +69,7 @@
     load(intensFile,'avgIntensity');
     
     % Load the lastFrames average intensity
-    if d.bytes>100
+    if ~isempty(d) && d.bytes>100
         lf = load(intensFile_lastFrames,'avgIntensity');
     else
         lf.avgIntensity = [];
@@ -94,7 +94,11 @@
         % automatically...
         switch attemptNum
             case 1
-                vidIntensThresh = min(avgIntensity)*[1.2 1.4];
+                % vidIntensThresh = min(avgIntensity)*[1.2 1.4]; % if min
+                % really is too small, can detect little wiggles
+                intensMed = median(avgIntensity);
+                intensMin = min(avgIntensity);
+                vidIntensThresh = intensMin+(intensMed-intensMin)*[0.05 0.1];
             case 2
                 intensMed = median(avgIntensity);
                 intensMin = min(avgIntensity);
@@ -114,9 +118,7 @@
                         load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     otherwise
-                        fprintf(1, 'cannot find a threshold that works. You tell me...\n');
-                        figure; plot(avgIntensity);
-                        keyboard
+                        error(1, 'cannot find a threshold that works. You tell me...\n');
                 end
                 loadAttemptNum = loadAttemptNum+1;
         end
@@ -184,18 +186,18 @@
     %% IN TIMELINE
     % Load timeline if not an input
     if ~exist('Timeline','var')
-        fprintf(1, 'loading timeline\n');
+        fprintf(1, 'Loading timeline\n');
         timeline = getTimeline(expPath);
     end
-    tlTime = timepro.extractChan(timeline,'time');
+    tlTime = timeproc.extractChan(timeline,'time');
     
     % Find the timeline samples where cam sync pulses started
-    tlSyncOnSamps = timepro.getChanEventTime(timeline,'camSync');
+    tlSyncOnSamps = timeproc.getChanEventTime(timeline,'camSync');
     
     % If exist, find the strobe times for the camera
     camName = regexp(movieName,'[a-z]*Cam','match');
     strobeName = [camName{1} 'Strobe'];
-    strobeSamps = timepro.getChanEventTime(timeline,strobeName);
+    strobeSamps = timeproc.getChanEventTime(timeline,strobeName);
     if ~isempty(strobeSamps)
         % Take the strobes if exist
         numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
@@ -212,11 +214,11 @@
         figure;
         subplot(121)
         hold all
-        tlSync = timepro.extractChan(timeline,'camSync');
+        tlSync = timeproc.extractChan(timeline,'camSync');
         plot(tlTime,tlSync)
         vline(tlSyncOnSamps)
         if ~isempty(strobeSamps)
-            tlStrobe = timepro.extractChan(timeline,strobeName);
+            tlStrobe = timeproc.extractChan(timeline,strobeName);
             plot(tlTime,tlStrobe)
             vline(strobeSamps(find(strobeSamps>=tlSyncOnSamps(2),1)))
             vline(strobeSamps(find(strobeSamps<tlSyncOnSamps(2),1)))

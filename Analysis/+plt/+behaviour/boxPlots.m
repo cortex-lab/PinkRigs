@@ -85,7 +85,7 @@ for i = 1:length(subject)
 end
 %%
 maxGrid = arrayfun(@(x) [length(unique(x.audDiff)) length(unique(x.visDiff))], extractedData, 'uni', 0);
-maxGrid = max(cell2mat(maxGrid));
+maxGrid = max(cell2mat(maxGrid),2);
 axesOpt.figureHWRatio = maxGrid(2)/(1.3*maxGrid(1));
 axesOpt.btlrMargins = [100 80 60 100];
 axesOpt.gapBetweenAxes = [100 40];

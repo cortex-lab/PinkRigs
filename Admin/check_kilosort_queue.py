@@ -43,9 +43,9 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     for mouse in mice_to_check:
         my_dates = pd.DataFrame()
         subject_csv = pd.read_csv(os.path.join(root,'%s.csv' % mouse))
-        my_dates = subject_csv[subject_csv.ephys>0].drop_duplicates('expDate')
+        my_dates = subject_csv.drop_duplicates('expDate')
 
-        for my_path in my_dates.path:
+        for my_path in my_dates.expFolder:
             mp = Path(my_path)
 
             server = mp.parts[0][:-1]
@@ -83,25 +83,21 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
 
+    # clean current queue
+    queue_file = os.path.join(root,'kilosort_queue.csv')
+    old_queue = pd.read_csv(queue_file,index_col=False)
+    new_queue = old_queue[old_queue['sortedTag'] != 1]
+
     isnew = len(new_recs_to_sort)>0
     # if there are new recs to sort, then overwrite queue
     if isnew:
-        
-        queue_file = os.path.join(root,'kilosort_queue.csv')
-        old_queue = pd.read_csv(queue_file,index_col=False)
-
-    #     #backup the old file
-    #     now = datetime.datetime.now()
-    #     backup_path = os.path.join(root,'Backups\%s_kilosort_queue.csv') % (now.strftime('%Y-%m-%d'))
-    #     old_queue.to_csv(backup_path)
-
         added_recs = pd.DataFrame(new_recs_to_sort,columns=[old_queue.columns[0]])
         added_recs[old_queue.columns[1]]=0
-        new_queue = pd.concat([old_queue,added_recs])
-        # remove what has already been queing
+        new_queue = pd.concat([new_queue,added_recs])
+        # remove duplicates
         new_queue = new_queue.drop_duplicates('ephysName')
 
-        new_queue.to_csv(queue_file,index = False)
+    new_queue.to_csv(queue_file,index = False)
     
-        print('%d files are waiting to be sorted ...'
-              % (len(new_queue[new_queue['sortedTag']==0])))
+    print('%d files are waiting to be sorted ...'
+        % (len(new_queue[new_queue['sortedTag']==0])))

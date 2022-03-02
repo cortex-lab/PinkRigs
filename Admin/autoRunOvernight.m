@@ -9,6 +9,15 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Running "runFacemap" ... \n')
+        eveningFacemapPath = which('evening_facemap.py');
+        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+            'python ' eveningFacemapPath ' &&' ...
+            'conda deactivate']);
+        if statusFacemap > 0
+            fprintf('Facemap failed with error "%s".\n', resultFacemap)
+        end
+        
     case 'ephys'
         fprintf('Detected ephys computer... \n')
         
@@ -18,11 +27,20 @@ switch lower(computerType)
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
         
+        fprintf('Running "runFacemap" ... \n')
+        eveningFacemapPath = which('evening_facemap.py');
+        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+            'python ' eveningFacemapPath ' &&' ...
+            'conda deactivate']);
+        if statusFacemap > 0
+            fprintf('Facemap failed with error "%s".\n', resultFacemap)
+        end
+        
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         
-        fprintf('Running "checkForNewAVRecordings"... \n')
-        checkForNewAVRecordings;
+        fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
+        csv.checkForNewPinkRigRecordings;
         
         fprintf('Update on training... \n')
         checkTrainingPath = which('check_training_mice.py');
@@ -45,4 +63,8 @@ switch lower(computerType)
         fprintf('Running kilosort on the queue... \n')
         param.checkTime = 1; % to stop it after about 20h
         kilo.main(param)
+         
+        fprintf('Running preprocessing...\n')
+        params.mice2Check = 'AV009'; % for now to avoid crashes
+        preproc.main(params);
 end
