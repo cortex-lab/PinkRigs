@@ -2,13 +2,13 @@ function csvData = readTable(csvPath)
 %% Writes a "clean" csv file from "csvData"--meaning no "NaN" or "NaT" 
 opts = detectImportOptions(csvPath);
 
-dateFields = contains(opts.VariableNames, 'date','IgnoreCase',true);
+dateFields = find(contains(opts.VariableNames, 'date','IgnoreCase',true));
 opts = setvartype(opts, 'char');
 
 csvData = readtable(csvPath, opts);
 
 reWrite = 0;
-for i = 1:length(dateFields)
+for i = 1:dateFields
     if any(contains(csvData.(opts.VariableNames{i}), {'\';'/'}))
         reWrite = 1;
         badStr = '(?<day>\d+)/(?<month>\d+)/(?<year>\d+)';       
