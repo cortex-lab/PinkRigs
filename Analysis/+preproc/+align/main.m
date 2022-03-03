@@ -88,6 +88,7 @@ function main(varargin)
                             ephys = nan;
                         else
                             % Found a (set of) matching ephys for that exp.
+                            ephys = struct();
                             for p = 1:numel(ephysPath)
                                 ephys(p).originTimes = ephysFlipperTimes{p};
                                 ephys(p).timelineTimes = timelineFlipperTimes{p};
