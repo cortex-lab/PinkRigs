@@ -193,13 +193,49 @@ def cal_two_cond_max_diff(spike_rate, cond_1_times, cond_2_times, bins_used,
 
 def cal_neural_selectivity(spike_rate, cond_1_times, cond_2_times, bins_used,
                           time_before_align=0, time_after_align=0.3,
-                          ave_method_across_trials='mean'):
+                          ave_method_across_trials='mean', num_shuffle=1000):
+    """
 
+    Parameters
+    ----------
+    spike_rate
+    cond_1_times
+    cond_2_times
+    bins_used
+    time_before_align
+    time_after_align
+    ave_method_across_trials
+    num_shuffle
+
+    Returns
+    -------
+
+    """
+
+    max_abs_diff, max_sign, max_abs_diff_idx = cal_two_cond_max_diff(spike_rate, cond_1_times, cond_2_times,
+                                                                     time_before_align=time_before_align,
+                                                                     time_after_align=time_after_align,
+                                                                     ave_method_across_trials=ave_method_across_trials)
+
+    num_neuron = np.shape(spike_rate)[1]
+    shuffled_max_abs_diff = np.zeros((num_shuffle, num_neuron))
+
+    n_cond_1 = len(cond_1_times)
+    n_cond_2 = len(cond_2_times)
+
+    for shuffle_n in tqdm(np.arange(num_shuffle)):
+        shuffled_event_times = np.random.permutation(np.concatenate([cond_1_times, cond_2_times]))
+        shuffled_cond_1_times = np.sort(shuffled_event_times[0:n_cond_1])
+        shuffled_cond_2_times = np.sort(shuffled_event_times[n_cond_1:])
+        shuffled_max_abs_diff[shuffle_n, :], _, _ = cal_two_cond_max_diff(spike_rate.reshape(-1, 1),
+                                                                          shuffled_cond_1_times, shuffled_cond_2_times,
+                                                                          time_before_align=time_before_align,
+                                                                          time_after_align=time_after_align,
+                                                                          ave_method_across_trials=ave_method_across_trials)
 
     max_abs_diff_percentile = sstats.percentileofscore(max_abs_diff, shuffled_max_abs_diff)
 
-
-    return None
+    return max_abs_diff_percentile
 
 
 
