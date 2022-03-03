@@ -67,7 +67,7 @@ for mname in activeMice:
             trainedthisweek=0
                       
         if trainedthisweek==1:
-            readyMice.append('%s - Stage %.0d,timeout in %.1d s, wheel yoked in %.0d %% of trials, on day %s' % (mname,stage,expDate,timeout,wheelMovementProbability*100))
+            readyMice.append('%s - Stage %.0d,timeout in %.1d s, wheel yoked in %.0d%% of trials, on day %s' % (mname,stage,timeout,wheelMovementProbability*100,expDate))
     
 if len(readyMice)>0:
     now = datetime.datetime.today()
