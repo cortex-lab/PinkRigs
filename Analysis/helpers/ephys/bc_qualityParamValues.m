@@ -44,13 +44,13 @@ param.templateDuration = 400;
 param.pss = 40;
 
 % paths
-if exist(ksFolder,'var')
+if exist('ksFolder','var')
     % added by CB
     param.ksFolder = ksFolder;
 else
     param.ksFolder = nan;
 end
-if exist(ephysap_path,'var')
+if exist('ephysap_path','var')
     param.rawFolder = [ephysap_path, '/..'];
 else
     param.rawFolder = nan;
