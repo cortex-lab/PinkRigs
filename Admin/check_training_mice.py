@@ -53,7 +53,10 @@ for mname in activeMice:
 
         block = scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),squeeze_me=True)
 
-        stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage'] 
+        stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage']
+        timeout = block['block']['events'].item()['selected_paramsetValues'].item()['responseWindow']      
+        wheelMovementProbability=block['block']['events'].item()['selected_paramsetValues'].item()['wheelMovementProbability']
+
             
         # check whether they were trained recently
         previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
@@ -64,7 +67,7 @@ for mname in activeMice:
             trainedthisweek=0
                       
         if trainedthisweek==1:
-            readyMice.append('%s - Stage %.0d on day %s' % (mname,stage,expDate))
+            readyMice.append('%s - Stage %.0d,timeout in %.1d s, wheel yoked in %.0d %% of trials, on day %s' % (mname,stage,expDate,timeout,wheelMovementProbability*100))
     
 if len(readyMice)>0:
     now = datetime.datetime.today()
