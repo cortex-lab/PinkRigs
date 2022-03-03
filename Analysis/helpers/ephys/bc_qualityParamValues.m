@@ -1,8 +1,5 @@
 param = struct;
 
-% added by CB
-param.ksFolder = ksFolder;
-
 %bc_qualityParamValues
 param.plotThis = 0;
 param.plotGlobal = 0;
@@ -25,7 +22,6 @@ param.maxWvDuration = 800; %ms
 param.minSpatialDecaySlope = -20;
 param.maxWvBaselineFraction = 0.3;
 % amplitude parameters
-param.rawFolder = [ephysap_path, '/..'];
 param.nRawSpikesToExtract = 100; 
 param.minAmplitude = 20; 
 % recording parametrs
@@ -46,3 +42,16 @@ param.longISI = 2;
 param.propISI = 0.1;
 param.templateDuration = 400;
 param.pss = 40;
+
+% paths
+if exist(ksFolder,'var')
+    % added by CB
+    param.ksFolder = ksFolder;
+else
+    param.ksFolder = nan;
+end
+if exist(ephysap_path,'var')
+    param.rawFolder = [ephysap_path, '/..'];
+else
+    param.rawFolder = nan;
+end
