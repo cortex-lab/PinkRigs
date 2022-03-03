@@ -115,8 +115,8 @@ if any(alignFile)
         nDat.issorted = num2str(nan);
     end    
 end
-if nDat.alignBlkFrontSideEyeMicEphys(6) == 0 && round(now-blk.endDateTime)>7 && nDat.ephysFolderExists == 0
-    nDat.alignBlkFrontSideEyeMicEphys(6) = nan;
+if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
+    nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
 end
 
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
