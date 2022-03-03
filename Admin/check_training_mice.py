@@ -43,7 +43,7 @@ for mname in activeMice:
 
     if (sess2check.shape[0]>0):
         # take the last day for the update
-        expPath = sess2check['path'].iloc[0]
+        expPath = sess2check['expFolder'].iloc[0]
         expDate = sess2check['expDate'].iloc[0]
         try: # date formats aren't homogeneous...
             datetime.datetime.strptime(expDate, '%Y-%m-%d')

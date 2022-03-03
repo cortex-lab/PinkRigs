@@ -2,12 +2,12 @@ function codeChecked = checkStatusCode(codes2Check,codeRef)
     %%% This function will check the status of experiment (taken from the
     %%% csv) against a specific request
     %%%
-    %%% (x,x,x) will take these if any of the bits that are inside equal x
+    %%% (a,a,a) will take these if any of the bits that are inside equal a
     %%% (equivalent to "any")
-    %%% ~(x,x,x) will take these if any of the bits that are inside equal x
+    %%% ~(a,a,a) will take these if any of the bits that are inside equal a
     %%% (equivalent to "not any")
-    %%% ~(x,x,x) will take these if at least one of the bit is different
-    %%% from x (equivalent to "not all")
+    %%% x(a) will take these if at least one of the bit is different
+    %%% from a (equivalent to "not all")
     
     
     % Check if grouping (for "any" or "not any")

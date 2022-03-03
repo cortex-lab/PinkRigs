@@ -66,7 +66,7 @@ for i = 1:length(subject)
         taskEvents = cell2struct(cellData, names);
         taskEvents.nExperiments = sum(modeIdx);
         blkDates{i} = blkDates{i}(modeIdx);
-        rigNames{i} = blkDates{i}(modeIdx);
+        rigNames{i} = rigNames{i}(modeIdx);
     end
     
     for j = 1:length(taskEvents)

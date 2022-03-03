@@ -105,7 +105,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
         try
-            [timelineFlipperTimes, ephysFlipperTimes_cut] = ...
+            [timelineFlipperTimes_corr, ephysFlipperTimes_cut] = ...
                 try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
             success = 1;
         catch
@@ -115,7 +115,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         if success
             fprintf('Success! \n')
             ephysRefTimes{ee} = ephysFlipperTimes_cut;
-            timelineRefTimes{ee} = timelineFlipperTimes;
+            timelineRefTimes{ee} = timelineFlipperTimes_corr;
         else
             ephysRefTimes{ee} = [];
             timelineRefTimes{ee} = [];

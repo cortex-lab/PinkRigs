@@ -13,9 +13,9 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'sparseNoise';
         
     elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
-            contains(expDef, 'AVPassive_checkerboard_postactive')
-        expDefRef = 'AVprotocol';
-
+            contains(expDef, 'AVPassive_ckeckerboard_postactive')
+%         expDefRef = 'AVprotocol';
+        expDefRef = 'AVprotocol2';
     else
         error('ExpDef reference does not exist for expDef %s',expDef)
     end

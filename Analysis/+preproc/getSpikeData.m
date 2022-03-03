@@ -22,7 +22,8 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
     sp = loadKSdir(KSFolder,params);
     
     %% Compute depths
-
+    %%% SHOULD FIND A BETTER WAY TO DO IT?
+    
     if isfield(sp,'pcFeat')
         pcFeat = sp.pcFeat;
         pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
@@ -52,7 +53,7 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         spk(ii).ID = sp.cids(ii)';
         spk(ii).KSLab = sp.cgs(ii);
         spk(ii).Spknum = numel(spk(ii).spikeTimes);
-        if exist('spikeDepths','var')
+        if isfield(sp,'spikeDepths')
             spk(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
             spk(ii).Depth = nanmean(sp.spikeDepths(spkIdx));
         else 
