@@ -63,14 +63,19 @@ function ev = AVprotocol(timeline, block, alignmentBlock)
             audOnsetAll(tt) = audOnset(idxa);
         end
     end
-    stimOnset = min([visOnsetAll; audOnsetAll]); % NOT IDEAL AT ALL, TAKES THE FIRST ONE THAT COMES // COULD ALSO TAKE stimOnsetRaw
-    stimOnset(audTrial) = audOnset; % force it to be aligned on auditory onsets for now, because that's what we're interested in...
-    stimOnset(isnan(stimOnset)) = stimOnsetRaw(isnan(stimOnset));
+%     stimOnset = min([visOnsetAll; audOnsetAll]); % NOT IDEAL AT ALL, TAKES THE FIRST ONE THAT COMES // COULD ALSO TAKE stimOnsetRaw
+%     
+%     stimOnset(audTrial) = audOnset; % force it to be aligned on auditory onsets for now, because that's what we're interested in...
+%     stimOnset(isnan(stimOnset)) = stimOnsetRaw(isnan(stimOnset));
     
     %% save it in ev
-    ev.stimOnset = stimOnset;
+    ev.visStimOnset = visOnsetAll;
+    ev.audStimOnset = audOnsetAll;
     ev.trialInfo.visTrial = visTrial;
     ev.trialInfo.visTrialsLoc = visTrialsLoc;
     ev.trialInfo.audTrial = audTrial;
     ev.trialInfo.audTrialsLoc = audTrialsLoc;
     ev.trialInfo.rewTrials = rewTrials;
+    ev.trialInfo.visContrast=block.events.viscontrastValues;
+    ev.trialInfo.Loudness = block.events.audamplitudeValues; 
+    

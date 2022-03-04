@@ -3,20 +3,20 @@ close all
 
 %% Get exp ref
 
-params.mice2Check = 'AV009';
-% params.days2Check = {'2021-11-22','2021-11-23'};
+params.mice2Check = 'FT035';
+params.days2Check = {'2021-12-14'};
 % params.expDef2Check = 'imageWorld';
 params.timeline2Check = 1;
-params.align2Check = '(0,0,0,0,0,0)'; % "any 0"
-params.preproc2Check = '(0,0)';
+params.align2Check = '*,*,*,*,*'; 
+params.preproc2Check = '*,*';
 exp2checkList = queryExp(params);
 
 %% Just run alignment
-params.recompute = {'video'};
+params.recompute = {'all'};
 preproc.align.main(params,exp2checkList)
 
 %% Just run preprocessing
-params.recompute = 1;
+params.recompute = {'all'};
 preproc.extractExpData(params, exp2checkList)
 
 %% Or run all
