@@ -1,5 +1,5 @@
 function plotIMROProtocol(basePath,savePlt)
-    if ~exist(savePlt,'var')
+    if ~exist('savePlt','var')
         savePlt = 0;
     end
     

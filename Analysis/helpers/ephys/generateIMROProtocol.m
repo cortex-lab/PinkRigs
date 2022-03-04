@@ -5,7 +5,7 @@ function generateIMROProtocol(basePath,imroprop)
     if exist(basePath,'dir')
         % just save it somewhere else
         today = datestr(now);
-        movefile(basePath, regexprep([basePath '_' today]),' |:','_')
+        movefile(basePath, regexprep([basePath '_' today],' |:','_'))
     end
     
     mkdir(basePath)
@@ -21,7 +21,7 @@ function generateIMROProtocol(basePath,imroprop)
             for probeNum = 1:numel(imroprop{d}{p}.probe)
                 probeProp = imroprop{d}{p}.probe(probeNum);
                 prefix = sprintf('Day%d_%s_probe%d_',d,protocol,probeNum-1);
-                fileName = kilo.generateIMRO_P24(probeProp.patternTag, probeProp.botRow, probeProp.shankChoice, probeProp.refElec, savePath);
+                fileName = generateIMRO_P24(probeProp.patternTag, probeProp.botRow, probeProp.shankChoice, probeProp.refElec, savePath);
                 [path,file,ext] = fileparts(fileName);
                 movefile(fileName,fullfile(path,[prefix file ext]))
             end
