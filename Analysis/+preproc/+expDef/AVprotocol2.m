@@ -31,6 +31,7 @@ function ev = AVprotocol2(timeline, block, alignmentBlock)
         
 %% Convert to shorter names for ease of use later
 e = block.events;                     %Event structure
+v = block.paramsValues;  %Parameter values at start of trial
 vIdx = e.repeatNumValues(1:length(e.endTrialTimes))==1;            %Indices of valid trials (0 for repeats)
 
 %% The number of repeats and timeouts for each trial type presented
@@ -49,13 +50,26 @@ end
 eIdx = 1:length(e.endTrialTimes);
 vIdx = vIdx(eIdx);
 
-audAmplitude = e.audAmplitudeValues(eIdx)';               %Convert amplitudes to matrix. Assumes one value for each trial.
-visContrast = e.visContrastValues(eIdx)';                 %Convert contrast to matrix. Assumes one value for each trial.
-correctResponse = e.correctResponseValues(eIdx)';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
-audInitialAzimuth = e.audInitialAzimuthValues(eIdx)';     %Convert audInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+if isfield(v, 'audAmplitude')
+    audAmplitude = [v(eIdx).audAmplitude]';               %Convert amplitudes to matrix. Assumes one value for each trial.
+    visContrast = [v(eIdx).visContrast]';                 %Convert amplitudes to matrix. Assumes one value for each trial.
+    correctResponse = [v(eIdx).correctResponse]';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
+    audInitialAzimuth = [v(eIdx).audInitialAzimuth]';     %Convert audInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+    visInitialAzimuth = [v(eIdx).visInitialAzimuth]';     %Convert visInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+    clickRate = block.paramsValues.clickRate;
+    clickDuration = block.paramsValues.clickDuration;
+else
+    audAmplitude = e.audAmplitudeValues(eIdx)';               %Convert amplitudes to matrix. Assumes one value for each trial.
+    visContrast = e.visContrastValues(eIdx)';                 %Convert contrast to matrix. Assumes one value for each trial.
+    correctResponse = e.correctResponseValues(eIdx)';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
+    audInitialAzimuth = e.audInitialAzimuthValues(eIdx)';     %Convert audInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+    visInitialAzimuth = e.visInitialAzimuthValues(eIdx)';     %Convert visInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+    clickRate = block.events.selected_paramsetValues.clickRate;
+    clickDuration = block.events.selected_paramsetValues.clickDuration;
+end
 audInitialAzimuth(audAmplitude==0) = inf;             %Change case when audAmplitude was 0 to have infinite azimuth (an indication of no azimuth value)
-visInitialAzimuth = e.visInitialAzimuthValues(eIdx)';     %Convert visInitialAzimuth on each trial to matrix. Assumes one value for each trial.
 visInitialAzimuth(visContrast==0) = inf;              %Change case when visContrast was 0 to have infinite azimuth (an indication of no azimuth value)
+
 
 %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
 trialTimes = [e.newTrialTimes(eIdx)' e.endTrialTimes(eIdx)'];
@@ -117,8 +131,6 @@ stimStartBlock = preproc.align.event2Timeline(block.events.stimPeriodOnOffTimes,
 stimStartBlock = stimStartBlock(1:2:end);
 stimStartBlock = stimStartBlock(eIdx)';
 
-clickRate = block.events.selected_paramsetValues.clickRate;
-clickDuration = block.events.selected_paramsetValues.clickDuration;
 trialGapThresh = 1;
 %% Reward times using standard code
 tExt.rewardTimes = timeproc.getChanEventTime(timeline, 'rewardEcho')';

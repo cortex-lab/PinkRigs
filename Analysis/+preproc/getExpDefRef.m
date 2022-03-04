@@ -13,7 +13,7 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'sparseNoise';
         
     elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
-            contains(expDef, 'AVPassive_ckeckerboard_postactive')
+            contains(expDef, 'multiSpaceWorld_checker')
 %         expDefRef = 'AVprotocol';
         expDefRef = 'AVprotocol2';
     else

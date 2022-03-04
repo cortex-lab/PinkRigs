@@ -45,7 +45,7 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
         switch expDef
             case 'imageWorld_AllInOne'
                 alignType = 'photoDiode';
-            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'}
+            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'}
                 alignType = 'wheel';
             otherwise 
                 fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',expDef)

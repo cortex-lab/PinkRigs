@@ -58,7 +58,7 @@ function exp2checkList = queryExp(varargin)
         
         % Get specific expDefs
         if ~strcmp(params.expDef2Check,'all')
-            expDef2Check = contains(expListMouse.expDef,params.expDef2Check);
+            expDef2Check = strcmpi(expListMouse.expDef,params.expDef2Check);
             exp2Check = exp2Check & expDef2Check;
         end
         
