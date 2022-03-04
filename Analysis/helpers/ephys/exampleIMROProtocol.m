@@ -1,6 +1,6 @@
 %% Define base path to generate the IMRO
 
-basePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV010';
+basePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV009';
 
 %% DAY 1
 d = 1;
@@ -164,3 +164,9 @@ generateIMROProtocol(basePath,imroprop)
 
 % Will read and plot it
 plotIMROProtocol(basePath,1)
+
+% Copy the file that was used to generate this protocol
+FileNameAndLocation = mfilename('fullpath');
+[path,file] = fileparts(FileNameAndLocation);
+[~,protocolName] = fileparts(basePath);
+copyfile([FileNameAndLocation '.m'], fullfile(basePath,[regexprep(file,'example',protocolName) '.m']));
