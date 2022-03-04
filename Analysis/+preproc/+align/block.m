@@ -85,8 +85,6 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
             testIdx = cellfun(@(x) sum(abs(blockWheelVelocity(x))), samplePoints)>(5*blockWidth/sR);
             if mean(testIdx) < 0.2
                 error('Not enough movment to synchronize using wheel');
-            elseif mean(testIdx) < 0.2
-                warning('Little movement so timeline alignment with wheel will be unreliable');
             end
             
             % Go through each subsection and detect the offset between block and timline
