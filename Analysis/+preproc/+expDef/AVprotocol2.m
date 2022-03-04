@@ -157,18 +157,18 @@ largeAudGaps = sort([find(diff([0; aStimOnOffTV(:,1)])>trialGapThresh); find(dif
 audstimStartTimeline = aStimOnOffTV(largeAudGaps,1);
 audstimStartTimeline = audstimStartTimeline(aStimOnOffTV(largeAudGaps,2)==1);
 nonAudTrials = audAmplitude(eIdx) == 0; 
-[compareIndex] = prc.nearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
+[compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
 audError = 0;
 if any(compareIndex-(1:numel(compareIndex))')
     audError = 1;
-    [compareIndex] = prc.nearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline(~nonAudTrials));
+    [compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline(~nonAudTrials));
     if ~any(compareIndex-(1:numel(compareIndex))') && length(largeAudGaps)/2 == length(nonAudTrials)
         fprintf('WARNING: Detected that AmpAud = 0 trials still generated signals in Timeline. Will remove these \n')
         
         largeAudGaps([find(nonAudTrials)*2-1 find(nonAudTrials)*2]) = [];
         audstimStartTimeline = aStimOnOffTV(largeAudGaps,1);
         audstimStartTimeline = audstimStartTimeline(aStimOnOffTV(largeAudGaps,2)==1);
-        [compareIndex] = prc.nearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
+        [compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
         if ~any(compareIndex-(1:numel(compareIndex)))
             audError = 0;
             keepIdx = cell2mat(arrayfun(@(x) largeAudGaps(x):largeAudGaps(x+1), 1:2:length(largeAudGaps), 'uni', 0));
@@ -199,15 +199,15 @@ largeVisGaps = [largeVisGaps(1:2:end) largeVisGaps(2:2:end)];
 largeVisGaps(diff(largeVisGaps,[],2)<(1/2000),:) = [];
 
 % Sanity check (should be match between stim starts from block and from timeline)
-[compareIndex] = prc.nearestPoint(stimStartRef, largeVisGaps(:,1)');
+[compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)');
 if any(compareIndex-(1:numel(compareIndex))')
     fprintf('WARNING: problem matching visual stimulus start and end times \n');
     fprintf('Will try removing points that do not match stimulus starts \n');
     
-    [~, nearestPoint] = prc.nearestPoint(largeVisGaps(:,1), stimStartRef);
+    [~, nearestPoint] = getNearestPoint(largeVisGaps(:,1), stimStartRef);
     largeVisGaps(nearestPoint>0.75,:) = [];
     
-    [compareIndex] = prc.nearestPoint(stimStartRef, largeVisGaps(:,1)')';
+    [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
     if any(compareIndex-(1:numel(compareIndex))); fprintf('Error in matching visual stimulus start and end times \n'); keyboard; end
 end
 
@@ -320,7 +320,7 @@ rawFields = fields(tExt);
 for i = 1:length(rawFields)
     currField = rawFields{i};
     currData = tExt.(currField);
-    tExt.(currField) = prc.indexByTrial(trialStEnTimes, currData(:,1), currData);
+    tExt.(currField) = indexByTrial(trialStEnTimes, currData(:,1), currData);
     emptyIdx = cellfun(@isempty, tExt.(currField));
 
     if any(strcmp(currField, {'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
