@@ -135,6 +135,7 @@ function main(varargin)
                 
                 % Note that block file should always exist.
                 try
+                    block = struct;
                     fprintf(1, '* Aligning block... *\n');
                     [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
                     fprintf(1, '* Block alignment done. *\n');

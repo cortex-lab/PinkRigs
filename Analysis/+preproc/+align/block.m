@@ -45,7 +45,7 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
         switch expDef
             case 'imageWorld_AllInOne'
                 alignType = 'photoDiode';
-            case 'multiSpaceWorld'
+            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'}
                 alignType = 'wheel';
             otherwise 
                 fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',expDef)
@@ -54,7 +54,8 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
     end
     
     %% Get reference times for block and timeline
-    
+    timelineTime = timeline.rawDAQTimestamps;
+    sR = 1/diff(timelineTime(1:2));
     switch alignType
         case 'wheel' % Get interpolation points using the wheel data
             % Unwrap the wheel trace (it is circular) and then smooth it. Smoothing is important because covariance will not work otherwise
