@@ -1,4 +1,8 @@
-function plotIMROProtocol(basePath)
+function plotIMROProtocol(basePath,savePlt)
+    if ~exist(savePlt,'var')
+        savePlt = 0;
+    end
+    
     probeColor = [0.4 0.6 0.2; ...
                     0.9 0.3 0.0];
     
@@ -69,5 +73,7 @@ function plotIMROProtocol(basePath)
         end
     end
     
-    saveas(f,fullfile(basePath,'IMROWholeProtocol.png'),'png')
+    if savePlt
+        saveas(f,fullfile(basePath,'IMROWholeProtocol.png'),'png')
+    end
 end

@@ -163,4 +163,4 @@ imroprop{d}{p}.probe(2).refElec = 1;
 generateIMROProtocol(basePath,imroprop)
 
 % Will read and plot it
-plotIMROProtocol(basePath)
+plotIMROProtocol(basePath,1)
