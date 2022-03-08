@@ -46,6 +46,10 @@ function ev = AVprotocol(timeline, block, alignmentBlock)
     % audOnset = t(find(diff(aud)>1)+1);
     % audOnset(find(diff(audOnset)<1)+1) = [];
     [~, visOnset, ~] = schmittTimes(t, pho, max(pho)*[0.5 0.8]);
+    if numel(visOnset)<2
+        % case where photodiode is pretty high
+        [~, visOnset, ~] = schmittTimes(t, pho, max(pho)*[0.8 0.9]);
+    end
     visOnset(1) = []; % looks like something else
     visOnset(find(diff(visOnset)<0.5)+1) = [];
     nTrials = numel(block.events.stimuliOnTimes);

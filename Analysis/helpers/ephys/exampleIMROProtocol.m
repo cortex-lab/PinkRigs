@@ -1,6 +1,7 @@
 %% Define base path to generate the IMRO
 
 basePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV009';
+clear imroprop
 
 %% DAY 1
 d = 1;
