@@ -9,11 +9,11 @@ function chan = extractChan(timeline,chanName,varargin)
     end
     
     
-    if strcmp(chanName,'time')
+    if strcmpi(chanName,'time')
         % extract the time channel
         chan = timeline.rawDAQTimestamps;
     else
-        chanIndex = find(strcmp({timeline.hw.inputs.name}, chanName));
+        chanIndex = find(strcmpi({timeline.hw.inputs.name}, chanName));
         if ~isempty(chanIndex)
             chan = timeline.rawDAQData(:,chanIndex);
         else
