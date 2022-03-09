@@ -41,16 +41,17 @@ function getAvgMovInt(direc, fname, varargin)
     else
         % load only a defined number of frames at the beginning and end of
         % the movie
+        nFramesToLoad = min(nF,nFramesToLoad);
         img = read(vr, [1 nFramesToLoad]);
         avgIntensity(1:nFramesToLoad) = squeeze(mean(mean(img(ROI(2):(ROI(2)+ROI(4)-1), ROI(1):(ROI(1)+ROI(3)-1),:,:), 1),2));
-        avgIntensity(nFramesToLoad+1:nF-nFramesToLoad-1) = avgIntensity(nFramesToLoad);
+        avgIntensity(nFramesToLoad+1:nF-nFramesToLoad) = avgIntensity(nFramesToLoad);
         
-        img = read(vr, [nF-nFramesToLoad nF]);
-        avgIntensity(nF-nFramesToLoad:nF) = squeeze(mean(mean(img(ROI(2):(ROI(2)+ROI(4)-1), ROI(1):(ROI(1)+ROI(3)-1),:,:), 1),2));
+        img = read(vr, [nF-nFramesToLoad+1 nF]);
+        avgIntensity(nF-nFramesToLoad+1:nF) = squeeze(mean(mean(img(ROI(2):(ROI(2)+ROI(4)-1), ROI(1):(ROI(1)+ROI(3)-1),:,:), 1),2));
         
         isLoaded = false(size(avgIntensity));
         isLoaded(1:nFramesToLoad) = true;
-        isLoaded(nF-nFramesToLoad:nF) = true;
+        isLoaded(nF-nFramesToLoad+1:nF) = true;
     end
     
     % delete and clear
