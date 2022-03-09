@@ -50,8 +50,8 @@ end
 
 blk = load(blockPath); blk = blk.block;
 if ~contains(blk.rigName, 'zelda'); return; end
-if blk.duration/60<5
-    fprintf('Block < 5 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
+if blk.duration/60<2
+    fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     pause(0.01);
     return;
 end
