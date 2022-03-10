@@ -7,8 +7,10 @@ else
 %     continue;%fprintf('There is %d GB of space, continuing experiment...\n', round(FileObj.getUsableSpace/1e9));
 end
 %%
-% open frontcam 
-eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
+% open frontcam
+if any(contains(hostname, {'1';'2'}))
+    eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
+end
 
 % open sidecam
 eval('!matlab -nodesktop -nosplash -r "my_sidecam" &')
