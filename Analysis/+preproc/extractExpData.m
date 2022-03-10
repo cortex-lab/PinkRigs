@@ -131,15 +131,17 @@ function extractExpData(varargin)
                                 spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
                                 
                                 % Align them
-                                for clu = 1:numel(spk{probeNum})
-                                    spk{probeNum}(clu).spikeTimes = preproc.align.event2Timeline(spk{probeNum}(clu).spikeTimes, ...
-                                        alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
-                                    
-                                    % Subselect the ones that are within this experiment
-                                    expLength = block.duration;
-                                    spk2keep = (spk{probeNum}(clu).spikeTimes>0) & (spk{probeNum}(clu).spikeTimes<expLength);
-                                    spk{probeNum}(clu).spikeTimes = spk{probeNum}(clu).spikeTimes(spk2keep);
-                                end
+                                spk{probeNum}.spikes.time = preproc.align.event2Timeline(spk{probeNum}.spikes.time, ...
+                                    alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                                
+                                % Subselect the ones that are within this experiment
+                                expLength = block.duration;
+                                spk2keep = (spk{probeNum}.spikes.time>0) & (spk{probeNum}.spikes.time<expLength);
+                                spk{probeNum}.spikes.time = spk{probeNum}.spikes.time(spk2keep);
+                                spk{probeNum}.spikes.cluster = spk{probeNum}.spikes.cluster(spk2keep);
+                                spk{probeNum}.spikes.xpos = spk{probeNum}.spikes.xpos(spk2keep);
+                                spk{probeNum}.spikes.depth = spk{probeNum}.spikes.depth(spk2keep);
+                                spk{probeNum}.spikes.tempScalingAmp = spk{probeNum}.spikes.tempScalingAmp(spk2keep);
                             end
                             
                             % Remove any error file
@@ -155,7 +157,7 @@ function extractExpData(varargin)
                             % Save error message locally
                             saveErrMess(me.message,fullfile(expPath, 'GetSpkError.json'))
                         end
-                    elseif isstring(alignment.ephys) && strcmp(alignment.ephys,'error')
+                    elseif ischar(alignment.ephys) && strcmp(alignment.ephys,'error')
                         spk = 'error';
                     elseif isnan(alignment.ephys)
                         spk = nan;
