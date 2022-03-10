@@ -8,7 +8,7 @@ function main(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     params.recomputeKilo = 0;
     params.recomputeQMetrics = 0; % made the two independent
-    params.checkTime = 0;
+    params.runFor = inf; % in hour
     
     % This is not ideal
     if ~isempty(varargin)
@@ -73,13 +73,11 @@ function main(varargin)
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
-        if params.checkTime
-            % To avoid running too long. Will stop after ~20h + 1 last 
-            % processing.
-            nowClock = datetime('now');
-            if nowClock > startClock + 20/24
-                return
-            end
+        % To avoid running too long. Will stop after ~20h + 1 last
+        % processing.
+        nowClock = datetime('now');
+        if nowClock > startClock + param.runFor/24
+            return
         end
         
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
