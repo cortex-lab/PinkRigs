@@ -47,8 +47,8 @@ while find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)
         t1(errPoint+1) = [];
     end
     
-    t2(max([errPoint-1,1]):errPoint+1) = [];
-    t1(max([errPoint-1,1]):errPoint+1) = [];
+    t2(max([errPoint-1,1]):min([errPoint+1 numel(t2)])) = [];
+    t1(max([errPoint-1,1]):min([errPoint+1 numel(t1)])) = [];
     
     minL = min([length(t1) length(t2)]);
     compareVect = [t1(1:minL)-(t1(1)) t2(1:minL)-t2(1)];
