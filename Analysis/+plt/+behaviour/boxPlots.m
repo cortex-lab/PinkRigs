@@ -20,6 +20,7 @@ function boxPlots(subject, expDate, plotType, sepPlots, expDef)
 % expDef----Name of required expDef ('multiSpaceWorld_checker_training')
 
 %%
+figure;
 if ~exist('subject', 'var'); error('Must specify subect'); end
 if ~exist('expDate', 'var'); expDate = 'last5'; end
 if ~exist('plotType', 'var'); plotType = 'res'; end
