@@ -65,6 +65,6 @@ switch lower(computerType)
         kilo.main(param)
          
         fprintf('Running preprocessing...\n')
-        params.mice2Check = 'AV009'; % for now to avoid crashes
+        params.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
         preproc.main(params);
 end
