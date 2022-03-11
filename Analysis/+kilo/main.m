@@ -76,7 +76,7 @@ function main(varargin)
         % To avoid running too long. Will stop after ~20h + 1 last
         % processing.
         nowClock = datetime('now');
-        if nowClock > startClock + param.runFor/24
+        if nowClock > startClock + params.runFor/24
             return
         end
         

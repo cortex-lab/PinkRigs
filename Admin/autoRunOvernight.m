@@ -65,13 +65,13 @@ switch lower(computerType)
         
         fprintf('Running kilosort on the queue... \n')
         if c(4) > 20
-            param.runFor = 3; % to stop it after about 20h
+            paramsKilo.runFor = 3; % to stop it after about 20h
         else
-            param.runFor = 17;
+            paramsKilo.runFor = 17;
         end
-        kilo.main(param)
+        kilo.main(paramsKilo)
          
         fprintf('Running preprocessing...\n')
-        params.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
-        preproc.main(params);
+        paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
+        preproc.main(paramsPreproc);
 end
