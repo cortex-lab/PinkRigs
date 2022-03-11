@@ -1,10 +1,11 @@
 %% Define base path to generate the IMRO
 
 basePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV009';
-clear imroprop
+clear imroprop days
 
 %% DAY 1
 d = 1;
+days{d} = '11-03-2022'; % optional
 % PROTOCOL 1
 p = 1;
 imroprop{d}{p}.protocol = 'PassiveActive';
@@ -82,6 +83,7 @@ imroprop{d}{p}.probe(2).refElec = 1;
 
 %% DAY 2
 d = d+1;
+days{d} = '12-03-2022';
 % PROTOCOL 1
 p = 1;
 imroprop{d}{p}.protocol = 'PassiveActive';
@@ -161,7 +163,7 @@ imroprop{d}{p}.probe(2).refElec = 1;
 %% Generate the protocol and plot
 
 % Will generate the protocol
-generateIMROProtocol(basePath,imroprop)
+generateIMROProtocol(basePath,imroprop,days)
 
 % Will read and plot it
 plotIMROProtocol(basePath,1)

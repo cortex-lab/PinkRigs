@@ -68,7 +68,11 @@ function plotIMROProtocol(basePath,savePlt)
                 xlim([-16,(numel(IMROfiles)-1)*8*shankSep + numel(IMROfiles)*3*shankSep+64]);
                 ylim([-10,10000]);
                 text((probeNum-1)*8*shankSep + 0.5*shankSep+64,10000,sprintf('Probe %d', probeNum))
-                title(sprintf('%s, Protocol %s',days(d).name,regexprep(protocols(p).name,'_',' ')));
+                title(regexprep(protocols(p).name,'_',' '));
+            end
+            
+            if p == 1
+                ylabel(regexprep(days(d).name,'_',' '))
             end
         end
     end

@@ -1,6 +1,10 @@
-function generateIMROProtocol(basePath,imroprop)
+function generateIMROProtocol(basePath,imroprop,days)
     %%% This function will generate the architecture and IMRO files for a
     %%% given protocol.
+    
+    if ~exist('days','var')
+        days = cellstr(num2str([1:numel(imroprop)]'));
+    end
     
     if exist(basePath,'dir')
         % just save it somewhere else
@@ -12,11 +16,11 @@ function generateIMROProtocol(basePath,imroprop)
     
     % Loop through days and protocols
     for d = 1:numel(imroprop)
-        mkdir(fullfile(basePath,sprintf(sprintf('Day%d',d))))
+        mkdir(fullfile(basePath,['Day_',days{d}]))
         for p = 1:numel(imroprop{d})
             % Get protocol
             protocol = imroprop{d}{p}.protocol;
-            savePath = fullfile(basePath,sprintf('Day%d',d),protocol);
+            savePath = fullfile(basePath,['Day_',days{d}],protocol);
             mkdir(savePath)
             for probeNum = 1:numel(imroprop{d}{p}.probe)
                 probeProp = imroprop{d}{p}.probe(probeNum);
