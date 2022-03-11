@@ -42,13 +42,16 @@ switch lower(computerType)
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
         csv.checkForNewPinkRigRecordings;
         
-        fprintf('Update on training... \n')
-        checkTrainingPath = which('check_training_mice.py');
-        [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
-            'python ' checkTrainingPath ' &&' ...
-            'conda deactivate']);
-        if statusTrain > 0
-            fprintf('Updating on training failed with error "%s".\n', resultTrain)
+        c = clock;
+        if c(4) > 20
+            fprintf('Update on training... \n')
+            checkTrainingPath = which('check_training_mice.py');
+            [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
+                'python ' checkTrainingPath ' &&' ...
+                'conda deactivate']);
+            if statusTrain > 0
+                fprintf('Updating on training failed with error "%s".\n', resultTrain)
+            end
         end
         
         fprintf('Getting kilosort queue... \n')
@@ -61,10 +64,14 @@ switch lower(computerType)
         end
         
         fprintf('Running kilosort on the queue... \n')
-        param.checkTime = 1; % to stop it after about 20h
-        kilo.main(param)
+        if c(4) > 20
+            paramsKilo.runFor = 3; % to stop it after about 20h
+        else
+            paramsKilo.runFor = 17;
+        end
+        kilo.main(paramsKilo)
          
         fprintf('Running preprocessing...\n')
-        params.mice2Check = 'AV009'; % for now to avoid crashes
-        preproc.main(params);
+        paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
+        preproc.main(paramsPreproc);
 end
