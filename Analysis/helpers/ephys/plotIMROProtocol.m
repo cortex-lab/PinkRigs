@@ -42,6 +42,8 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
                 assert(fid>=3,msg) % ensure the file opened correctly.
                 out = fgetl(fid); % read and ignore the very first line.
                 fclose(fid);
+                
+                %%% Same as in plotRecordingSites
                 out = regexp(out,'\(|\)(|\)','split'); 
                 out(1:2) = []; % empty + extra channel or something?
                 out(end) = []; % empty

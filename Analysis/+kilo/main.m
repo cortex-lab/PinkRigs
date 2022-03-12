@@ -70,6 +70,10 @@ function main(varargin)
         [ephysPath,b,c] = fileparts(recName);
         ephysFileName = strcat(b,c);
         
+        % Plot and save recording sites
+        ephysParentFolderName = fileparts(ephysPath);
+        plotRecordingSites({ephysParentFolderName},1)
+        
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
