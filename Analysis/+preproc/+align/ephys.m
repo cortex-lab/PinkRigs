@@ -98,18 +98,26 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         end
         % Get the current experiment (the one of which timeline duration
         % matches best)
-        [~, currExpIdx] = min(abs(experimentDurations-timeline.rawDAQTimestamps(end)));
-        % Subselect the ephys flipper flip times
-        ephysFlipperTimes_cut = ephysFlipperTimes_ee(flipperStEnIdx(currExpIdx,1):flipperStEnIdx(currExpIdx,2));
-        
+        percMismatch = abs(experimentDurations-timeline.rawDAQTimestamps(end))./experimentDurations;
+        [~, currExpIdx] = sort(percMismatch,'ascend');
+        currExpIdx = currExpIdx(percMismatch(currExpIdx) < 1); % subselect only the experiments with a mismatch that's not too bad
+
         % Check that number of flipper flips in timeline matches ephys
         success = 0;
-        try
-            [timelineFlipperTimes_corr, ephysFlipperTimes_cut] = ...
-                try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
-            success = 1;
-        catch
-            success = 0;
+        % try with the others experiments that aren't too bad
+        exp = 0;
+        while exp <= numel(currExpIdx)
+            exp = exp+1;
+            try
+                % Subselect the ephys flipper flip times
+                ephysFlipperTimes_cut = ephysFlipperTimes_ee(flipperStEnIdx(currExpIdx(exp),1):flipperStEnIdx(currExpIdx(exp),2));
+                [timelineFlipperTimes_corr, ephysFlipperTimes_cut] = ...
+                    try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
+                success = 1;
+                exp = numel(currExpIdx)+1;
+            catch
+                success = 0;
+            end
         end
                 
         if success
