@@ -65,7 +65,7 @@ switch lower(computerType)
         
         fprintf('Running kilosort on the queue... \n')
         if c(4) > 20
-            paramsKilo.runFor = 3; % to stop it after about 20h
+            paramsKilo.runFor = 2; % to stop it after about 20h
         else
             paramsKilo.runFor = 17;
         end

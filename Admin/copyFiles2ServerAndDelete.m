@@ -54,7 +54,7 @@ serverFileDetails = cell2mat(serverFileDetails);
 
 %% Deletions
 % delete files that have been copied correctly
-oldIdx = ([localFileDetails(:).datenum]<=now-2)';
+oldIdx = ([localFileDetails(:).datenum]<=now-0)';
 sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
 
 toDelete = localFileDetails(oldIdx & ~sizeMismatch);
