@@ -27,7 +27,7 @@ function extractExpData(varargin)
     
     if ~exist('exp2checkList', 'var')
         % Will get all the exp for the active mice.
-        exp2checkList = queryExp();
+        exp2checkList = csv.queryExp();
     end
     
     %% --------------------------------------------------------

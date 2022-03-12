@@ -83,8 +83,14 @@ function main(varargin)
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successKS = 1;
-        else
+        else            
             try
+                if exist('recList','var')
+                    % Indicate it's being processed
+                    recList.sortedTag(compIdx(rr)) = 0.5; % for 'currently processing'
+                    writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+                end
+                
                 %% Getting meta data
                 % Get meta data
                 metaData = readMetaData_spikeGLX(ephysFileName,ephysPath);
@@ -197,7 +203,7 @@ function main(varargin)
 
         % Get experments
         [partmp.mice2Check, partmp.days2Check, ~] = parseExpPath(ephysPath);
-        expList = queryExp(partmp);
+        expList = csv.queryExp(partmp);
         
         % Update
         for ee = 1:numel(expList)

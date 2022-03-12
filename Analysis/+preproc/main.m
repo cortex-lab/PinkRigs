@@ -28,7 +28,7 @@ function main(varargin)
     end
     
     if ~exist('exp2checkList', 'var')
-        exp2checkList = queryExp(params);
+        exp2checkList = csv.queryExp(params);
     end
     
     %% --------------------------------------------------------
