@@ -1,19 +1,39 @@
-function plotIMROProtocol(basePath,savePlt)
+function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
     if ~exist('savePlt','var')
         savePlt = 0;
+    end
+    if ~exist('pltAll','var')
+        % 1 to plot all days in one figure
+        pltAll = 0;
     end
     
     probeColor = [0.4 0.6 0.2; ...
                     0.9 0.3 0.0];
     
     days = dir(basePath);
+    if exist('dayNames','var') && ~isempty(daysIn)
+       days(~contains({days.name},daysIn)) = []; 
+    end
     days(~[days.isdir]) = [];
     days(ismember({days.name},{'.','..'})) = [];
-    f = figure('Position',[1 30 1920 970]);
+    
+    if pltAll
+        f = figure('Position',[1 30 1920 970]);
+    end
+    
     for d = 1:numel(days)
-        protocols = dir(fullfile(days(d).folder,days(d).name)); protocols(ismember({protocols.name},{'.','..'})) = [];
-        for p = 1:numel(protocols)
-            subplot(numel(days),numel(protocols),(d-1)*numel(protocols)+p); hold all
+        protocols = dir(fullfile(days(d).folder,days(d).name)); 
+        protocols(ismember({protocols.name},{'.','..'})) = [];
+        protocols(~[protocols.isdir]) = [];
+        if ~pltAll
+            f = figure('Position',[1 30 1920 970]);
+        end
+        for p = 1:numel(protocols)   
+            if ~pltAll
+                subplot(1,numel(protocols),p); hold all
+            else
+                subplot(numel(days),numel(protocols),(d-1)*numel(protocols)+p); hold all
+            end
             IMROfiles = dir(fullfile(protocols(p).folder,protocols(p).name,'**','*.imro'));
             for probeNum = 1:numel(IMROfiles)
                 %% read data
@@ -75,9 +95,11 @@ function plotIMROProtocol(basePath,savePlt)
                 ylabel(regexprep(days(d).name,'_',' '))
             end
         end
+        if savePlt && ~pltAll
+            saveas(f,fullfile(basePath,days(d).name,sprintf('IMROWholeProtocol_%s.png',days(d).name)),'png')
+        end
     end
-    
-    if savePlt
-        saveas(f,fullfile(basePath,'IMROWholeProtocol.png'),'png')
+    if savePlt && pltAll
+        saveas(f,fullfile(basePath,sprintf('IMROWholeProtocol_%s.png',regexprep(strjoin({days.name}),' ','_'))),'png')
     end
 end
