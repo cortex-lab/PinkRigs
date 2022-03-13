@@ -160,8 +160,14 @@ function main(varargin)
             end
                     
             if exist(KSOutFolderLoc,'dir')
-                % Delete data otherwise will crowd up
-                rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                try
+                    %%% Have to "try" for now because sometimes issue when
+                    %%% there's a KS error above...
+                    % Delete data otherwise will crowd up
+                    rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                catch
+                    warning('Can''t delete KSout local folder.. Will crowd up.')
+                end
             end
         end
         
