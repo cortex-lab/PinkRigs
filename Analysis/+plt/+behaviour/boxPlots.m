@@ -21,7 +21,7 @@ function boxPlots(subject, expDate, plotType, sepPlots, expDef)
 
 %%
 figure;
-if ~exist('subject', 'var'); error('Must specify subect'); end
+if ~exist('subject', 'var'); error('Must specify subject'); end
 if ~exist('expDate', 'var'); expDate = 'last5'; end
 if ~exist('plotType', 'var'); plotType = 'res'; end
 if ~exist('sepPlots', 'var'); sepPlots = 1; end

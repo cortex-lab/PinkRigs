@@ -20,11 +20,11 @@ function ev = AVprotocol(timeline, block, alignmentBlock)
     
     % QUICK AND DIRTY FOR NOW -- NEED TO CHANGE AND RECOMPUTE
     % get stim info
-    visTrial = block.events.viscontrastValues > 0;
-    visTrialsLoc = block.events.visazimuthValues; visTrialsLoc(~visTrial) = nan;
-    audTrial = block.events.audamplitudeValues > 0;
-    audTrialsLoc = block.events.audazimuthValues; audTrialsLoc(~audTrial) = nan;
-    rewTrials = block.outputs.rewardValues>0;
+    visTrial = block.events.viscontrastValues(1:numel(block.events.endTrialValues)) > 0;
+    visTrialsLoc = block.events.visazimuthValues(1:numel(block.events.endTrialValues)); visTrialsLoc(~visTrial) = nan;
+    audTrial = block.events.audamplitudeValues(1:numel(block.events.endTrialValues)) > 0;
+    audTrialsLoc = block.events.audazimuthValues(1:numel(block.events.endTrialValues)); audTrialsLoc(~audTrial) = nan;
+    rewTrials = block.outputs.rewardValues(1:numel(block.events.endTrialValues))>0;
     
     % get stim onsets
     t = timeproc.extractChan(timeline,'time');
@@ -52,7 +52,7 @@ function ev = AVprotocol(timeline, block, alignmentBlock)
     end
     visOnset(1) = []; % looks like something else
     visOnset(find(diff(visOnset)<0.5)+1) = [];
-    nTrials = numel(block.events.stimuliOnTimes);
+    nTrials = numel(block.events.endTrialValues); % full trials?
     visOnsetAll = nan(1,nTrials);
     audOnsetAll = nan(1,nTrials);
     idxv = 0;
