@@ -72,8 +72,10 @@ switch lower(computerType)
             paramsKilo.runFor = 17;
         end
         kilo.main(paramsKilo)
-         
-        fprintf('Running preprocessing...\n')
-        paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
-        preproc.main(paramsPreproc);
+        
+        if c(4) < 20
+            fprintf('Running preprocessing...\n')
+            paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
+            preproc.main(paramsPreproc);
+        end
 end
