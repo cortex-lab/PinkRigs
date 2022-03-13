@@ -39,6 +39,8 @@ switch lower(computerType)
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         
+        dbstop if error
+        
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
         csv.checkForNewPinkRigRecordings;
         
