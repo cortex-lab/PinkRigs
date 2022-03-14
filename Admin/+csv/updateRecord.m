@@ -74,7 +74,8 @@ nDat.expFolder = {fileparts(blockPath)};
 
 nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
-alignFile = contains({fileContents.name}','alignment.mat');
+nDat.ephysRecordingPath = num2str(nan);
+alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
 
 if any(alignFile)
     alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat']);
@@ -118,11 +119,15 @@ if any(alignFile)
         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
     elseif isnan(nDat.alignBlkFrontSideEyeMicEphys(6))
         nDat.issorted = nan;
+        nDat.ephysRecordingPath = num2str(nan);
+    else
+        nDat.ephysRecordingPath = 0;
     end    
 end
 if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
     nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
     nDat.issorted = 0;
+    nDat.ephysRecordingPath = 0;
 end
 
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));

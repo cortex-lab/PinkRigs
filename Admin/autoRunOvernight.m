@@ -72,8 +72,27 @@ switch lower(computerType)
             paramsKilo.runFor = 17;
         end
         kilo.main(paramsKilo)
-         
-        fprintf('Running preprocessing...\n')
-        paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
-        preproc.main(paramsPreproc);
+        
+        if c(4) < 20
+            %%% Bypassing preproc.main for now to go though experiments
+            %%% that have been aligned but not preprocessed... Have to fix
+            %%% it!
+            
+            fprintf('Running preprocessing...\n')
+            paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
+            % paramsPreproc.mice2Check = 'active';
+            paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
+            
+            % Alignment
+            paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
+            paramsPreproc.preproc2Check = '(*,*)';
+            exp2checkList = csv.queryExp(paramsPreproc);
+            preproc.align.main([], exp2checkList)
+            
+            % Extracting data
+            paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
+            paramsPreproc.preproc2Check = '(0,0)';
+            exp2checkList = csv.queryExp(paramsPreproc);
+            preproc.extractExpData([], exp2checkList)
+        end
 end
