@@ -11,7 +11,7 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
                     0.9 0.3 0.0];
     
     days = dir(basePath);
-    if exist('dayNames','var') && ~isempty(daysIn)
+    if exist('daysIn','var') && ~isempty(daysIn)
        days(~contains({days.name},daysIn)) = []; 
     end
     days(~[days.isdir]) = [];

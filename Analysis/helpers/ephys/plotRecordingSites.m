@@ -29,7 +29,7 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
                 if savePlt
                     f = figure('Position', [992   566   248   412],'visible','off'); hold all
                 else
-                    f = figure('Position', [992   566   248   412],'visible','off'); hold all
+                    f = figure('Position', [992   566   248   412]); hold all
                 end
                 for probeNum = 1:numel(probeFolders)
                     binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.bin'));
