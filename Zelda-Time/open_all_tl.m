@@ -8,9 +8,7 @@ else
 end
 %%
 % open frontcam
-if ~any(contains(hostname, {'1';'2'}))
-    eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
-end
+eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
 
 % open sidecam
 eval('!matlab -nodesktop -nosplash -r "my_sidecam" &')
