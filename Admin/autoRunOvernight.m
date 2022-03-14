@@ -79,20 +79,20 @@ switch lower(computerType)
             %%% it!
             
             fprintf('Running preprocessing...\n')
-            paramsPreproc.days2Check = inf; % back in time from today
+            paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
             % paramsPreproc.mice2Check = 'active';
             paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
             
             % Alignment
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
             paramsPreproc.preproc2Check = '(*,*)';
-            exp2checkList = csv.queryExp(params);
+            exp2checkList = csv.queryExp(paramsPreproc);
             preproc.align.main([], exp2checkList)
             
             % Extracting data
             paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
             paramsPreproc.preproc2Check = '(0,0)';
-            exp2checkList = csv.queryExp(params);
+            exp2checkList = csv.queryExp(paramsPreproc);
             preproc.extractExpData([], exp2checkList)
         end
 end
