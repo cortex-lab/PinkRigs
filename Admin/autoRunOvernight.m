@@ -74,8 +74,25 @@ switch lower(computerType)
         kilo.main(paramsKilo)
         
         if c(4) < 20
+            %%% Bypassing preproc.main for now to go though experiments
+            %%% that have been aligned but not preprocessed... Have to fix
+            %%% it!
+            
             fprintf('Running preprocessing...\n')
+            paramsPreproc.days2Check = inf; % back in time from today
+            % paramsPreproc.mice2Check = 'active';
             paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
-            preproc.main(paramsPreproc);
+            
+            % Alignment
+            paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
+            paramsPreproc.preproc2Check = '(*,*)';
+            exp2checkList = csv.queryExp(params);
+            preproc.align.main([], exp2checkList)
+            
+            % Extracting data
+            paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
+            paramsPreproc.preproc2Check = '(0,0)';
+            exp2checkList = csv.queryExp(params);
+            preproc.extractExpData([], exp2checkList)
         end
 end
