@@ -5,8 +5,8 @@ close all
 
 clear params
 params.mice2Check = 'AV007';
-params.days2Check = 7;
-params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.days2Check = inf;
+params.expDef2Check = 'imageWorld_AllInOne';
 exp2checkList = csv.queryExp(params); 
 
 %% Plot it

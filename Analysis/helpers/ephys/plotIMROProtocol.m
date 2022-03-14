@@ -17,6 +17,8 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
     days(~[days.isdir]) = [];
     days(ismember({days.name},{'.','..'})) = [];
     
+    [~,protocolName] = fileparts(basePath);
+    
     if pltAll
         f = figure('Position',[1 30 1920 970]);
     end
@@ -88,20 +90,32 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
                     scatter((probeNum-1)*8*shankSep + shankSep*sI + chanPos(cc,1), chanPos(cc,2), 20, [.4 .2 .6], 'square', 'filled' );
                 end
                 xlim([-16,(numel(IMROfiles)-1)*8*shankSep + numel(IMROfiles)*3*shankSep+64]);
-                ylim([-10,10000]);
+                ylim([-10,11000]);
                 text((probeNum-1)*8*shankSep + 0.5*shankSep+64,10000,sprintf('Probe %d', probeNum))
                 title(regexprep(protocols(p).name,'_',' '));
             end
             
+            botRow2plt = [48:48:576];
             if p == 1
                 ylabel(regexprep(days(d).name,'_',' '))
+                set(gca,'Ytick',botRow2plt*15)
+                set(gca,'YtickLabels',num2str((botRow2plt)'))
+            else
+                set(gca,'ytick',[])
             end
+            axis tight
+            set(gca,'xtick',[])
+            xl = xlim;
+            plot(repmat(xl,numel(botRow2plt),1)', [botRow2plt*15;botRow2plt*15],'k-')
+        
         end
         if savePlt && ~pltAll
-            saveas(f,fullfile(basePath,days(d).name,sprintf('IMROWholeProtocol_%s.png',days(d).name)),'png')
+            saveas(f,fullfile(basePath,days(d).name,sprintf('IMROWholeProtocol_%s_%s.png',protocolName,days(d).name)),'png')
         end
+
+        
     end
     if savePlt && pltAll
-        saveas(f,fullfile(basePath,sprintf('IMROWholeProtocol_%s.png',regexprep(strjoin({days.name}),' ','_'))),'png')
+        saveas(f,fullfile(basePath,sprintf('IMROWholeProtocol_%s_%s.png',protocolName,regexprep(strjoin({days.name}),' ','_'))),'png')
     end
 end
