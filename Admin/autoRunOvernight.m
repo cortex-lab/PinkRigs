@@ -39,7 +39,7 @@ switch lower(computerType)
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         
-        dbstop if error
+        dbstop if error % temporarily, to debug
         
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
         csv.checkForNewPinkRigRecordings;
@@ -47,6 +47,16 @@ switch lower(computerType)
         c = clock;
         if c(4) > 20
             fprintf('Update on training... \n')
+            % Get plot of the mice trained today.
+            paramsQuery.days2Check = 0;
+            paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
+            expList = csv.queryExp(paramsQuery);
+            mouseNames = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
+            plt.behaviour.boxPlots(mouseNames,'last1')
+            saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
+            close(gcf)
+            
+            % Check status and send email.
             checkTrainingPath = which('check_training_mice.py');
             [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
                 'python ' checkTrainingPath ' &&' ...
@@ -74,9 +84,10 @@ switch lower(computerType)
         kilo.main(paramsKilo)
         
         if c(4) < 20
-            %%% Bypassing preproc.main for now to go though experiments
+            %%% Bypassing preproc.main for now to go through experiments
             %%% that have been aligned but not preprocessed... Have to fix
-            %%% it!
+            %%% it! Have to wait until it's a 0 and not a NaN when ephys
+            %%% hasn't been aligned...
             
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
