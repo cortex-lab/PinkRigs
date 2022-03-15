@@ -1,12 +1,12 @@
-clear all
-close all
+% clear all
+% close all
 
 %% Get experiments
 
 clear params
 params.mice2Check = 'AV007';
-params.days2Check = inf;
-params.expDef2Check = 'imageWorld_AllInOne';
+% params.days2Check = 2;
+params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 exp2checkList = csv.queryExp(params); 
 
 %% Plot it
@@ -17,7 +17,7 @@ mouseIdx = strcmpi(mainCSV.Subject,params.mice2Check);
 probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type)+~isempty(mainCSV(mouseIdx,:).P1_type);
 
 % Plot the basic layout
-figure('Position', [680    32   551   964]); hold all
+figure('Position', [680    32   551   964],'Name', params.mice2Check); hold all
 for pp = 1:probeNum
     probeType = mainCSV(mouseIdx,:).(sprintf('P%d_type',pp-1)){1};
     switch probeType
@@ -27,7 +27,7 @@ for pp = 1:probeNum
             nElec = 1280;   % per shank; pattern repeats for the four shanks
             vSep = 15;      % in um
             hSep = 32;
-            shankSep = 250;
+            shankSep = 200; % That's what's in the ephys metadata...
             elecPos = zeros(nElec, 2);
             elecPos(1:2:end,1) = 0;                %sites 0,2,4...
             elecPos(2:2:end,1) =  hSep;            %sites 1,3,5...
@@ -91,7 +91,7 @@ for ee = 1:size(exp2checkList,1)
             
             %% Plot a square around parts that were recorded from
             miXpos = min(chanPos(:,1)) + (pp-1)*sum(shankNum)*shankSep;
-            maXpos = max(chanPos(:,1)) + (pp-1)*sum(shankNum)*shankSep;
+            maXpos = max(chanPos(:,1)) + (pp-1)*sum(shankNum)*shankSep + shankSep/3;
             miDepth = min(chanPos(:,2));
             maDepth = max(chanPos(:,2));
             
@@ -125,4 +125,46 @@ protocols = unique(exp2checkList.expDef);
 for pro = 1:numel(protocols)
     protocolColor = getProtocolColor(protocols{pro});
     text(shankNum(1)*shankSep,6000-pro*100,regexprep(protocols{pro},'_',' '),'color',protocolColor)
+end
+
+%% Add reference recording...
+
+params.days2Check = {'2022-03-13','2022-03-14'};
+params.expDef2Check = 'spontaneousActivity';
+exp2checkList = csv.queryExp(params); 
+
+if qMetricFilter == 1
+    % get good units
+    bc_qualityParamValues;
+    paramBC = param; clear param;
+    paramBC.somatic = [0 1];
+    paramBC.minAmplitude = 10;
+end
+
+for ee = 1:size(exp2checkList,1)
+    preprocFile = dir(fullfile(exp2checkList(ee,:).expFolder{1},'*preprocData.mat'));
+    preprocDat = load(fullfile(preprocFile.folder,preprocFile.name),'spk');
+    
+    for pp = 1:numel(preprocDat.spk)
+        if qMetricFilter == 1
+            % get good units
+            bc_qualityParamValues;
+            param.somatic = [0 1];
+            param.minAmplitude = 10;
+            
+            unitType = nan(1,numel(preprocDat.spk{pp}.clusters));
+            for c = 1:numel(preprocDat.spk{pp}.clusters)
+                unitType(c) = bc_getQualityUnitType(preprocDat.spk{pp}.clusters(c),paramBC);
+            end
+            goodUnits = unitType == 1;
+        elseif qMetricFilter == 2
+            goodUnits = [preprocDat.spk{pp}.clusters.KSLab] == 2;
+        else
+            goodUnits = true(1,numel(preprocDat.spk{pp}.clusters.KSLab));
+        end
+        
+        scatter([preprocDat.spk{pp}.clusters(goodUnits).XPos] + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
+            [preprocDat.spk{pp}.clusters(goodUnits).Depth],...
+            30,'k','filled')
+    end
 end
