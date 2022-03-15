@@ -2,6 +2,8 @@
 if strcmpi(getComputerType, 'stim')
     changeToOldPTB;
     fprintf('Changed to old version of PTB \n');
+
+    addpath('\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs');
 end
 
 %% Check PinkRig repo and update if needed
