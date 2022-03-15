@@ -39,7 +39,7 @@ switch lower(computerType)
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
         
-        dbstop if error
+        dbstop if error % temporarily, to debug
         
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
         csv.checkForNewPinkRigRecordings;
@@ -84,9 +84,10 @@ switch lower(computerType)
         kilo.main(paramsKilo)
         
         if c(4) < 20
-            %%% Bypassing preproc.main for now to go though experiments
+            %%% Bypassing preproc.main for now to go through experiments
             %%% that have been aligned but not preprocessed... Have to fix
-            %%% it!
+            %%% it! Have to wait until it's a 0 and not a NaN when ephys
+            %%% hasn't been aligned...
             
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked

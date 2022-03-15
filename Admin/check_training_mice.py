@@ -35,6 +35,7 @@ def send_email(mname):
     figurePath = r'C:\Users\Experiment\Documents\BehaviorFigures\Behavior_' + dateToday + '.png'
     with open(figurePath, 'rb') as fp:
         img = MIMEImage(fp.read())
+        img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday)
         msg.attach(img)
 
     # Send email.
