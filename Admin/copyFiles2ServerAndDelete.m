@@ -28,8 +28,8 @@ else
     files2copy = find(~copiedAlready);
     for i = 1:length(files2copy)
         cIdx = files2copy(i);
-        fprintf('Copying %s ... \n', localFilePaths{cIdx});
-        
+        fprintf('Copying %s ...\n', localFilePaths{cIdx});
+        tic;
         if ~isfolder(fileparts(serverFilePaths{cIdx}))
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{cIdx}));
@@ -42,6 +42,10 @@ else
         catch
             fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
         end
+        elapsedTime = toc;
+        d = dir(localFilePaths{cIdx});
+        rate = d.bytes/(10^6)/elapsedTime;
+        fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
     end
 end
 
