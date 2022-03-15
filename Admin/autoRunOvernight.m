@@ -47,6 +47,16 @@ switch lower(computerType)
         c = clock;
         if c(4) > 20
             fprintf('Update on training... \n')
+            % Get plot of the mice trained today.
+            paramsQuery.days2Check = 0;
+            paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
+            expList = csv.queryExp(paramsQuery);
+            mouseNames = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
+            plt.behaviour.boxPlots(mouseNames,'last1')
+            saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
+            close(gcf)
+            
+            % Check status and send email.
             checkTrainingPath = which('check_training_mice.py');
             [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
                 'python ' checkTrainingPath ' &&' ...

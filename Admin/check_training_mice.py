@@ -1,31 +1,46 @@
 import pandas as pd
 import numpy as np
 import scipy.io
-import smtplib
 import datetime
 import dateutil.parser
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 
-def send_email(mname):    
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+def send_email(mname):
+    # Get sender and receiver emails.    
     with open(r'\\zserver.cortexlab.net\Code\AVrig\AVrigEmail.txt') as f:
-        address,pwd = f.read().splitlines()
+        sender_email,pwd = f.read().splitlines()
+    # receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
+    receivers_email = ['c.bimbard@ucl.ac.uk']
 
-    server.login(address, pwd)
+    msg = MIMEMultipart()
+    msg['Subject'] = 'Mouse training completed'
+    msg['From'] = sender_email
+    msg['To'] = ', '.join(receivers_email)
 
-    receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
-    message = """From: AVrigs <{}>
-Subject: Mouse training completed
+    # Write Message
+    message = MIMEText("""Hello, 
+    The following mice have been trained recently: 
+    {}
 
-Hello, 
-The following mice have been trained recently: 
-{}
-Cheers!
-AVrig
-""".format(address,mname)
+    And attached is a plot of today's behavior!
+    Cheers!
+    AVrig bot""".format(mname))
+    msg.attach(message)
 
+    # Add latest figure about behavior.
+    dateToday = datetime.datetime.today().strftime( '%d-%m-%Y')
+    figurePath = r'C:\Users\Experiment\Documents\BehaviorFigures\Behavior_' + dateToday + '.png'
+    with open(figurePath, 'rb') as fp:
+        img = MIMEImage(fp.read())
+        msg.attach(img)
 
-    server.sendmail(address,receivers,
-                    message)
+    # Send email.
+    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    server.login(sender_email, pwd)
+    server.sendmail(sender_email,receivers_email,msg.as_string())
 
 
 basepath = r'\\zserver.cortexlab.net\Code\AVrig'
