@@ -12,8 +12,7 @@ def send_email(mname):
     # Get sender and receiver emails.    
     with open(r'\\zserver.cortexlab.net\Code\AVrig\AVrigEmail.txt') as f:
         sender_email,pwd = f.read().splitlines()
-    # receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
-    receivers_email = ['c.bimbard@ucl.ac.uk']
+    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
     msg = MIMEMultipart()
     msg['Subject'] = 'Mouse training completed'

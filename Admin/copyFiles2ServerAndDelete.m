@@ -62,5 +62,9 @@ oldIdx = ([localFileDetails(:).datenum]<=now-0)';
 sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
 
 toDelete = localFileDetails(oldIdx & ~sizeMismatch);
+fprintf('Deleting...')
+tic;
 arrayfun(@(x) delete(fullfile(x.folder, x.name)), toDelete);
+elapsedTime = toc;
+fprintf('Done in %d sec.',elapsedTime)
 end
