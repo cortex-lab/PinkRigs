@@ -4,10 +4,12 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV007';
-% params.days2Check = 2;
-params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.mice2Check = 'AV008';
+params.days2Check = 1;
+params.expDef2Check = 'spontaneousActivity';
+% params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 exp2checkList = csv.queryExp(params); 
+pltClusters = 0;
 
 %% Plot it
 
@@ -127,44 +129,49 @@ for pro = 1:numel(protocols)
     text(shankNum(1)*shankSep,6000-pro*100,regexprep(protocols{pro},'_',' '),'color',protocolColor)
 end
 
-%% Add reference recording...
+%% Add a reference recording to visualize clusters
 
-params.days2Check = {'2022-03-13','2022-03-14'};
-params.expDef2Check = 'spontaneousActivity';
-exp2checkList = csv.queryExp(params); 
-
-if qMetricFilter == 1
-    % get good units
-    bc_qualityParamValues;
-    paramBC = param; clear param;
-    paramBC.somatic = [0 1];
-    paramBC.minAmplitude = 10;
-end
-
-for ee = 1:size(exp2checkList,1)
-    preprocFile = dir(fullfile(exp2checkList(ee,:).expFolder{1},'*preprocData.mat'));
-    preprocDat = load(fullfile(preprocFile.folder,preprocFile.name),'spk');
+if pltClusters
+    params.days2Check = {'2022-03-15','2022-03-16'};
+    params.expDef2Check = 'spontaneousActivity';
+    exp2checkList = csv.queryExp(params);
     
-    for pp = 1:numel(preprocDat.spk)
-        if qMetricFilter == 1
-            % get good units
-            bc_qualityParamValues;
-            param.somatic = [0 1];
-            param.minAmplitude = 10;
-            
-            unitType = nan(1,numel(preprocDat.spk{pp}.clusters));
-            for c = 1:numel(preprocDat.spk{pp}.clusters)
-                unitType(c) = bc_getQualityUnitType(preprocDat.spk{pp}.clusters(c),paramBC);
-            end
-            goodUnits = unitType == 1;
-        elseif qMetricFilter == 2
-            goodUnits = [preprocDat.spk{pp}.clusters.KSLab] == 2;
-        else
-            goodUnits = true(1,numel(preprocDat.spk{pp}.clusters.KSLab));
-        end
+    qMetricFilter = 2;
+    if qMetricFilter == 1
+        % get good units
+        bc_qualityParamValues;
+        paramBC = param; clear param;
+        paramBC.somatic = [0 1];
+        paramBC.minAmplitude = 10;
+    end
+    
+    for ee = 1:size(exp2checkList,1)
+        preprocFile = dir(fullfile(exp2checkList(ee,:).expFolder{1},'*preprocData.mat'));
+        preprocDat = load(fullfile(preprocFile.folder,preprocFile.name),'spk');
         
-        scatter([preprocDat.spk{pp}.clusters(goodUnits).XPos] + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
-            [preprocDat.spk{pp}.clusters(goodUnits).Depth],...
-            30,'k','filled')
+        for pp = 1:numel(preprocDat.spk)
+            if iscell(preprocDat.spk)
+                if qMetricFilter == 1
+                    % get good units
+                    bc_qualityParamValues;
+                    param.somatic = [0 1];
+                    param.minAmplitude = 10;
+                    
+                    unitType = nan(1,numel(preprocDat.spk{pp}.clusters));
+                    for c = 1:numel(preprocDat.spk{pp}.clusters)
+                        unitType(c) = bc_getQualityUnitType(preprocDat.spk{pp}.clusters(c),paramBC);
+                    end
+                    goodUnits = unitType == 1;
+                elseif qMetricFilter == 2
+                    goodUnits = [preprocDat.spk{pp}.clusters.KSLab] == 2;
+                else
+                    goodUnits = true(1,numel(preprocDat.spk{pp}.clusters.KSLab));
+                end
+                
+                scatter([preprocDat.spk{pp}.clusters(goodUnits).XPos] + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
+                    [preprocDat.spk{pp}.clusters(goodUnits).Depth],...
+                    30,'k','filled')
+            end
+        end
     end
 end
