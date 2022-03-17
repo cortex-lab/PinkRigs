@@ -66,5 +66,5 @@ fprintf('Deleting...')
 tic;
 arrayfun(@(x) delete(fullfile(x.folder, x.name)), toDelete);
 elapsedTime = toc;
-fprintf('Done in %d sec.',elapsedTime)
+fprintf('Done in %d sec.\n',elapsedTime)
 end

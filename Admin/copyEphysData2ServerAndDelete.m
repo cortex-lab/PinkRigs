@@ -3,6 +3,8 @@ function copyEphysData2ServerAndDelete(localFolder, ignoreSubjectMismatch)
 if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end 
 if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
 
+fprintf('Starting now %s...',datestr(now))
+
 % find all folders with bin files
 localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
 if isempty(localEphysFiles)
@@ -69,4 +71,7 @@ allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serv
 copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1)
 %%
 cleanEmptyFoldersInDirectory(localFolder);
+
+fprintf('Stopping now %s.',datestr(now))
+
 end
