@@ -2,7 +2,7 @@ function checkForNewPinkRigRecordings(days2Check, recompute, selectedMouse)
 serverLocations = getServersList;
 
 if ~exist('recompute', 'var'); recompute = 0; end
-if ~exist('days2Check', 'var'); days2Check = 7; end
+if ~exist('days2Check', 'var'); days2Check = 1; end
 
 csvLocation = csv.getLocation('main');
 csvData = csv.readTable(csvLocation);
