@@ -42,7 +42,7 @@ switch lower(computerType)
         dbstop if error % temporarily, to debug
         
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
-        csv.checkForNewPinkRigRecordings;
+        csv.checkForNewPinkRigRecordings(1);
         
         c = clock;
         if c(4) > 20
@@ -76,14 +76,14 @@ switch lower(computerType)
         end
         
         fprintf('Running kilosort on the queue... \n')
-        if c(4) > 20
+        if c(4) > 20 || c(4) < 2
             paramsKilo.runFor = 2; % to stop it after about 20h
         else
-            paramsKilo.runFor = 17;
+            paramsKilo.runFor = 12;
         end
         kilo.main(paramsKilo)
         
-        if c(4) < 20
+        if c(4) < 20 && c(4) > 2
             %%% Bypassing preproc.main for now to go through experiments
             %%% that have been aligned but not preprocessed... Have to fix
             %%% it! Have to wait until it's a 0 and not a NaN when ephys
