@@ -38,6 +38,7 @@ switch lower(computerType)
         
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
+        fprintf('Starting now %s...',datestr(now))
         
         dbstop if error % temporarily, to debug
         
@@ -106,4 +107,5 @@ switch lower(computerType)
             exp2checkList = csv.queryExp(paramsPreproc);
             preproc.extractExpData([], exp2checkList)
         end
+        fprintf('Stopping now %s.',datestr(now))
 end
