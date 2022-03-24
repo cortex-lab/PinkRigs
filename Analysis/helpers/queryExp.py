@@ -62,7 +62,7 @@ def queryExp(mice2check='all',days2check='all',expdef2check='all'):
         expList = pd.read_csv(r'%s\%s.csv' % (root,mm))
 
         if 'all' not in expdef2check:
-            expList = expList[expList.expDef.str.match(expdef2check)]
+            expList = expList[expList.expDef.str.contains(expdef2check)]
         if 'all' not in days2check: 
             selected_dates = check_date_selection(days2check,expList.expDate)
             expList = expList[selected_dates]
