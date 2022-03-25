@@ -134,7 +134,7 @@ for pro = 1:numel(protocols)
     text(shankNum(1)*shankSep,6000-pro*100,regexprep(protocols{pro},'_',' '),'color',protocolColor)
 end
 
-% set (gcf, 'WindowButtonMotionFcn', @mouseBotRow);
+set (gcf, 'WindowButtonMotionFcn', @mouseBotRow);
 
 %% Add a reference recording to visualize clusters
 
