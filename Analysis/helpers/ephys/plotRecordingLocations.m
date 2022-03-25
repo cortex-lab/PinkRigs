@@ -4,19 +4,20 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV008';
-params.days2Check = 1;
-params.expDef2Check = 'spontaneousActivity';
-% params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.mice2Check = 'AV007';
+params.days2Check = 7;
+% params.expDef2Check = 'spontaneousActivity';
+params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.align2Check = '*,*,*,*,*,1';
 exp2checkList = csv.queryExp(params); 
-pltClusters = 0;
+pltClusters = 1;
 
 %% Plot it
 
 % Get probes layout
 mainCSV = csv.readTable(csv.getLocation('main'));
 mouseIdx = strcmpi(mainCSV.Subject,params.mice2Check);
-probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type)+~isempty(mainCSV(mouseIdx,:).P1_type);
+probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type) + ~isempty(mainCSV(mouseIdx,:).P1_type);
 
 % Plot the basic layout
 figure('Position', [680    32   551   964],'Name', params.mice2Check); hold all
@@ -56,8 +57,12 @@ for ee = 1:size(exp2checkList,1)
     % Get exp info
     expInfo = exp2checkList(ee,:);
     expPath = expInfo.expFolder{1};
-    ephysPaths = regexp(expInfo.ephysRecordingPath,',','split');
-    ephysPaths = ephysPaths{1};
+    % temporarily dead
+    % ephysPaths = regexp(expInfo.ephysRecordingPath,',','split');
+    % ephysPaths = ephysPaths{1};
+    alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
+    load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
+    ephysPaths = {ephys.ephysPath};
     
     for pp = 1:numel(ephysPaths)
         binFile = dir(fullfile(ephysPaths{pp},'*ap.bin'));
@@ -129,10 +134,12 @@ for pro = 1:numel(protocols)
     text(shankNum(1)*shankSep,6000-pro*100,regexprep(protocols{pro},'_',' '),'color',protocolColor)
 end
 
+% set (gcf, 'WindowButtonMotionFcn', @mouseBotRow);
+
 %% Add a reference recording to visualize clusters
 
 if pltClusters
-    params.days2Check = {'2022-03-15','2022-03-16'};
+    params.days2Check = {'2022-03-23','2022-03-22'};
     params.expDef2Check = 'spontaneousActivity';
     exp2checkList = csv.queryExp(params);
     
