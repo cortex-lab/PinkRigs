@@ -53,9 +53,11 @@ switch lower(computerType)
             paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
             expList = csv.queryExp(paramsQuery);
             mouseNames = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
-            plt.behaviour.boxPlots(mouseNames,'last1')
-            saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
-            close(gcf)
+            if ~isempty(mouseNames)
+                plt.behaviour.boxPlots(mouseNames,'last1')
+                saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
+                close(gcf)
+            end
             
             % Check status and send email.
             checkTrainingPath = which('check_training_mice.py');
@@ -78,7 +80,7 @@ switch lower(computerType)
         
         fprintf('Running kilosort on the queue... \n')
         if c(4) > 20 || c(4) < 2
-            paramsKilo.runFor = 2; % to stop it after about 20h
+            paramsKilo.runFor = 2; 
         else
             paramsKilo.runFor = 12;
         end
@@ -93,7 +95,7 @@ switch lower(computerType)
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
             % paramsPreproc.mice2Check = 'active';
-            paramsPreproc.mice2Check = {'AV007','AV008','AV009'}; % for now to avoid crashes
+            paramsPreproc.mice2Check = {'AV006','AV007','AV008','AV009'}; % for now to avoid crashes
             
             % Alignment
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"

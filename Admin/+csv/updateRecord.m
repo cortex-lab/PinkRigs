@@ -35,7 +35,7 @@ nDat.faceMapFrontSideEye = {};
 nDat.issorted = {};
 nDat.preProcSpkEV = {};
 nDat.expFolder = {};
-nDat.ephysRecordingPath = {};
+% nDat.ephysRecordingPath = {};
 % nDat.complete = {};
 
 if ~exist(csvPathMouse, 'file') && saveData
@@ -74,7 +74,7 @@ nDat.expFolder = {fileparts(blockPath)};
 
 nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
-nDat.ephysRecordingPath = num2str(nan);
+% nDat.ephysRecordingPath = num2str(nan);
 alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
 
 if any(alignFile)
@@ -116,18 +116,18 @@ if any(alignFile)
         issorted = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), {alignment.ephys.ephysPath});
         nDat.issorted = num2str(mean(issorted));
         
-        nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
+%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
     elseif isnan(nDat.alignBlkFrontSideEyeMicEphys(6))
         nDat.issorted = nan;
-        nDat.ephysRecordingPath = num2str(nan);
+%         nDat.ephysRecordingPath = num2str(nan);
     else
-        nDat.ephysRecordingPath = 0;
+%         nDat.ephysRecordingPath = 0;
     end    
 end
 if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
     nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
     nDat.issorted = 0;
-    nDat.ephysRecordingPath = 0;
+%     nDat.ephysRecordingPath = 0;
 end
 
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
