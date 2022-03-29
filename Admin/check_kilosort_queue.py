@@ -79,10 +79,11 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
                         print(KS_done)
                         if not KS_done:
+                            print(ephys_file)
                             new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
 
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
-
+    print(new_recs_to_sort)
     # clean current queue
     queue_file = os.path.join(root,'kilosort_queue.csv')
     old_queue = pd.read_csv(queue_file,index_col=False)

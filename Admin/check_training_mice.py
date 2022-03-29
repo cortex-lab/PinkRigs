@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import scipy.io
 import datetime
+from os.path import exists
 import dateutil.parser
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -32,10 +33,11 @@ def send_email(mname):
     # Add latest figure about behavior.
     dateToday = datetime.datetime.today().strftime( '%d-%m-%Y')
     figurePath = r'C:\Users\Experiment\Documents\BehaviorFigures\Behavior_' + dateToday + '.png'
-    with open(figurePath, 'rb') as fp:
-        img = MIMEImage(fp.read())
-        img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday)
-        msg.attach(img)
+    if exists(figurePath):
+        with open(figurePath, 'rb') as fp:
+            img = MIMEImage(fp.read())
+            img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday)
+            msg.attach(img)
 
     # Send email.
     server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
