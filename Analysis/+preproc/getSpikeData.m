@@ -57,8 +57,8 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         cl = clusterList(ii);
         spkIdx = sp.clu == cl;
         
-        spk.clusters(ii).ID = sp.cids(ii)';
-        spk.clusters(ii).KSLab = sp.cgs(ii);
+        spk.clusters(ii).ID = cl;
+        spk.clusters(ii).KSLab = sp.cgs(sp.cids == cl);
         spk.clusters(ii).Spknum = sum(spkIdx);
         if isfield(sp,'spikeDepths')
             spk.clusters(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
