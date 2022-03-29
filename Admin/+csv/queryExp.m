@@ -8,7 +8,7 @@ function exp2checkList = queryExp(varargin)
     params.mice2Check = 'active';
     params.expDef2Check = 'all';
     params.timeline2Check = 0;
-    params.align2Check = '*,*,*,*,*,*'; % "any 0"
+    params.align2Check = '*,*,*,*,*,*';
     params.preproc2Check = '*,*';
     
     if ~isempty(varargin)
