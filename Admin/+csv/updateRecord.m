@@ -115,8 +115,8 @@ if any(alignFile)
     if nDat.alignBlkFrontSideEyeMicEphys(6) == 1
         issorted = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), {alignment.ephys.ephysPath});
         nDat.issorted = num2str(mean(issorted));
-        
 %         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
+%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, '')};
     elseif isnan(nDat.alignBlkFrontSideEyeMicEphys(6))
         nDat.issorted = nan;
 %         nDat.ephysRecordingPath = num2str(nan);

@@ -51,7 +51,7 @@ function exp2checkList = queryExp(varargin)
         elseif isa(params.days2Check,'cell') || isa(params.days2Check,'char')
             dates2Check = ismember(datenum(expListMouse.expDate),datenum(params.days2Check));
         else
-            warning('Couldn''t find correspond dates for mouse %s', subject)
+            warning('Couldn''t find corresponding dates for mouse %s', subject)
             dates2Check = [];
         end
         exp2Check = exp2Check & dates2Check;
