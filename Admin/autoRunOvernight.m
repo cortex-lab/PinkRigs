@@ -52,9 +52,10 @@ switch lower(computerType)
             paramsQuery.days2Check = 0;
             paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
             expList = csv.queryExp(paramsQuery);
-            mouseNames = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
+            [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
+            opt.expNum = expNums;
             if ~isempty(mouseNames)
-                plt.behaviour.boxPlots(mouseNames,'last1')
+                plt.behaviour.boxPlots(mouseNames,dates, 'res',expList.expDef, opt)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
             end
