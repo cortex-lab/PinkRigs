@@ -5,7 +5,7 @@
 
 clear params
 params.mice2Check = 'AV007';
-params.days2Check = 7;
+params.days2Check = inf;
 % params.expDef2Check = 'spontaneousActivity';
 params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 params.align2Check = '*,*,*,*,*,1';
@@ -139,7 +139,7 @@ set (gcf, 'WindowButtonMotionFcn', @mouseBotRow);
 %% Add a reference recording to visualize clusters
 
 if pltClusters
-    params.days2Check = {'2022-03-23','2022-03-22'};
+    params.days2Check = {'2022-03-28','2022-03-29'};
     params.expDef2Check = 'spontaneousActivity';
     exp2checkList = csv.queryExp(params);
     
