@@ -36,7 +36,7 @@ if ~exist('expDef', 'var'); expDef = 'multiSpaceWorld_checker_training'; end
 if ~iscell(subject); subject = {subject}; end
 if ~exist('noPlot', 'var'); noPlot = 0; end
 
-if ~strcmp('expNum', 'any')
+if ~strcmp(expNum, 'any')
     if ~all([length(expNum) length(expDate)] == nSubjects)
         error('If requesting expNum, subjects/date/expnum must be the same size');
     end
