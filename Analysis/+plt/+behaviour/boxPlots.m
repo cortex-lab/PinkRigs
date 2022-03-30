@@ -36,7 +36,7 @@ if ~exist('expDef', 'var'); expDef = 'multiSpaceWorld_checker_training'; end
 if ~iscell(subject); subject = {subject}; end
 if ~exist('noPlot', 'var'); noPlot = 0; end
 
-if ~strcmp('expNum', 'any')
+if ~strcmp(expNum, 'any')
     if ~all([length(expNum) length(expDate)] == nSubjects)
         error('If requesting expNum, subjects/date/expnum must be the same size');
     end
@@ -48,6 +48,11 @@ if nSubjects > 1 && ~exist('sepPlots', 'var')
 elseif ~exist('sepPlots', 'var')
     sepPlots = 1;
 end
+
+if ~iscell(expDate); expDate = {expDate}; end
+if ~iscell(expNum); expNum = {expNum}; end
+if ~iscell(expDef); expDef = {expDef}; end
+
 
 if length(expDate)==1 && 1 ~= nSubjects; expDate = repmat(expDate, nSubjects); end
 if length(expNum)==1 && 1 ~= nSubjects; expNum = repmat(expNum, nSubjects); end
@@ -175,6 +180,7 @@ if ~exist('addText', 'var'); addText = 1; end
 if ~isfield(boxPlot, 'plotLabels'); boxPlot.plotLabels = boxPlot.plotData; end
 if iscell(boxPlot.subject); boxPlot.subject = boxPlot.subject{1}; end
 plotData = boxPlot.plotData;
+triNum = boxPlot.trialCount;
 imAlpha=ones(size(plotData));
 imAlpha(isnan(plotData))=0;
 imagesc(plotData, 'AlphaData', imAlpha);
@@ -182,9 +188,11 @@ caxis(boxPlot.axisLimits);
 colormap(boxPlot.colorMap);
 daspect([1 1 1]); axis xy;
 [xPnts, yPnts] = meshgrid(1:size(plotData,2), 1:size(plotData,1));
+
+tIdx = ~isnan(plotData);
 if addText
-    txtD = num2cell([xPnts(~isnan(plotData)), yPnts(~isnan(plotData)), plotData(~isnan(plotData))],2);
-    cellfun(@(x) text(x(1),x(2), num2str(round(x(3)*100)/100), 'horizontalalignment', 'center'), txtD)
+    txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotData(tIdx))/100, triNum(tIdx)],2);
+    cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center'), txtD)
 end
 if isfield(boxPlot, 'extraInf')
     title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf))
