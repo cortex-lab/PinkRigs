@@ -175,6 +175,7 @@ if ~exist('addText', 'var'); addText = 1; end
 if ~isfield(boxPlot, 'plotLabels'); boxPlot.plotLabels = boxPlot.plotData; end
 if iscell(boxPlot.subject); boxPlot.subject = boxPlot.subject{1}; end
 plotData = boxPlot.plotData;
+triNum = boxPlot.trialCount;
 imAlpha=ones(size(plotData));
 imAlpha(isnan(plotData))=0;
 imagesc(plotData, 'AlphaData', imAlpha);
@@ -182,9 +183,11 @@ caxis(boxPlot.axisLimits);
 colormap(boxPlot.colorMap);
 daspect([1 1 1]); axis xy;
 [xPnts, yPnts] = meshgrid(1:size(plotData,2), 1:size(plotData,1));
+
+tIdx = ~isnan(plotData);
 if addText
-    txtD = num2cell([xPnts(~isnan(plotData)), yPnts(~isnan(plotData)), plotData(~isnan(plotData))],2);
-    cellfun(@(x) text(x(1),x(2), num2str(round(x(3)*100)/100), 'horizontalalignment', 'center'), txtD)
+    txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotData(tIdx))/100, triNum(tIdx)],2);
+    cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center'), txtD)
 end
 if isfield(boxPlot, 'extraInf')
     title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf))
