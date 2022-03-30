@@ -58,10 +58,12 @@ for i = 1:size(requestedDates,1)
     end
 end
 if iscell(selectedDateNums); selectedDateNums = unique(cell2mat(selectedDateNums)); end
-
 selectedFiles = availableExps(ismember(availableDateNums, selectedDateNums),:);
+
+% Load selected files
 data = cell(size(selectedFiles,1),1);
 dataDates = cell(size(selectedFiles,1),1);
+
 for i = 1:size(selectedFiles,1)
     tDat = selectedFiles(i,:);
     blkName = [datestr(tDat.expDate, 'yyyy-mm-dd') '_' tDat.expNum{1} '_' subject{1} '_Block.mat'];

@@ -14,12 +14,13 @@ function boxPlots(subject, expDate, plotType, sepPlots, expDef)
     
 % plotType--Type of box plot ('res')
     %        'res'---------------------Fraction of rightward responses
+    %        'tim'---------------------Median reaction times for each condition
     
 % sepPlots--Separate plots by session--only possible if 1 subject (1)
 
 % expDef----Name of required expDef ('multiSpaceWorld_checker_training')
 
-%%
+%% Input validation and default assingment
 figure;
 if ~exist('subject', 'var'); error('Must specify subject'); end
 if ~exist('expDate', 'var'); expDate = 'last5'; end
@@ -36,6 +37,7 @@ end
 blkDates = cell(length(subject),1);
 rigNames = cell(length(subject),1);
 
+%%
 for i = 1:length(subject)
     [blks, extractedDates] = getDataFromDates(subject{i}, expDate, 'any', expDef);
     if length(unique(extractedDates)) ~= length(extractedDates)
