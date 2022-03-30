@@ -49,6 +49,11 @@ elseif ~exist('sepPlots', 'var')
     sepPlots = 1;
 end
 
+if ~iscell(expDate); expDate = {expDate}; end
+if ~iscell(expNum); expNum = {expNum}; end
+if ~iscell(expDef); expDef = {expDef}; end
+
+
 if length(expDate)==1 && 1 ~= nSubjects; expDate = repmat(expDate, nSubjects); end
 if length(expNum)==1 && 1 ~= nSubjects; expNum = repmat(expNum, nSubjects); end
 if length(expDef)==1 && 1 ~= nSubjects; expDef = repmat(expDef, nSubjects); end
