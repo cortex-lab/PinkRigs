@@ -10,6 +10,7 @@ function [data, dataDates]  = getDataFromDates(subject, requestedDates, expNum, 
 %                'firstx'------------------The first x days of date
 %                'yest'--------------------The x-1 day, where x is the most recent day
 %                'yyyy-mm-dd:yyyy-mm-dd'---Dates in this range (including the boundaries)
+
 %expDef('multiSpaceWorld')--Specify the expDef to be loaded (otherwise blk files will no concatenate properly)
 
 %OUTPUTS
@@ -30,9 +31,11 @@ expList = csv.readTable(csv.getLocation(subject{1}));
 availableExps = expList;
 if ~strcmpi(expDef, 'any')
     availableExps = availableExps(strcmp(expList.expDef, expDef),:);
+    expList = expList(strcmp(expList.expDef, expDef),:);
 end
 if ~strcmpi(expNum, 'any')
-    availableExps = availableExps(strcmp(num2cell(expList.expNum), expNum),:);
+    availableExps = availableExps(strcmp(expList.expNum, expNum),:);
+    expList = expList(strcmp(expList.expDef, expDef),:);
 end
 if isempty(availableExps); warning(['No processed files matching criteria for' subject{1}]); return; end
 availableDateNums = datenum(availableExps.expDate);
