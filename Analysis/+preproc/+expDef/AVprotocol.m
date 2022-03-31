@@ -82,16 +82,22 @@ OffsetAll = nan(numClicks,nTrials);
 for myTrial=1:nTrials
     evPerTrial = TimesPerTrial{myTrial};
     if numel(evPerTrial)>0
-        if (myTrial==1) && (numel(evPerTrial)>numClicks*2)
-            evPerTrial(1)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial                
-        end 
-        % can sort on and offsets or just get all 
-        if sortOnOff==1
-            OnsetAll(:,myTrial) = evPerTrial(1:2:end);  
-            OffsetAll(:,myTrial) = evPerTrial(2:2:end); 
+        if (myTrial==1) && (numel(evPerTrial)<numClicks*2)
+            % Surely due to auditory only trial starting while photodiode
+            % flips
+            % Skip it
         else
-            OnsetAll(:,myTrial) = evPerTrial; 
-        end 
+            if (myTrial==1) && (numel(evPerTrial)>numClicks*2)
+                evPerTrial(1:numel(evPerTrial)-numClicks*2)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
+            end
+            % can sort on and offsets or just get all
+            if sortOnOff==1
+                OnsetAll(:,myTrial) = evPerTrial(1:2:end);
+                OffsetAll(:,myTrial) = evPerTrial(2:2:end);
+            else
+                OnsetAll(:,myTrial) = evPerTrial;
+            end
+        end
     end
 end 
 end

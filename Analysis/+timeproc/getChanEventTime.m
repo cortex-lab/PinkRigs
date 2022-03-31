@@ -18,6 +18,9 @@ function evTimes = getChanEventTime(timeline,chanName)
                 % Different form the shmitt times I used to use; also takes much longer!
                 % pdT = schmittTimes(timelineTime,chan, [2.5 3]);
                 
+                % Median filter to remove short glitches
+                chan = medfilt1(chan,3);
+                
                 [~, thresh] = kmeans(chan(1:5:end),5);
                 thresh = [min(thresh) + range(thresh)*0.2;  max(thresh) - range(thresh)*0.2];
                 
