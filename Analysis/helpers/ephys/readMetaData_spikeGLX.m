@@ -1,4 +1,4 @@
-function [meta] = ReadMeta_GLX(binName, path)
+function [meta] = readMetaData_spikeGLX(binName, path)
 
     % Create the matching metafile name
     [dumPath,name,dumExt] = fileparts(binName);
