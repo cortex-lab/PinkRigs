@@ -177,7 +177,7 @@ if any(compareIndex-(1:numel(compareIndex))')
         end
     end
 end
-if audError; fprintf('Error in matching auditory stimulus start and end times \n'); keyboard; end
+if audError; error('Error in matching auditory stimulus start and end times \n'); end
 
 tExt.audStimOnOff = [aStimOnOffTV(aStimOnOffTV(:,2)==1,1) aStimOnOffTV(aStimOnOffTV(:,2)==0,1)];
 aStimOnOffTV = aStimOnOffTV(largeAudGaps,:);
@@ -208,7 +208,7 @@ if any(compareIndex-(1:numel(compareIndex))')
     largeVisGaps(nearestPoint>0.75,:) = [];
     
     [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
-    if any(compareIndex-(1:numel(compareIndex))); fprintf('Error in matching visual stimulus start and end times \n'); keyboard; end
+    if any(compareIndex-(1:numel(compareIndex))); error('Error in matching visual stimulus start and end times \n'); end
 end
 
 visStimPeriodOnOffValues = 0*sort(largeVisGaps(:))'+1;

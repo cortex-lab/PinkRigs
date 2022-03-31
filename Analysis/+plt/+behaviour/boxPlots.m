@@ -146,11 +146,24 @@ for i = 1:length(extractedData)
     switch lower(plotType(1:3))
         case 'res'
             timeOuts = extractedData(i).responseRecorded == 0;
-            tDat = filterStructRows(tDat, ~timeOuts);
+            repTrials = timeOuts*0;
+            repNums = extractedData(i).repeatNum;
+            rep1 = find(repNums==1);
+            for j = 1:length(extractedData(i).responseRecorded)
+                if repNums(j)~=1 && ~timeOuts(j)
+                   tstIdx = rep1(find(rep1<j,1,'last'));
+                   if sum(~timeOuts(tstIdx:j)) ~= 1
+                       repTrials(j) = 1;
+                   end
+                end
+            end
+
+            tDat = filterStructRows(tDat, ~timeOuts & ~repTrials);
+            
             [~,~,vLabel] = unique(tDat.visDiff);
             [~,~,aLabel] = unique(tDat.audDiff);
             boxPlot.plotData = accumarray([aLabel, vLabel],tDat.responseRecorded,[],@mean)-1;
-            boxPlot.trialCount = accumarray([aLabel, vLabel],tDat.responseRecorded,[],@sum);
+            boxPlot.trialCount = accumarray([aLabel, vLabel],~isnan(tDat.responseRecorded),[],@sum);
             boxPlot.plotData(boxPlot.trialCount==0) = nan;
             boxPlot.totTrials = length(tDat.visDiff);
             colorBar.colorLabel = 'Fraction of right turns';
