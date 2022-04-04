@@ -4,7 +4,7 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV007';
+params.mice2Check = 'AV008';
 params.days2Check = inf;
 params.expDef2Check = 'multiSpaceWorld_checker_training';
 params.preproc2Check = '1,*';
@@ -138,11 +138,13 @@ fig = figure('Position', [1 31 1920 973],'Name', params.mice2Check);
 clear probeAxes behaviorAxes
 
 recNumPerChan = cellfun(@(x) size(x,2), chanExpRef);
-nRow = ceil(max(recNumPerChan)/4);
 nCol = 4;
+nRow = ceil(max(recNumPerChan)/(nCol-1));
+
 
 % Set the layout for the probes
 axesProbes = subplot(nRow,nCol,(0:nRow-1)*nCol+1); hold all
+axesProbes.Title.String = 'No channel selected';
 % scatter(chanPosAllPlt(:,1), chanPosAllPlt(:,2), 30, 'k', 'square')
 trialNumChan = cellfun(@(x) sum(cellfun(@(y) y.totTrials, plotBehData(x))), chanExpRef);
 imageProbes = nan(ceil(max(chanPosAllPlt(:,1))/15),ceil(max(chanPosAllPlt(:,2))/15)); % 15 * 15 um map
@@ -217,7 +219,8 @@ for nr = 1:nRow
         axesBehavior(ss) = subplot(nRow,nCol,nCol*(nr-1) + nc +1); hold all
         axesBehavior(ss).Title.String = 'No session';
         imBehavior(ss) = imagesc(nan,'AlphaData',~isnan(nan));
-        textBehavior{ss} =  text(1,1,'No trial','horizontalalignment', 'center','Parent',axesBehavior(ss));
+        textBehavior{ss} =  text(1,1,'No session','horizontalalignment', 'center','Parent',axesBehavior(ss));
+        axis equal tight
     end
 end
 
@@ -249,6 +252,11 @@ while keepGoing
         for ss = 1:numel(axesBehavior)
             if numel(chanExpRef{eleSec}) >= ss
                 expRef = chanExpRef{eleSec}(ss);
+                
+                % Update
+                axesProbes.Title.String = sprintf('Position: %d / botRow: %d',yposPlt, floor(yposPlt/15));
+                
+                % Update Behavior plots
                 imBehavior(ss).CData = plotBehData{expRef}.plotData;
                 imBehavior(ss).AlphaData = ~isnan(plotBehData{expRef}.plotData);
                 colormap(axesBehavior(ss), plotBehData{expRef}.colorMap)
@@ -262,13 +270,15 @@ while keepGoing
                 axesBehavior(ss).Title.String = sprintf('%s: %d Tri, %s', ...
                     plotBehData{expRef}.subject{1}, plotBehData{expRef}.totTrials, plotBehData{expRef}.extraInf);
                 
+                % Plot the performance and trial number in each condition
                 triNum = plotBehData{expRef}.trialCount;
                 [xPnts, yPnts] = meshgrid(1:size(plotBehData{expRef}.plotData,2), 1:size(plotBehData{expRef}.plotData,1));
                 tIdx = ~isnan(plotBehData{expRef}.plotData);
                 txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotBehData{expRef}.plotData(tIdx))/100, triNum(tIdx)],2);
                 delete(textBehavior{ss})
                 textBehavior{ss} = cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center','Parent',axesBehavior(ss)), txtD);
-
+                
+                set(axesBehavior(ss),'Visible','on')
             else
                 imBehavior(ss).CData = nan;
                 imBehavior(ss).AlphaData = 0;
@@ -279,7 +289,8 @@ while keepGoing
                 imBehavior(ss).Parent.YTickLabel = {'NaN'};
                 axesBehavior(ss).Title.String = 'No session';
                 delete(textBehavior{ss})
-                textBehavior{ss} =  text(1,1,'No trial', 'horizontalalignment', 'center','Parent',axesBehavior(ss));
+                textBehavior{ss} =  text(1,1,'No session', 'horizontalalignment', 'center','Parent',axesBehavior(ss));
+                set(axesBehavior(ss),'Visible','off')
             end
         end
     end
