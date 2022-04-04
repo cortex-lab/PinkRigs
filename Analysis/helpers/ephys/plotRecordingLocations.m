@@ -4,7 +4,7 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV007';
+params.mice2Check = 'AV008';
 params.days2Check = inf;
 % params.expDef2Check = 'spontaneousActivity';
 params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
@@ -146,8 +146,7 @@ if pltClusters
     qMetricFilter = 2;
     if qMetricFilter == 1
         % get good units
-        bc_qualityParamValues;
-        paramBC = param; clear param;
+        paramBC = bc_qualityParamValues;
         paramBC.somatic = [0 1];
         paramBC.minAmplitude = 10;
     end
