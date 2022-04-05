@@ -225,7 +225,7 @@ function plotRecordingLocations2(mouseName, varargin)
                 if iscell(preprocDat.spk)
                     if qMetricFilter == 1
                         % get good units
-                        bc_qualityParamValues;
+                        param = bc_qualityParamValues;
                         param.somatic = [0 1];
                         param.minAmplitude = 10;
                         
