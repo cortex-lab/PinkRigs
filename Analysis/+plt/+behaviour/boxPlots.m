@@ -176,15 +176,17 @@ for i = 1:length(extractedData)
     end
     plotData{i,1} = boxPlot;
 end
-currentAxisPotision = get(gca, 'position');
-figureSize = get(gcf, 'position');
-
-colorBar.handle = colorbar;
-set(colorBar.handle, 'Ticks', get(colorBar.handle, 'Limits'), 'TickLabels', colorBar.colorYTick, 'YDir', colorBar.colorDirection);
-set(gca, 'position', currentAxisPotision);
-colorBar.textHandle = ylabel(colorBar.handle, colorBar.colorLabel);
-set(colorBar.textHandle, 'position', [1 mean(get(colorBar.handle, 'Limits')) 0], 'FontSize', 14)
-set(colorBar.handle, 'position', [1-75/figureSize(3), 0.2, 30/figureSize(3), 0.6])
+if ~noPlot
+    currentAxisPotision = get(gca, 'position');
+    figureSize = get(gcf, 'position');
+    
+    colorBar.handle = colorbar;
+    set(colorBar.handle, 'Ticks', get(colorBar.handle, 'Limits'), 'TickLabels', colorBar.colorYTick, 'YDir', colorBar.colorDirection);
+    set(gca, 'position', currentAxisPotision);
+    colorBar.textHandle = ylabel(colorBar.handle, colorBar.colorLabel);
+    set(colorBar.textHandle, 'position', [1 mean(get(colorBar.handle, 'Limits')) 0], 'FontSize', 14)
+    set(colorBar.handle, 'position', [1-75/figureSize(3), 0.2, 30/figureSize(3), 0.6])
+end
 end
 
 
