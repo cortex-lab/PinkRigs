@@ -3,23 +3,29 @@ import pandas as pd
 
 def check_date_selection(date_selection,dateList):
     date_range = []
-
     if 'last' in date_selection: 
         date_selection = date_selection.split('last')[1]
         date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
         date_range.append(datetime.datetime.today())
     else:
-        date_selection=date_selection.split(':')
+        if type(date_selection) is not list:
+            date_selection=date_selection.split(':')
+        
         for d in date_selection:
             date_range.append(datetime.datetime.strptime(d,'%Y-%m-%d'))   
-
+        #if only one element
         if len(date_range) == 1:
             date_range.append(date_range[0])
 
     selected_dates = []
     for date in dateList:
         exp_date = datetime.datetime.strptime(date,'%Y-%m-%d')
-        if (exp_date >= date_range[0]) & (exp_date <= date_range[1]):
+
+        if type(date_selection) is list: 
+            IsGoodDate= True in ([exp_date==date_range[i] for i in range(len(date_range))])
+        else: 
+            (exp_date >= date_range[0]) & (exp_date <= date_range[1])
+        if IsGoodDate:
             selected_dates.append(True)
         else:
             selected_dates.append(False)
@@ -33,8 +39,9 @@ def queryExp(mice2check='all',days2check='all',expdef2check='all'):
     ----
     mice2check : str/list
         selected mice. Can be all, active, or specific subject names
-    days2check : str
-        selected dates. Can be all,lastX,date range or a single date
+    days2check : str/list
+        selected dates. If str: Can be all,lastX,date range, or a single date
+                        If list: string of selected dates (e.g. ['2022-03-15','2022-03-30'])
     expdef2check : str
         selected expdef or portion of the string of the the expdef name
 
