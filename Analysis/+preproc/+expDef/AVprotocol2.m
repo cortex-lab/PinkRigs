@@ -238,82 +238,73 @@ tExt.visStimPeriodOnOff = [vStimOnOffTV(vStimOnOffTV(:,2)==1,1) vStimOnOffTV(vSt
 %     tExt.visStimOnOff = [vStimOnOffTV(vStimOnOffTV(:,2)==1,1) vStimOnOffTV(vStimOnOffTV(:,2)==0,1)];
 % end
 
-% if any(contains(fineTune, 'movements'))
-%     responseMadeIdx = block.events.feedbackValues(1:size(trialStEnTimes,1)) ~= 0;
-%     
-%     timelineVisOnset = prc.indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
-%     timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
-%     timelineAudOnset = prc.indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
-%     timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
-%     timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
-%     
-%     stimOnsetIdx = round(timelineStimOnset(responseMadeIdx)*sR); 
-%     if ~exist('timelinehWeelPosition', 'var')
-%         timelinehWeelPosition = timeline.rawDAQData(:,strcmpi(inputNames, 'rotaryEncoder'));
-%         timelinehWeelPosition(timelinehWeelPosition > 2^31) = timelinehWeelPosition(timelinehWeelPosition > 2^31) - 2^32;
-%     end
-%     wheelPos = timelinehWeelPosition;
-%     whlDecThr = round(block.wheel2DegRatio*60);
-%    
-%     sumWin = 51;
-%     velThresh  = sR*(whlDecThr*0.01)/sumWin;
-%     wheelVel = diff([0; wheelPos])*sR;
-%     posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
-%     negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
-%     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21); 
-%     falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
-%     
-%     choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelPos(x:(x+(sR*1.5)))-wheelPos(x))>whlDecThr,1)+x]), stimOnsetIdx);
-%     choiceCrsIdx(falseIdx) = nan;
-%     gdIdx = ~isnan(choiceCrsIdx);
-%     
-%     choiceThreshTime = choiceCrsIdx/sR;
-%     choiceThreshDirection = choiceThreshTime*nan;
-%     choiceThreshDirection(gdIdx) = sign(wheelPos(choiceCrsIdx(gdIdx)) - wheelPos(choiceCrsIdx(gdIdx)-25));
-%     choiceThreshDirection(gdIdx) = (((choiceThreshDirection(gdIdx)==-1)+1).*(abs(choiceThreshDirection(gdIdx))))';    
-%     
-%     tstWin = [zeros(1, sumWin-1), 1];
-%     velThreshPoints = [(strfind((posVelScan'>=velThresh), tstWin)+sumWin-2) -1*(strfind((-1*negVelScan'>=velThresh), tstWin)+sumWin-2)]';
-% 
-%     [~, srtIdx] = sort(abs(velThreshPoints));
-%     moveOnsetIdx = abs(velThreshPoints(srtIdx));
-%     moveOnsetSign = sign(velThreshPoints(srtIdx))';
-%     moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';    
-%     
-%     reactBound = [stimOnsetIdx, stimOnsetIdx+1.5*sR]/sR;
-%     onsetTimDirByTrial = prc.indexByTrial(reactBound, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
-%     onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial) | isnan(choiceCrsIdx)) = deal({[nan nan]});
-% %%
-%     %"firstMoveTimes" are the first onsets occuring after stimOnsetIdx. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
-%     %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
-%     %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
-%     firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirByTrial, 'uni', 0));
-%     choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
-%     choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
-%     choiceInitTimeDir = cell2mat(choiceInitTimeDir);
-%     
-%     %SANITY CHECK
-%     responseMade = double(block.events.correctResponseValues(1:length(block.events.feedbackValues))).*(block.events.feedbackValues ~= 0);
-%     responseMade(block.events.feedbackValues<0) = -1*(responseMade(block.events.feedbackValues<0));
-%     responseMade = responseMade(block.events.feedbackValues ~= 0)';
-%     responseMade = ((responseMade>0)+1).*(responseMade~=0);
-%     tstIdx = ~isnan(choiceInitTimeDir(:,2));
-%     if mean(choiceInitTimeDir(tstIdx,2) == responseMade(tstIdx)) < 0.65
-%         warning('Why are most of the movements not in the same direction as the response?!?')
-%         keyboard
-%     end
-%     
-%     tExt.firstMoveTimeDir = firstMoveTimeDir;
-%     tExt.choiceInitTimeDir = choiceInitTimeDir;
-%     tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
-% end
-timelinehWeelPosition = timeproc.extractChan(timeline, 'rotaryEncoder');
-timelinehWeelPosition(timelinehWeelPosition > 2^31) = timelinehWeelPosition(timelinehWeelPosition > 2^31) - 2^32;
+%% MOVEMENT
+responseMadeIdx = responseRecorded ~= 0;
+timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
+timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
+timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
+timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
+timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
-changePoints = strfind(diff([0,timelinehWeelPosition'])==0, [1 0]);
+stimOnsetIdx = round(timelineStimOnset(responseMadeIdx)*sR);
+
+wheelDeg = extractWheelDeg(timeline);
+wheelVel = diff([0; wheelDeg])*sR;
+
+sumWin = 51;
+whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain);
+velThresh  = sR*(whlDecThr*0.01)/sumWin;
+
+posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
+negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
+movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
+falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
+
+choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+(sR*1.5)))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx);
+choiceCrsIdx(falseIdx) = nan;
+gdIdx = ~isnan(choiceCrsIdx);
+
+choiceThreshTime = choiceCrsIdx/sR;
+choiceThreshDirection = choiceThreshTime*nan;
+choiceThreshDirection(gdIdx) = sign(wheelDeg(choiceCrsIdx(gdIdx)) - wheelDeg(choiceCrsIdx(gdIdx)-25));
+choiceThreshDirection(gdIdx) = (((choiceThreshDirection(gdIdx)==-1)+1).*(abs(choiceThreshDirection(gdIdx))))';
+
+tstWin = [zeros(1, sumWin-1), 1];
+velThreshPoints = [(strfind((posVelScan'>=velThresh), tstWin)+sumWin-2) -1*(strfind((-1*negVelScan'>=velThresh), tstWin)+sumWin-2)]';
+
+[~, srtIdx] = sort(abs(velThreshPoints));
+moveOnsetIdx = abs(velThreshPoints(srtIdx));
+moveOnsetSign = sign(velThreshPoints(srtIdx))';
+moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
+
+onsetTimDirByTrial = indexByTrial([stimOnsetIdx/sR trialStEnTimes(responseMadeIdx,2)], moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
+onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial) | isnan(choiceCrsIdx)) = deal({[nan nan]});
+
+%"firstMoveTimes" are the first onsets occuring after stimOnsetIdx. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
+%sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
+%mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
+firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirByTrial, 'uni', 0));
+choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
+choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
+choiceInitTimeDir = cell2mat(choiceInitTimeDir);
+
+
+%SANITY CHECK
+blockTstValues = responseRecorded(responseMadeIdx);
+tstIdx = ~isnan(choiceInitTimeDir(:,2));
+if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
+    error('Why are most of the movements not in the same direction as the response?!?')
+end
+
+tExt.firstMoveTimeDir = firstMoveTimeDir;
+tExt.choiceInitTimeDir = choiceInitTimeDir;
+tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
+tExt.allMovOnsetsTimDirByTrial = onsetTimDirByTrial;
+
+changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
 trialStEnIdx = (trialStEnTimes*sR);
-points2Keep = sort([1 changePoints changePoints+1 length(timelinehWeelPosition) ceil(trialStEnIdx(:,1))'+1, floor(trialStEnIdx(:,2))'-1]);
-tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' timelinehWeelPosition(points2Keep)];
+points2Keep = sort([1 changePoints changePoints+1 length(wheelDeg) ceil(trialStEnIdx(:,1))'+1, floor(trialStEnIdx(:,2))'-1]);
+tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' wheelDeg(points2Keep)];
 
 %%
 rawFields = fields(tExt);
@@ -349,10 +340,7 @@ ev.stim.audDiff = audDiff;
 ev.stim.visContrast = visContrast;
 ev.stim.visInitialAzimuth = visInitialAzimuth;
 ev.stim.visDiff = visDiff;
-ev.outcome.reactionTime = nan;
 ev.outcome.responseRecorded = responseRecorded;
 ev.outcome.feedbackGiven = feedbackValues;
 ev.outcome.timeToFeedback = timeToFeedback;
-ev.outcome.timeDirAllMoveOnsets = nan;
-ev.outcome.timeToFirstMove = nan;
-ev.outcome.timeToResponseThresh = nan;
+

@@ -4,13 +4,13 @@ close all
 %% Get exp ref
 
 clear params
-params.mice2Check = 'AV007';
-params.days2Check = 7;
+params.mice2Check = 'AV009';
+params.days2Check = 1;
 % params.days2Check = {'2022-03-25'};
-% params.expDef2Check = 'multiSpaceWorld_checker_training';
-params.timeline2Check = 1;
+params.expDef2Check = 'multiSpaceWorld_checker_training';
+% params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
-params.preproc2Check = '*,2';
+% params.preproc2Check = '*,2';
 exp2checkList = csv.queryExp(params);
 
 %% Just run alignment
