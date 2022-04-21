@@ -2,8 +2,6 @@ function ev = AVprotocol2(timeline, block, alignmentBlock)
 %% A helper function for multisensoySpaceWorld experimental definition that produces standardised files with useful structures for further analysis.
 % OUTPUTS
 % "ev" is the new, compact, and restructured block file with the following fields:
-    %.performanceAVM--------Performance of mouse (%) on auditory, visual, and multisensory trials
-    
     %.trialType------------Structure with logical fields to identifying each class of trial
         %.blank----------------Trials with auditory in the center and visual contrast is zero
         %.auditory-------------Trials with auditory on left/right and visual contrast is zero
@@ -108,10 +106,6 @@ trialType.coherent = sign(visInitialAzimuth.*audInitialAzimuth)>0 & audAmplitude
 trialType.conflict = sign(visInitialAzimuth.*audInitialAzimuth)<0 & audAmplitude>0 & visContrast>0;
 trialType.repeatNum = e.repeatNumValues(1:length(vIdx))';
 
-audPerformance = round(mean(feedbackValues(trialType.auditory & responseRecorded~=0 & vIdx(:))>0)*100);
-visPerformance = round(mean(feedbackValues(trialType.visual & responseRecorded~=0 & vIdx(:))>0)*100);
-mulPerformance = round(mean(feedbackValues(trialType.coherent & responseRecorded~=0 & vIdx(:))>0)*100);
-
 audDiff = audInitialAzimuth.*audAmplitude>0;
 visDiff = sign(visInitialAzimuth).*visContrast;
 visDiff(visContrast==0) = 0;
@@ -208,17 +202,17 @@ if any(compareIndex-(1:numel(compareIndex))')
     largeVisGaps(nearestPoint>0.75,:) = [];
     
     [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
-    if any(compareIndex-(1:numel(compareIndex))); error('Error in matching visual stimulus start and end times \n'); end
 end
-
-visStimPeriodOnOffValues = 0*sort(largeVisGaps(:))'+1;
-visStimPeriodOnOffValues(2:2:end) = 0;
-visStimPeriodOnOffTimes = sort(largeVisGaps(:))';
-
-vStimOnOffTV = [visStimPeriodOnOffTimes' visStimPeriodOnOffValues'];
-vStimOnOffTV = vStimOnOffTV(1:find(vStimOnOffTV(:,2)==0,1,'last'),:);
-tExt.visStimPeriodOnOff = [vStimOnOffTV(vStimOnOffTV(:,2)==1,1) vStimOnOffTV(vStimOnOffTV(:,2)==0,1)];
-
+if any(compareIndex-(1:numel(compareIndex)))
+    fprintf('WARNING: Could not fix start/end times\n');
+    fprintf('Will perform incomplete identification based on trial structure\n');
+    
+    visGapsByTrial = indexByTrial(trialStEnTimes, sort(largeVisGaps(:)));
+    visGapsByTrial = visGapsByTrial(~zeroContrastTrials);
+    visGapsByTrial(cellfun(@length, visGapsByTrial)~=2) = [];
+    largeVisGaps = cell2mat(cellfun(@(x) x', visGapsByTrial, 'uni', 0));
+end
+tExt.visStimPeriodOnOff = largeVisGaps;
 
 %%
 % Could add this in for pasive
@@ -288,7 +282,6 @@ choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByTr
 choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
 choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
-
 %SANITY CHECK
 blockTstValues = responseRecorded(responseMadeIdx);
 tstIdx = ~isnan(choiceInitTimeDir(:,2));
@@ -299,7 +292,7 @@ end
 tExt.firstMoveTimeDir = firstMoveTimeDir;
 tExt.choiceInitTimeDir = choiceInitTimeDir;
 tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
-tExt.allMovOnsetsTimDirByTrial = onsetTimDirByTrial;
+tExt.allMovOnsetsTimDirByTrial = cell2mat(onsetTimDirByTrial);
 
 changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
 trialStEnIdx = (trialStEnTimes*sR);
@@ -314,7 +307,7 @@ for i = 1:length(rawFields)
     tExt.(currField) = indexByTrial(trialStEnTimes, currData(:,1), currData);
     emptyIdx = cellfun(@isempty, tExt.(currField));
 
-    if any(strcmp(currField, {'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
+    if any(strcmp(currField, {'allMovOnsetsTimDirByTrial'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
         nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
         tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
         tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
@@ -327,7 +320,6 @@ for i = 1:length(rawFields)
 end
 
 %% Populate n with all fields;
-ev.performanceAVM = [audPerformance visPerformance mulPerformance];
 ev.trialType = trialType; 
 ev.trialType.validTrial = vIdx(:);
 ev.timings.trialStartEnd = trialTimes;

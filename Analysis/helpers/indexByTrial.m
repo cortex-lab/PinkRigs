@@ -12,6 +12,12 @@ function sortedByTrial = indexByTrial(trialTimes, prmTimes, prmValues, timesToSu
 %%
 %Set default values
 if ~exist('prmValues', 'var') || isempty(prmValues); prmValues = prmTimes; end
+if ~all(diff(prmTimes(~isnan(prmTimes)))>=0) 
+    warning('Input times are not monotonic so will be sorted');
+    [~, srtIdx] = sort(prmTimes);
+    prmTimes = prmTimes(srtIdx, :);
+    prmValues = prmValues(srtIdx, :);    
+end
 
 %Use histcounts to find all the times that fall between trial start and end times--this is a computationally fast way to do this. We remove indices
 %with 0 values because these are out of bounds. 
@@ -24,7 +30,7 @@ idxBounds = [find(diff([-10;trialIdx])>0) find(diff([trialIdx;1e6])>0)];
 idxBounds(mod(unique(trialIdx),2)==0,:) = [];
 eventCount(2:2:end) = [];
 
-%Get the unique tiral indices that aren't inter-trial spaces and pre-populate the sortedByTrial cell array according to this.
+%Get the unique trial indices that aren't inter-trial spaces and pre-populate the sortedByTrial cell array according to this.
 idx = 0;
 sortedByTrial = cell(length(eventCount),1);
 if ~exist('timesToSubtract', 'var'); timesToSubtract = repmat(0*prmValues(:,1), length(eventCount),1); end
