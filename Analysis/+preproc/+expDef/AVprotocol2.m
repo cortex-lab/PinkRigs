@@ -73,10 +73,8 @@ visInitialAzimuth(visContrast==0) = inf;              %Change case when visContr
 trialTimes = [e.newTrialTimes(eIdx)' e.endTrialTimes(eIdx)'];
 stimPeriodStart = e.stimPeriodOnOffTimes(e.stimPeriodOnOffValues == 1)'; 
 stimPeriodStart = stimPeriodStart(eIdx);
-feedbackTimes = e.feedbackTimes(eIdx)';
 feedbackValues = e.feedbackValues(eIdx)';
 timeOuts = feedbackValues==0;
-timeToFeedback = feedbackTimes-stimPeriodStart;
 
 %%
 %Calculate an approximate time to the first wheel movement. This is different from the "timeToFeedback" in that it is based on wheel movement, rather
@@ -292,7 +290,7 @@ end
 tExt.firstMoveTimeDir = firstMoveTimeDir;
 tExt.choiceInitTimeDir = choiceInitTimeDir;
 tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
-tExt.allMovOnsetsTimDirByTrial = cell2mat(onsetTimDirByTrial);
+tExt.allMovOnsetsTimDir = cell2mat(onsetTimDirByTrial);
 
 changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
 trialStEnIdx = (trialStEnTimes*sR);
@@ -307,7 +305,7 @@ for i = 1:length(rawFields)
     tExt.(currField) = indexByTrial(trialStEnTimes, currData(:,1), currData);
     emptyIdx = cellfun(@isempty, tExt.(currField));
 
-    if any(strcmp(currField, {'allMovOnsetsTimDirByTrial'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
+    if any(strcmp(currField, {'allMovOnsetsTimDir'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
         nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
         tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
         tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
@@ -334,5 +332,3 @@ ev.stim.visInitialAzimuth = visInitialAzimuth;
 ev.stim.visDiff = visDiff;
 ev.outcome.responseRecorded = responseRecorded;
 ev.outcome.feedbackGiven = feedbackValues;
-ev.outcome.timeToFeedback = timeToFeedback;
-
