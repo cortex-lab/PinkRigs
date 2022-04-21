@@ -15,7 +15,13 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         params = parseInputParams(params,paramsIn);
     end
     
-    KSFolder = fullfile(ephysPath,'kilosort2');
+    % so that one can give this a custom folder
+    if (~isempty(varargin)) && (isfield(paramsIn, 'KSdir'))
+        KSFolder = paramsIn.KSdir;
+    else
+        KSFolder = fullfile(ephysPath,'kilosort2');
+    end
+    
     
     %% Get spike data
     

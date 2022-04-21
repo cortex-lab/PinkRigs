@@ -5,7 +5,7 @@ function getQualityMetrics(ksFolder,ephysFolder)
         templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ksFolder);
     
     %% Set paths
-    savePath = fullfile(ksFolder,'qualityMetrics.mat');;
+    savePath = fullfile(ksFolder,'qualityMetrics.mat');
     ephysRawFile = dir(fullfile(ephysFolder,'*ap.bin'));
     ephysap_path = fullfile(ephysRawFile.folder,ephysRawFile.name);
 

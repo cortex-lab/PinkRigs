@@ -1,7 +1,7 @@
 function spikeStruct = loadKSdir(ksDir, varargin)
-% Function taken from the spikes repository.
-    
-    
+% Function taken from the spikes repository. 
+% adapted to take the output of pykilosort even on stitched data
+   
 if ~isempty(varargin)
     params = varargin{1};
 else
@@ -19,7 +19,12 @@ end
 
 spikeStruct = loadParamsPy(fullfile(ksDir, 'params.py'));
 
-ss = readNPY(fullfile(ksDir, 'spike_times.npy'));
+% introduced to be able to load stitched data 
+if exist(fullfile(ksDir, 'spike_times_corrected.npy'))
+    ss = readNPY(fullfile(ksDir, 'spike_times_corrected.npy'));
+else
+    ss = readNPY(fullfile(ksDir, 'spike_times.npy'));
+end 
 st = double(ss)/spikeStruct.sample_rate;
 spikeTemplates = readNPY(fullfile(ksDir, 'spike_templates.npy')); % note: zero-indexed
 
@@ -28,6 +33,13 @@ if exist(fullfile(ksDir, 'spike_clusters.npy'))
 else
     clu = spikeTemplates;
 end
+
+%introduced variable in the stitched dataset
+if exist(fullfile(ksDir, 'spike_datasets.npy'))
+    spk_dataset_idx = readNPY(fullfile(ksDir, 'spike_datasets.npy')); 
+else
+    spk_dataset_idx = ones(numel(st),1); 
+end 
 
 tempScalingAmps = readNPY(fullfile(ksDir, 'amplitudes.npy'));
 
@@ -94,3 +106,4 @@ spikeStruct.temps = temps;
 spikeStruct.winv = winv;
 spikeStruct.pcFeat = pcFeat;
 spikeStruct.pcFeatInd = pcFeatInd;
+spikeStruct.spk_dataset_idx=spk_dataset_idx; 
