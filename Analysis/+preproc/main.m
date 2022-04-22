@@ -6,9 +6,9 @@ function main(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     params.paramsAlign = [];
     params.paramsExtract = [];
-    params.days2Check = inf; % back in time from today
+    params.days2Check = 3; % back in time from today
     params.mice2Check = 'active';
-    params.align2Check = '(0,0,0,0,0,0)'; % "any 0"
+    params.align2Check = '(*,*,*,*,*,*)'; % "any 0"
     params.preproc2Check = '(0,0)';
     
     if ~isempty(varargin)
@@ -28,7 +28,7 @@ function main(varargin)
     end
     
     if ~exist('exp2checkList', 'var')
-        exp2checkList = queryExp(params);
+        exp2checkList = csv.queryExp(params);
     end
     
     %% --------------------------------------------------------

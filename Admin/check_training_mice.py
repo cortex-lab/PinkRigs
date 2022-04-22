@@ -1,31 +1,48 @@
 import pandas as pd
 import numpy as np
 import scipy.io
-import smtplib
 import datetime
+from os.path import exists
 import dateutil.parser
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 
-def send_email(mname):    
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+def send_email(mname):
+    # Get sender and receiver emails.    
     with open(r'\\zserver.cortexlab.net\Code\AVrig\AVrigEmail.txt') as f:
-        address,pwd = f.read().splitlines()
+        sender_email,pwd = f.read().splitlines()
+    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
-    server.login(address, pwd)
+    msg = MIMEMultipart()
+    msg['Subject'] = 'Mouse training completed'
+    msg['From'] = sender_email
+    msg['To'] = ', '.join(receivers_email)
 
-    receivers = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
-    message = """From: AVrigs <{}>
-Subject: Mouse training completed
+    # Write Message
+    message = MIMEText("""Hello, 
+    The following mice have been trained recently: 
+    {}
 
-Hello, 
-The following mice have been trained recently: 
-{}
-Cheers!
-AVrig
-""".format(address,mname)
+    And attached is a plot of today's behavior!
+    Cheers!
+    AVrig bot""".format(mname))
+    msg.attach(message)
 
+    # Add latest figure about behavior.
+    dateToday = datetime.datetime.today().strftime( '%d-%m-%Y')
+    figurePath = r'C:\Users\Experiment\Documents\BehaviorFigures\Behavior_' + dateToday + '.png'
+    if exists(figurePath):
+        with open(figurePath, 'rb') as fp:
+            img = MIMEImage(fp.read())
+            img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday)
+            msg.attach(img)
 
-    server.sendmail(address,receivers,
-                    message)
+    # Send email.
+    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    server.login(sender_email, pwd)
+    server.sendmail(sender_email,receivers_email,msg.as_string())
 
 
 basepath = r'\\zserver.cortexlab.net\Code\AVrig'
@@ -53,7 +70,10 @@ for mname in activeMice:
 
         block = scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),squeeze_me=True)
 
-        stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage'] 
+        stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage']
+        timeout = block['block']['events'].item()['selected_paramsetValues'].item()['responseWindow']      
+        wheelMovementProbability=block['block']['events'].item()['selected_paramsetValues'].item()['wheelMovementProbability']
+
             
         # check whether they were trained recently
         previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
@@ -64,7 +84,7 @@ for mname in activeMice:
             trainedthisweek=0
                       
         if trainedthisweek==1:
-            readyMice.append('%s - Stage %.0d on day %s' % (mname,stage,expDate))
+            readyMice.append('%s - Stage %.0d,timeout in %.1f s, wheel yoked in %.0d%% of trials, on day %s' % (mname,stage,timeout,wheelMovementProbability*100,expDate))
     
 if len(readyMice)>0:
     now = datetime.datetime.today()

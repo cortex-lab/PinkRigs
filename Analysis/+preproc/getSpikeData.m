@@ -15,14 +15,25 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         params = parseInputParams(params,paramsIn);
     end
     
-    KSFolder = fullfile(ephysPath,'kilosort2');
+    % so that one can give this a custom folder
+    if (~isempty(varargin)) && (isfield(paramsIn, 'KSdir'))
+        KSFolder = paramsIn.KSdir;
+    else
+        KSFolder = fullfile(ephysPath,'kilosort2');
+    end
+    
     
     %% Get spike data
     
     sp = loadKSdir(KSFolder,params);
     
+    spk.spikes.time = sp.st;
+    spk.spikes.cluster = sp.clu;
+    spk.spikes.tempScalingAmp = sp.tempScalingAmps;
+    
     %% Compute depths
-
+    %%% SHOULD FIND A BETTER WAY TO DO IT?
+    
     if isfield(sp,'pcFeat')
         pcFeat = sp.pcFeat;
         pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
@@ -37,6 +48,9 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         
         spikeFeatXcoords = sp.xcoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
         sp.spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
+        
+        spk.spikes.xpos = sp.spikeXPos;
+        spk.spikes.depth = sp.spikeDepths;
     end
         
     %% Group it by clusters
@@ -44,20 +58,20 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
     
     clusterList = unique(sp.clu);
     
-    spk = struct([]);
+    spk.clusters = struct([]);
     for ii = 1:numel(clusterList)
         cl = clusterList(ii);
         spkIdx = sp.clu == cl;
-        spk(ii).spikeTimes = sp.st(spkIdx);
-        spk(ii).ID = sp.cids(ii)';
-        spk(ii).KSLab = sp.cgs(ii);
-        spk(ii).Spknum = numel(spk(ii).spikeTimes);
+        
+        spk.clusters(ii).ID = cl;
+        spk.clusters(ii).KSLab = sp.cgs(sp.cids == cl);
+        spk.clusters(ii).Spknum = sum(spkIdx);
         if isfield(sp,'spikeDepths')
-            spk(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
-            spk(ii).Depth = nanmean(sp.spikeDepths(spkIdx));
+            spk.clusters(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
+            spk.clusters(ii).Depth = nanmean(sp.spikeDepths(spkIdx));
         else 
-            spk(ii).XPos = nan;
-            spk(ii).Depth = nan;
+            spk.clusters(ii).XPos = nan;
+            spk.clusters(ii).Depth = nan;
         end
     end
     
@@ -73,7 +87,7 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
             clQMidx = qMetric.clusterID == cl+1;
             for f = 1:numel(fieldsQM)
                 fieldname = fieldsQM{f};
-                spk(ii).(fieldname) = qMetric.(fieldname)(clQMidx);
+                spk.clusters(ii).(fieldname) = qMetric.(fieldname)(clQMidx);
             end
         end
     end

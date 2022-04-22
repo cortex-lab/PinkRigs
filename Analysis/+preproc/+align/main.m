@@ -28,7 +28,7 @@ function main(varargin)
     
     if ~exist('exp2checkList', 'var')
         % Will get all the exp for the active mice.
-        exp2checkList = queryExp();
+        exp2checkList = csv.queryExp();
     end
     
     %% --------------------------------------------------------
@@ -88,6 +88,7 @@ function main(varargin)
                             ephys = nan;
                         else
                             % Found a (set of) matching ephys for that exp.
+                            ephys = struct();
                             for p = 1:numel(ephysPath)
                                 ephys(p).originTimes = ephysFlipperTimes{p};
                                 ephys(p).timelineTimes = timelineFlipperTimes{p};
@@ -134,6 +135,7 @@ function main(varargin)
                 
                 % Note that block file should always exist.
                 try
+                    block = struct;
                     fprintf(1, '* Aligning block... *\n');
                     [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
                     fprintf(1, '* Block alignment done. *\n');

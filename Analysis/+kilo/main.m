@@ -8,7 +8,7 @@ function main(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     params.recomputeKilo = 0;
     params.recomputeQMetrics = 0; % made the two independent
-    params.checkTime = 0;
+    params.runFor = inf; % in hour
     
     % This is not ideal
     if ~isempty(varargin)
@@ -70,23 +70,31 @@ function main(varargin)
         [ephysPath,b,c] = fileparts(recName);
         ephysFileName = strcat(b,c);
         
+        % Plot and save recording sites
+        ephysParentFolderName = fileparts(ephysPath);
+        plotRecordingSites({ephysParentFolderName},1)
+        
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
-        if params.checkTime
-            % To avoid running too long. Will stop after ~20h + 1 last 
-            % processing.
-            nowClock = datetime('now');
-            if nowClock > startClock + 20/24
-                return
-            end
+        % To avoid running too long. Will stop after ~20h + 1 last
+        % processing.
+        nowClock = datetime('now');
+        if nowClock > startClock + params.runFor/24
+            return
         end
         
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successKS = 1;
-        else
+        else            
             try
+                if exist('recList','var')
+                    % Indicate it's being processed
+                    recList.sortedTag(compIdx(rr)) = 0.5; % for 'currently processing'
+                    writetable(recList,KSqueueCSVLoc,'Delimiter',',');
+                end
+                
                 %% Getting meta data
                 % Get meta data
                 metaData = readMetaData_spikeGLX(ephysFileName,ephysPath);
@@ -152,8 +160,14 @@ function main(varargin)
             end
                     
             if exist(KSOutFolderLoc,'dir')
-                % Delete data otherwise will crowd up
-                rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                try
+                    %%% Have to "try" for now because sometimes issue when
+                    %%% there's a KS error above...
+                    % Delete data otherwise will crowd up
+                    rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                catch
+                    warning('Can''t delete KSout local folder.. Will crowd up.')
+                end
             end
         end
         
@@ -199,7 +213,7 @@ function main(varargin)
 
         % Get experments
         [partmp.mice2Check, partmp.days2Check, ~] = parseExpPath(ephysPath);
-        expList = queryExp(partmp);
+        expList = csv.queryExp(partmp);
         
         % Update
         for ee = 1:numel(expList)

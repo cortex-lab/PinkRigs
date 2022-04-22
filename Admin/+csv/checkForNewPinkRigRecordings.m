@@ -1,8 +1,8 @@
-function checkForNewPinkRigRecordings(days2Check, recompute)
+function checkForNewPinkRigRecordings(days2Check, recompute, selectedMouse)
 serverLocations = getServersList;
 
 if ~exist('recompute', 'var'); recompute = 0; end
-if ~exist('days2Check', 'var'); days2Check = 2; end
+if ~exist('days2Check', 'var'); days2Check = 1; end
 
 csvLocation = csv.getLocation('main');
 csvData = csv.readTable(csvLocation);
@@ -17,15 +17,21 @@ if any(~strcmp(csvDataSort.Subject, csvData.Subject))
     csv.writeClean(csvDataSort, csvLocation)
     csvData = csvDataSort;
 end
+mice2Update = csvData.Subject(activeMice);
+
+if exist('selectedMouse', 'var') && ~isempty(selectedMouse)
+    if ~iscell(selectedMouse); selectedMouse = {selectedMouse}; end
+    mice2Update = selectedMouse;
+elseif recompute
+    mice2Update = csvData.Subject;
+end
 
 if recompute
     cycles = 2;
-    mice2Update = csvData.Subject;
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
     paths2Check = vertcat(paths2Check{:});
 else
     cycles = 1;
-    mice2Update = csvData.Subject(activeMice);
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
     
     pastXDays = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-days2Check:now, 'uni', 0)';

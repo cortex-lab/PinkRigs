@@ -9,7 +9,7 @@ for idx = 1:numel(d)
 end
 
 % params.mice2Check = 'AV009';
-% exp2checkList = queryExp(params);
+% exp2checkList = csv.queryExp(params);
 % idx = 1;
 % for ee = 1:size(exp2checkList,1)
 %     alignmentFile = dir(fullfile(exp2checkList(ee,:).expFolder{1}, '*alignment.mat'));

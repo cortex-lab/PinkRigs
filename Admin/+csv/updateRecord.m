@@ -35,6 +35,7 @@ nDat.faceMapFrontSideEye = {};
 nDat.issorted = {};
 nDat.preProcSpkEV = {};
 nDat.expFolder = {};
+% nDat.ephysRecordingPath = {};
 % nDat.complete = {};
 
 if ~exist(csvPathMouse, 'file') && saveData
@@ -50,8 +51,8 @@ end
 
 blk = load(blockPath); blk = blk.block;
 if ~contains(blk.rigName, 'zelda'); return; end
-if blk.duration/60<5
-    fprintf('Block < 5 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
+if blk.duration/60<2
+    fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     pause(0.01);
     return;
 end
@@ -73,7 +74,8 @@ nDat.expFolder = {fileparts(blockPath)};
 
 nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
-alignFile = contains({fileContents.name}','alignment.mat');
+% nDat.ephysRecordingPath = num2str(nan);
+alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
 
 if any(alignFile)
     alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat']);
@@ -108,15 +110,24 @@ if any(alignFile)
         nDat.alignBlkFrontSideEyeMicEphys = tDat;
     end
     
+    
+    
     if nDat.alignBlkFrontSideEyeMicEphys(6) == 1
         issorted = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), {alignment.ephys.ephysPath});
         nDat.issorted = num2str(mean(issorted));
+%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
+%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, '')};
+    elseif isnan(nDat.alignBlkFrontSideEyeMicEphys(6))
+        nDat.issorted = nan;
+%         nDat.ephysRecordingPath = num2str(nan);
     else
-        nDat.issorted = num2str(nan);
+%         nDat.ephysRecordingPath = 0;
     end    
 end
-if nDat.alignBlkFrontSideEyeMicEphys(6) == 0 && round(now-blk.endDateTime)>7 && nDat.ephysFolderExists == 0
-    nDat.alignBlkFrontSideEyeMicEphys(6) = nan;
+if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
+    nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
+    nDat.issorted = 0;
+%     nDat.ephysRecordingPath = 0;
 end
 
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));

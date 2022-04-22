@@ -8,7 +8,7 @@ function exp2checkList = queryExp(varargin)
     params.mice2Check = 'active';
     params.expDef2Check = 'all';
     params.timeline2Check = 0;
-    params.align2Check = '*,*,*,*,*,*'; % "any 0"
+    params.align2Check = '*,*,*,*,*,*';
     params.preproc2Check = '*,*';
     
     if ~isempty(varargin)
@@ -48,17 +48,17 @@ function exp2checkList = queryExp(varargin)
         % Get specific dates
         if isa(params.days2Check,'double')
             dates2Check = todayDate - datenum(expListMouse.expDate) <= params.days2Check;
-        elseif isa(params.days2Check,'cell') | isa(params.days2Check,'char')
+        elseif isa(params.days2Check,'cell') || isa(params.days2Check,'char')
             dates2Check = ismember(datenum(expListMouse.expDate),datenum(params.days2Check));
         else
-            warning('Couldn''t find correspond dates for mouse %s', subject)
+            warning('Couldn''t find corresponding dates for mouse %s', subject)
             dates2Check = [];
         end
         exp2Check = exp2Check & dates2Check;
         
         % Get specific expDefs
         if ~strcmp(params.expDef2Check,'all')
-            expDef2Check = contains(expListMouse.expDef,params.expDef2Check);
+            expDef2Check = strcmpi(expListMouse.expDef,params.expDef2Check);
             exp2Check = exp2Check & expDef2Check;
         end
         

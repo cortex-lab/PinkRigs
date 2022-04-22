@@ -28,8 +28,8 @@ else
     files2copy = find(~copiedAlready);
     for i = 1:length(files2copy)
         cIdx = files2copy(i);
-        fprintf('Copying %s ... \n', localFilePaths{cIdx});
-        
+        fprintf('Copying %s ...\n', localFilePaths{cIdx});
+        tic;
         if ~isfolder(fileparts(serverFilePaths{cIdx}))
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{cIdx}));
@@ -42,6 +42,10 @@ else
         catch
             fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
         end
+        elapsedTime = toc;
+        d = dir(localFilePaths{cIdx});
+        rate = d.bytes/(10^6)/elapsedTime;
+        fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
     end
 end
 
@@ -54,9 +58,13 @@ serverFileDetails = cell2mat(serverFileDetails);
 
 %% Deletions
 % delete files that have been copied correctly
-oldIdx = ([localFileDetails(:).datenum]<=now-2)';
+oldIdx = ([localFileDetails(:).datenum]<=now-0)';
 sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
 
 toDelete = localFileDetails(oldIdx & ~sizeMismatch);
+fprintf('Deleting...')
+tic;
 arrayfun(@(x) delete(fullfile(x.folder, x.name)), toDelete);
+elapsedTime = toc;
+fprintf('Done in %d sec.\n',elapsedTime)
 end

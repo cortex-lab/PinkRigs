@@ -118,7 +118,7 @@
                         load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     otherwise
-                        error(1, 'cannot find a threshold that works. You tell me...\n');
+                        error('Cannot find a threshold that works. You tell me...');
                 end
                 loadAttemptNum = loadAttemptNum+1;
         end
