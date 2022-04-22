@@ -1,6 +1,7 @@
 function plotRecordingLocations2(mouseName, varargin)
     %%% This function will plot the location of the recordings (behavior)
     %%% performed across the whole probe(s).
+    %%% Should do it with guidata but meh for now
     
     %% Get parameters
     pltClusters = 1; % Will plot clusters from spontaneous
@@ -204,9 +205,23 @@ function plotRecordingLocations2(mouseName, varargin)
         end
         exp2checkListClu = csv.queryExp(paramsClu);
         if isempty(clustersDays)
-            % Take the last 8 spontaneous recordings, should span the whole
-            % probe
-            exp2checkListClu = exp2checkListClu(end-7:end,:);
+            % Take the last recordings, to span everything
+            %%% NEED TO WRITE IT, NOT EASY TO CODE
+%             idx2Keep = [];
+%             spannedAll = 0;
+%             ee = 0;
+%             while ee <= size(exp2checkListClu,1) && spannedAll
+%                 ee = ee+1;
+%                 expInfo = exp2checkListClu(size(exp2checkListClu,1)-ee+1,:);
+%                 expPath = expInfo.expFolder{1};
+%                 
+%                 alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
+%                 load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
+%                 ephysPaths = {ephys.ephysPath}; clear ephys
+% 
+%             end
+            idx2Keep = size(exp2checkListClu,1)-8+1:size(exp2checkListClu,1);
+            exp2checkListClu = exp2checkListClu(idx2Keep,:);
         end
         
         qMetricFilter = 2;
@@ -223,12 +238,7 @@ function plotRecordingLocations2(mouseName, varargin)
             
             for pp = 1:numel(preprocDat.spk)
                 if iscell(preprocDat.spk)
-                    if qMetricFilter == 1
-                        % get good units
-                        param = bc_qualityParamValues;
-                        param.somatic = [0 1];
-                        param.minAmplitude = 10;
-                        
+                    if qMetricFilter == 1                        
                         unitType = nan(1,numel(preprocDat.spk{pp}.clusters));
                         for c = 1:numel(preprocDat.spk{pp}.clusters)
                             unitType(c) = bc_getQualityUnitType(preprocDat.spk{pp}.clusters(c),paramBC);
@@ -292,14 +302,14 @@ function plotRecordingLocations2(mouseName, varargin)
             eleSecScat.YData = yposPlt;
             
             eleSec = find(all(chanPosAllPlt == [xposPlt yposPlt],2));
+                                
+            % Update bot row
+            axesProbes.Title.String = sprintf('Position: %d / botRow: %d',yposPlt, floor(yposPlt/15));
             
             % Update associated behavior
             for ss = 1:numel(axesBehavior)
                 if numel(chanExpRef{eleSec}) >= ss
                     expRef = chanExpRef{eleSec}(ss);
-                    
-                    % Update bot row
-                    axesProbes.Title.String = sprintf('Position: %d / botRow: %d',yposPlt, floor(yposPlt/15));
                     
                     % Update Behavior plots
                     imBehavior(ss).CData = plotBehData{expRef}.plotData;
