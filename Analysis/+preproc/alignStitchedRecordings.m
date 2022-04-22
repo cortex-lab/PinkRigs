@@ -3,15 +3,23 @@ clc; clear;
 clear params
 params.mice2Check = 'AV008';
 %params.days2Check = 1;
-params.days2Check = {'2022-03-09'};
-params.expDef2Check = 'multiSpaceWorld_checker_training';
+params.days2Check = {'2022-03-11'};
+params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
 % params.preproc2Check = '*,2';
 exp2checkList = csv.queryExp(params);
-
+%%
 expInfo = exp2checkList(1,:);
 paramsKS.KSdir = 'D:\output';
+
+
+% get quality metrics for this recording - actually, I don't think this
+% works either because of course the dataset itself is not stitched. 
+
+% if ~exist(fullfile(paramsKS.KSdir,'qualityMetrics.mat'))
+%     kilo.getQualityMetrics(paramsKS.KSdir,ephysFolder)
+% end 
 % load the params file which should tell which index is the queried
 % recording...
 % I don't know why the loadparamsPy does not parse the dat_path properly 
@@ -39,6 +47,7 @@ sp = cell(1,numel(alignment.ephys));
 
 for probeNum = 1:numel(alignment.ephys)
     % Get spikes times & cluster info
+    % the KSdir might be different down the line...
     [spk{probeNum},sp{probeNum}] = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath,paramsKS);
     
     spk{probeNum}.spikes.time = preproc.align.event2Timeline(spk{probeNum}.spikes.time, ...
