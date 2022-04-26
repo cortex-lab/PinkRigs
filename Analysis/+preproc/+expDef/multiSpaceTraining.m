@@ -116,9 +116,6 @@ is_visualTrial = (audAmplitude==0 | audInitialAzimuth==0) & (visContrast>0 & vis
 is_coherentTrial = sign(visInitialAzimuth.*audInitialAzimuth)>0 & audAmplitude>0 & visContrast>0;
 is_conflictTrial = sign(visInitialAzimuth.*audInitialAzimuth)<0 & audAmplitude>0 & visContrast>0;
 
-visDiff = sign(visInitialAzimuth).*visContrast;
-visDiff(visContrast==0) = 0;
-
 %% Info from timeline!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 timelineTime = timeline.rawDAQTimestamps;             %Timestamps in the timeline file
 sR = 1/diff(timeline.rawDAQTimestamps(1:2));          %Timeline sample rate
@@ -227,7 +224,17 @@ tExt.visStimPeriodOnOff = largeVisGaps;
 photoFlipsByTrial = arrayfun(@(x,y) find(photoDiodeFlipTimes>=x & photoDiodeFlipTimes<=y), tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,2), 'uni', 0);
 expectedFlashTrainLength = clickRate*block.events.selected_paramsetValues.responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
 misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
-photoFlipsByTrial(feedbackValues((~zeroContrastTrials))~=0 | misMatchFlashtrain~=0) = [];
+
+repeatNums = e.repeatNumValues(eIdx)';
+stimMoves = repeatNums*0;
+stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
+stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
+stim_closedLoop = stimMoves;
+
+stimMoves = stimMoves(~zeroContrastTrials);
+
+isTimeOut = responseRecorded(~zeroContrastTrials)==0;
+photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
 
 visStimOnOffTimes = sort(photoDiodeFlipTimes(cell2mat(photoFlipsByTrial)))';
 tExt.visStimOnOff = [visStimOnOffTimes(1:2:end)' visStimOnOffTimes(2:2:end)'];
@@ -346,11 +353,12 @@ ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0
 ev.timeline_wheelTimeValue  = tExt.wheelTraceTimeValue;  
 
 ev.stim_correctResponse = correctResponse;     
-ev.stim_repeatNum = e.repeatNumValues(1:length(vIdx))';         
+ev.stim_repeatNum = repeatNums;         
 ev.stim_audAmplitude = audAmplitude;      
 ev.stim_audAzimuth = audInitialAzimuth;       
 ev.stim_visContrast = visContrast;         
-ev.stim_visAzimuth = visInitialAzimuth;    
+ev.stim_visAzimuth = visInitialAzimuth;   
+ev.stim_closedLoop = stim_closedLoop>0;   
 
 ev.response_direction = responseRecorded;
 ev.response_feedback = feedbackValues;
