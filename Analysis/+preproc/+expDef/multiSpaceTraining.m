@@ -222,7 +222,9 @@ tExt.visStimPeriodOnOff = largeVisGaps;
 
 % Could add this in for pasive
 photoFlipsByTrial = arrayfun(@(x,y) find(photoDiodeFlipTimes>=x & photoDiodeFlipTimes<=y), tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,2), 'uni', 0);
-expectedFlashTrainLength = clickRate*block.events.selected_paramsetValues.responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
+responseWindow = block.events.selected_paramsetValues.responseWindow;
+if isinf(responseWindow); responseWindow = 0; end
+expectedFlashTrainLength = clickRate*responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
 misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
 
 repeatNums = e.repeatNumValues(eIdx)';
