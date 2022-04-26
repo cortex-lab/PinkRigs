@@ -1,4 +1,4 @@
-function ev = AVprotocol(timeline, block, alignmentBlock)
+function ev = AVPassive(timeline, block, alignmentBlock)
     %%% This function will fetch all important information from the AV
     %%% protocols, during postactive or during training.
 
