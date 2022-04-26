@@ -3,7 +3,7 @@ clc; clear;
 clear params
 params.mice2Check = 'AV008';
 %params.days2Check = 1;
-params.days2Check = {'2022-03-11'};
+params.days2Check = {'2022-03-20'};
 params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
@@ -11,7 +11,7 @@ params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 exp2checkList = csv.queryExp(params);
 %%
 expInfo = exp2checkList(1,:);
-paramsKS.KSdir = 'D:\output';
+paramsKS.KSdir = 'D:\pyKS_stitched\AV008_2022-03-11_2022-03-20_imec1\output';
 
 
 % get quality metrics for this recording - actually, I don't think this
@@ -68,5 +68,5 @@ expPath = expInfo.expFolder{1};
         
 % Define savepath for the preproc results
 [subject, expDate, expNum] = parseExpPath(expPath);
-savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_spkData_stitch.mat']);
+savePath = fullfile(paramsKS.KSdir,[expDate '_' expNum '_' subject '_spkData_stitch.mat']);
 save(savePath,'spk')      

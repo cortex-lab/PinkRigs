@@ -15,12 +15,17 @@ if ~isfield(params, 'loadPCs')
     params.loadPCs = false;
 end
 
+if isfield(params, 'uncorrected_time')
+    uncorrected_time = true;
+else
+    uncorrected_time = false;
+end
 % load spike data
 
 spikeStruct = loadParamsPy(fullfile(ksDir, 'params.py'));
 
 % introduced to be able to load stitched data 
-if exist(fullfile(ksDir, 'spike_times_corrected.npy'))
+if exist(fullfile(ksDir, 'spike_times_corrected.npy')) && (uncorrected_time==false)
     ss = readNPY(fullfile(ksDir, 'spike_times_corrected.npy'));
 else
     ss = readNPY(fullfile(ksDir, 'spike_times.npy'));
