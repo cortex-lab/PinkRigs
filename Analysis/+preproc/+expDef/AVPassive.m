@@ -1,6 +1,27 @@
 function ev = AVPassive(timeline, block, alignmentBlock)
-    %%% This function will fetch all important information from the AV
+%%% This function will fetch all important information from the AV
     %%% protocols, during postactive or during training.
+
+    % Returns:  
+    % ev.is_blankTrial      %logical: indicating "blank" trials
+    % ev.is_visualTrial     %logical: indicating "visual" trials
+    % ev.is_auditoryTrial   %logical: indicating "auditory" trials
+    % ev.is_coherentTrial   %logical: indicating "coherent" trials
+    % ev.is_conflictTrial   %logical: indicating "conflict" trials
+    % ev.is_rewardTrial   %logical: indicating "reward click" trials
+    % 
+    % ev.block_trialOnOff   %nx2 matrix: [starttime endtime]
+    % ev.block_stimOn       %nx1 matrix: start times for stimulus period
+    % 
+    % ev.timeline_rewardOn  %nx1 matrix: reward times 
+    % ev.timeline_audOnOff  %nx8 matrix: [on off] times for aud stimuli (each click)
+    % ev.timeline_visOnOff  %nx8 matrix: [on off] times for vis stimuli (each flash)
+    % 
+    % ev.stim_audAmplitude        %nx1 matrix: aud amplitude
+    % ev.stim_visContrast         %nx1 matrix: vis contrast
+    % ev.stim_audAzimuth          %nx1 matrix: aud azimuth presented
+    % ev.stim_visAzimuth          %nx1 matrix: vis azimuth presented   
+
 
     % get stim info
     visTrial = block.events.viscontrastValues(1:numel(block.events.endTrialValues)) > 0;
@@ -8,6 +29,13 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     audTrial = block.events.audamplitudeValues(1:numel(block.events.endTrialValues)) > 0;
     audTrialsLoc = block.events.audazimuthValues(1:numel(block.events.endTrialValues)); audTrialsLoc(~audTrial) = nan;
     rewTrials = block.outputs.rewardValues(1:numel(block.events.endTrialValues))>0;
+    
+    % get trial types, Dr Coen scheme 
+    blankTrials  = ((isnan(visTrialsLoc)) & (isnan(audTrialsLoc)) & (rewTrials==0));
+    visOnlyTrials =(visTrial==1) & (audTrial==0);
+    audOnlyTrials =(visTrial==1) & (audTrial==0);
+    coherentTrials = (visTrial==1) & (audTrial==1) & (visTrialsLoc==audTrialsLoc);
+    conflictTrials = (visTrial==1) & (audTrial==1) & (visTrialsLoc~=audTrialsLoc);
     
     % get timing for blanks 
     stimOnsetRaw = preproc.align.event2Timeline(block.events.visstimONTimes, ...
@@ -28,7 +56,7 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     % sort by trial
     p = block.paramsValues(1); 
     numClicks = numel((p.clickDuration/2):1/p.clickRate:p.stimDuration); 
-    [visOnsetAll,visOffsetAll] = sortClicksByTrial(photoDiodeFlipTimes,trialStart,trialEnd,numClicks,1);
+    visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart,trialEnd,numClicks*2,0);
 
     
     
@@ -41,7 +69,7 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     timelineClickOff = timelineTime(strfind((audTrace<min(thresh)*0.2)', [0 1]));
     ClickTimes = sort([timelineClickOn timelineClickOff]);
     
-    [audOnsetAll,audOffsetAll] = sortClicksByTrial(ClickTimes,trialStart,trialEnd,numClicks,1); 
+    audOnOff = sortClicksByTrial(ClickTimes,trialStart,trialEnd,numClicks*2,0); 
     
     
     %% reward times 
@@ -49,20 +77,30 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     [rewardAll,~] = sortClicksByTrial(reward,trialStart,trialEnd,1,0);
     
     %% save it in ev
-    ev.visStimOnset = visOnsetAll;
-    ev.visStimOffset = visOffsetAll;
-    ev.audStimOnset = audOnsetAll;
-    ev.audStimOffset = audOffsetAll; 
-    ev.rewardTimes = rewardAll; 
-    ev.visOnBlock = stimOnsetRaw;
-    ev.trialInfo.visTrial = visTrial;
-    ev.trialInfo.visTrialsLoc = visTrialsLoc;
-    ev.trialInfo.audTrial = audTrial;
-    ev.trialInfo.audTrialsLoc = audTrialsLoc;
-    ev.trialInfo.rewTrials = rewTrials;
-    ev.trialInfo.visContrast=block.events.viscontrastValues;
-    ev.trialInfo.Loudness = block.events.audamplitudeValues; 
-end 
+ 
+    ev.is_blankTrial = blankTrials.T;    
+    ev.is_visualTrial = visOnlyTrials.T; 
+    ev.is_auditoryTrial = audOnlyTrials.T; 
+    ev.is_coherentTrial = coherentTrials.T; 
+    ev.is_conflictTrial = conflictTrials.T; 
+    ev.is_rewardTrial = rewTrials.T;
+
+    ev.block_trialOnOff = [block.events.newTrialTimes' block.events.endTrialTimes']; 
+    ev.block_stimOn  = stimOnsetRaw.T; 
+
+    ev.timeline_rewardOn = rewardAll.T; 
+    ev.timeline_audOnOff = audOnOff.T;  
+    ev.timeline_visOnOff = visOnOff.T;  
+    
+    ev.timeline_audPeriodOnOff = audOnOff([1 numClicks*2],:).T;
+    ev.timeline_visPeriodOnOff = visOnOff([1 numClicks*2],:).T;
+
+    ev.stim_audAmplitude = block.events.audamplitudeValues.T;
+    ev.stim_visContrast = block.events.viscontrastValues.T;
+    ev.stim_audAzimuth  = audTrialsLoc.T;
+    ev.stim_visAzimuth  = visTrialsLoc.T;
+
+%%
 
 function [OnsetAll,OffsetAll] = sortClicksByTrial(eventTimes,trialStart,trialEnd,numClicks,sortOnOff)
 % sort events by trial 
@@ -101,4 +139,4 @@ for myTrial=1:nTrials
     end
 end 
 end
-    
+end
