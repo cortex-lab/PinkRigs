@@ -6,7 +6,6 @@ function cellRaster(spk,eventTimes,trialGroups, opt)
 %
 % eventTimes - vector or cell array of times
 % trialGroups - categorical vectors of trial types (optional)
-% sortRule - sorting for scrolling through units (default = depth)
 
 % Controls: 
 
@@ -60,9 +59,9 @@ nRow = 5;
 nAxes = nCol*nRow;
 
 cellrasterGui = figure('color','w');
-guiData.unitAxes = subplot(nRow,nCol,1:nCol:(nAxes-nRow),'YDir','reverse'); hold on;
+guiData.unitAxes = subplot(nRow,nCol,1:nCol:(nAxes-nRow),'YDir','normal'); hold on;
 xlim([-0.1,1]);
-ylabel('Depth (\mum)')
+ylabel('Distance from tip (\mum)')
 xlabel('xPosition (\mum)')
 tRef = nCol-2:nCol;
 disableDefaultInteractivity(gca)
@@ -291,6 +290,8 @@ set(guiData.amplitudePlot,'XData', ...
 set(guiData.amplitudeLines(1),'XData',repmat(min(guiData.tPeriEvent(:)),2,1),'YData',[ymin,ymax]);
 set(guiData.amplitudeLines(2),'XData',repmat(max(guiData.tPeriEvent(:)),2,1),'YData',[ymin,ymax]);
 assignin('base','guiData',guiData)
+
+set(guiData.title, 'String', sprintf('ClusterID: %d', guiData.curr.unit));
 end
 
 
@@ -394,9 +395,9 @@ guiData = guidata(cellrasterGui);
 unitX = get(guiData.unitDots,'XData');
 unitY = get(guiData.unitDots,'YData');
 
-[~,clicked_unit] = min(sqrt(sum(([unitX;unitY] - ...
+[~,clickedUnit] = min(sqrt(sum(([unitX;unitY] - ...
     eventdata.IntersectionPoint(1:2)').^2,1)));
-guiData.curr.unit = clicked_unit;
+guiData.curr.unit = guiData.clustIDs(clickedUnit);
 
 % Upload gui data and draw
 guidata(cellrasterGui,guiData);
