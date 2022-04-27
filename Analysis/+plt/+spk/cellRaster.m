@@ -45,10 +45,10 @@ guiData.trialGroups = trialGroups;
 %% Validate "opt"
 guiData.clustNum = cellfun(@(x) length(x.clusters), spk);
 
-if ~isfield(opt, 'highlight'); guiData.highlight = []; 
+if ~isfield(opt, 'highlight'); guiData.highlight = cell(length(spk),1); 
 else, guiData.highlight = opt.highlight;
 end
-if ~isfield(opt,'sortRule'); guiData.sortRule = 'sig'; guiData.highlight = [];
+if ~isfield(opt,'sortRule'); guiData.sortRule = 'sig';
 else, guiData.sortRule = opt.sortRule;
 end
 
@@ -123,8 +123,8 @@ switch guiData.sortRule(1:3)
     case 'sig'
         guiData.sigRes = neural.findResponsiveCells(spk,guiData.curr.eventTimes);
         [~, guiData.curr.sortedClustIDs] = sort(guiData.sigRes.pVal);
-        if isempty(guiData.highlight)
-            guiData.highlight = guiData.sigRes.pVal<0.01;
+        if isempty(guiData.highlight{guiData.curr.probe})
+            guiData.highlight{guiData.curr.probe} = guiData.sigRes.pVal<0.01;
         end
 end
 guiData.curr.sortedClustIDs = guiData.clustIDs(guiData.curr.sortedClustIDs);
@@ -139,8 +139,8 @@ ylim([min(guiData.clustDepths)-50 max(guiData.clustDepths)+50]);
 xlim([min(guiData.clustXPos)-25 max(guiData.clustXPos)+25]);
 
 % (plot unit depths by depth and relative number of spks)
-if isempty(guiData.highlight); highlight = guiData.clustDepths*0;
-else, highlight = guiData.highlight;
+if isempty(guiData.highlight{guiData.curr.probe}); highlight = guiData.clustDepths*0;
+else, highlight = guiData.highlight{guiData.curr.probe};
 end
 plot(guiData.clustXPos(highlight),guiData.clustDepths(highlight),'.b','MarkerSize',25);
 unitDots = plot(guiData.clustXPos,guiData.clustDepths,'.k','MarkerSize',15,'ButtonDownFcn',@unitClick);
