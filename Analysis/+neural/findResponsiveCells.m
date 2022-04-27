@@ -1,4 +1,5 @@
 function sigResults = findResponsiveCells(spk,eventTimes,tWin)
+
 if ~iscell(spk); spk  = {spk}; end
 if iscell(eventTimes); eventTimes = eventTimes{1}; end
 eventTimes(isnan(eventTimes)) = [];
@@ -9,13 +10,11 @@ elseif ~all([(tWin(1:2)<=0) (tWin(3:4)>=0)]); error('pre/post windows should be 
 end
 
 % Note: this looping is faster because it means smaller subsets are indexed when searching.
-%%
 sigResults = struct;
 for i = 1:length(spk)
-    if iscell(spk)
-        spkTimes = spk{i}.spikes.time;
-        spkCluster = spk{i}.spikes.cluster;
-        clusterIDs = [spk{i}.clusters.ID]';  
+    spkTimes = spk{i}.spikes.time;
+    spkCluster = spk{i}.spikes.cluster;
+    clusterIDs = [spk{i}.clusters.ID]';
 
     matlabMod = 0;
     if min(clusterIDs) == 0
@@ -39,7 +38,6 @@ for i = 1:length(spk)
     sigResults(i).pVal = pVal;
     sigResults(i).spikeCountsPre = spikeCountsPre';
     sigResults(i).spikeCountsPost = spikeCountsPost';
-end
 end
 
 

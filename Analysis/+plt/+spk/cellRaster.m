@@ -107,21 +107,31 @@ guiData.spkAmps = spk.spikes.tempScalingAmp;
 
 guiData.clustDepths = [spk.clusters.Depth]';
 guiData.clustXPos = [spk.clusters.XPos]';
+guiData.clustIDs = [spk.clusters.ID]';
+
+if min(guiData.spkCluster) == 0
+    guiData.spkCluster = guiData.spkCluster+1; 
+    guiData.clustIDs = guiData.clustIDs+1; 
+end
+
 
 guiData.curr.eventTimes = guiData.eventTimes{guiData.curr.eventTimeRef};
 guiData.curr.trialGroups = guiData.trialGroups{guiData.curr.eventTimeRef};
 
 switch guiData.sortRule(1:3)
     case 'dep'
-        [~, guiData.curr.sortIdx] = sort(guiData.clustDepths);
+        [~, guiData.curr.sortedClustIDs] = sort(guiData.clustDepths);
     case 'sig'
         guiData.sigRes = neural.findResponsiveCells(spk,guiData.curr.eventTimes);
-        [~, guiData.curr.sortIdx] = sort(guiData.sigRes.pVal);
+        [~, guiData.curr.sortedClustIDs] = sort(guiData.sigRes.pVal);
         if isempty(guiData.highlight)
             guiData.highlight = guiData.sigRes.pVal<0.01;
         end
 end
-guiData.curr.unit = guiData.curr.sortIdx(1);
+guiData.curr.sortedClustIDs = guiData.clustIDs(guiData.curr.sortedClustIDs);
+guiData.curr.unit = guiData.curr.sortedClustIDs(1);
+guiData.curr.unitIdx = find(guiData.curr.unit == guiData.clustIDs);
+
 
 %%
 % Initialize figure and axes
@@ -186,6 +196,7 @@ end
 function updatePlot(cellrasterGui)
 % Get guidata
 guiData = guidata(cellrasterGui);
+guiData.curr.unitIdx = find(guiData.curr.unit == guiData.clustIDs);
 
 % Turn on/off the appropriate graphics
 set(guiData.rasterDots,'visible','on');
@@ -193,7 +204,7 @@ set(guiData.rasterDots,'visible','on');
 % Plot depth location on probe
 unitX = get(guiData.unitDots,'XData');
 unitY = get(guiData.unitDots,'YData');
-set(guiData.currUnitDot,'XData',unitX(guiData.curr.unit), 'YData',unitY(guiData.curr.unit));
+set(guiData.currUnitDot,'XData',unitX(guiData.curr.unitIdx), 'YData',unitY(guiData.curr.unitIdx));
 
 % Bin spks (use only spks within time range, big speed-up)
 currspkIdx = ismember(guiData.spkCluster,guiData.curr.unit);
@@ -299,14 +310,14 @@ switch eventdata.Key
         
     case 'downarrow'
         % Next unit
-        currUnitIdx = guiData.curr.unit == guiData.curr.sortIdx;
-        newUnit = guiData.curr.sortIdx(circshift(currUnitIdx,1));
+        currUnitPosition = guiData.curr.unit == guiData.curr.sortedClustIDs;
+        newUnit = guiData.curr.sortedClustIDs(circshift(currUnitPosition,1));
         guiData.curr.unit = newUnit;
         
     case 'uparrow'
         % Previous unit
-        currUnitIdx = guiData.curr.unit(end) == guiData.curr.sortIdx;
-        newUnit = guiData.curr.sortIdx(circshift(currUnitIdx,-1));
+        currUnitPosition = guiData.curr.unit(end) == guiData.curr.sortedClustIDs;
+        newUnit = guiData.curr.sortedClustIDs(circshift(currUnitPosition,-1));
         guiData.curr.unit = newUnit;
 
     case 'rightarrow'
@@ -362,7 +373,7 @@ switch eventdata.Key
     case 'u'
         % Enter and go to unit
         newUnit = str2double(cell2mat(inputdlg('Go to unit:')));
-        if ~ismember(newUnit,unique(guiData.curr.sortIdx))
+        if ~ismember(newUnit,unique(guiData.curr.sortedClustIDs))
             error(['Unit ' num2str(newUnit) ' not present'])
         end
         guiData.curr.unit = newUnit;
