@@ -237,6 +237,8 @@ stimMoves = stimMoves(~zeroContrastTrials);
 
 isTimeOut = responseRecorded(~zeroContrastTrials)==0;
 photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
+photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
+photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
 
 visStimOnOffTimes = sort(photoDiodeFlipTimes(cell2mat(photoFlipsByTrial)))';
 tExt.visStimOnOff = [visStimOnOffTimes(1:2:end)' visStimOnOffTimes(2:2:end)'];

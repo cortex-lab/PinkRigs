@@ -15,11 +15,12 @@ exp2checkList = csv.queryExp(params);
 
 %%
 clear params
-params.mice2Check = 'all';
-params.days2Check = 10000;
+params.mice2Check = 'AV008';
+params.days2Check = '2022-03-11';
 params.expDef2Check = 'multiSpaceWorld_checker_training';
 exp2checkList = csv.queryExp(params);
 params.recompute = {'ev'};
+%%
 preproc.extractExpData(params, exp2checkList)
 
 
