@@ -4,9 +4,9 @@ close all
 %% Get exp ref
 
 clear params
-params.mice2Check = 'AV009';
-params.days2Check = 10000;
-%  params.days2Check = {'2022-03-09'};
+params.mice2Check = 'AV008';
+% params.days2Check = 10000;
+ params.days2Check = {'2022-03-14'};
 params.expDef2Check = 'multiSpaceWorld_checker_training';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
