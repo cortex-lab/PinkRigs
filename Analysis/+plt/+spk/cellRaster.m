@@ -272,13 +272,10 @@ rasterWindow = [-0.5,1];
 psthBinSize = 0.001;
 tBins = rasterWindow(1):psthBinSize:rasterWindow(2);
 t = tBins(1:end-1) + diff(tBins)./2;
+tPeriEvent = guiData.curr.eventTimes + tBins;
 
-[~, trialGroupSort] = sort(guiData.curr.trialGroups(:, guiData.curr.trialGroupRef));
-tPeriEvent = guiData.curr.eventTimes(trialGroupSort) + tBins;
 % (handle NaNs by setting rows with NaN times to 0)
 tPeriEvent(any(isnan(tPeriEvent),2),:) = 0;
-
-
 
 % Set functions for key presses
 set(cellrasterGui,'WindowKeyPressFcn',@keyPress);
@@ -362,11 +359,12 @@ elseif length(unique(sign(currGroup(currGroup ~= 0)))) == 2
 end
 
 % Plot smoothed PSTH
-gw = gausswin(51,3)';
+gw = gausswin(31,3)';
 smWin = gw./sum(gw);
 currPsth = grpstats(currRaster,currGroup,@(x) mean(x,1));
-padMatrix = zeros(size(currPsth,1), floor(length(smWin)/2));
-currSmoothedPsth = conv2([padMatrix,currPsth,padMatrix], smWin,'valid')./mean(diff(guiData.t));
+padStart = repmat(mean(currPsth(:,1:10),2), 1, floor(length(smWin)/2));
+padEnd = repmat(mean(currPsth(:,end-9:end),2), 1, floor(length(smWin)/2));
+currSmoothedPsth = conv2([padStart,currPsth,padEnd], smWin,'valid')./mean(diff(guiData.t));
 
 % (set the first n lines by group, set all others to NaN)
 arrayfun(@(x) set(guiData.plot.psthLines(x), ...
