@@ -255,12 +255,13 @@ currClusterDot = plot(0,0,'.r','MarkerSize',20);
 axes(guiData.axes.psth); cla;
 maxNumGroups = 10; %HARDCODED for now... unlikely to be more than 10 trial labels...
 psthLines = arrayfun(@(x) plot(NaN,NaN,'linewidth',2,'color','k'),1:maxNumGroups);
-psthOnset = xline(0, ':k', 'linewidth', 3);
+psthOnset = xline(0, ':c', 'linewidth', 3);
 
 % (raster)
 axes(guiData.axes.raster); cla;
 rasterDots = scatter(NaN,NaN,5,'k','filled');
-rasterOnset = xline(0, ':k', 'linewidth', 3);
+rasterOnset = xline(0, ':c', 'linewidth', 3);
+addRasterTicks = scatter(NaN,NaN,5,'c','filled');
 
 % (spk amplitude across the recording)
 axes(guiData.axes.amplitude); cla;
@@ -289,6 +290,7 @@ guiData.plot.psthLines = psthLines;
 guiData.plot.psthOnset = psthOnset;
 guiData.plot.rasterDots = rasterDots;
 guiData.plot.rasterOnset = rasterOnset;
+guiData.plot.addRasterTicks = addRasterTicks;
 guiData.plot.amplitudes = amplitudePlot;
 
 % (raster times)
@@ -332,6 +334,12 @@ end
 
 % Set color scheme
 currGroup = guiData.curr.trialGroups(:,guiData.curr.trialGroupRef);
+currAddTicks = guiData.trialTickTimes{guiData.curr.eventTimeRef};
+if any(currAddTicks)
+    if max(currAddTicks) > 100
+        currAddTicks = currAddTicks - guiData.eventTimes{guiData.curr.eventTimeRef};
+    end
+end
 if length(unique(currGroup)) == 1
     % Black if one group
     groupColors = [0,0,0];
@@ -373,15 +381,19 @@ ylim(get(guiData.plot.psthLines(1),'Parent'),[min(currSmoothedPsth(:)), ...
 
 % Plot raster
 % (single cluster mode)
-[~,~,rowGroup] = unique(guiData.curr.trialGroups(:,guiData.curr.trialGroupRef),'sorted');
-[~, rasterSortIdx] = sort(currGroup);
+[~,~,rowGroup] = unique(currGroup,'sorted');
+[~, rasterSortIdx] = sortrows([currGroup, currAddTicks], [1,2]);
 currRaster = currRaster(rasterSortIdx,:);
 rowGroup = rowGroup(rasterSortIdx);
+currAddTicks = currAddTicks(rasterSortIdx);
 
 [rasterY,rasterX] = find(currRaster);
 set(guiData.plot.rasterDots,'XData',guiData.t(rasterX),'YData',rasterY);
 xlim(get(guiData.plot.rasterDots,'Parent'),[guiData.tBins(1),guiData.tBins(end)]);
 ylim(get(guiData.plot.rasterDots,'Parent'),[0,size(guiData.tPeriEvent,1)]);
+if any(currAddTicks)
+    set(guiData.plot.addRasterTicks,'XData',currAddTicks,'YData',1:length(currAddTicks));
+end
 
 % (set dot color by group)
 psthColors = get(guiData.plot.psthLines,'color');
@@ -404,7 +416,6 @@ end
 
 function keyPress(cellrasterGui,eventdata)
 % Get guidata
-disp(eventdata)
 guiData = guidata(cellrasterGui);
 
 switch eventdata.Key
