@@ -1,7 +1,10 @@
 % read raw data and dump into .bin file according to shanks? 
 path = 'Z:\AV008\2022-03-11\ephys\AV008_2022-03-11_ActivePassive_g0\AV008_2022-03-11_ActivePassive_g0_imec0';
 
-AP_filename = [path '\AV008_2022-03-11_ActivePassive_g0_t0.imec0.ap.bin']; 
+AP_filename = [path '\AV008_2022-03-11_ActivePassive_g0_t0.imec0.ap.bin'];
+shank = 3;
+
+
 d=dir(AP_filename);
 ops.numChannels=385; 
 nSamps = d.bytes/2/ops.numChannels;
@@ -20,7 +23,6 @@ for i=1:size(shankdat,2)
     shankID(i)=str2double(currentband_dat{1});
 end 
 
-shank = 2;
 % 
 idx = find(shankID==shank);
 mmf = memmapfile(AP_filename,'Format',{'int16', [ops.numChannels nSamps],'x'});
@@ -32,8 +34,12 @@ chunkInd = 1;
 while 1
 
 fprintf(1, 'chunk %d/%d\n', chunkInd, nChunksTotal);
-
-dat = mmf.Data.x(idx,(chunkInd-1)*chunkSize+1:chunkInd*chunkSize);
+if chunkInd*chunkSize>nSamps
+    t_end = nSamps;
+else 
+    t_end = chunkInd*chunkSize;
+end
+dat = mmf.Data.x(idx,(chunkInd-1)*chunkSize+1:t_end);
 
 if ~isempty(dat)
 
