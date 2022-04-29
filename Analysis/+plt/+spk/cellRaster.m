@@ -49,6 +49,7 @@ function cellRaster(spk, eventTimes, trialGroups, opt)
 % Up/Down arrow keys:             switch between different clusters
 % Left/Right arrow keys:          switch between different groups of trial labels
 % Shift+Left/Right arrow keys:    switch between different sets of event times
+% "c" key:                        manually select a cluster
 
 %% Input validation and contruction
 % Validate eventTimes input
@@ -272,10 +273,6 @@ rasterWindow = [-0.5,1];
 psthBinSize = 0.001;
 tBins = rasterWindow(1):psthBinSize:rasterWindow(2);
 t = tBins(1:end-1) + diff(tBins)./2;
-tPeriEvent = guiData.curr.eventTimes + tBins;
-
-% (handle NaNs by setting rows with NaN times to 0)
-tPeriEvent(any(isnan(tPeriEvent),2),:) = 0;
 
 % Set functions for key presses
 set(cellrasterGui,'WindowKeyPressFcn',@keyPress);
@@ -291,9 +288,8 @@ guiData.plot.addRasterTicks = addRasterTicks;
 guiData.plot.amplitudes = amplitudePlot;
 
 % (raster times)
-guiData.t = t;
-guiData.tBins = tBins;
-guiData.tPeriEvent = tPeriEvent;
+guiData.plot.rasterTime = t;
+guiData.plot.rasterBins = tBins;
 
 % Upload gui data and draw
 guidata(cellrasterGui, guiData);
@@ -302,6 +298,11 @@ end
 function updatePlot(cellrasterGui)
 % Get guidata
 guiData = guidata(cellrasterGui);
+guiData.curr.eventTimes = guiData.eventTimes{guiData.curr.eventTimeRef};
+guiData.curr.trialGroups = guiData.trialGroups{guiData.curr.eventTimeRef};
+if guiData.curr.trialGroupRef > size(guiData.curr.trialGroups,2)
+    guiData.curr.trialGroupRef = size(guiData.curr.trialGroups,2);
+end
 guiData.curr.clustIdx = find(guiData.curr.clust == guiData.curr.clustIDs);
 
 % Turn on/off the appropriate graphics
@@ -313,20 +314,25 @@ clusterY = get(guiData.plot.clusterDots,'YData');
 set(guiData.plot.currClusterDot,'XData',clusterX(guiData.curr.clustIdx), 'YData',clusterY(guiData.curr.clustIdx));
 
 % Bin spks (use only spks within time range, big speed-up)
-currspkIdx = ismember(guiData.curr.spkCluster,guiData.curr.clust);
-currRasterspkTimes = guiData.curr.spkTimes(currspkIdx);
-currRasterspkTimes(currRasterspkTimes < min(guiData.tPeriEvent(:)) | ...
-    currRasterspkTimes > max(guiData.tPeriEvent(:))) = [];
+currSpkIdx = ismember(guiData.curr.spkCluster,guiData.curr.clust);
+currRasterSpkTimes = guiData.curr.spkTimes(currSpkIdx);
 
-tDat = guiData.tPeriEvent';
+tPeriEvent = guiData.curr.eventTimes + guiData.plot.rasterBins;
+% (handle NaNs by setting rows with NaN times to 0)
+tPeriEvent(any(isnan(tPeriEvent),2),:) = 0;
+
+currRasterSpkTimes(currRasterSpkTimes < min(tPeriEvent(:)) | ...
+    currRasterSpkTimes > max(tPeriEvent(:))) = [];
+
+tDat = tPeriEvent';
 if ~any(diff(tDat(:))<0)
-    currRaster = [histcounts(currRasterspkTimes,tDat(:)),0];
-    currRaster = reshape(currRaster, size(guiData.tPeriEvent'))';
+    currRaster = [histcounts(currRasterSpkTimes,tDat(:)),0];
+    currRaster = reshape(currRaster, size(tPeriEvent'))';
     currRaster(:,end) = [];
 else
     currRaster = cell2mat(arrayfun(@(x) ...
-        histcounts(currRasterspkTimes,guiData.tPeriEvent(x,:)), ...
-        [1:size(guiData.tPeriEvent,1)]','uni',false));
+        histcounts(currRasterSpkTimes,tPeriEvent(x,:)), ...
+        [1:size(tPeriEvent,1)]','uni',false));
 end
 
 % Set color scheme
@@ -364,11 +370,11 @@ smWin = gw./sum(gw);
 currPsth = grpstats(currRaster,currGroup,@(x) mean(x,1));
 padStart = repmat(mean(currPsth(:,1:10),2), 1, floor(length(smWin)/2));
 padEnd = repmat(mean(currPsth(:,end-9:end),2), 1, floor(length(smWin)/2));
-currSmoothedPsth = conv2([padStart,currPsth,padEnd], smWin,'valid')./mean(diff(guiData.t));
+currSmoothedPsth = conv2([padStart,currPsth,padEnd], smWin,'valid')./mean(diff(guiData.plot.rasterTime));
 
 % (set the first n lines by group, set all others to NaN)
 arrayfun(@(x) set(guiData.plot.psthLines(x), ...
-    'XData',guiData.t,'YData',currSmoothedPsth(x,:), ...
+    'XData',guiData.plot.rasterTime,'YData',currSmoothedPsth(x,:), ...
     'Color',groupColors(x,:)),1:size(currPsth,1));
 arrayfun(@(align_group) set(guiData.plot.psthLines(align_group), ...
     'XData',NaN,'YData',NaN), ...
@@ -386,9 +392,9 @@ rowGroup = rowGroup(rasterSortIdx);
 currAddTicks = currAddTicks(rasterSortIdx);
 
 [rasterY,rasterX] = find(currRaster);
-set(guiData.plot.rasterDots,'XData',guiData.t(rasterX),'YData',rasterY);
-xlim(get(guiData.plot.rasterDots,'Parent'),[guiData.tBins(1),guiData.tBins(end)]);
-ylim(get(guiData.plot.rasterDots,'Parent'),[0,size(guiData.tPeriEvent,1)]);
+set(guiData.plot.rasterDots,'XData',guiData.plot.rasterTime(rasterX),'YData',rasterY);
+xlim(get(guiData.plot.rasterDots,'Parent'),[guiData.plot.rasterBins(1),guiData.plot.rasterBins(end)]);
+ylim(get(guiData.plot.rasterDots,'Parent'),[0,size(tPeriEvent,1)]);
 if any(currAddTicks)
     set(guiData.plot.addRasterTicks,'XData',currAddTicks,'YData',1:length(currAddTicks));
 end
@@ -402,8 +408,8 @@ set(guiData.plot.rasterDots,'CData',rasterDotColor);
 
 % Plot cluster amplitude over whole experiment
 set(guiData.plot.amplitudes,'XData', ...
-    guiData.curr.spkTimes(currspkIdx), ...
-    'YData',guiData.curr.spkAmps(currspkIdx),'linestyle','none');
+    guiData.curr.spkTimes(currSpkIdx), ...
+    'YData',guiData.curr.spkAmps(currSpkIdx),'linestyle','none');
 
 assignin('base','guiData',guiData)
 set(guiData.title, 'String', sprintf('ClusterID--%d   Alignment--%s   Grouping--%s', ...
@@ -443,13 +449,6 @@ switch eventdata.Key
                 newEventTimes = 1;
             end
             guiData.curr.eventTimeRef = newEventTimes;
-            if guiData.curr.trialGroupRef > size(guiData.trialGroups{guiData.curr.eventTimeRef},2)
-                guiData.curr.trialGroupRef = size(guiData.trialGroups{guiData.curr.eventTimeRef},2);
-            end
-            
-            guidata(cellrasterGui,guiData);
-            cycleProbe(cellrasterGui);
-            guiData = guidata(cellrasterGui);
         else
             newTrialGroup = guiData.curr.trialGroupRef + 1;
             if newTrialGroup > size(guiData.trialGroups{guiData.curr.eventTimeRef},2)
@@ -465,10 +464,6 @@ switch eventdata.Key
                  newEventTimes = length(guiData.eventTimes);
              end
              guiData.curr.eventTimeRef = newEventTimes;
-
-             guidata(cellrasterGui,guiData);
-             cycleProbe(cellrasterGui);
-             guiData = guidata(cellrasterGui);
          else
              newTrialGroup = guiData.curr.trialGroupRef - 1;
              if newTrialGroup < 1
@@ -477,7 +472,7 @@ switch eventdata.Key
              guiData.curr.trialGroupRef = newTrialGroup;
          end
 
-    case 'u'
+    case 'c'
         % Enter and go to cluster
         newCluster = str2double(cell2mat(inputdlg('Go to cluster:')));
         if ~ismember(newCluster,unique(guiData.curr.sortedClustIDs))
