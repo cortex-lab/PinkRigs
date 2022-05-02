@@ -22,7 +22,7 @@ probeDates(cellfun(@isempty, probeDates)) = deal({now+20});
 csvIdx = cellfun(@(x,y) sum(implantDatesFromCSV == x & serialsFromCSV == y,2), probeDates, probeSerial, 'uni', 0);
 uniqueEntryDetected = cellfun(@(x) sum(x(:)), csvIdx)==1;
 if ~all(uniqueEntryDetected)
-    arrayfun(@(x) fprintf('No valid entry found for serial number: %d \n', x), probeSerial(~uniqueEntryDetected));
+    cellfun(@(x) fprintf('No valid entry found for serial number: %d \n', x), probeSerial(~uniqueEntryDetected));
     warning('Probe(s) not entered properly in main CSV? Will not copy associated files')  
 end
    
