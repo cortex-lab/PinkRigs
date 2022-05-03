@@ -399,6 +399,8 @@ xlim(get(guiData.plot.rasterDots,'Parent'),[guiData.plot.rasterBins(1),guiData.p
 ylim(get(guiData.plot.rasterDots,'Parent'),[0,size(tPeriEvent,1)]);
 if any(currAddTicks)
     set(guiData.plot.addRasterTicks,'XData',currAddTicks,'YData',1:length(currAddTicks));
+else
+    set(guiData.plot.addRasterTicks,'XData',[nan nan],'YData',[nan nan]);
 end
 
 % (set dot color by group)
@@ -484,8 +486,10 @@ switch eventdata.Key
 end
 
 % Upload gui data and draw
-guidata(cellrasterGui,guiData);
-updatePlot(cellrasterGui);
+if contains(eventdata.Key, {'p'; 'c'; 'arrow'})
+    guidata(cellrasterGui,guiData);
+    updatePlot(cellrasterGui);
+end
 end
 
 function clusterClick(cellrasterGui,eventdata)
