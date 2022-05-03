@@ -78,27 +78,27 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     
     %% save it in ev
  
-    ev.is_blankTrial = blankTrials.T;    
-    ev.is_visualTrial = visOnlyTrials.T; 
-    ev.is_auditoryTrial = audOnlyTrials.T; 
-    ev.is_coherentTrial = coherentTrials.T; 
-    ev.is_conflictTrial = conflictTrials.T; 
-    ev.is_rewardTrial = rewTrials.T;
+    ev.is_blankTrial = blankTrials';    
+    ev.is_visualTrial = visOnlyTrials'; 
+    ev.is_auditoryTrial = audOnlyTrials'; 
+    ev.is_coherentTrial = coherentTrials'; 
+    ev.is_conflictTrial = conflictTrials'; 
+    ev.is_rewardTrial = rewTrials';
 
     ev.block_trialOnOff = [block.events.newTrialTimes' block.events.endTrialTimes']; 
-    ev.block_stimOn  = stimOnsetRaw.T; 
+    ev.block_stimOn  = stimOnsetRaw'; 
 
-    ev.timeline_rewardOn = rewardAll.T; 
-    ev.timeline_audOnOff = audOnOff.T;  
-    ev.timeline_visOnOff = visOnOff.T;  
+    ev.timeline_rewardOn = rewardAll'; 
+    ev.timeline_audOnOff = audOnOff';  
+    ev.timeline_visOnOff = visOnOff';  
     
-    ev.timeline_audPeriodOnOff = audOnOff([1 numClicks*2],:).T;
-    ev.timeline_visPeriodOnOff = visOnOff([1 numClicks*2],:).T;
+    ev.timeline_audPeriodOnOff = audOnOff([1 numClicks*2],:)';
+    ev.timeline_visPeriodOnOff = visOnOff([1 numClicks*2],:)';
 
-    ev.stim_audAmplitude = block.events.audamplitudeValues.T;
-    ev.stim_visContrast = block.events.viscontrastValues.T;
-    ev.stim_audAzimuth  = audTrialsLoc.T;
-    ev.stim_visAzimuth  = visTrialsLoc.T;
+    ev.stim_audAmplitude = block.events.audamplitudeValues';
+    ev.stim_visContrast = block.events.viscontrastValues';
+    ev.stim_audAzimuth  = audTrialsLoc';
+    ev.stim_visAzimuth  = visTrialsLoc';
 
 %%
 
