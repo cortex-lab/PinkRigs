@@ -212,7 +212,9 @@ guiData.curr.clustXPos = [spk.clusters.XPos]';
 guiData.curr.clustIDs = [spk.clusters.ID]';
 
 % Remove the zero idx (if present) from clusters;
+guiData.pythonModIdx = 0;
 if min(guiData.curr.spkCluster) == 0
+    guiData.pythonModIdx = 1;
     guiData.curr.spkCluster = guiData.curr.spkCluster+1; 
     guiData.curr.clustIDs = guiData.curr.clustIDs+1; 
 end
@@ -413,7 +415,7 @@ set(guiData.plot.amplitudes,'XData', ...
 
 assignin('base','guiData',guiData)
 set(guiData.title, 'String', sprintf('ClusterID--%d   Alignment--%s   Grouping--%s', ...
-    guiData.curr.clust, guiData.eventNames{guiData.curr.eventTimeRef}, ...
+    guiData.curr.clust-guiData.pythonModIdx, guiData.eventNames{guiData.curr.eventTimeRef}, ...
     guiData.groupNames{guiData.curr.eventTimeRef}{guiData.curr.trialGroupRef}));
 end
 
