@@ -38,7 +38,7 @@ switch lower(computerType)
         
     case 'kilo1'
         fprintf('Detected kilo1 computer... \n')
-        fprintf('Starting now %s...',datestr(now))
+        fprintf('Starting now %s... \n',datestr(now))
         
         dbstop if error % temporarily, to debug
         

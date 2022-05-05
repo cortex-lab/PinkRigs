@@ -1,8 +1,8 @@
 subject = 'AV009';
 server = '\\zinu';
-% date = '2022-02-25';
+date = '2022-04-26';
 
-d = dir(fullfile(server,'Subjects',subject,'**','ephys','**','*.ap.bin'));
+d = dir(fullfile(server,'Subjects',subject,date,'**','ephys','**','*.ap.bin'));
 clear recList
 for idx = 1:numel(d)
     recList{idx} = fullfile(d(idx).folder,d(idx).name);
@@ -22,6 +22,6 @@ end
 % recList = unique(recList);
 
 %%
-params.recomputeKilo = 0;
+params.recomputeKilo = 1;
 params.recomputeQMetrics = 1;
 kilo.main(params,recList)

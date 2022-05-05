@@ -10,7 +10,7 @@ function getQualityMetrics(ksFolder,ephysFolder)
     ephysap_path = fullfile(ephysRawFile.folder,ephysRawFile.name);
 
     %% quality metric parameters and thresholds
-    param = bc_qualityParamValues;
+    param = bc_qualityParamValues(ksFolder,ephysap_path);
 
     %% compute quality metrics
     [qMetric, unitType] = bc_runAllQualityMetrics(param, spikeTimes, spikeTemplates, ...
