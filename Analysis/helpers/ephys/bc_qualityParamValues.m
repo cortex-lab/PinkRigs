@@ -1,4 +1,4 @@
-function param = bc_qualityParamValues
+function param = bc_qualityParamValues(ksFolder,ephysap_path)
     param = struct;
     
     %bc_qualityParamValues
