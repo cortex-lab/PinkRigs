@@ -25,13 +25,13 @@ end
 
 % add the calculated drift from pyKS on the plots. 
 % the drift is not calculated per shank but as total drift
-drift_times = readNPY([ksDir '\' 'drift.times.npy']); 
-drift_um = readNPY([ksDir '\' 'drift.um.npy']); 
-drift_depths_um = readNPY([ksDir '\' 'drift_depths.um.npy']); 
-
-subplot(1,numel(recorded_shanks)+1,numel(recorded_shanks)+1);
-% add the starting position to each driftunm
-drift_um_corrected_start = drift_um + repmat(drift_depths_um,numel(drift_times),1); 
-plot(drift_times,drift_um_corrected_start);
-ylim([min(spikeDepths)*0.98,max(spikeDepths)*1.02]);
-title('drift estimate by pykilosort');
+% drift_times = readNPY([ksDir '\' 'drift.times.npy']); 
+% drift_um = readNPY([ksDir '\' 'drift.um.npy']); 
+% drift_depths_um = readNPY([ksDir '\' 'drift_depths.um.npy']); 
+% 
+% subplot(1,numel(recorded_shanks)+1,numel(recorded_shanks)+1);
+% % add the starting position to each driftunm
+% drift_um_corrected_start = drift_um + repmat(drift_depths_um,numel(drift_times),1); 
+% plot(drift_times,drift_um_corrected_start);
+% ylim([min(spikeDepths)*0.98,max(spikeDepths)*1.02]);
+% title('drift estimate by pykilosort');

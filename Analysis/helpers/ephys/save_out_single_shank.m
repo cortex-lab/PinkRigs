@@ -1,7 +1,6 @@
 % read raw data and dump into .bin file according to shanks? 
-path = 'Z:\AV008\2022-03-11\ephys\AV008_2022-03-11_ActivePassive_g0\AV008_2022-03-11_ActivePassive_g0_imec0';
-
-AP_filename = [path '\AV008_2022-03-11_ActivePassive_g0_t0.imec0.ap.bin']; 
+path = '\\zinu.cortexlab.net\Subjects\AV008\2022-03-20\ephys\AV008_2022-03-20_ActivePassiveSSparseNoiseSpontaneousNaturalImages_g0\AV008_2022-03-20_ActivePassiveSSparseNoiseSpontaneousNaturalImages_g0_imec0';
+AP_filename = [path '\AV008_2022-03-20_ActivePassiv_g0_t0.imec0.ap.bin']; 
 d=dir(AP_filename);
 ops.numChannels=385; 
 nSamps = d.bytes/2/ops.numChannels;
@@ -20,7 +19,7 @@ for i=1:size(shankdat,2)
     shankID(i)=str2double(currentband_dat{1});
 end 
 
-shank = 2;
+shank = 3;
 % 
 idx = find(shankID==shank);
 mmf = memmapfile(AP_filename,'Format',{'int16', [ops.numChannels nSamps],'x'});
