@@ -37,6 +37,7 @@ switch lower(computerType)
         end
         
     case 'kilo1'
+        %%
         fprintf('Detected kilo1 computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
         
@@ -110,5 +111,5 @@ switch lower(computerType)
             exp2checkList = csv.queryExp(paramsPreproc);
             preproc.extractExpData([], exp2checkList)
         end
-        fprintf('Stopping now %s.',datestr(now))
+        fprintf('Stopping now %s. \n',datestr(now))
 end
