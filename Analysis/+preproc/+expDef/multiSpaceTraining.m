@@ -329,7 +329,9 @@ for i = 1:length(rawFields)
         tExt.(currField) = single(cell2mat(tExt.(currField)));
     end
 end
-
+tExt.rewardTimes(cellfun(@length, tExt.rewardTimes)>1) = {nan};
+tExt.rewardTimes(responseRecorded~=1) = {nan};
+tExt.rewardTimes = cellfun(@double, tExt.rewardTimes); 
 %% Populate n with all fields;
 ev.is_blankTrial = is_blankTrial;
 ev.is_visualTrial = is_visualTrial;    
