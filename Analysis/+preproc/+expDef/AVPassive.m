@@ -33,7 +33,7 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     % get trial types, Dr Coen scheme 
     blankTrials  = ((isnan(visTrialsLoc)) & (isnan(audTrialsLoc)) & (rewTrials==0));
     visOnlyTrials =(visTrial==1) & (audTrial==0);
-    audOnlyTrials =(visTrial==1) & (audTrial==0);
+    audOnlyTrials =(visTrial==0) & (audTrial==1);
     coherentTrials = (visTrial==1) & (audTrial==1) & (visTrialsLoc==audTrialsLoc);
     conflictTrials = (visTrial==1) & (audTrial==1) & (visTrialsLoc~=audTrialsLoc);
     
@@ -85,7 +85,7 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     ev.is_conflictTrial = conflictTrials'; 
     ev.is_rewardTrial = rewTrials';
 
-    ev.block_trialOnOff = [block.events.newTrialTimes' block.events.endTrialTimes']; 
+    ev.block_trialOnOff = [trialStart' trialEnd']; 
     ev.block_stimOn  = stimOnsetRaw'; 
 
     ev.timeline_rewardOn = rewardAll'; 
@@ -109,8 +109,6 @@ function [OnsetAll,OffsetAll] = sortClicksByTrial(eventTimes,trialStart,trialEnd
 % numClicks = expected events per trial  (% todo: make this more flexible?)
 % 
 
-
-
 TimesPerTrial = arrayfun(@(x,y) eventTimes((eventTimes>=x)& ...
         (eventTimes<=y)),trialStart,trialEnd,'UniformOutput',false);
 nTrials = numel(TimesPerTrial); 
@@ -120,21 +118,15 @@ OffsetAll = nan(numClicks,nTrials);
 for myTrial=1:nTrials
     evPerTrial = TimesPerTrial{myTrial};
     if numel(evPerTrial)>0
-        if (myTrial==1) && (numel(evPerTrial)<numClicks*2)
-            % Surely due to auditory only trial starting while photodiode
-            % flips
-            % Skip it
+        if (myTrial==1) && (numel(evPerTrial)>numClicks)
+            evPerTrial(1:numel(evPerTrial)-numClicks)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
+        end
+        % can sort on and offsets or just get all
+        if sortOnOff==1
+            OnsetAll(:,myTrial) = evPerTrial(1:2:end);
+            OffsetAll(:,myTrial) = evPerTrial(2:2:end);
         else
-            if (myTrial==1) && (numel(evPerTrial)>numClicks*2)
-                evPerTrial(1:numel(evPerTrial)-numClicks*2)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
-            end
-            % can sort on and offsets or just get all
-            if sortOnOff==1
-                OnsetAll(:,myTrial) = evPerTrial(1:2:end);
-                OffsetAll(:,myTrial) = evPerTrial(2:2:end);
-            else
-                OnsetAll(:,myTrial) = evPerTrial;
-            end
+            OnsetAll(:,myTrial) = evPerTrial;
         end
     end
 end 
