@@ -210,7 +210,7 @@ if any(compareIndex-(1:numel(compareIndex))')
     [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
 end
 if any(compareIndex-(1:numel(compareIndex)))
-    fprintf('WARNING: Could not fix start/end times\n');
+    fprintf('WARNING: Could not fix start\end times\n');
     fprintf('Will perform incomplete identification based on trial structure\n');
     
     visGapsByTrial = indexByTrial(trialStEnTimes, sort(largeVisGaps(:)));
@@ -340,7 +340,7 @@ ev.is_coherentTrial = is_coherentTrial;
 ev.is_conflictTrial = is_conflictTrial;   
 ev.is_validTrial = vIdx(:);
 
-ev.block_trialOnOff = trialTimes;
+ev.block_trialOnOff = trialStEnTimes;
 ev.block_stimOn = stimPeriodStart;
 
 ev.timeline_rewardOn = tExt.rewardTimes;

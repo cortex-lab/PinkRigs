@@ -9,7 +9,8 @@ function plotData = boxPlots(subject, expDate, plotType, expDef, opt)
     %        'all'---------------------All data
     %        'lastx'-------------------The last x days of data (especially useful during training)
     %        'firstx'------------------The first x days of data
-    %        'yest'--------------------The x-1 day, where x is the most recent day
+    %        'yest'--------------------The x-1 day, where x is the most
+    %        recent day 
     %        'yyyy-mm-dd:yyyy-mm-dd'---Load dates in this range (including the boundaries)
     
 % plotType--Type of box plot ('res')
@@ -21,7 +22,6 @@ function plotData = boxPlots(subject, expDate, plotType, expDef, opt)
 % expDef----Name of required expDef ('multiSpaceWorld_checker_training')
 
 %% Input validation and default assingment
-nSubjects = length(subject);
 if exist('opt', 'var')
     if isfield(opt, 'sepPlots'); sepPlots = opt.sepPlots; end
     if isfield(opt, 'expNum'); expNum = opt.expNum; end
@@ -36,6 +36,7 @@ if ~exist('expDef', 'var'); expDef = 'multiSpaceWorld_checker_training'; end
 if ~iscell(subject); subject = {subject}; end
 if ~exist('noPlot', 'var'); noPlot = 0; end
 
+nSubjects = length(subject);
 if ~strcmp(expNum, 'any')
     if ~all([length(expNum) length(expDate)] == nSubjects)
         error('If requesting expNum, subjects/date/expnum must be the same size');
@@ -54,9 +55,9 @@ if ~iscell(expNum); expNum = {expNum}; end
 if ~iscell(expDef); expDef = {expDef}; end
 
 
-if length(expDate)==1 && 1 ~= nSubjects; expDate = repmat(expDate, nSubjects); end
-if length(expNum)==1 && 1 ~= nSubjects; expNum = repmat(expNum, nSubjects); end
-if length(expDef)==1 && 1 ~= nSubjects; expDef = repmat(expDef, nSubjects); end
+if length(expDate)==1 && 1 ~= nSubjects; expDate = repmat(expDate, nSubjects,1); end
+if length(expNum)==1 && 1 ~= nSubjects; expNum = repmat(expNum, nSubjects,1); end
+if length(expDef)==1 && 1 ~= nSubjects; expDef = repmat(expDef, nSubjects,1); end
 
 blkDates = cell(nSubjects,1);
 rigNames = cell(nSubjects,1);
