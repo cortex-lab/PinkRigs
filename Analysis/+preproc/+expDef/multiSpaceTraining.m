@@ -78,12 +78,11 @@ else
     clickRate = block.events.selected_paramsetValues.clickRate;
     clickDuration = block.events.selected_paramsetValues.clickDuration;
 end
-audInitialAzimuth(audAmplitude==0) = inf;             %Change case when audAmplitude was 0 to have infinite azimuth (an indication of no azimuth value)
-visInitialAzimuth(visContrast==0) = inf;              %Change case when visContrast was 0 to have infinite azimuth (an indication of no azimuth value)
+audInitialAzimuth(audAmplitude==0) = nan;             %Change case when audAmplitude was 0 to have "nan" azimuth
+visInitialAzimuth(visContrast==0) = nan;              %Change case when visContrast was 0 to have "nan" azimuth
 
 
 %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
-trialTimes = [e.newTrialTimes(eIdx)' e.endTrialTimes(eIdx)'];
 stimPeriodStart = e.stimPeriodOnOffTimes(e.stimPeriodOnOffValues == 1)'; 
 stimPeriodStart = stimPeriodStart(eIdx);
 feedbackValues = e.feedbackValues(eIdx)';

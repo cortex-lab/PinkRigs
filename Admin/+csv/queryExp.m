@@ -1,7 +1,7 @@
 function extractedExperiments = queryExp(varargin)
 %%% This function will fetch all possible experiments to check for
 %%% computing alignment, preprocessing etc.
-params = inputValidation(varargin{:});
+params = csv.inputValidation(varargin{:});
 
 %Assign defaults for remaining params not contained in "inputValidation"
 params = csv.addDefaultParam(params, 'timeline2Check', {0});
