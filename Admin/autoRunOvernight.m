@@ -53,9 +53,9 @@ switch lower(computerType)
             paramsQuery.days2Check = 0;
             paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
             expList = csv.queryExp(paramsQuery);
-            [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
-            opt.expNum = expNums;
-            if ~isempty(mouseNames)
+            if ~isempty(expList)
+                [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
+                opt.expNum = expNums;
                 plt.behaviour.boxPlots(mouseNames,dates, 'res',expList.expDef, opt)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
@@ -97,7 +97,7 @@ switch lower(computerType)
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
             % paramsPreproc.mice2Check = 'active';
-            paramsPreproc.mice2Check = {'AV006','AV007','AV008','AV009'}; % for now to avoid crashes
+            paramsPreproc.mice2Check = {'AV005','AV009','EB014'}; % for now to avoid crashes
             
             % Alignment
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
