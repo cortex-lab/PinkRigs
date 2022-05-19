@@ -31,7 +31,7 @@ p.KeepUnmatched=true;
 def_subject = {'active'};
 def_expDate = {'all'};
 def_expNum = {'all'};
-def_expDef = {'training'};
+def_expDef = {'all'};
 
 tblDat = varargin(cellfun(@istable, varargin));
 tblDatConverted = cellfun(@(x) table2struct(x, 'ToScalar', 1), tblDat, 'uni', 0);
