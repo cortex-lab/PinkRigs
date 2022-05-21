@@ -59,7 +59,7 @@ if ~exist('opt','var'); opt = struct; end
 if ~iscell(eventTimes) && ~isstruct(eventTimes); eventTimes = {eventTimes}; end
 
 % If "ev" has been input instead of event times, load a parameter set with corresponding function
-if ~isfield('opt','paramTag'); opt.paramTag = 'default'; end
+if ~isfield(opt,'paramTag'); opt.paramTag = 'default'; end
 if isstruct(eventTimes)
     ev = eventTimes;
     fprintf('eventTimes appears to be "ev" so will load preset parameters \n');

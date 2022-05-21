@@ -64,9 +64,10 @@ vIdx = vIdx(eIdx);
 if isfield(v, 'audAmplitude')
     audAmplitude = [v(eIdx).audAmplitude]';               %Convert amplitudes to matrix. Assumes one value for each trial.
     visContrast = [v(eIdx).visContrast]';                 %Convert amplitudes to matrix. Assumes one value for each trial.
-    correctResponse = [v(eIdx).correctResponse]';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
-    audInitialAzimuth = [v(eIdx).audInitialAzimuth]';     %Convert audInitialAzimuth on each trial to matrix. Assumes one value for each trial.
-    visInitialAzimuth = [v(eIdx).visInitialAzimuth]';     %Convert visInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+%     correctResponse = [v(eIdx).correctResponse]';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
+    correctResponse = e.correctResponseValues(eIdx)';         %Convert correctResponse on each trial to matrix. Assumes one value for each trial.
+    audInitialAzimuth = e.audInitialAzimuthValues(eIdx)';     %Convert audInitialAzimuth on each trial to matrix. Assumes one value for each trial.
+    visInitialAzimuth = e.visInitialAzimuthValues(eIdx)';     %Convert visInitialAzimuth on each trial to matrix. Assumes one value for each trial.
     clickRate = block.paramsValues.clickRate;
     clickDuration = block.paramsValues.clickDuration;
 else
@@ -78,11 +79,12 @@ else
     clickRate = block.events.selected_paramsetValues.clickRate;
     clickDuration = block.events.selected_paramsetValues.clickDuration;
 end
-audInitialAzimuth(audAmplitude==0) = nan;             %Change case when audAmplitude was 0 to have "nan" azimuth
-visInitialAzimuth(visContrast==0) = nan;              %Change case when visContrast was 0 to have "nan" azimuth
+audInitialAzimuth(audAmplitude==0) = nan;             %Change case when audAmplitude was 0 to have nan azimuth (an indication of no azimuth value)
+visInitialAzimuth(visContrast==0) = nan;              %Change case when visContrast was 0 to have nan azimuth (an indication of no azimuth value)
 
 
 %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
+trialTimes = [e.newTrialTimes(eIdx)' e.endTrialTimes(eIdx)'];
 stimPeriodStart = e.stimPeriodOnOffTimes(e.stimPeriodOnOffValues == 1)'; 
 stimPeriodStart = stimPeriodStart(eIdx);
 feedbackValues = e.feedbackValues(eIdx)';
@@ -221,7 +223,14 @@ tExt.visStimPeriodOnOff = largeVisGaps;
 
 % Could add this in for pasive
 photoFlipsByTrial = arrayfun(@(x,y) find(photoDiodeFlipTimes>=x & photoDiodeFlipTimes<=y), tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,2), 'uni', 0);
-responseWindow = block.events.selected_paramsetValues.responseWindow;
+
+if isfield(block.events,'selected_paramsetValues')
+    responseWindow = block.events.selected_paramsetValues.responseWindow;
+else
+    responseWindow = [block.paramsValues.responseWindow];
+    responseWindow = responseWindow(1); 
+end 
+    
 if isinf(responseWindow); responseWindow = 0; end
 expectedFlashTrainLength = clickRate*responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
 misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
@@ -256,7 +265,13 @@ wheelDeg = extractWheelDeg(timeline);
 wheelVel = diff([0; wheelDeg])*sR;
 
 sumWin = 51;
-whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain);
+if isfield(block.events,'selected_paramsetValues')
+    whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain);
+else
+    wg = [block.paramsValues.wheelGain];
+    whlDecThr = round(60./wg(1));
+end 
+    
 velThresh  = sR*(whlDecThr*0.01)/sumWin;
 
 posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);

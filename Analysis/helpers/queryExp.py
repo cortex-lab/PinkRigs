@@ -44,7 +44,7 @@ def queryExp(mice2check='all',days2check='all',expdef2check='all'):
                         If list: string of selected dates (e.g. ['2022-03-15','2022-03-30'])
     expdef2check : str
         selected expdef or portion of the string of the the expdef name
-
+        
     Returns
     ----
     exp2checkList : pandas DataFrame 

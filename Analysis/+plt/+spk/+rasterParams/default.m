@@ -51,5 +51,7 @@ switch lower(customTag)
         opt.sortClusters = 'sig';
         opt.sortTrials = repmat({ev.timeline_choiceMoveOn}, length(eventTimes),1);
         opt.trialTickTimes = repmat({ev.timeline_choiceMoveOn}, length(eventTimes),1);
+        
+    
 end
 end
