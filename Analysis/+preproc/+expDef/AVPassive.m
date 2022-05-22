@@ -115,6 +115,12 @@ nTrials = numel(TimesPerTrial);
 OnsetAll = nan(numClicks,nTrials);
 OffsetAll = nan(numClicks,nTrials);
 
+if ~visTrial(1)
+    % issue with the alignment here because of the square on and off of the
+    % photodiode that is saved
+    TimesPerTrial{1} = [];
+end
+
 for myTrial=1:nTrials
     evPerTrial = TimesPerTrial{myTrial};
     if numel(evPerTrial)>0
