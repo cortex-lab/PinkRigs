@@ -4,7 +4,7 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV007';
+params.mice2Check = 'AV005';
 params.days2Check = 14;
 % params.expDef2Check = 'spontaneousActivity';
 params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
