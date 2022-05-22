@@ -51,7 +51,7 @@ for mm = 1:numel(params.subject)
     currDate = params.expDate{mm};
     if ~iscell(currDate); currDate = {currDate}; end
     selectedDates = arrayfun(@(x) extractDates(x, expListMouse.expDate), currDate, 'uni', 0);
-    expListMouse = expListMouse(sum(cell2mat(selectedDates'),2)>0,:);
+    expListMouse = expListMouse(sum(cell2mat(selectedDates),2)>0,:);
     if isempty(expListMouse); continue; end
     
     extractedExperiments = [extractedExperiments; expListMouse];
