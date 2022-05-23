@@ -97,7 +97,7 @@ switch lower(computerType)
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
             % paramsPreproc.mice2Check = 'active';
-            paramsPreproc.mice2Check = {'AV005','AV009','EB014'}; % for now to avoid crashes
+            paramsPreproc.mice2Check = {'AV005','AV009','EB014','AV013'}; % for now to avoid crashes
             
             % Alignment
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"

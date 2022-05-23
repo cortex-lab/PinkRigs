@@ -55,7 +55,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
             # only add the mice that need to be sorted if all criteria is fulfilled
             # that is: 
             # if the mouse names are subselected 
-            if mouse_selection in subject: 
+            if (mouse_selection in subject) or (mouse_selection in "all"): 
                 #if some dates have been subselected
                 if check_date_selection(date_selection,date):
                     ephys_files = r'%s\%s\%s\ephys\**\*.ap.bin' % (server,subject,date) 
@@ -77,7 +77,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                                 # file was 0kb
                                 KS_done = False 
 
-                        print(KS_done)
                         if not KS_done:
                             print(ephys_file)
                             new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
