@@ -142,6 +142,11 @@ function extractExpData(varargin)
                                 spk{probeNum}.spikes.xpos = spk{probeNum}.spikes.xpos(spk2keep);
                                 spk{probeNum}.spikes.depth = spk{probeNum}.spikes.depth(spk2keep);
                                 spk{probeNum}.spikes.tempScalingAmp = spk{probeNum}.spikes.tempScalingAmp(spk2keep);
+                                
+                                % Recompute spike numbers
+                                for c = 1:numel(spk{probeNum}.clusters)
+                                    spk{probeNum}.clusters(c).Spknum = sum(spk{probeNum}.spikes.cluster == spk{probeNum}.clusters(c).ID);
+                                end
                             end
                             
                             % Remove any error file
