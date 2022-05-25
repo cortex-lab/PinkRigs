@@ -7,9 +7,9 @@ function plotRecordingLocations2(mouseName, varargin)
     pltClusters = 1; % Will plot clusters from spontaneous
     clustersDays = []; % Will get specific dates for these spont recordings
     
-    params.mice2Check = mouseName;
-    params.days2Check = inf;
-    params.expDef2Check = 'multiSpaceWorld_checker_training';
+    params.subject = mouseName;
+    params.expDate = inf;
+    params.expDef = 'multiSpaceWorld_checker_training';
     params.preproc2Check = '1,*';
     
     % Ugly
@@ -34,7 +34,7 @@ function plotRecordingLocations2(mouseName, varargin)
     
     % Get probes layout
     mainCSV = csv.readTable(csv.getLocation('main'));
-    mouseIdx = strcmpi(mainCSV.Subject,params.mice2Check);
+    mouseIdx = strcmpi(mainCSV.Subject,params.subject);
     probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type) + ~isempty(mainCSV(mouseIdx,:).P1_type);
     
     % Get the basic layout
@@ -148,7 +148,7 @@ function plotRecordingLocations2(mouseName, varargin)
         % Get behavior
         opt.noPlot = 1;
         opt.expNum = expInfo.expNum;
-        plotBehData(ee) = plt.behaviour.boxPlots({params.mice2Check},expInfo.expDate, 'res', expInfo.expDef, opt);
+        plotBehData(ee) = plt.behaviour.boxPlots({params.subject},expInfo.expDate, 'res', expInfo.expDef, opt);
     end
     
     %%  Build the different probe images
@@ -171,7 +171,7 @@ function plotRecordingLocations2(mouseName, varargin)
     
     %% Plot the basic layout
     
-    fig = figure('Position', [1 31 1920 973],'Name', params.mice2Check);
+    fig = figure('Position', [1 31 1920 973],'Name', params.subject);
     clear probeAxes behaviorAxes
     
     recNumPerChan = cellfun(@(x) size(x,2), chanExpRef);
@@ -198,11 +198,12 @@ function plotRecordingLocations2(mouseName, varargin)
     % Add a reference recording to visualize clusters density
     if pltClusters
         % Get spontaneous recordings to plot cluster density
-        paramsClu.mice2Check = params.mice2Check;
-        paramsClu.expDef2Check = 'spontaneousActivity';
+        paramsClu.subject = params.subject;
+        paramsClu.expDef = 'spontaneousActivity';
         if ~isempty(clustersDays)
-            paramsClu.days2Check = clustersDays; % find a better way
+            paramsClu.expDate = clustersDays; % find a better way
         end
+        paramsClu.preproc2Check = '1,*';
         exp2checkListClu = csv.queryExp(paramsClu);
         if isempty(clustersDays)
             % Take the last recordings, to span everything
