@@ -54,7 +54,7 @@ while find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)
     compareVect = [t1(1:minL)-(t1(1)) t2(1:minL)-t2(1)];
     loopNumber = loopNumber+1;
     hold on;
-    if loopNumber > 100; error('Extreme alignment error'); end
+    if loopNumber > 50; error('Extreme alignment error'); end
 end
 t1Corrected = t1(1:minL);
 t2Corrected = t2(1:minL);
