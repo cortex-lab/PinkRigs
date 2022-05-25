@@ -7,6 +7,7 @@ params = csv.inputValidation(varargin{:});
 params = csv.addDefaultParam(params, 'timeline2Check', {0});
 params = csv.addDefaultParam(params, 'align2Check', {'*,*,*,*,*,*'});
 params = csv.addDefaultParam(params, 'preproc2Check', {'*,*'});
+params = csv.addDefaultParam(params, 'issorted', {[0 1]});
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.
@@ -40,6 +41,12 @@ for mm = 1:numel(params.subject)
     % Get exp with specific alignment status
     alignCodeChecked = csv.checkStatusCode(expListMouse.alignBlkFrontSideEyeMicEphys,params.align2Check{mm});
     expListMouse = expListMouse(alignCodeChecked,:);
+    if isempty(expListMouse); continue; end
+
+    % Get exp with specific sorting status
+    if params.issorted{mm}
+        expListMouse = expListMouse(ismember(expListMouse.issorted, params.issorted{mm}),:);
+    end
     if isempty(expListMouse); continue; end
 
     % Get exp with specific preprocessing state
