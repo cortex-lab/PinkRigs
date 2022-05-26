@@ -124,7 +124,7 @@ function extractExpData(varargin)
                             if ~exist('block','var')
                                 block = getBlock(expPath);
                             end
-
+                            
                             spk = cell(1,numel(alignment.ephys));
                             for probeNum = 1:numel(alignment.ephys)
                                 % Get spikes times & cluster info
@@ -148,6 +148,7 @@ function extractExpData(varargin)
                                     spk{probeNum}.clusters(c).Spknum = sum(spk{probeNum}.spikes.cluster == spk{probeNum}.clusters(c).ID);
                                 end
                             end
+                            fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                             
                             % Remove any error file
                             if exist(fullfile(expPath, 'GetSpkError.json'),'file')
