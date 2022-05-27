@@ -54,13 +54,13 @@ function main(varargin)
     end
     
     % KS2 config file
-    pathToKSConfigFile = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2';
+    pathToKSConfigFile = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\helpers\ephys\KSconfig';
     if ~exist(pathToKSConfigFile, 'dir')
         error('Can''t find the path to the KS2 config files.')
     end
     
     % Path to the defaults P3B chan map
-    defaultP3Bchanmap = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2\neuropixPhase3B2_kilosortChanMap.mat';
+    defaultP3Bchanmap = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\helpers\ephys\KSconfig\neuropixPhase3B2_kilosortChanMap.mat';
 
     %% Go through experiments to sort
     
