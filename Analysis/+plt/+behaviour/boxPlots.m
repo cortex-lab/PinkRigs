@@ -110,6 +110,12 @@ for i = 1:nSubjects
     if i == 1; extractedData = taskEvents;
     else, extractedData(i,1) = taskEvents;
     end
+    
+    % remove empty experiments
+    emptyExpIdx = cellfun(@(x) isempty(x), {extractedData.visInitialAzimuth});
+    extractedData(emptyExpIdx) = [];
+    blkDates(emptyExpIdx) = [];
+    rigNames(emptyExpIdx) = [];
 end
 %%
 maxGrid = arrayfun(@(x) [length(unique(x.audDiff)) length(unique(x.visDiff))], extractedData, 'uni', 0);
