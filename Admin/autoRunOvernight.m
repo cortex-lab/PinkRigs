@@ -36,9 +36,9 @@ switch lower(computerType)
             fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
         
-    case 'kilo1'
+    case {'kilo1','kilo2'}
         %%
-        fprintf('Detected kilo1 computer... \n')
+        fprintf('Detected kilo computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
         
         dbstop if error % temporarily, to debug
