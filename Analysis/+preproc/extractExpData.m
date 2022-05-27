@@ -189,4 +189,5 @@ function extractExpData(varargin)
                 fprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
             end
         end
+        clear block timeline
     end
