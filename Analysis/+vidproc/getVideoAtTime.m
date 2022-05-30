@@ -25,7 +25,7 @@ function movie = getVideoAtTime(expPath,t,vidName,win)
         vidName = alignment.video(goodVidIdx(1)).name;
         fprintf('Couldn''t find what you ask (inexistant or corrupted). Loading video %s.\n', vidName)
         vidIdx = strcmp({alignment.video.name},vidName);
-    else
+    end
         
     timeWin = find(alignment.video(vidIdx).frameTimes > t+win(1) & ... 
         alignment.video(vidIdx).frameTimes < t+win(2));
