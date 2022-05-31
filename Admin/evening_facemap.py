@@ -959,14 +959,17 @@ def batch_process_facemap():
                         'video_corruption_check.csv',
                         '!MouseList.csv']
 
-    #pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
-
-    for path in mouse_info_csv_paths:
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+    for n_path, path in enumerate(mouse_info_csv_paths):
         if os.path.basename(path) in files_to_exclude:
             mouse_info_csv_paths.remove(path)
-        #fname_without_ext = '.'.split(path)
-        #if not pattern_to_match.match(fname_without_ext):
-        #    mouse_info_csv_paths.remove(path)
+        else:
+            fname = os.path.basename(path)
+            fname_without_ext = fname.split('.')[0]
+            str_match = re.match(pattern_to_match, fname_without_ext) is not None
+
+            if not str_match:
+                mouse_info_csv_paths.remove(path)
 
     all_mouse_info = []
 
@@ -1251,7 +1254,7 @@ def summarize_progress():
 
 def main():
     how_often_to_check = 3600
-    override_time_check = False
+    override_time_check = True
     override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True
