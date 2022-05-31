@@ -908,7 +908,25 @@ def update_file_list(all_mouse_info, file_list_csv_path, load_from_server=False)
     return all_file_info
 
 
-def batch_process_facemap():
+def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
+    """
+    
+    Parameters
+    ----------
+    subset_mice_to_use : list, optional
+        DESCRIPTION. The default is None.
+        example: 
+            subset_mice_to_use = ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range : list, optional
+        DESCRIPTION. The default is None.
+        example:
+            subset_date_range = ['2021-12-01', '2021-12-20']
+
+    Returns
+    -------
+    None.
+
+    """
     num_videos_to_run_per_call = 1
     num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
@@ -941,9 +959,6 @@ def batch_process_facemap():
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    subset_mice_to_use = None  # ['FT030', 'FT031', 'FT032', 'FT035']
-    subset_date_range = None  # ['2021-12-01', '2021-12-20']
-
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
         for mouse_name in subset_mice_to_use:
@@ -970,7 +985,7 @@ def batch_process_facemap():
 
             if not str_match:
                 mouse_info_csv_paths.remove(path)
-
+    
     all_mouse_info = []
 
     for csv_path in mouse_info_csv_paths:
@@ -988,7 +1003,7 @@ def batch_process_facemap():
                 ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
 
         all_mouse_info.append(mouse_info)
-
+    
     all_mouse_info = pd.concat(all_mouse_info)
 
     if subset_date_range is not None:
@@ -1253,12 +1268,13 @@ def summarize_progress():
 
 
 def main():
-    how_often_to_check = 3600
-    override_time_check = True
+    how_often_to_check = 3600  # how often to check the time (seconds), currently not used
+    override_time_check = False
     override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
-    continue_running = True
+    continue_running = True  # fixed at True at the start
     summarize_progress = False
+    subset_mice_to_use = ['FT038', 'FT039']
 
     while continue_running:
         e = datetime.datetime.now()
@@ -1273,7 +1289,11 @@ def main():
 
         if (hour_int < 8) | (hour_int >= 20) | override_time_check:
             print('It is prime time to run some facemap!')
-            batch_process_facemap()
+            
+            if subset_mice_to_use is not None:
+                print('Running facemap on specified subset of mice: %s' % subset_mice_to_use)
+            
+            batch_process_facemap(subset_mice_to_use=subset_mice_to_use)
 
             if override_time_check:
                 override_counter += 1
