@@ -135,7 +135,8 @@ function main(varargin)
                         cbinFile = ephysFileName;
                         chFile = regexprep(ephysFileName,'.cbin','.ch');
                         
-                        % Copy locally the ch file
+                        % Copy locally the ch file that hasn't yet been
+                        % copied
                         copyfile(regexprep(recName,'.cbin','.ch'),fullfile(KSOutFolderLoc,chFile));
                         
                         % Decompress 
@@ -149,7 +150,7 @@ function main(varargin)
                             error('Issue with decompression.')
                         end
                         
-                        ephysFileName = regexp(ephysFileName,'.cbin','.bin');
+                        ephysFileName = regexprep(ephysFileName,'.cbin','.bin');
                     end
                     
                     %% Running the main algorithm
