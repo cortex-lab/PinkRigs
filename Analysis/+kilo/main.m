@@ -77,8 +77,7 @@ function main(varargin)
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
-        % To avoid running too long. Will stop after ~20h + 1 last
-        % processing.
+        % To avoid running too long. 
         nowClock = datetime('now');
         if nowClock > startClock + params.runFor/24
             return
@@ -87,6 +86,7 @@ function main(varargin)
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successKS = 1;
+            successQM = nan;
         else            
             try
                 if exist('recList','var')
@@ -140,6 +140,7 @@ function main(varargin)
                         copyfile(regexprep(recName,'.cbin','.ch'),fullfile(KSOutFolderLoc,chFile));
                         
                         % Decompress 
+                        fprintf('Decompressing the data...\n')
                         decompressPath = which('decompress_data.py');
                         [statusDecomp,resultDecomp] = system(['conda activate PinkRigs && ' ...
                             'python ' decompressPath ' ' ...
@@ -157,6 +158,23 @@ function main(varargin)
                     fprintf('Running kilosort...\n')
                     kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
                     fprintf('Kilosort done.\n')
+                    
+                    %% Running quality metrics
+                    % Have to do in while the raw data is decompressed
+                    fprintf('Running quality metrics...\n')
+                    try
+                        kilo.getQualityMetrics(KSOutFolderServer, fullfile(KSOutFolderLoc,ephysFileName))
+                        
+                        if exist(fullfile(ephysPath, 'QMerror.json'),'file')
+                            delete(fullfile(ephysPath, 'QMerror.json'))
+                        end
+                        successQM = 1;
+                    catch me
+                        successQM = 0;
+                        
+                        % Save error message locally
+                        saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
+                    end
                     
                     %% Copying file to distant server
                     fprintf('Copying to server (and deleting local copy)...\n')
@@ -187,18 +205,19 @@ function main(varargin)
                     %%% Have to "try" for now because sometimes issue when
                     %%% there's a KS error above...
                     % Delete data otherwise will crowd up
-                    rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                    rmdir(KSOutFolderLoc, 's'); % delete whole folder whatever happens
                 catch
                     warning('Can''t delete KSout local folder.. Will crowd up.')
                 end
             end
         end
         
-        if successKS
+        if successKS & isnan(successQM)
             if ~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics
                 %% Running quality metrics (directly on the server)
-                % Independent of previous block to be able to run one or the
-                % other (it's likely we might want to recompute only the qM)
+                % Independent of previous block to be able to run this
+                % without redoing the KSing.
+                % Will crash if raw waveforms haven't been extracted.
                 fprintf('Running quality metrics...\n')
                 try
                     kilo.getQualityMetrics(KSOutFolderServer, ephysPath)
@@ -217,7 +236,15 @@ function main(varargin)
                 successFinal = 1;
             end
         else 
-            successFinal = -1;
+            if successKS
+                if successQM
+                    successFinal = 1;
+                else
+                    successFinal = -2;
+                end
+            else
+                successFinal = -1;
+            end
         end
                 
         if exist('recList','var')
