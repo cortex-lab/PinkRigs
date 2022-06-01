@@ -44,6 +44,17 @@ if any(subjectMismatch)
 else
     fprintf('All expected subjects match file names. Nice! \n');
 end
+%%
+for i = 1:length(localEphysFiles)
+    syncPath = fullfile(localEphysFiles(i).folder, 'sync.mat');
+    if exist(syncPath, 'file'); continue; end
+    metaS = readMetaData_spikeGLX(localEphysFiles(i).name,localEphysFiles(i).folder);
+
+    apPath = fullfile(localEphysFiles(i).folder, localEphysFiles(i).name);
+    fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', ...
+        subjectFromBinName{i}, dateFromBinName{i})
+    extractSync(apPath, str2double(metaS.nSavedChans));
+end
 
 %%
 if ignoreSubjectMismatch && any(subjectMismatch)
@@ -56,6 +67,7 @@ validEphysFiles = localEphysFiles(validIdx);
 validSubjects = expectedSubject(validIdx);
 validDates = dateFromBinName(validIdx);
 
+%%
 % NOTE: This is specific to SpikeGLX output... maybe there is a better way
 splitFolders = arrayfun(@(x) regexp(x.folder,'\','split'), validEphysFiles, 'uni', 0);
 serverFolders = cellfun(@(x,y,z) getExpPath(x,y), validSubjects, validDates, 'uni', 0);
@@ -68,6 +80,7 @@ allLocalFiles = cell2mat(allLocalFiles);
 %%
 allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
 allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
+
 copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1)
 %%
 cleanEmptyFoldersInDirectory(localFolder);
