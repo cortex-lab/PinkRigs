@@ -24,6 +24,15 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Compressing local data... \n')     
+        compressPath = which('compress_data.py');
+        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+            'python ' compressPath ' && ' ...
+            'conda deactivate']);
+        if statusComp > 0
+            error('Compressing local data failed.')
+        end
+        
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
         
