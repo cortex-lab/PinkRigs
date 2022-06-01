@@ -81,9 +81,11 @@ switch lower(computerType)
         end
         
         fprintf('Getting kilosort queue... \n')
-        stageKSPath = which('stageKS.py');
+        checkQueuePath = which('check_kilosort_queue.py');
+        checkWhichMice = 'all';
+        checkWhichDates = 'last7';
         [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
-            'python ' stageKSPath ' && ' ...
+            'python ' checkQueuePath ' ''' checkWhichMice ''' ''' checkWhichDates ''' && ' ...
             'conda deactivate']);
         if statusQueue > 0
             fprintf('Updating the queue failed with error "%s".\n', resultQueue)
