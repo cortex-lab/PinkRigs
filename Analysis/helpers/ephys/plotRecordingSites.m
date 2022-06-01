@@ -32,7 +32,7 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
                     f = figure('Position', [992   566   248   412]); hold all
                 end
                 for probeNum = 1:numel(probeFolders)
-                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.bin'));
+                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.*bin'));
                     metaData = readMetaData_spikeGLX(binFile.name,binFile.folder);
                     
                     %% Extract info from metadata
