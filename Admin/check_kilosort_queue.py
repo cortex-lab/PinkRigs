@@ -32,9 +32,11 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
     # which mice to sort -- FT or FT032
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
-    # check 
-
+    # check
+    
     print(mouse_selection)
+    print(date_selection)
+
     # check which mice are active on Master csv
     root = r'\\zserver.cortexlab.net\Code\AVrig'
     master_csv = pd.read_csv(os.path.join(root,'!MouseList.csv'))

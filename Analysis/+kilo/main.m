@@ -130,6 +130,28 @@ function main(varargin)
                 if ~success
                     error('Couldn''t copy data to local folder.')
                 else
+                    %% Decompress it if needed.
+                    if strcmp(ephysFileName(end-3:end),'cbin')
+                        cbinFile = ephysFileName;
+                        chFile = regexprep(ephysFileName,'.cbin','.ch');
+                        
+                        % Copy locally the ch file
+                        copyfile(regexprep(recName,'.cbin','.ch'),fullfile(KSOutFolderLoc,chFile));
+                        
+                        % Decompress 
+                        decompressPath = which('decompress_data.py');
+                        [statusDecomp,resultDecomp] = system(['conda activate PinkRigs && ' ...
+                            'python ' decompressPath ' ' ...
+                            fullfile(KSOutFolderLoc,cbinFile) ' ' ...
+                            fullfile(KSOutFolderLoc,chFile) ' && ' ...
+                            'conda deactivate']);
+                        if statusDecomp > 0 
+                            error('Issue with decompression.')
+                        end
+                        
+                        ephysFileName = regexp(ephysFileName,'.cbin','.bin');
+                    end
+                    
                     %% Running the main algorithm
                     fprintf('Running kilosort...\n')
                     kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
