@@ -24,6 +24,9 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Running "extractLocalSync"... \n')
+        extractLocalSync('D:\LocalExpData');
+        
         fprintf('Compressing local data... \n')     
         compressPath = which('compress_data.py');
         [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
