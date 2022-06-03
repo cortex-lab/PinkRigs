@@ -49,6 +49,7 @@ switch lower(computerType)
         end
         
     case {'kilo1','kilo2'}
+      
         %%
         fprintf('Detected kilo computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
