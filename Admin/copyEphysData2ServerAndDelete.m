@@ -45,16 +45,16 @@ else
     fprintf('All expected subjects match file names. Nice! \n');
 end
 %%
-for i = 1:length(localEphysFiles)
-    syncPath = fullfile(localEphysFiles(i).folder, 'sync.mat');
-    if exist(syncPath, 'file'); continue; end
-    metaS = readMetaData_spikeGLX(localEphysFiles(i).name,localEphysFiles(i).folder);
-
-    apPath = fullfile(localEphysFiles(i).folder, localEphysFiles(i).name);
-    fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', ...
-        subjectFromBinName{i}, dateFromBinName{i})
-    extractSync(apPath, str2double(metaS.nSavedChans));
-end
+% for i = 1:length(localEphysFiles)
+%     syncPath = fullfile(localEphysFiles(i).folder, 'sync.mat');
+%     if exist(syncPath, 'file'); continue; end
+%     metaS = readMetaData_spikeGLX(localEphysFiles(i).name,localEphysFiles(i).folder);
+% 
+%     apPath = fullfile(localEphysFiles(i).folder, localEphysFiles(i).name);
+%     fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', ...
+%         subjectFromBinName{i}, dateFromBinName{i})
+%     extractSync(apPath, str2double(metaS.nSavedChans));
+% end
 
 %%
 if ignoreSubjectMismatch && any(subjectMismatch)
