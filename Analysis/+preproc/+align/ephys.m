@@ -40,7 +40,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     % Will work only if the architecture is good.
     if isempty(ephysPath)
         % Just take them all, whatever the architecture..?
-        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','**','*.ap.bin'));
+        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','**','*.ap.*bin'));
         if isempty(ephysFiles)
             error('No ephys file here: %s', fullfile(server,'Subjects',subject,expDate,'ephys'))
         else
@@ -53,7 +53,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     
     for ee = 1:numel(ephysPath)
         % Get syncData
-        dataFile = dir(fullfile(ephysPath{ee},'*ap.bin'));
+        dataFile = dir(fullfile(ephysPath{ee},'*ap.*bin'));
         metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
         
         % Load sync data
