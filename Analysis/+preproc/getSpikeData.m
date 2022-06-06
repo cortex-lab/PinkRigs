@@ -69,9 +69,11 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
         if isfield(sp,'spikeDepths')
             spk.clusters(ii).XPos = nanmean(sp.spikeXPos(spkIdx)); % not sure why there can be nans here
             spk.clusters(ii).Depth = nanmean(sp.spikeDepths(spkIdx));
+            spk.clusters(ii).Shank = floor(spk.clusters(ii).XPos/200);
         else 
             spk.clusters(ii).XPos = nan;
             spk.clusters(ii).Depth = nan;
+            spk.clusters(ii).Shank = 0;
         end
     end
     

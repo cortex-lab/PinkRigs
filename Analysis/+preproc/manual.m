@@ -13,9 +13,9 @@ params.timeline2Check = 1;
 
 %%
 clear params
-params.mice2Check = 'AV009';
-params.days2Check = '2022-05-05';
-params.expDef2Check = 'multiSpaceWorld_checker_training';
+params.mice2Check = 'FT031';
+params.days2Check = 'all';
+params.expDef2Check = 'all';
 exp2checkList = csv.queryExp(params);
 params.recompute = {'ev'};
 %%
@@ -23,12 +23,12 @@ preproc.extractExpData(params, exp2checkList)
 
 
 %% Just run alignment
-params.recompute = {'ephys'};
+params.recompute = {'all'};
 preproc.align.main(params,exp2checkList)
 
 %% Just run preprocessing
 params.recompute = {'all'};
-params.recompute = {'spk'};
+%params.recompute = {'ev'};
 preproc.extractExpData(params, exp2checkList)
 
 %% Or run all

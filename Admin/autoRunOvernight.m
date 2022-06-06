@@ -24,6 +24,18 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Running "extractLocalSync"... \n')
+        extractLocalSync('D:\LocalExpData');
+        
+        fprintf('Compressing local data... \n')     
+        compressPath = which('compress_data.py');
+        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+            'python ' compressPath ' && ' ...
+            'conda deactivate']);
+        if statusComp > 0
+            error('Compressing local data failed.')
+        end
+        
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
         
@@ -36,9 +48,10 @@ switch lower(computerType)
             fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
         
-    case 'kilo1'
+    case {'kilo1','kilo2'}
+      
         %%
-        fprintf('Detected kilo1 computer... \n')
+        fprintf('Detected kilo computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
         
         dbstop if error % temporarily, to debug
@@ -72,9 +85,11 @@ switch lower(computerType)
         end
         
         fprintf('Getting kilosort queue... \n')
-        stageKSPath = which('stageKS.py');
-        [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
-            'python ' stageKSPath ' && ' ...
+        checkQueuePath = which('check_kilosort_queue.py');
+        checkWhichMice = 'all';
+        checkWhichDates = 'last7';
+        [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
+            'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
             'conda deactivate']);
         if statusQueue > 0
             fprintf('Updating the queue failed with error "%s".\n', resultQueue)
@@ -97,7 +112,7 @@ switch lower(computerType)
             fprintf('Running preprocessing...\n')
             paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
             % paramsPreproc.mice2Check = 'active';
-            paramsPreproc.mice2Check = {'AV005','AV009','EB014'}; % for now to avoid crashes
+            paramsPreproc.mice2Check = {'AV005','EB014','AV013'}; % for now to avoid crashes
             
             % Alignment
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"

@@ -15,7 +15,16 @@ for i = 1:length(blks)
         
         tDat = blks{i}.events.(eventNames{j})';
         if ~any(length(tDat) == [nTrials nEnded])
-            error('Cannot parse trial-based data');
+            if length(tDat)== sum(blks{i}.events.repeatNumValues==1)
+                repeatNums = blks{i}.events.repeatNumValues==1;
+                tDat = repeatNums(:)*nan;
+                tDat(repeatNums==1) = blks{i}.events.(eventNames{j})';
+                repeatIdx = find(repeatNums~=1);
+                repeatedIdx = arrayfun(@(x) find(~isnan(tDat(1:x)),1,'last'),repeatIdx);
+                tDat(repeatIdx) = tDat(repeatedIdx);
+            else
+                error('Cannot parse trial-based data');
+            end
         end
         if strcmp(eventNames{j}(end-5:end), 'Values')
             events(i,1).(eventNames{j}(1:end-6)) = tDat(1:nEnded);

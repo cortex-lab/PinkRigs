@@ -48,6 +48,19 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     trialEnd = preproc.align.event2Timeline(block.events.endTrialTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     
+    if numel(trialStart)-numel(trialEnd)>0
+        if numel(trialStart)-numel(trialEnd)==1
+            % likely it was stopped manually
+            trialStart(end) = [];
+        else
+            error('Discrepancy between the number of started vs. ended trials. Have a look.')
+        end
+    end
+    
+    % Add delay to trial start and end because of issues with alignment?
+    % It's a bit of a hacky thing to do.
+    delay = 0.2;
+    
     %% visual stimulus timings 
     
     % get all screen flips 
@@ -56,10 +69,19 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     % sort by trial
     p = block.paramsValues(1); 
     numClicks = numel((p.clickDuration/2):1/p.clickRate:p.stimDuration); 
-    visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart,trialEnd,numClicks*2,0);
+    try
+        visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
+    catch
+        % case where photodiode is crazy -- try something else
+        try
+            warning('Passing in error mode to get photodiode flip times')
+            photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
+            visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
+        catch
+            error('Can''t find good visual stim onsets. Check photodiode...')
+        end
+    end
 
-    
-    
     %% auditory click times 
     audTrace = timeproc.extractChan(timeline,'audioOut');
     timelineTime = timeproc.extractChan(timeline,'time');
@@ -68,13 +90,15 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     timelineClickOn = timelineTime(strfind((audTrace>max(thresh)*0.2)', [0 1]));
     timelineClickOff = timelineTime(strfind((audTrace<min(thresh)*0.2)', [0 1]));
     ClickTimes = sort([timelineClickOn timelineClickOff]);
-    
-    audOnOff = sortClicksByTrial(ClickTimes,trialStart,trialEnd,numClicks*2,0); 
-    
+
+    % it happens that the offset of the last click happens after the
+    % trial ends. May be due to lack of precision in the alignment?
+    % So just add 100ms of slack here.
+    audOnOff = sortClicksByTrial(ClickTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
     
     %% reward times 
     reward = timeproc.getChanEventTime(timeline,'rewardEcho'); 
-    [rewardAll,~] = sortClicksByTrial(reward,trialStart,trialEnd,1,0);
+    [rewardAll,~] = sortClicksByTrial(reward,trialStart+delay,trialEnd+delay,1,0);
     
     %% save it in ev
  
@@ -115,20 +139,32 @@ nTrials = numel(TimesPerTrial);
 OnsetAll = nan(numClicks,nTrials);
 OffsetAll = nan(numClicks,nTrials);
 
+if ~visTrial(1)
+    % issue with the alignment here because of the square on and off of the
+    % photodiode that is saved
+    TimesPerTrial{1} = [];
+end
+
 for myTrial=1:nTrials
     evPerTrial = TimesPerTrial{myTrial};
     if numel(evPerTrial)>0
-        if (myTrial==1) && (numel(evPerTrial)>numClicks)
-            evPerTrial(1:numel(evPerTrial)-numClicks)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
-        end
-        % can sort on and offsets or just get all
-        if sortOnOff==1
-            OnsetAll(:,myTrial) = evPerTrial(1:2:end);
-            OffsetAll(:,myTrial) = evPerTrial(2:2:end);
+        if numel(evPerTrial)<numClicks
+            continue
         else
-            OnsetAll(:,myTrial) = evPerTrial;
+            if (myTrial==1) && (numel(evPerTrial)>numClicks)
+                evPerTrial(1:numel(evPerTrial)-numClicks)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
+            end
+            % can sort on and offsets or just get all
+            if sortOnOff==1
+                audOnOff = sortClicksByTrial(ClickTimes,trialStart,trialEnd+0.01,numClicks*2,0);
+                
+                OnsetAll(:,myTrial) = evPerTrial(1:2:end);
+                OffsetAll(:,myTrial) = evPerTrial(2:2:end);
+            else
+                OnsetAll(:,myTrial) = evPerTrial;
+            end
         end
     end
-end 
+end
 end
 end

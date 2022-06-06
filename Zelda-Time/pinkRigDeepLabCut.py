@@ -4,10 +4,11 @@ import deeplabcut
 import os
 import glob
 # For accessing files on server
-from gi.repository import Gio
 import pandas as pd
 import yaml
 import re
+
+import socket
 
 
 def get_pinkrig_pcs(mouse_info_folder, subset_mice_to_use=None,
@@ -69,7 +70,12 @@ def main():
     access_file_via_server = False
     check_project_made = False  # Check that project is already made
     # main_folder = 'smb://zinu.local/subjects/'#
-    main_folder = '/run/user/1000/gvfs/smb-share:server=zinu.local,share=subjects' # 'smb://zinu.local/subjects/'
+
+
+    if 'Zelda' in socket.gethostname():
+        main_folder = '//zinu.cortexlab.net/Subjects'
+    else:
+        main_folder = '/run/user/1000/gvfs/smb-share:server=zinu.local,share=subjects' # 'smb://zinu.local/subjects/'
     # If gvfs is saying things are not directories (eg. zserver), try relaunching gvfs in the terminal
     # and restarting Files / Thunar
     # projectName = 'bscopeDeepLabCut'  # bscope or pinkrigs
@@ -84,8 +90,12 @@ def main():
     if projectName == 'bscopeDeepLabCut':
         working_directory = '/home/timothysit/'
     else:
-        working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code'
-        working_directory = os.path.join(working_directory, 'AVRigDLC')
+        if 'Zelda' in socket.gethostname():
+            working_directory = '//zserver/Code'
+            working_directory = os.path.join(working_directory, 'AVRigDLC')
+        else:
+            working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code'
+            working_directory = os.path.join(working_directory, 'AVRigDLC')
 
     project_custom_configs = {
         'bscopeDeepLabCut': dict(
@@ -161,9 +171,8 @@ def main():
             # may be a problem creating symlink between zserver and znas...
             # see: https://superuser.com/questions/1337257/clients-cant-create-symlinks-on-samba-share
             # also see this: https://unix.stackexchange.com/questions/145636/symlink-from-one-workstation-to-another-without-mount
-            pdb.set_trace()
             deeplabcut.create_new_project(
-                projectName, experimenter, [video_paths[0]], working_directory=working_directory
+                projectName, experimenter, video_paths, working_directory=working_directory
             )
 
     # Step 2: Edit config YAML files

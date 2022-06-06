@@ -2,6 +2,7 @@ import os,glob
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import sys
 
 def check_date_selection(date_selection,date):
     import datetime 
@@ -31,7 +32,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
     # which mice to sort -- FT or FT032
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
-    # check 
+    # check
+    
+    print(mouse_selection)
+    print(date_selection)
 
     # check which mice are active on Master csv
     root = r'\\zserver.cortexlab.net\Code\AVrig'
@@ -55,10 +59,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
             # only add the mice that need to be sorted if all criteria is fulfilled
             # that is: 
             # if the mouse names are subselected 
-            if mouse_selection in subject: 
+            if (mouse_selection in subject) or (mouse_selection in "all"): 
                 #if some dates have been subselected
                 if check_date_selection(date_selection,date):
-                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.bin' % (server,subject,date) 
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.*bin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
@@ -77,7 +81,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                                 # file was 0kb
                                 KS_done = False 
 
-                        print(KS_done)
                         if not KS_done:
                             print(ephys_file)
                             new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
@@ -102,3 +105,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     
     print('%d files are waiting to be sorted ...'
         % (len(new_queue[new_queue['sortedTag']==0])))
+
+if __name__ == "__main__":
+   stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])

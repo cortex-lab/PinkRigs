@@ -43,6 +43,6 @@ To set up regular deletion of camera data on timeline/ephys computers on Windows
 
 ### Dev
 If you added new packages to the environment, overwrite the current `environment.yml` by running the following before you git add/commit: 
-`conda env export > environment.yml`
+`conda env export -f environment.yml`
 
 
