@@ -3,31 +3,21 @@ close all
 %% Get exp ref
 
 clear params
-params.mice2Check = 'AV009';
+params.mice2Check = {'AV005'};
 params.days2Check = 1;
-% params.days2Check = {'2022-04-04'};
+params.days2Check = {{'2022-05-27'}};
 % params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
-params.timeline2Check = 1;
+% params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
-% params.preproc2Check = '2,*';
-
-%%
-clear params
-params.mice2Check = 'FT031';
-params.days2Check = 'all';
-params.expDef2Check = 'all';
+params.preproc2Check = '2,*';
 exp2checkList = csv.queryExp(params);
-params.recompute = {'ev'};
-%%
-preproc.extractExpData(params, exp2checkList)
-
 
 %% Just run alignment
-params.recompute = {'all'};
+params.recompute = {'ephys'};
 preproc.align.main(params,exp2checkList)
 
 %% Just run preprocessing
-params.recompute = {'all'};
+params.recompute = {'spk'};
 %params.recompute = {'ev'};
 preproc.extractExpData(params, exp2checkList)
 

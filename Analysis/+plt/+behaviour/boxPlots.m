@@ -13,7 +13,7 @@ if nSubjects > 1 && opt.sepPlots{1}==1
     opt.sepPlots = repmat({0},nSubjects,1);
 end
 
-expList = csv.loadData(opt, loadTag='blk');
+expList = csv.loadData(opt, 'loadTag', 'blk');
 expList = expList(cellfun(@isstruct, expList.blkData),:);
 %%
 [blkDates, rigNames] = deal(cell(nSubjects,1));
@@ -95,7 +95,7 @@ for i = 1:length(extractedData)
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     end
 
-    boxPlot.subject = currData.subject{1};
+    boxPlot.subject = opt.subject{i};
 
     boxPlot.xyValues = {unique(tDat.visDiff)*100; unique(tDat.audDiff)};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
