@@ -1,7 +1,7 @@
 function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
+varargin = ['loadTag', {'ev'}, varargin];
 params = csv.inputValidation(varargin{:});
-params = csv.addDefaultParam(params, 'loadTag', 'ev');
 expList = csv.queryExp(params);
 
 newFields = {'blkData'; 'evData'; 'spkData'};
