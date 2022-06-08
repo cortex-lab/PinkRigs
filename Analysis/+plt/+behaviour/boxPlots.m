@@ -14,7 +14,7 @@ if nSubjects > 1 && opt.sepPlots{1}==1
 end
 
 expList = csv.loadData(opt, 'loadTag', 'blk');
-expList = expList(cellfun(@isstruct, expList.blkData),:);
+expList = expList(cellfun(@isstruct, expList.blockData),:);
 %%
 [blkDates, rigNames] = deal(cell(nSubjects,1));
 for i = 1:nSubjects
@@ -25,7 +25,7 @@ for i = 1:nSubjects
         keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
         currData = currData(keepIdx,:);
     end
-    blks = currData.blkData;
+    blks = currData.blockData;
     blkDates{i} = currData.expDate;
     rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 

@@ -6,29 +6,9 @@ function extractExpData(varargin)
     %%% either in a table or cell with paths format.
     
     %% Get parameters
-    % Parameters for processing (can be inputs in varargin{1})
-    params.recompute = {'none'};
-    
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            if istable(varargin{2})
-                % already in the right format, with all the info
-                exp2checkList = varargin{2};
-            else
-                % format is just a cell with paths, go fetch info
-                expPath2checkList = varargin{2};
-                exp2checkList = getExpInfoFromPath(expPath2checkList);
-            end
-        end
-    end
-    
-    if ~exist('exp2checkList', 'var')
-        % Will get all the exp for the active mice.
-        exp2checkList = csv.queryExp();
-    end
+    varargin = ['recompute', {'none'}, varargin];
+    params = csv.inputValidation(varargin{:});
+    exp2checkList = csv.queryExp(params);
     
     %% --------------------------------------------------------
     %% Will compute the 'preprocData' file for each experiment.   
@@ -36,12 +16,14 @@ function extractExpData(varargin)
     for ee = 1:size(exp2checkList,1)
         
         % Get exp info
-        expInfo = exp2checkList(ee,:);
-        expPath = expInfo.expFolder{1};
+        expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
+        expFolder = expInfo.expFolder{1};
+        recompute = params.recompute{1};
         
         % Define savepath for the preproc results
-        [subject, expDate, expNum] = parseExpPath(expPath);
-        savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_preprocData.mat']);
+        pathStub = fullfile(expFolder, [expInfo.expDate{1} '_' expInfo.expNum{1} '_' expInfo.subject{1}]);
+        savePath = [pathStub '_preprocData.mat'];
+
         if exist(savePath,'file')
             % To check if anything's missing (and that the csv hasn't seen
             % for some reason)
@@ -52,45 +34,46 @@ function extractExpData(varargin)
         
         % Get preproc status
         preprocStatus = parseStatusCode(expInfo.preProcSpkEV);
-        
-        if ~(strcmp(params.recompute,'none') && strcmp(expInfo.preProcSpkEV{1},'1,1')) 
+        preprocStatus = structfun(@(x) strcmp(x,'0'), preprocStatus,'uni',0);
+
+        if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV{1},'1,1')) 
             %% If all isn't good...
                         
             % monitors if anything has changed
             change = 0;
             
-            fprintf(1, '*** Preprocessing experiment %s... ***\n', expPath);
+            fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
 
             % get alignment file location
-            alignmentFile = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
+            alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
-            if ~isempty(alignmentFile)
+            if exist(alignmentFile, 'file')
                 %% Load alignment file
-                alignment = load(fullfile(alignmentFile.folder,alignmentFile.name),'ephys','block');
+                alignment = load(alignmentFile,'ephys','block');
                 
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
-                if contains(params.recompute,'all') || contains(params.recompute,'ev') || ...
-                        strcmp(preprocStatus.ev,'0') || ~ismember('ev',varListInFile)
+                if contains(recompute,{'all';'ev'}) || preprocStatus.ev || ~ismember('ev',varListInFile)
                          
                     try
                         fprintf(1, '* Extracting events... *\n');
                         
                         % Get Block and Timeline
-                        timeline = getTimeline(expPath);
-                        block = getBlock(expPath);
+                        loadedData = csv.loadData(expInfo, loadTag = 'timelineblock');
+                        timeline = loadedData.timelineData{1};
+                        block = loadedData.blockData{1};
                         
                         % Get the appropriate ref for the exp def
-                        expDef = expInfo.expDef{1};
+                        expDef = expInfo.expDef{1}{1};
                         expDefRef = preproc.getExpDefRef(expDef);
                         
                         % Call specific preprocessing function
                         ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                         
                         % Remove any error file
-                        if exist(fullfile(expPath, 'GetEvError.json'),'file')
-                            delete(fullfile(expPath, 'GetEvError.json'))
+                        if exist(fullfile(expFolder, 'GetEvError.json'),'file')
+                            delete(fullfile(expFolder, 'GetEvError.json'))
                         end
                         
                         fprintf(1, '* Events extraction done. *\n');
@@ -99,7 +82,7 @@ function extractExpData(varargin)
                         ev = 'error';
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(expPath, 'GetEvError.json'))
+                        saveErrMess(me.message,fullfile(expFolder, 'GetEvError.json'))
                     end
                     
                     change = 1;
@@ -114,15 +97,15 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if contains(params.recompute,'all') || contains(params.recompute,'spk') || ...
-                        strcmp(preprocStatus.spk,'0') || ~ismember('spk',varListInFile)
+                if contains(recompute,{'all';'spk'}) || preprocStatus.spk || ~ismember('spk',varListInFile)
                     
                     if isstruct(alignment.ephys)
                         try
                             fprintf(1, '* Extracting spikes... *\n');
                             
                             if ~exist('block','var')
-                                block = getBlock(expPath);
+                                loadedData = csv.loadData(expInfo, loadTag = 'block');
+                                block = loadedData.blockData{1};
                             end
                             
                             spk = cell(1,numel(alignment.ephys));
@@ -151,8 +134,8 @@ function extractExpData(varargin)
                             fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                             
                             % Remove any error file
-                            if exist(fullfile(expPath, 'GetSpkError.json'),'file')
-                                delete(fullfile(expPath, 'GetSpkError.json'))
+                            if exist(fullfile(expFolder, 'GetSpkError.json'),'file')
+                                delete(fullfile(expFolder, 'GetSpkError.json'))
                             end
                             
                             fprintf(1, '* Spikes extraction done. *\n');
@@ -161,7 +144,7 @@ function extractExpData(varargin)
                             spk = 'error';
                             
                             % Save error message locally
-                            saveErrMess(me.message,fullfile(expPath, 'GetSpkError.json'))
+                            saveErrMess(me.message,fullfile(expFolder, 'GetSpkError.json'))
                         end
                     elseif ischar(alignment.ephys) && strcmp(alignment.ephys,'error')
                         spk = 'error';
@@ -182,11 +165,11 @@ function extractExpData(varargin)
                 %% Update csv
                 
                 if change
-                    [subject, expDate, expNum] = parseExpPath(expPath);
+                    [subject, expDate, expNum] = parseExpPath(expFolder);
                     csv.updateRecord(subject, expDate, expNum);
                 end
             else
-                fprintf('Alignment for exp. %s does not exist. Skipping.\n', expPath)
+                fprintf('Alignment for exp. %s does not exist. Skipping.\n', expFolder)
             end
         end
         clear block timeline
