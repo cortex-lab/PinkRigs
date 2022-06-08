@@ -1,4 +1,4 @@
- function [tVid,numFramesMissed] = video(expPath, movieName, varargin)
+ function [tVid,numFramesMissed] = video(varargin)
     %%% This function will align the time frames of the input video to the
     %%% corresponding timeline. It will try to minimize the amount of time
     %%% and computing by loading first only the beginning and end of the
@@ -11,36 +11,30 @@
     
     %% get path and parameters    
     % Parameters for processing (can be inputs in varargin{1})
-    params.recomputeInt = false; % will recompute intensity file if true
-    params.nFramesToLoad = 3000; % will start loading the first and 3000 of the movie
-    params.adjustPercExpo = 1; % will adjust the timing of the first frame from its intensity
-    params.plt = 1; % to plot the inter frame interval for sanity checks
-    params.crashMissedFrames = 1; % will crash if any missed frame
+    varargin = ['recomputeInt', {false}, varargin]; % will recompute intensity file if true
+    varargin = ['nFramesToLoad', {3000}, varargin]; % will start loading the first and 3000 of the movie
+    varargin = ['adjustPercExpo', {1}, varargin]; % will adjust the timing of the first frame from its intensity
+    varargin = ['plt', {1}, varargin]; % to plot the inter frame interval for sanity checks
+    varargin = ['crashMissedFrames', {1}, varargin]; % % will crash if any missed frame
     
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            timeline = varargin{2};
-        end
-    end
+    params = csv.inputValidation(varargin{:});
     
     %% Get files names
-    
+    if ~isfield(params, 'vidName'); error('MUST specify video name'); end
+    pathStub = fullfile(params.expFolder{1}, ...
+        [params.expDate{1} '_' params.expNum{1} '_' params.subject{1} '_' params.vidName{1}]);
+
     % File with the movie intensity to detect the dark flashes
-    intensFile = fullfile(expPath, ...
-        [movieName '_avgIntensity.mat']);
+    intensFile = [pathStub '_avgIntensity.mat'];
     
     % File containing the last frames (due to vBox)
-    intensFile_lastFrames = fullfile(expPath, ...
-        [movieName '_lastFrames_avgIntensity.mat']);
+    intensFile_lastFrames = [pathStub '_lastFrames_avgIntensity.mat'];
     
     %% Load or (re)compute aligned times
     %% Get intensity files
     % This bit will compute and save the intensity of the movies.
     
-    if params.recomputeInt
+    if params.recomputeInt{1}
         % Delete intensity files
         if exist(intensFile, 'file')
             delete(intensFile);
@@ -53,14 +47,14 @@
     % Compute intensity file for the main file, will save it in folder
     if ~exist(intensFile, 'file')
         fprintf(1, 'computing average intensity of first/last frames...\n');
-        vidproc.getAvgMovInt(expPath, movieName, params.nFramesToLoad);
+        vidproc.getAvgMovInt(pathStub, params.nFramesToLoad{1});
     end
     
     % Compute intensity file for the lastFrames file, will save it in folder
-    d = dir(fullfile(expPath, [movieName '_lastFrames.mj2'])); % to check if it's there and worth loading
+    d = dir([pathStub '_lastFrames.mj2']); % to check if it's there and worth loading
     if ~isempty(d) && ~exist(intensFile_lastFrames, 'file')
         if d.bytes>100
-            vidproc.getAvgMovInt(expPath, [movieName '_lastFrames'], []);
+            vidproc.getAvgMovInt([pathStub '_lastFrames'], params.nFramesToLoad{1});
         end
     end
     
@@ -109,13 +103,15 @@
                 switch loadAttemptNum
                     case 1
                         fprintf(1, 'trying to load more frames...\n')
-                        vidproc.getAvgMovInt(expPath, movieName, 10000);
-                        load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
+                        vidproc.getAvgMovInt(pathStub, 10000);
+                        load(intensFile,'avgIntensity'); 
+                        avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     case 2
                         fprintf(1, 'trying to load all frames...\n')
-                        vidproc.getAvgMovInt(expPath, movieName);
-                        load(intensFile,'avgIntensity'); avgIntensity = [avgIntensity lf.avgIntensity];
+                        vidproc.getAvgMovInt(pathStub, inf);
+                        load(intensFile,'avgIntensity'); 
+                        avgIntensity = [avgIntensity lf.avgIntensity];
                         attemptNum = 0;
                     otherwise
                         error('Cannot find a threshold that works. You tell me...');
@@ -140,7 +136,7 @@
     numFramesFoundBetweenSyncs = diff(vidSyncOnFrames);
     
     % Get the frames times as saved by vBox
-    A = importdata(fullfile(expPath, [movieName, '_times.txt']),'\t');
+    A = importdata([pathStub, '_times.txt'],'\t');
     
     % Inter frame interval
     % Note that a lot of jitter is introduced by matlab here
@@ -167,7 +163,7 @@
         fprintf(1, 'missed frames: %d \n', numFramesMissed);
     end
     
-    if params.plt
+    if params.plt{1}
         % Plot and save a figure with the inter frame interval, for any
         % post-processing checks
         f = figure('visible','off'); hold all
@@ -180,14 +176,17 @@
         title(sprintf('Missed frames: %s',num2str(numFramesMissed)))
         
         % save
-        saveas(f,fullfile(expPath, [movieName '_alignment.png']),'png')
+        saveas(f,[pathStub '_alignment.png'],'png')
     end
     
     %% IN TIMELINE
     % Load timeline if not an input
-    if ~exist('Timeline','var')
+    if isempty(params.timeline{1}) || ischar(params.timeline{1})
         fprintf(1, 'Loading timeline\n');
-        timeline = getTimeline(expPath);
+        loadedData = csv.loadData(params, loadTag = 'timeline');
+        timeline = loadedData.timelineData{1};
+    else
+        timeline = params.timeline{1};
     end
     tlTime = timeproc.extractChan(timeline,'time');
     
@@ -195,16 +194,13 @@
     tlSyncOnSamps = timeproc.getChanEventTime(timeline,'camSync');
     
     % If exist, find the strobe times for the camera
-    camName = regexp(movieName,'[a-z]*Cam','match');
-    strobeName = [camName{1} 'Strobe'];
+    strobeName = [params.vidName{1} 'Strobe'];
     strobeSamps = timeproc.getChanEventTime(timeline,strobeName);
     if ~isempty(strobeSamps)
         % Take the strobes if exist
         numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
         numMissedFrames_wStrobes = numStrobesFoundBetweenSyncs - numFramesFoundBetweenSyncs;
         fprintf(1, 'missed frames with the strobes: %d \n', numMissedFrames_wStrobes);
-    else
-        numMissedFrames_wStrobes = nan;
     end
     
     if numFramesMissed && params.plt
@@ -233,7 +229,7 @@
         fprintf(1, 'on the disk: %d frames / metadata %d frames \n',numel(avgIntensity),A.data(end,1)) % not sure what it means if these two things are different...
         
         % Check video around missed frames to see if we can see it
-        vid = VideoReader(fullfile(expPath,[movieName '.mj2']));
+        vid = VideoReader(fullfile(expFolder,[vidName '.mj2']));
         win = [missedidx-20,missedidx+20];
         tmp = read(vid,win);
         imtool3D(squeeze(tmp))
@@ -244,7 +240,7 @@
     % Try to realign a bit better with the percentage of exposition.
     % Could maybe use the strobes if they're here?
     
-    if params.adjustPercExpo
+    if params.adjustPercExpo{1}
         % Will adjust the first post-dark flash frame depending on its
         % intensity compared to the previous ones.
         percentExpo = (avgIntensity(vidSyncOnFrames(1))-avgIntensity(vidSyncOnFrames(1)-2))/(avgIntensity(vidSyncOnFrames(1)+2)-avgIntensity(vidSyncOnFrames(1)-2));

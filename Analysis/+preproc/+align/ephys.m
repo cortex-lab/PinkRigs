@@ -1,4 +1,4 @@
-function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
+function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
     %%% This function will align the flipper of the ephys data to the
     %%% flipper taken from the timeline.
     %%%
@@ -8,41 +8,37 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
-    params.ephysPath = []; % for specific ephys folders (give full path)
-    params.toleranceThreshold = 0.005;
+    varargin = ['ephysPath', {[]}, varargin]; % for specific ephys folders (give full path)
+    varargin = ['toleranceThreshold', {0.005}, varargin];
+    varargin = ['timeline', {[]}, varargin]; % for timeline input
+    params = csv.inputValidation(varargin{:});
     
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            timeline = varargin{2};
-        end
-    end
-    
-    [subject, expDate, ~, server] = parseExpPath(expPath);
-    
+    subject = params.subject{1};
+    expDate = params.expDate{1};
+
     %% Get timeline flipper times
-    
     % Get timeline
-    if ~exist('timeline','var')
+    if isempty(params.timeline{1}) || ischar(params.timeline{1})
         fprintf(1, 'Loading timeline\n');
-        timeline = getTimeline(expPath);
+        loadedData = csv.loadData(params, loadTag = 'timeline');
+        timeline = loadedData.timelineData{1};
+    else
+        timeline = params.timeline{1};
     end
     % Detect sync events from timeline
     timelineFlipperTimes = timeproc.getChanEventTime(timeline,'flipper');
 
     %% Get all ephys flipper times
     
-    ephysPath = params.ephysPath;
+    ephysPath = params.ephysPath{1};
     
     % Get ephys folders
     % Will work only if the architecture is good.
     if isempty(ephysPath)
         % Just take them all, whatever the architecture..?
-        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','**','*.ap.*bin'));
+        ephysFiles = dir(fullfile(fileparts(params.expFolder{1}),'ephys','**','*.ap.*bin'));
         if isempty(ephysFiles)
-            error('No ephys file here: %s', fullfile(server,'Subjects',subject,expDate,'ephys'))
+            error('No ephys file here: %s', fullfile(fileparts(params.expFolder{1}),'ephys'))
         else
             ephysPath = {ephysFiles.folder};
         end
@@ -120,7 +116,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
                 % Subselect the ephys flipper flip times
                 ephysFlipperTimes_cut = ephysFlipperTimes_ee(flipperStEnIdx(currExpIdx(exp),1):flipperStEnIdx(currExpIdx(exp),2));
                 [timelineFlipperTimes_corr, ephysFlipperTimes_cut] = ...
-                    try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
+                    try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold{1},0);
                 success = 1;
                 exp = numel(currExpIdx)+1;
             catch

@@ -49,6 +49,7 @@ switch lower(computerType)
         end
         
     case {'kilo1','kilo2'}
+      
         %%
         fprintf('Detected kilo computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
@@ -68,7 +69,7 @@ switch lower(computerType)
             if ~isempty(expList)
                 [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
                 opt.expNum = expNums;
-                plt.behaviour.boxPlots(mouseNames,dates, 'res',expList.expDef, opt)
+                plt.behaviour.boxPlots('subject', mouseNames, 'expDate', dates, 'expDef', expList.expDef, opt)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
             end
@@ -117,13 +118,13 @@ switch lower(computerType)
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
             paramsPreproc.preproc2Check = '(*,*)';
             exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.align.main([], exp2checkList)
+            preproc.align.main(exp2checkList)
             
             % Extracting data
             paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
             paramsPreproc.preproc2Check = '(0,0)';
             exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.extractExpData([], exp2checkList)
+            preproc.extractExpData(exp2checkList)
         end
         fprintf('Stopping now %s. \n',datestr(now))
 end

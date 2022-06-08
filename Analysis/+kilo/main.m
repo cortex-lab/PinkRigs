@@ -26,11 +26,7 @@ function main(varargin)
         % Get all the recordings in the queue
         KSqueueCSVLoc = csv.getLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
-        if ~params.recomputeKilo
-            compIdx = find(recList.sortedTag == 0);
-        else
-            compIdx = 1:numel(recList.sortedTag);
-        end
+        compIdx = find(recList.sortedTag == 0);
         rec2sortList = recList.ephysName(compIdx);
     end
     
@@ -154,6 +150,18 @@ function main(varargin)
                         ephysFileName = regexprep(ephysFileName,'.cbin','.bin');
                     end
                     
+                    %% Extract sync if not done already
+                    syncPath = fullfile(ephysPath,'sync.mat');
+                    if ~exist(syncPath)
+                        metaS = readMetaData_spikeGLX(ephysFileName,ephysPath);
+                        
+                        apPath = fullfile(KSOutFolderLoc, ephysFileName);
+                        fprintf('Couldn''t find the sync file for %s. Computing it.\n', ephysFileName)
+                        extractSync(apPath, str2double(metaS.nSavedChans));
+                        
+                        copyfile(fullfile(KSOutFolderLoc,'sync.mat'),syncPath)
+                    end
+                    
                     %% Running the main algorithm
                     fprintf('Running kilosort...\n')
                     kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
@@ -163,8 +171,12 @@ function main(varargin)
                     % Have to do in while the raw data is decompressed
                     fprintf('Running quality metrics...\n')
                     try
-                        kilo.getQualityMetrics(KSOutFolderServer, fullfile(KSOutFolderLoc,ephysFileName))
+                        % copy meta file
+                        metaFile = regexprep(ephysFileName,'.bin','.meta');
+                        copyfile(regexprep(recName,'.cbin','.meta'),fullfile(KSOutFolderLoc,metaFile));
                         
+                        kilo.getQualityMetrics(KSOutFolderLoc, KSOutFolderLoc)
+                        delete(fullfile(KSOutFolderLoc,metaFile))
                         if exist(fullfile(ephysPath, 'QMerror.json'),'file')
                             delete(fullfile(ephysPath, 'QMerror.json'))
                         end

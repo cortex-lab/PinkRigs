@@ -1,13 +1,13 @@
 function extractedExperiments = queryExp(varargin)
 %%% This function will fetch all possible experiments to check for
 %%% computing alignment, preprocessing etc.
-params = csv.inputValidation(varargin{:});
 
-%Assign defaults for remaining params not contained in "inputValidation"
-params = csv.addDefaultParam(params, 'timeline2Check', {0});
-params = csv.addDefaultParam(params, 'align2Check', {'*,*,*,*,*,*'});
-params = csv.addDefaultParam(params, 'preproc2Check', {'*,*'});
-params = csv.addDefaultParam(params, 'issorted', {[0 1]});
+%Assign defaults for params not contained in "inputValidation"
+varargin = ['timeline2Check', {0}, varargin];
+varargin = ['align2Check', {'*,*,*,*,*,*'}, varargin];
+varargin = ['preproc2Check', {'*,*'}, varargin];
+varargin = ['issorted', {[0 1]}, varargin];
+params = csv.inputValidation(varargin{:});
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.
@@ -58,7 +58,7 @@ for mm = 1:numel(params.subject)
     currDate = params.expDate{mm};
     if ~iscell(currDate); currDate = {currDate}; end
     selectedDates = arrayfun(@(x) extractDates(x, expListMouse.expDate), currDate, 'uni', 0);
-    expListMouse = expListMouse(sum(cell2mat(selectedDates),2)>0,:);
+    expListMouse = expListMouse(sum(cell2mat(selectedDates(:)'),2)>0,:);
     if isempty(expListMouse); continue; end
     
     extractedExperiments = [extractedExperiments; expListMouse];

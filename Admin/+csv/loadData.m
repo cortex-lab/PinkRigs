@@ -1,17 +1,17 @@
 function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
+varargin = ['loadTag', {'ev'}, varargin];
 params = csv.inputValidation(varargin{:});
-params = csv.addDefaultParam(params, 'loadTag', 'ev');
 expList = csv.queryExp(params);
 
-newFields = {'blkData'; 'evData'; 'spkData'};
+newFields = {'blockData'; 'evData'; 'spkData'; 'timelineData'};
 for i = 1:length(newFields)
 expList.(newFields{i}) = cell(size(expList,1),1);
 end
 
 if isempty(expList); error('No sessions matched params'); end
 for i=1:height(expList)
-    clear ev spk blk;
+    clear ev spk blk tim;
     currExp = expList(i,:);
     currMouseIdx = strcmpi(params.subject, currExp.subject);
     currLoadTag = params.loadTag{currMouseIdx};
@@ -32,22 +32,32 @@ for i=1:height(expList)
             if exist('spk', 'var')
                 expList.spkData{i} = spk.spk;
             end
-        end    
+        end
     end
 
 
     %Load block data if requested
-    if contains(currLoadTag, {'blk'})
+    if contains(currLoadTag, {'blk', 'block'})
         preProcPath = cell2mat([currExp.expFolder '\' pathStub '_block.mat']);
         if ~exist(preProcPath, 'file'); continue; end
         blk = load(preProcPath, 'block');
         if exist('blk', 'var')
-            expList.blkData{i} = blk.block;
+            expList.blockData{i} = blk.block;
+        end
+    end
+
+    %Load block data if requested
+    if contains(currLoadTag, {'tim'; 'timeline'})
+        preProcPath = cell2mat([currExp.expFolder '\' pathStub '_timeline.mat']);
+        if ~exist(preProcPath, 'file'); continue; end
+        tim = load(preProcPath, 'Timeline');
+        if exist('tim', 'var')
+            expList.timelineData{i} = tim.Timeline;
         end
     end
 end
 
-expList = removevars(expList,{'expDuration'; 'block'; 'timeline';...
+expList = removevars(expList,{'block'; 'timeline';...
     'frontCam'; 'sideCam'; 'eyeCam'; 'micDat'; 'ephysFolderExists'; ...
     'alignBlkFrontSideEyeMicEphys'; 'faceMapFrontSideEye'; 'issorted'; ...
     'preProcSpkEV'; 'expFolder'});

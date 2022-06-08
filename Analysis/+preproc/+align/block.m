@@ -1,4 +1,4 @@
-function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
+function [blockRefTimes, timelineRefTimes] = block(varargin)
     %%% This function aligns a block file with its corresponding timeline
     %%% file.
     %%% Additional arguments are some parameters, and the experiment's
@@ -6,49 +6,37 @@ function [blockRefTimes, timelineRefTimes] = block(expPath, varargin)
     
     %% Get parameters    
     % Parameters for processing (can be inputs in varargin{1})
-    params.alignType = [];
-    
-    % This is not ideal
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            timeline = varargin{2};
-        end
-    end
+    varargin = ['alignType', {[]}, varargin]; % for specific ephys folders (give full path)
+    varargin = ['timeline', {[]}, varargin]; % for timeline input
+    params = csv.inputValidation(varargin{:});
     
     %% Get timeline and block
-    
-    % Get timeline
-    if ~exist('timeline','var')
+    if isempty(params.timeline{1}) || ischar(params.timeline{1})
         fprintf(1, 'Loading timeline\n');
-        timeline = getTimeline(expPath);
+        loadedData = csv.loadData(params, loadTag = 'timelineblock');
+        timeline = loadedData.timelineData{1};
+        block = loadedData.blockData{1};
+    else
+        loadedData = csv.loadData(params, loadTag = 'block');
+        block = loadedData.blockData{1};
     end
-    
-    % Get block
-    block = getBlock(expPath);
-    
-    % Get expDef
-    % Alignment method will depend on expDef
-    expDef = regexp(block.expDef,'\w*\.m','match'); expDef = expDef{1}(1:end-2);
     
     %% Get alignment type
 
-    if ~isempty(params.alignType)
-        alignType = params.alignType;
+    if ~isempty(params.alignType{1})
+        alignType = params.alignType{1};
         
         % Check if this specific type would work this would work
         %%% TODO
     else
         % Chose it depending on expDef
-        switch expDef
+        switch params.expDef{1}{1}
             case 'imageWorld_AllInOne'
                 alignType = 'photoDiode';
             case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'}
                 alignType = 'wheel';
             otherwise 
-                fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',expDef)
+                fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',params.expDef{1}{1})
                 alignType = 'photoDiode';
         end
     end
