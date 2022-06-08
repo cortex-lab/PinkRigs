@@ -69,7 +69,7 @@ switch lower(computerType)
             if ~isempty(expList)
                 [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
                 opt.expNum = expNums;
-                plt.behaviour.boxPlots(mouseNames,dates, 'res',expList.expDef, opt)
+                plt.behaviour.boxPlots('subject', mouseNames, 'expDate', dates, 'expDef', expList.expDef, opt)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
             end
