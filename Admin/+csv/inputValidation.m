@@ -68,7 +68,6 @@ outP = structfun(@mkCell, outP, 'uni', 0);
 mainCSVLoc = csv.getLocation('main');
 mouseList = csv.readTable(mainCSVLoc);
 
-
 %Validate subjects and deal with "all" and "active" cases for subject selection
 if strcmp(outP.subject{1},'active')
     outP.subject = mouseList.Subject(strcmp(mouseList.IsActive,'1'));
