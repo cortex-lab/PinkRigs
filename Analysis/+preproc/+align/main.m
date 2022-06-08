@@ -35,7 +35,7 @@ function main(varargin)
         alignStatus = parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
         alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
         
-        if ~(strcmp(params.recompute,'none') && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
+        if ~(strcmp(params.recompute{1},'none') && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
             %% If all isn't good...
                         
             % monitors if anything has changed

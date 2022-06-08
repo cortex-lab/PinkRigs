@@ -60,7 +60,7 @@ function extractExpData(varargin)
                         fprintf(1, '* Extracting events... *\n');
                         
                         % Get Block and Timeline
-                        loadedData = csv.loadData(expInfo, loadTag = 'timelineblock');
+                        loadedData = csv.loadData(expInfo, 'loadTag', 'timelineblock');
                         timeline = loadedData.timelineData{1};
                         block = loadedData.blockData{1};
                         
@@ -104,7 +104,7 @@ function extractExpData(varargin)
                             fprintf(1, '* Extracting spikes... *\n');
                             
                             if ~exist('block','var')
-                                loadedData = csv.loadData(expInfo, loadTag = 'block');
+                                loadedData = csv.loadData(expInfo, 'loadTag', 'block');
                                 block = loadedData.blockData{1};
                             end
                             

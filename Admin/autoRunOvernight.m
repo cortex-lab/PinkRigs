@@ -118,13 +118,13 @@ switch lower(computerType)
             paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
             paramsPreproc.preproc2Check = '(*,*)';
             exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.align.main([], exp2checkList)
+            preproc.align.main(exp2checkList)
             
             % Extracting data
             paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
             paramsPreproc.preproc2Check = '(0,0)';
             exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.extractExpData([], exp2checkList)
+            preproc.extractExpData(exp2checkList)
         end
         fprintf('Stopping now %s. \n',datestr(now))
 end
