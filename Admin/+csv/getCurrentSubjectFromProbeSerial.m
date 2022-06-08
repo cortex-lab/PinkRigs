@@ -16,8 +16,8 @@ dateFormats1 = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), im
 dateFormats2 = cellfun(@(x) ~isempty(regexp(x,'\d\d/\d\d/\d\d\d\d', 'once')), implantDatesFromCSV);
 dateFormats = dateFormats1 | dateFormats2;
 implantDatesFromCSV(dateFormats2) = cellfun(@(x) datestr(datenum(x,'dd/mm/yyyy'), 'yyyy-mm-dd'), implantDatesFromCSV(dateFormats2), 'UniformOutput', false);
-implantDatesFromCSV(~dateFormats) = deal({datestr(now-5000, 'yyyy-mm-dd')});
-implantDatesFromCSV = cellfun(@(x) datenum(x, 'yyyy-mm-dd'), implantDatesFromCSV);
+implantDatesFromCSV(~dateFormats) = deal({['"' datestr(now-5000, 'yyyy-mm-dd') '"']});
+implantDatesFromCSV = cellfun(@(x) datenum(x, '"yyyy-mm-dd"'), implantDatesFromCSV);
 
 probeDates = cellfun(@(x) max(implantDatesFromCSV(serialsFromCSV == x)), probeSerial, 'uni', 0);
 probeDates(cellfun(@isempty, probeDates)) = deal({now+20});
