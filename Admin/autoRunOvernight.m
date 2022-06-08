@@ -25,7 +25,7 @@ switch lower(computerType)
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
         fprintf('Running "extractLocalSync"... \n')
-        extractLocalSync('D:\LocalExpData');
+        extractLocalSync('D:\ephysData');
         
         fprintf('Compressing local data... \n')     
         compressPath = which('compress_data.py');
