@@ -52,7 +52,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     ephysFlipperTimes = cell(1,numel(ephysPath));
     
     for ee = 1:numel(ephysPath)
-        % Get syncData
+        % Get meta data
         dataFile = dir(fullfile(ephysPath{ee},'*ap.*bin'));
         metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
         
@@ -60,12 +60,20 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
             fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
-            extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
+            try
+                extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
+            catch
+                fprintf('Couldn''t extract the sync! Have a look?\n')
+            end    
             ephysFlipperTimes{ee} = [];
             syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         end
-        syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
-        
+        if ~isempty(syncDataFile)
+            syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
+        else
+            syncData.sync = [];
+        end
+
         % Extract flips
         Fs = str2double(metaS.imSampRate);
         ephysFlipperTimes{ee} = (find(diff(syncData.sync)~=0)/Fs);
