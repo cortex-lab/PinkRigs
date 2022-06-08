@@ -84,7 +84,8 @@ function extractExpData(varargin)
                         
                         fprintf(1, '* Events extraction done. *\n');
                     catch me
-                        warning(me.identifier,'Couldn''t get events (ev): threw an error (%s)',me.message)
+                        msgText = getReport(me);
+                        warning(me.identifier,'Couldn''t get events (ev): threw an error\n (%s)',msgText)
                         ev = 'error';
                         
                         % Save error message locally

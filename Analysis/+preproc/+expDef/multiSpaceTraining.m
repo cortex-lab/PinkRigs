@@ -210,7 +210,7 @@ if any(compareIndex-(1:numel(compareIndex))')
     
     [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
 end
-if any(compareIndex-(1:numel(compareIndex)))
+if any(compareIndex-(1:numel(compareIndex))')
     fprintf('WARNING: Could not fix start-end times\n');
     fprintf('Will perform incomplete identification based on trial structure\n');
     
