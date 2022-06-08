@@ -183,7 +183,7 @@
     % Load timeline if not an input
     if isempty(params.timeline{1}) || ischar(params.timeline{1})
         fprintf(1, 'Loading timeline\n');
-        loadedData = csv.loadData(params, loadTag = 'timeline');
+        loadedData = csv.loadData(params, 'loadTag','timeline');
         timeline = loadedData.timelineData{1};
     else
         timeline = params.timeline{1};
