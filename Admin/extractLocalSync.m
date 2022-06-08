@@ -10,7 +10,7 @@ function extractLocalSync(localFolder)
         metaS = readMetaData_spikeGLX(localEphysFiles(i).name,localEphysFiles(i).folder);
 
         apPath = fullfile(localEphysFiles(i).folder, localEphysFiles(i).name);
-        fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', ...
-            subjectFromBinName{i}, dateFromBinName{i})
+        fprintf('Couldn''t find the sync file for %s. Computing it.\n', ...
+            localEphysFiles(i).name)
         extractSync(apPath, str2double(metaS.nSavedChans));
     end
