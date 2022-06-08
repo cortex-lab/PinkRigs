@@ -51,14 +51,14 @@ for i = 1:cycles
 end
 
 %Deal with cases where data is on multiple servers (take the biggest)
-[uniPaths,uniIdx,pathIdx] = ...
+[~,uniIdx,pathIdx] = ...
     unique(cellfun(@(x) x(strfind(x, 'Subjects'):end), paths2Check, 'uni', 0));
 duplicateEntries = unique(pathIdx(setdiff(1:numel(paths2Check), uniIdx)));
 paths2Remove = zeros(length(paths2Check),1)>0;
 for i = duplicateEntries'
     dupIdx = find(pathIdx==i);
     pathSize = cellfun(@(x) dir([fileparts(x) '/**/*']), paths2Check(dupIdx), 'uni', 0);
-    pathSize = cellfun(@(x) sum([x.bytes]), pathSize);
+    pathSize = cellfun(@(x) sum([x.bytes])+rand, pathSize);
     paths2Remove(dupIdx(pathSize~=max(pathSize))) = 1;
 end
 paths2Check(paths2Remove) = [];
