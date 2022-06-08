@@ -25,7 +25,6 @@ def send_email(mname):
     The following mice have been trained recently: 
     {}
 
-    And attached is a plot of today's behavior!
     Cheers!
     AVrig bot""".format(mname))
     msg.attach(message)
