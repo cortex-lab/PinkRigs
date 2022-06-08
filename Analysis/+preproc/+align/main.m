@@ -8,17 +8,20 @@ function main(varargin)
     % Parameters for processing (can be inputs in varargin{1})
     varargin = ['recompute', 'none', varargin];
     varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
+    varargin = ['process', 'all', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);    
     %% --------------------------------------------------------
+
     %% Will compute the 'alignment' file for each experiment.
-    
+
     for ee = 1:size(exp2checkList,1)
-        
+        varargin = varargin(cellfun(@(x) ~istable(x), varargin));
         % Get exp info
         expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
         expFolder = expInfo.expFolder{1};
         recompute = params.recompute{1};
+        process = params.process{1};
         
         % Define savepath for the alignment results
         pathStub = fullfile(expFolder, [expInfo.expDate{1} '_' expInfo.expNum{1} '_' expInfo.subject{1}]);
@@ -32,9 +35,13 @@ function main(varargin)
         end
         
         % Get preproc status
-        alignStatus = parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
+        alignStatus = csv.parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
         alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
         
+        %Anonymous funciton to decide whether something should be processed
+        shouldProcess = @(x,y) (contains(recompute,{'all';x}) || alignStatus.(x)...
+            || ~ismember(y, varListInFile)) && contains(process,{'all';x});
+
         if ~(strcmp(params.recompute{1},'none') && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
             %% If all isn't good...
                         
@@ -52,7 +59,7 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(recompute,{'all';'ephys'}) || alignStatus.ephys || ~ismember('ephys',varListInFile)
+            if shouldProcess('ephys', 'ephys')
                 
                 ephysFolder = fullfile(fileparts(expFolder),'ephys');
                 if exist(ephysFolder,'dir')
@@ -110,8 +117,8 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(recompute,{'all';'block'}) || alignStatus.block || ~ismember('block',varListInFile)
-                
+            if shouldProcess('block', 'block')
+
                 % Note that block file should always exist.
                 try
                     block = struct;
@@ -151,10 +158,7 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if contains(recompute,{'all';'video'}) || ...
-                    any([alignStatus.frontCam, alignStatus.sideCam, alignStatus.eyeCam]) || ...
-                    ~ismember('video',varListInFile) %  Won't check for every cam here
-                
+            if any(cellfun(@(x)shouldProcess(x, 'video'), params.videoNames{1}))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
                 % Align each of them
@@ -212,8 +216,8 @@ function main(varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if contains(recompute,{'all';'mic'}) || alignStatus.mic || ~ismember('mic',varListInFile)
-                
+            if shouldProcess('mic', 'mic')
+
                 % Align it
                 if str2double(expInfo.micDat{1}) > 0
                     try

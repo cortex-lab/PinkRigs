@@ -35,8 +35,6 @@ nDat.faceMapFrontSideEye = {};
 nDat.issorted = {};
 nDat.preProcSpkEV = {};
 nDat.expFolder = {};
-% nDat.ephysRecordingPath = {};
-% nDat.complete = {};
 
 if ~exist(csvPathMouse, 'file') && saveData
     csvDataMouse = struct2table(nDat, 'AsArray', 1);
@@ -74,60 +72,55 @@ nDat.expFolder = {fileparts(blockPath)};
 
 nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
-% nDat.ephysRecordingPath = num2str(nan);
 alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
 
 if any(alignFile)
     alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat']);
-    expectedFields = {'block', 'video', 'mic', 'ephys'};
-    if ~all(contains(expectedFields, fields(alignment)))
-        fprintf('WARNING: fields are incorrect in alignment.mat for %s %s %s. ... \n', subject, expDate, expNum);
-    else 
-        fileExists = [nDat.block, nDat.frontCam, nDat.sideCam, nDat.eyeCam, nDat.micDat, nDat.ephysFolderExists]>0;
-        tDat = nDat.alignBlkFrontSideEyeMicEphys;
-        tDat(~fileExists) = NaN;
-        
+    
+    fileExists = [nDat.block, nDat.frontCam, nDat.sideCam, nDat.eyeCam, nDat.micDat, nDat.ephysFolderExists]>0;
+    tDat = nDat.alignBlkFrontSideEyeMicEphys;
+    tDat(~fileExists) = NaN;
+
+    if isfield(alignment, 'video')
         for i = 1:length(camNames)
-            camIdx = contains({alignment.video.name}', camNames(i));
-            if (isempty(camIdx) || ~any(camIdx)) && ~isnan(tDat(i + i))
-                fprintf('FAILED: Conflict between cameras detected by align file and CSV?! for %s %s %s. ... \n', subject, expDate, expNum);
-                return;
-            elseif isempty(camIdx) || ~any(camIdx); tDat(i+1) = nan;
-            elseif isnan(alignment.video(camIdx).frameTimes(1)); tDat(i+1) = nan;
-            elseif strcmpi(alignment.video(camIdx).frameTimes, 'error'); tDat(i+1) = 2;
-            elseif isnumeric(alignment.video(camIdx).frameTimes); tDat(i+1) = 1;
+            if ~isfield(alignment, 'video');
+                camIdx = contains({alignment.video.name}', camNames(i));
+                if (isempty(camIdx) || ~any(camIdx)) && ~isnan(tDat(i + i))
+                    fprintf('FAILED: Conflict between cameras detected by align file and CSV?! for %s %s %s. ... \n', subject, expDate, expNum);
+                    return;
+                elseif isempty(camIdx) || ~any(camIdx); tDat(i+1) = nan;
+                elseif isnan(alignment.video(camIdx).frameTimes(1)); tDat(i+1) = nan;
+                elseif strcmpi(alignment.video(camIdx).frameTimes, 'error'); tDat(i+1) = 2;
+                elseif isnumeric(alignment.video(camIdx).frameTimes); tDat(i+1) = 1;
+                end
             end
         end
-        
-        tstDat = {alignment.block, 1; alignment.mic, 5; alignment.ephys, 6};
-        for i = 1:size(tstDat,1)
-            if isstruct(tstDat{i,1}); tDat(tstDat{i,2}) = 1;
-            elseif strcmpi(tstDat{i,1}, 'error'); tDat(tstDat{i,2}) = 2;
-            elseif isnan(tstDat{i,1}); tDat(tstDat{i,2}) = NaN;
-            end
-        end
-                
-        nDat.alignBlkFrontSideEyeMicEphys = tDat;
+    else
+        tDat(2:4) = 0;
     end
-    
-    
+
+    tstDat = {'block', 1; 'mic', 5; 'ephys', 6};
+    for i = 1:size(tstDat,1)
+        if ~isfield(alignment, tstDat{i,1}); tDat(tstDat{i,2}) = 0;
+        elseif isstruct(alignment.(tstDat{i,1})); tDat(tstDat{i,2}) = 1;
+        elseif strcmpi(alignment.(tstDat{i,1}), 'error'); tDat(tstDat{i,2}) = 2;
+        elseif isnan(alignment.(tstDat{i,1})); tDat(tstDat{i,2}) = NaN;
+        end
+    end
+
+    nDat.alignBlkFrontSideEyeMicEphys = tDat;
     
     if nDat.alignBlkFrontSideEyeMicEphys(6) == 1
         issorted = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), {alignment.ephys.ephysPath});
         nDat.issorted = num2str(mean(issorted));
-%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, ',')};
-%         nDat.ephysRecordingPath = {strjoin({alignment.ephys.ephysPath}, '')};
     elseif isnan(nDat.alignBlkFrontSideEyeMicEphys(6))
         nDat.issorted = nan;
-%         nDat.ephysRecordingPath = num2str(nan);
     else
-%         nDat.ephysRecordingPath = 0;
     end    
 end
 if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
     nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
     nDat.issorted = 0;
-%     nDat.ephysRecordingPath = 0;
 end
 
 faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
@@ -136,23 +129,23 @@ faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
 nDat.preProcSpkEV = zeros(1,2);
 preProcFile = contains({fileContents.name}','preprocData.mat');
 if any(preProcFile)
-    load([fullfile(fileContents(alignFile).folder,nameStub) '_preprocData.mat'],'ev', 'spk');
-    if ~exist('ev', 'var') || ~exist('spk', 'var')
-        fprintf('WARNING: Data missing from preprocData.mat for %s %s %s. ... \n', subject, expDate, expNum);
-    else
-        if iscell(spk); spk = spk{1}; end
-        tstDat = {spk, 1; ev, 2};
-        for i = 1:size(tstDat,1)
-            if isstruct(tstDat{i,1});  nDat.preProcSpkEV(tstDat{i,2}) = 1;
-            elseif strcmpi(tstDat{i,1}, 'error'); nDat.preProcSpkEV(tstDat{i,2}) = 2;
-            elseif isnan(tstDat{i,1}); nDat.preProcSpkEV(tstDat{i,2}) = NaN;
-            elseif ~isempty(tstDat{i,1}); nDat.preProcSpkEV(tstDat{i,2}) = 1;
-            end
+    preProcDat = load([fullfile(fileContents(alignFile).folder,nameStub) '_preprocData.mat']);
+    if isfield(preProcDat, 'ev'); ev = preProcDat.ev; else, ev = 0; end
+    if isfield(preProcDat, 'spk'); spk = preProcDat.spk; else, spk = 0; end
+    
+    if iscell(spk); spk = spk{1}; end
+    tstDat = {spk, 1; ev, 2};
+    for i = 1:size(tstDat,1)
+        if isnumeric(tstDat{i,1}) && tstDat{i,1} == 0; nDat.preProcSpkEV(tstDat{i,2}) = 0;
+        elseif isstruct(tstDat{i,1});  nDat.preProcSpkEV(tstDat{i,2}) = 1;
+        elseif strcmpi(tstDat{i,1}, 'error'); nDat.preProcSpkEV(tstDat{i,2}) = 2;
+        elseif isnan(tstDat{i,1}); nDat.preProcSpkEV(tstDat{i,2}) = NaN;
+        elseif ~isempty(tstDat{i,1}); nDat.preProcSpkEV(tstDat{i,2}) = 1;
         end
-        
-        if str2double(nDat.issorted) ~= 1 && nDat.preProcSpkEV(1) == 1
-            nDat.preProcSpkEV(1) = 0;
-        end
+    end
+
+    if str2double(nDat.issorted) ~= 1 && nDat.preProcSpkEV(1) == 1
+        nDat.preProcSpkEV(1) = 0;
     end
 end
 

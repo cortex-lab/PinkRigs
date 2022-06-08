@@ -5,8 +5,6 @@ opts = detectImportOptions(csvPath);
 dateFields = find(contains(opts.VariableNames, 'date','IgnoreCase',true));
 opts = setvartype(opts, 'char');
 
-% opts.VariableNamingRule = 'preserve';
-
 csvData = readtable(csvPath, opts');
 
 reWrite = 0;

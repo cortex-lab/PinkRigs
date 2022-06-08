@@ -5,75 +5,78 @@ varargin = ['sepPlots', {1}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
-opt = csv.inputValidation(varargin{:});
+params = csv.inputValidation(varargin{:});
 
-nSubjects = length(opt.subject);
-if nSubjects > 1 && opt.sepPlots{1}==1
+nSubjects = length(params.subject);
+if nSubjects > 1 && params.sepPlots{1}==1
     fprintf('Multiple subjects, so will combine within subjects \n');
-    opt.sepPlots = repmat({0},nSubjects,1);
+    params.sepPlots = repmat({0},nSubjects,1);
 end
 
-expList = csv.loadData(opt, 'loadTag', 'blk');
-expList = expList(cellfun(@isstruct, expList.blockData),:);
-%%
 [blkDates, rigNames] = deal(cell(nSubjects,1));
+expList = csv.queryExp(params);
+extractedData = cell(nSubjects,1);
 for i = 1:nSubjects
-    currData = expList(strcmp(expList.subject, opt.subject{i}),:);
+    currData = expList(strcmp(expList.subject, params.subject{i}),:);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
+    if any(~alignedBlock)
+        fprintf('Missing block alignments. Will try and align...\n')
+        preproc.align.main(currData(~alignedBlock,:), 'process', 'block');
+    end
+
+    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+    if any(~evExtracted)
+        fprintf('EV extractions. Will try to extract...\n')
+        preproc.extractExpData(currData(~evExtracted,:), 'process', 'ev');
+    end
+    
+    currData = csv.queryExp(currData);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
+    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+
+    failIdx = any(~[alignedBlock, evExtracted],2);
+    if any(failIdx)
+        failNames = currData.expFolder(failIdx);
+        cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
+        currData = currData(~failIdx,:);
+    end
+
     if length(unique(currData.expDate)) ~= length(currData.expDate)
         expDurations = cellfun(@str2double, currData.expDuration);
         [~, ~, uniIdx] = unique(currData.expDate);
         keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
         currData = currData(keepIdx,:);
     end
-    blks = currData.blockData;
     blkDates{i} = currData.expDate;
     rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 
-    paramSets = cellfun(@(x) x.events.selected_paramsetValues, blks, 'uni', 0);
-    AVParams = cellfun(@(x) [x.audInitialAzimuth(x.numRepeats>0) x.visContrast(x.numRepeats>0)], paramSets, 'uni', 0);
-    AVParams = cellfun(@(x) unique([x; x*-1], 'rows'), AVParams, 'uni', 0);
+    loadedEV = csv.loadData(currData, 'loadTag', 'ev');
+    evData = [loadedEV.evData{:}];
 
-    eventNames = {'visInitialAzimuth'; 'audInitialAzimuth'; 'repeatNum'; ...
-        'visContrast'; 'feedback'; 'correctResponse'};
-    taskEvents = extractEventsFromBlock(blks, eventNames);
+    for j = 1:length(evData)
+        evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
+        evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
+        evData(j).stim_audDiff = evData(j).stim_audAzimuth;
+        evData(j).AVParams = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
+    end
 
-    if ~opt.sepPlots{i}
-        [uniParams, ~, uniMode] = unique(cellfun(@(x) num2str(x(:)'), AVParams, 'uni', 0));
+    if ~params.sepPlots{i}
+        [uniParams, ~, uniMode] = unique(arrayfun(@(x) num2str(x.AVParams(:)'), evData, 'uni', 0));
         modeIdx = uniMode == mode(uniMode);
         if numel(uniParams) ~= 1
             fprintf('Multiple param sets detected for %s, using mode \n', currData.subject{1});
         end
-        names = fieldnames(taskEvents);
-        cellData = cellfun(@(f) {vertcat(taskEvents(modeIdx).(f))}, names);
+        names = fieldnames(evData);
+        cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
 
-        taskEvents = cell2struct(cellData, names);
-        taskEvents.nExperiments = sum(modeIdx);
+        extractedData{i,1} = cell2struct(cellData, names);
+        extractedData{i,1}.nExperiments = sum(modeIdx);
         blkDates{i} = blkDates{i}(modeIdx);
         rigNames{i} = rigNames{i}(modeIdx);
     end
-
-    for j = 1:length(taskEvents)
-        responseRecorded = double(taskEvents(j).correctResponse).*~(taskEvents(j).feedback==0);
-        responseRecorded(taskEvents(j).feedback<0) = -1*(responseRecorded(taskEvents(j).feedback<0));
-        responseRecorded = ((responseRecorded>0)+1).*(responseRecorded~=0);
-        taskEvents(j).responseRecorded = responseRecorded;
-
-        taskEvents(j).visDiff = taskEvents(j).visContrast.*sign(taskEvents(j).visInitialAzimuth);
-        taskEvents(j).audDiff = taskEvents(j).audInitialAzimuth;
-    end
-
-    if i == 1; extractedData = taskEvents;
-    else, extractedData(i,1) = taskEvents;
-    end
-    
-    % remove empty experiments
-    emptyExpIdx = cellfun(@(x) isempty(x), {extractedData.visInitialAzimuth});
-    extractedData(emptyExpIdx) = [];
-    blkDates(emptyExpIdx) = [];
-    rigNames(emptyExpIdx) = [];
 end
 %%
-maxGrid = arrayfun(@(x) [length(unique(x.audDiff)) length(unique(x.visDiff))], extractedData, 'uni', 0);
+maxGrid = arrayfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], evData, 'uni', 0);
 maxGrid = max(cell2mat(maxGrid),2);
 axesOpt.figureHWRatio = maxGrid(2)/(1.3*maxGrid(1));
 axesOpt.btlrMargins = [100 80 60 100];
@@ -81,61 +84,49 @@ axesOpt.gapBetweenAxes = [100 40];
 axesOpt.totalNumOfAxes = length(extractedData);
 
 plotData = cell(length(extractedData), 1);
-if ~opt.noPlot{1}; figure; end
+if ~params.noPlot{1}; figure; end
 for i = 1:length(extractedData)
-    if isfield(extractedData(i), 'nExperiments')
-        if extractedData(i).nExperiments == 1
+    if isfield(extractedData{i}, 'nExperiments')
+        if extractedData{i}.nExperiments == 1
             boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
         end
-        tDat = rmfield(extractedData(i), 'nExperiments');
-        boxPlot.nExperiments = extractedData(i).nExperiments;
+        tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
+        boxPlot.nExperiments = extractedData{i}.nExperiments;
     else
-        tDat = extractedData(i);
+        tDat = rmfield(extractedData{i}, 'AVParams');
         boxPlot.nExperiments = 1;
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     end
 
-    boxPlot.subject = opt.subject{i};
+    boxPlot.subject = params.subject{i};
 
-    boxPlot.xyValues = {unique(tDat.visDiff)*100; unique(tDat.audDiff)};
+    boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; unique(tDat.stim_audDiff)};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);
 
-    switch lower(opt.plotType{1}(1:3))
+    switch lower(params.plotType{1}(1:3))
         case 'res'
-            timeOuts = extractedData(i).responseRecorded == 0;
-            repTrials = timeOuts*0;
-            repNums = extractedData(i).repeatNum;
-            rep1 = find(repNums==1);
-            for j = 1:length(extractedData(i).responseRecorded)
-                if repNums(j)~=1 && ~timeOuts(j)
-                    tstIdx = rep1(find(rep1<j,1,'last'));
-                    if sum(~timeOuts(tstIdx:j)) ~= 1
-                        repTrials(j) = 1;
-                    end
-                end
-            end
+            tkIdx = extractedData{i}.is_validTrial & extractedData{i}.response_direction;
+            tDat = filterStructRows(tDat, tkIdx);
 
-            tDat = filterStructRows(tDat, ~timeOuts & ~repTrials);
-
-            [~,~,vLabel] = unique(tDat.visDiff);
-            [~,~,aLabel] = unique(tDat.audDiff);
-            boxPlot.plotData = accumarray([aLabel, vLabel],tDat.responseRecorded,[],@mean)-1;
-            boxPlot.trialCount = accumarray([aLabel, vLabel],~isnan(tDat.responseRecorded),[],@sum);
+            [~,~,vLabel] = unique(tDat.stim_visDiff);
+            [~,~,aLabel] = unique(tDat.stim_audDiff);
+            boxPlot.plotData = accumarray([aLabel, vLabel],tDat.response_direction,[],@mean)-1;
+            boxPlot.trialCount = accumarray([aLabel, vLabel],~isnan(tDat.response_direction),[],@sum);
             boxPlot.plotData(boxPlot.trialCount==0) = nan;
-            boxPlot.totTrials = length(tDat.visDiff);
+            boxPlot.totTrials = length(tDat.stim_visDiff);
             colorBar.colorLabel = 'Fraction of right turns';
             colorBar.colorDirection = 'normal';
             colorBar.colorYTick = {'0'; '1'};
     end
-    if ~opt.noPlot{1}
+    if ~params.noPlot{1}
         plt.general.getAxes(axesOpt, i);
         makePlot(boxPlot);
     end
     plotData{i,1} = boxPlot;
 end
-if ~opt.noPlot{1}
+if ~params.noPlot{1}
     currentAxisPotision = get(gca, 'position');
     figureSize = get(gcf, 'position');
 

@@ -6,7 +6,8 @@ function extractExpData(varargin)
     %%% either in a table or cell with paths format.
     
     %% Get parameters
-    varargin = ['recompute', {'none'}, varargin];
+    varargin = ['recompute', 'none', varargin];
+    varargin = ['process', 'all', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);
     
@@ -14,11 +15,13 @@ function extractExpData(varargin)
     %% Will compute the 'preprocData' file for each experiment.   
     
     for ee = 1:size(exp2checkList,1)
-        
+        varargin = varargin(cellfun(@(x) ~istable(x), varargin));
         % Get exp info
+        
         expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
         expFolder = expInfo.expFolder{1};
         recompute = params.recompute{1};
+        process = params.process{1};
         
         % Define savepath for the preproc results
         pathStub = fullfile(expFolder, [expInfo.expDate{1} '_' expInfo.expNum{1} '_' expInfo.subject{1}]);
@@ -33,8 +36,12 @@ function extractExpData(varargin)
         end
         
         % Get preproc status
-        preprocStatus = parseStatusCode(expInfo.preProcSpkEV);
+        preprocStatus = csv.parseStatusCode(expInfo.preProcSpkEV);
         preprocStatus = structfun(@(x) strcmp(x,'0'), preprocStatus,'uni',0);
+
+        %Anonymous function to decide whether something should be processed
+        shouldProcess = @(x) (contains(recompute,{'all';x}) || preprocStatus.(x)...
+            || ~ismember(x, varListInFile)) && contains(process,{'all';x});
 
         if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV{1},'1,1')) 
             %% If all isn't good...
@@ -49,13 +56,12 @@ function extractExpData(varargin)
 
             if exist(alignmentFile, 'file')
                 %% Load alignment file
-                alignment = load(alignmentFile,'ephys','block');
                 
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
-                if contains(recompute,{'all';'ev'}) || preprocStatus.ev || ~ismember('ev',varListInFile)
-                         
+                if shouldProcess('ev')
+                    alignment = load(alignmentFile, 'block');
                     try
                         fprintf(1, '* Extracting events... *\n');
                         
@@ -97,8 +103,8 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if contains(recompute,{'all';'spk'}) || preprocStatus.spk || ~ismember('spk',varListInFile)
-                    
+                if shouldProcess('spk')
+                    alignment = load(alignmentFile,'ephys','block');
                     if isstruct(alignment.ephys)
                         try
                             fprintf(1, '* Extracting spikes... *\n');
@@ -165,8 +171,7 @@ function extractExpData(varargin)
                 %% Update csv
                 
                 if change
-                    [subject, expDate, expNum] = parseExpPath(expFolder);
-                    csv.updateRecord(subject, expDate, expNum);
+                    csv.updateRecord(expInfo.subject{1}, expInfo.expDate{1}, expInfo.expNum{1});
                 end
             else
                 fprintf('Alignment for exp. %s does not exist. Skipping.\n', expFolder)
