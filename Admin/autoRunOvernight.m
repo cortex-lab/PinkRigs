@@ -57,7 +57,7 @@ switch lower(computerType)
         dbstop if error % temporarily, to debug
         
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
-        csv.checkForNewPinkRigRecordings(1);
+        csv.checkForNewPinkRigRecordings('days2check', 1);
         
         c = clock;
         if c(4) > 20
