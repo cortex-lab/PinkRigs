@@ -44,8 +44,8 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
     %% Get reference times for block and timeline
     timelineTime = timeline.rawDAQTimestamps;
     sR = 1/diff(timelineTime(1:2));
-    switch alignType
-        case 'wheel' % Get interpolation points using the wheel data
+    if strcmpi(alignType, 'wheel')
+            % Get interpolation points using the wheel data
             % Unwrap the wheel trace (it is circular) and then smooth it. Smoothing is important because covariance will not work otherwise
             smthWin = sR/10+1;
             timelinehWeelPosition = timeproc.extractChan(timeline,'rotaryEncoder');
@@ -73,22 +73,24 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             % Check that there is enough wheel movement to make the alignement (based on absolute velocity)
             testIdx = cellfun(@(x) sum(abs(blockWheelVelocity(x))), samplePoints)>(5*blockWidth/sR);
             if mean(testIdx) < 0.2
-                error('Not enough movment to synchronize using wheel');
+                warning('Not enough movment to synchronize using wheel');
+                alignType = 'photodiode';
+            else
+                % Go through each subsection and detect the offset between block and timline
+                samplePoints = samplePoints(testIdx);
+                delayValues = cellfun(@(x) finddelay(blockWheelVelocity(x), timelinehWeelVelocity(x), 1000), samplePoints)./sR;
+                
+                % Use a smoothed median to select the evolving delat values, and use these to calculate the evolving reference points for block and timeline
+                timelineRefTimes = timelineTime(sampleCentres);
+                delayValues = interp1(timelineTime(sampleCentres(testIdx)), delayValues, timelineRefTimes, 'linear', 'extrap');
+                delayValues = smooth(delayValues, 0.05, 'rlowess');
+                blockRefTimes = movmedian(timelineRefTimes(:)-delayValues-baseDelay, 7)';
+                blockRefTimes = interp1(timelineRefTimes(4:end-3), blockRefTimes(4:end-3), timelineRefTimes, 'linear', 'extrap');
+                block.alignment = 'wheel';
             end
-            
-            % Go through each subsection and detect the offset between block and timline
-            samplePoints = samplePoints(testIdx);
-            delayValues = cellfun(@(x) finddelay(blockWheelVelocity(x), timelinehWeelVelocity(x), 1000), samplePoints)./sR;
-            
-            % Use a smoothed median to select the evolving delat values, and use these to calculate the evolving reference points for block and timeline
-            timelineRefTimes = timelineTime(sampleCentres);
-            delayValues = interp1(timelineTime(sampleCentres(testIdx)), delayValues, timelineRefTimes, 'linear', 'extrap');
-            delayValues = smooth(delayValues, 0.05, 'rlowess');
-            blockRefTimes = movmedian(timelineRefTimes(:)-delayValues-baseDelay, 7)';
-            blockRefTimes = interp1(timelineRefTimes(4:end-3), blockRefTimes(4:end-3), timelineRefTimes, 'linear', 'extrap');
-            block.alignment = 'wheel';
-            
-        case 'reward' % Get interpolation points using the reward data
+    end
+    if strcmpi(alignType, 'reward')
+            % Get interpolation points using the reward data
             % Rewards are very obvious, but infrequent and sometimes completely absent. But if there is no other option, simply detect the rewards in
             % timesline, and use the rewardTimes from the block outputs to get reference points
             
@@ -100,8 +102,9 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             
             if length(timelineRefTimes)>length(blockRefTimes); timelineRefTimes = timelineRefTimes(2:end); end
             block.alignment = 'reward';
-            
-        case 'photoDiode' % Get interpolation points using the photodiode data
+    end
+    if strcmpi(alignType, 'photodiode')
+            % Get interpolation points using the photodiode data
             % Note, the photodiode *should* vary between two values, but it often doesn't. For reasons we don't understand, it sometimes goes to grey, and
             % sometimes you skip changes that are recorded in the block etc. This is another reason I prefer to use the wheel. But this method has proved
             % reasonably reliable if the wheel isn't suitable.

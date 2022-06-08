@@ -63,13 +63,9 @@ switch lower(computerType)
         if c(4) > 20
             fprintf('Update on training... \n')
             % Get plot of the mice trained today.
-            paramsQuery.days2Check = 0;
-            paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
-            expList = csv.queryExp(paramsQuery);
+            expList = csv.queryExp('expDate', 0, 'expDef', 'training');
             if ~isempty(expList)
-                [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
-                opt.expNum = expNums;
-                plt.behaviour.boxPlots('subject', mouseNames, 'expDate', dates, 'expDef', expList.expDef, opt)
+                plt.behaviour.boxPlots(expList)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
             end

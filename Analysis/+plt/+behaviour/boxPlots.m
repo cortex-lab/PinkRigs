@@ -40,6 +40,7 @@ for i = 1:nSubjects
         cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
         currData = currData(~failIdx,:);
     end
+    if isempty(currData); continue; end
 
     if length(unique(currData.expDate)) ~= length(currData.expDate)
         expDurations = cellfun(@str2double, currData.expDuration);
@@ -86,6 +87,7 @@ axesOpt.totalNumOfAxes = length(extractedData);
 plotData = cell(length(extractedData), 1);
 if ~params.noPlot{1}; figure; end
 for i = 1:length(extractedData)
+    if isempty(extractedData{i}); continue; end
     if isfield(extractedData{i}, 'nExperiments')
         if extractedData{i}.nExperiments == 1
             boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
