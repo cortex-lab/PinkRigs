@@ -101,7 +101,7 @@ function plotRecordingLocations2(mouseName, varargin)
         ephysPaths = {ephys.ephysPath}; clear ephys
         
         for pp = 1:numel(ephysPaths)
-            binFile = dir(fullfile(ephysPaths{pp},'*ap.bin'));
+            binFile = dir(fullfile(ephysPaths{pp},'*ap.*bin'));
             if isempty(binFile)
                 fprintf('No bin file in %s. Skipping.\n',ephysPaths{pp})
             else
