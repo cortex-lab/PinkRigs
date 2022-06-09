@@ -74,6 +74,8 @@ for i = 1:nSubjects
         extractedData{i,1}.nExperiments = sum(modeIdx);
         blkDates{i} = blkDates{i}(modeIdx);
         rigNames{i} = rigNames{i}(modeIdx);
+    else
+        extractedData = arrayfun(@(x) x,evData, 'uni', 0)';
     end
 end
 %%
@@ -94,13 +96,14 @@ for i = 1:length(extractedData)
         end
         tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
         boxPlot.nExperiments = extractedData{i}.nExperiments;
+        boxPlot.subject = params.subject{i};
     else
         tDat = rmfield(extractedData{i}, 'AVParams');
         boxPlot.nExperiments = 1;
-        boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
+        boxPlot.extraInf = [blkDates{1}{i} ' on ' rigNames{1}{i}];
+        boxPlot.subject = params.subject{1};
     end
 
-    boxPlot.subject = params.subject{i};
 
     boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; unique(tDat.stim_audDiff)};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
