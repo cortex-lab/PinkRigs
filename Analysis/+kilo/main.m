@@ -159,7 +159,7 @@ function main(varargin)
                         fprintf('Couldn''t find the sync file for %s. Computing it.\n', ephysFileName)
                         extractSync(apPath, str2double(metaS.nSavedChans));
                         
-                        copyfile(fullfile(KSOutFolderLoc,'sync.mat'),syncPath)
+                        movefile(fullfile(KSOutFolderLoc,'sync.mat'),syncPath)
                     end
                     
                     %% Running the main algorithm
