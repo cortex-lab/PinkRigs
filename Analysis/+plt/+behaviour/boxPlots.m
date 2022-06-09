@@ -26,7 +26,7 @@ for i = 1:length(params.subject)
     else
         currData = expList(strcmp(expList.subject, params.subject{i}),:);
     end
-
+    if isempty(currData); continue; end
 
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
     if any(~alignedBlock)
@@ -95,34 +95,26 @@ axesOpt.totalNumOfAxes = length(extractedData);
 plotData = cell(length(extractedData), 1);
 if ~params.noPlot{1}; figure; end
 for i = 1:length(extractedData)
-    if isfield(extractedData{i}, 'nExperiments')
+    if ~isempty(extractedData{i})
         boxPlot.extraInf = '';
         if extractedData{i}.nExperiments == 1
             boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
         end
         tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
         boxPlot.nExperiments = extractedData{i}.nExperiments;
-        boxPlot.subject = params.subject{i};
     end
 
-
-    boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; unique(tDat.stim_audDiff)};
+    boxPlot.subject = params.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);
 
     if isempty(extractedData{i})
-        plotData{i,1} = [];
-        if ~params.noPlot{1}
-            plt.general.getAxes(axesOpt, i);
-            image(0)
-        end
-    end
-
-    if isempty(extractedData{i})
+        boxPlot.xyValues = {0; 0};
         boxPlot.plotData = nan;
         boxPlot.trialCount = 0;
         boxPlot.totTrials = nan;
+        boxPlot.nExperiments = nan;
     elseif strcmpi(params.plotType{1}(1:3), 'res')
         tkIdx = extractedData{i}.is_validTrial & extractedData{i}.response_direction;
         tDat = filterStructRows(tDat, tkIdx);
@@ -133,6 +125,7 @@ for i = 1:length(extractedData)
         boxPlot.trialCount = accumarray([aLabel, vLabel],~isnan(tDat.response_direction),[],@sum);
         boxPlot.plotData(boxPlot.trialCount==0) = nan;
         boxPlot.totTrials = length(tDat.stim_visDiff);
+        boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; unique(tDat.stim_audDiff)};
         colorBar.colorLabel = 'Fraction of right turns';
         colorBar.colorDirection = 'normal';
         colorBar.colorYTick = {'0'; '1'};
