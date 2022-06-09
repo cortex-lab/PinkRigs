@@ -89,7 +89,6 @@ axesOpt.totalNumOfAxes = length(extractedData);
 plotData = cell(length(extractedData), 1);
 if ~params.noPlot{1}; figure; end
 for i = 1:length(extractedData)
-    if isempty(extractedData{i}); continue; end
     if isfield(extractedData{i}, 'nExperiments')
         if extractedData{i}.nExperiments == 1
             boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];

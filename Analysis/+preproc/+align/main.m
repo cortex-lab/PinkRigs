@@ -14,11 +14,10 @@ function main(varargin)
     %% --------------------------------------------------------
 
     %% Will compute the 'alignment' file for each experiment.
-
+    varargin = varargin(cellfun(@(x) ~istable(x), varargin));
     for ee = 1:size(exp2checkList,1)
-        varargin = varargin(cellfun(@(x) ~istable(x), varargin));
         % Get exp info
-        expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,1:3));
+        expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
         expFolder = expInfo.expFolder{1};
         recompute = params.recompute{1};
         process = params.process{1};
