@@ -17,12 +17,14 @@ if params.sepPlots{1}
     params = csv.inputValidation(varargin{:}, expList);
 end
 
-[blkDates, rigNames] = deal(cell(length(params.subject),1));
+[blkDates, rigNames] = deal(repmat({{'X'}},length(params.subject),1));
 extractedData = cell(length(params.subject),1);
 
 for i = 1:length(params.subject)
     if params.sepPlots{1}
         currData = expList(i,:);
+        blkDates{i} = currData.expDate;
+        rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
     else
         currData = expList(strcmp(expList.subject, params.subject{i}),:);
     end
@@ -95,19 +97,20 @@ axesOpt.totalNumOfAxes = length(extractedData);
 plotData = cell(length(extractedData), 1);
 if ~params.noPlot{1}; figure; end
 for i = 1:length(extractedData)
-    if ~isempty(extractedData{i})
-        boxPlot.extraInf = '';
-        if extractedData{i}.nExperiments == 1
-            boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
-        end
-        tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
-        boxPlot.nExperiments = extractedData{i}.nExperiments;
-    end
-
     boxPlot.subject = params.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);
+
+    if isempty(extractedData{i}) || extractedData{i}.nExperiments == 1 
+        boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
+    else
+        boxPlot.extraInf = num2str([extractedData{i}.nExperiments 'Sess']);
+    end
+    if ~isempty(extractedData{i})
+        tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
+        boxPlot.nExperiments = extractedData{i}.nExperiments;
+    end
 
     if isempty(extractedData{i})
         boxPlot.xyValues = {0; 0};
@@ -169,7 +172,7 @@ if addText
     txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotData(tIdx))/100, triNum(tIdx)],2);
     cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center'), txtD)
 end
-title(sprintf('%s: %d Tri, %d Sess', boxPlot.subject, boxPlot.totTrials, boxPlot.nExperiments));
+title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf))
 
 set(gca, 'xTick', 1:size(plotData,2), 'xTickLabel', boxPlot.xyValues{1}, 'fontsize', 14)
 set(gca, 'yTick', 1:size(plotData,1), 'yTickLabel', boxPlot.xyValues{2}, 'fontsize', 14, 'TickLength', [0, 0])
