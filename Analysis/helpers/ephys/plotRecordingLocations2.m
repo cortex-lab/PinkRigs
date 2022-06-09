@@ -10,7 +10,7 @@ function plotRecordingLocations2(mouseName, varargin)
     params.subject = mouseName;
     params.expDate = inf;
     params.expDef = 'multiSpaceWorld_checker_training';
-    params.preproc2Check = '1,*';
+    params.preproc2Check = '1,1';
     
     % Ugly
     if ~isempty(varargin)
@@ -146,9 +146,12 @@ function plotRecordingLocations2(mouseName, varargin)
         end
         
         % Get behavior
-        opt.noPlot = 1;
-        opt.expNum = expInfo.expNum;
-        plotBehData(ee) = plt.behaviour.boxPlots({params.subject},expInfo.expDate, 'res', expInfo.expDef, opt);
+        plotBehData(ee) = plt.behaviour.boxPlots('subject',{params.subject}, ...
+            'expDate',expInfo.expDate,...
+            'expDef', expInfo.expDef, ...
+            'expNum', expInfo.expNum, ...
+            'plotType', 'res', ...
+            'noPlot', 1);
     end
     
     %%  Build the different probe images
@@ -324,7 +327,7 @@ function plotRecordingLocations2(mouseName, varargin)
                     imBehavior(ss).Parent.XTickLabel = plotBehData{expRef}.xyValues(1);
                     imBehavior(ss).Parent.YTickLabel = plotBehData{expRef}.xyValues(2);
                     axesBehavior(ss).Title.String = sprintf('%s: %d Tri, %s', ...
-                        plotBehData{expRef}.subject{1}, plotBehData{expRef}.totTrials, plotBehData{expRef}.extraInf);
+                        plotBehData{expRef}.subject, plotBehData{expRef}.totTrials, plotBehData{expRef}.extraInf);
                     
                     % Plot the performance and trial number in each condition
                     triNum = plotBehData{expRef}.trialCount;
