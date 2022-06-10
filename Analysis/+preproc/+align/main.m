@@ -35,8 +35,22 @@ function main(varargin)
         
         % Get preproc status
         alignStatus = csv.parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
-        alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
         
+        %If there is no timeline. All alignment is NaN
+        if strcmp(expInfo.timeline{1}, '0')
+            if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
+                [block, mic, ephys] = deal(nan);
+                video = struct('name', expInfo.videoNames{1}, ...
+                    'frameTimes', num2cell(nan*ones(3,1)),...
+                    'missedFrames', num2cell(nan*ones(3,1)));
+                save(savePath,'block', 'video', 'ephys', 'mic');
+                csv.updateRecord(expInfo.subject{1}, expInfo.expDate{1}, expInfo.expNum{1});
+            end
+            fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
+            continue;
+        end
+        alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
+
         %Anonymous funciton to decide whether something should be processed
         shouldProcess = @(x,y) (contains(recompute,{'all';x}) || alignStatus.(x)...
             || ~ismember(y, varListInFile)) && contains(process,{'all';x});
@@ -122,12 +136,15 @@ function main(varargin)
                 try
                     block = struct;
                     fprintf(1, '* Aligning block... *\n');
-                    [blockRefTimes, timelineRefTimes] = preproc.align.block(expInfo);
+                    if contains(expInfo.expDef{1}, 'spontaneousActivity')
+                        %expDefs that aren't expected to have alignement
+                        block = nan;
+                    else
+                        [blockRefTimes, timelineRefTimes] = preproc.align.block(expInfo);
+                        block.originTimes = blockRefTimes;
+                        block.timelineTimes = timelineRefTimes;
+                    end
                     fprintf(1, '* Block alignment done. *\n');
-                    
-                    % Save it
-                    block.originTimes = blockRefTimes;
-                    block.timelineTimes = timelineRefTimes;
                     
                     % Remove any error file
                     if exist(fullfile(expFolder, 'AlignBlockError.json'),'file')

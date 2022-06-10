@@ -27,7 +27,10 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
                         % Median filter to remove short glitches
                         chan = medfilt1(chan,3);
                         
-                        [~, thresh] = kmeans(chan(1:5:end),5);
+                        %Kmeans to get thresh. Remove clusters with less
+                        %than 2% of points.
+                        [clustIdx, thresh] = kmeans(chan(1:5:end),5);
+                        thresh(arrayfun(@(x) mean(clustIdx==x)*100, unique(clustIdx))<2) = [];
                         thresh = [min(thresh) + range(thresh)*0.2;  max(thresh) - range(thresh)*0.2];
                         
                         % Find flips based on these thresholds.

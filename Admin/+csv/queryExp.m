@@ -43,8 +43,10 @@ for mm = 1:numel(params.subject)
     if isempty(expListMouse); continue; end
 
     % Get exp with timeline only
-    if params.timeline2Check{mm}
+    if params.timeline2Check{mm}==1
         expListMouse = expListMouse(str2double(expListMouse.timeline)>0,:);
+    elseif params.timeline2Check{mm}==-1
+        expListMouse = expListMouse(str2double(expListMouse.timeline)==0,:);
     end
     if isempty(expListMouse); continue; end
 

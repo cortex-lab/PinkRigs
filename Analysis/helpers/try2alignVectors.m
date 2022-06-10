@@ -13,10 +13,13 @@ function [t1Corrected, t2Corrected] = try2alignVectors(t1, t2, diffThresh,plt)
 %If diffThresh doesn't exist, estimate it using the mean absolute diffferences of t1 and t2 times
 t1Diff = diff(t1);
 t2Diff = diff(t2);
+maxLoops = abs(length(t1Diff))-length(t2Diff);
 if ~exist('diffThresh', 'var')
     [~, dist] = knnsearch(t2Diff,t1Diff);
-    diffThresh = max([0.25 20*mad(dist)]);
+    diffThresh = max([0.1 20*mad(dist)]);
 end
+if ~exist('plt', 'var'); plt = 0; end
+
 
 %Find initial offset. If shifting the first 10 points doesn't align them better, move on. Otherwise, truncate accordingly.
 buff = 10;
@@ -54,7 +57,7 @@ while find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)
     compareVect = [t1(1:minL)-(t1(1)) t2(1:minL)-t2(1)];
     loopNumber = loopNumber+1;
     hold on;
-    if loopNumber > 50; error('Extreme alignment error'); end
+    if loopNumber > maxLoops; error('Extreme alignment error'); end
 end
 t1Corrected = t1(1:minL);
 t2Corrected = t2(1:minL);

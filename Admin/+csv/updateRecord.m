@@ -74,7 +74,7 @@ nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
 alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
 
-if any(alignFile)
+if any(alignFile) 
     alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat']);
     
     fileExists = [nDat.block, nDat.frontCam, nDat.sideCam, nDat.eyeCam, nDat.micDat, nDat.ephysFolderExists]>0;

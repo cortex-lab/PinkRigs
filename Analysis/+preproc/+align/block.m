@@ -35,6 +35,10 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
                 alignType = 'photoDiode';
             case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'}
                 alignType = 'wheel';
+            case {'spontaneousActivity'}
+                alignType = 'none';
+                blockRefTimes = nan;
+                timelineRefTimes = nan;
             otherwise 
                 fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',params.expDef{1}{1})
                 alignType = 'photoDiode';
@@ -122,7 +126,7 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
             if length(blockRefTimes) ~= length(timelineRefTimes)
                 try
-                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
+                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes);
                 catch
                     warning('Passing in error mode to get photodiode flip times')
                     timelineRefTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
@@ -136,5 +140,3 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
                 error('Photodiode alignment error');
             end
     end
-    
-    %% saves it somewhere?
