@@ -20,6 +20,7 @@ end
 [blkDates, rigNames] = deal(repmat({{'X'}},length(params.subject),1));
 extractedData = cell(length(params.subject),1);
 
+validSub = ones(length(params.subject),1);
 for i = 1:length(params.subject)
     if params.sepPlots{1}
         currData = expList(i,:);
@@ -28,18 +29,22 @@ for i = 1:length(params.subject)
     else
         currData = expList(strcmp(expList.subject, params.subject{i}),:);
     end
-    if isempty(currData); continue; end
+    if isempty(currData)
+        fprintf('No matching data for %s \n', params.subject{i});
+        validSub(i) = 0;
+        continue;
+    end
 
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
     if any(~alignedBlock)
         fprintf('Missing block alignments. Will try and align...\n')
-        preproc.align.main(currData(~alignedBlock,:), 'process', 'block');
+        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
     end
 
     evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(currData(~evExtracted,:), 'process', 'ev');
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
     end
     
     currData = csv.queryExp(currData);
@@ -86,17 +91,21 @@ for i = 1:length(params.subject)
     blkDates{i} = blkDates{i}(modeIdx);
     rigNames{i} = rigNames{i}(modeIdx);
 end
+if all(cellfun(@isempty, extractedData))
+    warning('No sessions match criteria, returning')
+    return;
+end
 %%
 maxGrid = arrayfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], evData, 'uni', 0);
 maxGrid = max(cell2mat(maxGrid),2);
 axesOpt.figureHWRatio = maxGrid(2)/(1.3*maxGrid(1));
 axesOpt.btlrMargins = [100 80 60 100];
 axesOpt.gapBetweenAxes = [100 40];
-axesOpt.totalNumOfAxes = length(extractedData);
+axesOpt.totalNumOfAxes = sum(validSub);
 
 plotData = cell(length(extractedData), 1);
 if ~params.noPlot{1}; figure; end
-for i = 1:length(extractedData)
+for i = find(validSub)'
     boxPlot.subject = params.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
@@ -134,7 +143,7 @@ for i = 1:length(extractedData)
         colorBar.colorYTick = {'0'; '1'};
     end
     if ~params.noPlot{1}
-        plt.general.getAxes(axesOpt, i);
+        plt.general.getAxes(axesOpt, find(find(validSub)'==i));
         makePlot(boxPlot);
     end
     plotData{i,1} = boxPlot;
