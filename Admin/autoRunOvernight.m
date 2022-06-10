@@ -63,7 +63,7 @@ switch lower(computerType)
         if c(4) > 20
             fprintf('Update on training... \n')
             % Get plot of the mice trained today.
-            expList = csv.queryExp('expDate', 0, 'expDef', 'training');
+            expList = csv.queryExp('expDate', 1, 'expDef', 'training');
             if ~isempty(expList)
                 plt.behaviour.boxPlots(expList)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))

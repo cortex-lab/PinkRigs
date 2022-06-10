@@ -79,6 +79,7 @@ function main(varargin)
             return
         end
         
+        fprintf('*** Going through %s. ***\n', ephysFileName)
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successKS = 1;
@@ -108,7 +109,9 @@ function main(varargin)
                 end
                 
                 %% Copy data to local folder.
-                if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file')
+                ephysBinFileName = regexprep(ephysFileName,'.cbin','.bin');
+                if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file') && ...
+                        ~exist(fullfile(KSOutFolderLoc, ephysBinFileName),'file')
                     fprintf('Copying data to local folder...')
                     
                     if ~exist(KSOutFolderLoc, 'dir')
@@ -127,7 +130,7 @@ function main(varargin)
                     error('Couldn''t copy data to local folder.')
                 else
                     %% Decompress it if needed.
-                    if strcmp(ephysFileName(end-3:end),'cbin')
+                    if strcmp(ephysFileName(end-3:end),'cbin') && ~exist(fullfile(KSOutFolderLoc, ephysBinFileName),'file')
                         cbinFile = ephysFileName;
                         chFile = regexprep(ephysFileName,'.cbin','.ch');
                         
@@ -138,25 +141,24 @@ function main(varargin)
                         % Decompress 
                         fprintf('Decompressing the data...\n')
                         decompressPath = which('decompress_data.py');
-                        [statusDecomp,resultDecomp] = system(['conda activate PinkRigs && ' ...
+                        [statusDecomp,messageDecomp] = system(['conda activate PinkRigs && ' ...
                             'python ' decompressPath ' ' ...
                             fullfile(KSOutFolderLoc,cbinFile) ' ' ...
                             fullfile(KSOutFolderLoc,chFile) ' && ' ...
                             'conda deactivate']);
                         if statusDecomp > 0 
-                            error('Issue with decompression.')
+                            error(messageDecomp)
                         end
-                        
-                        ephysFileName = regexprep(ephysFileName,'.cbin','.bin');
+                        fprintf('Decompression done.\n');
                     end
                     
                     %% Extract sync if not done already
                     syncPath = fullfile(ephysPath,'sync.mat');
                     if ~exist(syncPath)
-                        metaS = readMetaData_spikeGLX(ephysFileName,ephysPath);
+                        metaS = readMetaData_spikeGLX(ephysBinFileName,ephysPath);
                         
-                        apPath = fullfile(KSOutFolderLoc, ephysFileName);
-                        fprintf('Couldn''t find the sync file for %s. Computing it.\n', ephysFileName)
+                        apPath = fullfile(KSOutFolderLoc, ephysBinFileName);
+                        fprintf('Couldn''t find the sync file for %s. Computing it.\n', ephysBinFileName)
                         extractSync(apPath, str2double(metaS.nSavedChans));
                         
                         copyfile(fullfile(KSOutFolderLoc,'sync.mat'),syncPath)
@@ -172,7 +174,7 @@ function main(varargin)
                     fprintf('Running quality metrics...\n')
                     try
                         % copy meta file
-                        metaFile = regexprep(ephysFileName,'.bin','.meta');
+                        metaFile = regexprep(ephysBinFileName,'.bin','.meta');
                         copyfile(regexprep(recName,'.cbin','.meta'),fullfile(KSOutFolderLoc,metaFile));
                         
                         kilo.getQualityMetrics(KSOutFolderLoc, KSOutFolderLoc)
@@ -190,7 +192,7 @@ function main(varargin)
                     
                     %% Copying file to distant server
                     fprintf('Copying to server (and deleting local copy)...\n')
-                    delete(fullfile(KSOutFolderLoc, ephysFileName)); % delete .bin file from KS output
+                    delete(fullfile(KSOutFolderLoc, ephysBinFileName)); % delete .bin file from KS output
                     successKS = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
                     
                     if ~successKS
@@ -224,8 +226,8 @@ function main(varargin)
             end
         end
         
-        if successKS & isnan(successQM)
-            if ~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics
+        if successKS && isnan(successQM)
+            if ~exist(fullfile(KSOutFolderServer,'qMetrics.m'),'var') || params.recomputeQMetrics
                 %% Running quality metrics (directly on the server)
                 % Independent of previous block to be able to run this
                 % without redoing the KSing.

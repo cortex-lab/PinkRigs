@@ -3,9 +3,9 @@ close all
 %% Get exp ref
 
 clear params
-params.mice2Check = {'AV014'};
+params.mice2Check = {'AV005'};
 params.days2Check = 1;
-params.days2Check = {{'2022-06-06','2022-06-07'}};
+params.days2Check = {{'2022-06-08'}};
 % params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
