@@ -131,7 +131,6 @@ stimStartBlock = preproc.align.event2Timeline(block.events.stimPeriodOnOffTimes,
 stimStartBlock = stimStartBlock(1:2:end);
 stimStartBlock = stimStartBlock(eIdx)';
 
-trialGapThresh = 1;
 %% Reward times using standard code
 tExt.rewardTimes = timeproc.getChanEventTime(timeline, 'rewardEcho')';
 
@@ -177,7 +176,7 @@ if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
     fprintf('WARNING: Could not fix start-end times\n');
     fprintf('Will perform incomplete identification based on trial structure\n');
     
-    audBoundsByTrial = indexByTrial(trialStEnTimes, sort(audPeriodOnOffTimeline(:)));
+    audBoundsByTrial = indexByTrial(trialStEnTimes(~nonAudTrials,:), sort(audPeriodOnOffTimeline(:)));
     audBoundsByTrial(cellfun(@length, audBoundsByTrial)~=2) = [];
     audPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', audBoundsByTrial, 'uni', 0));
 else
@@ -212,7 +211,7 @@ if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
     fprintf('WARNING: Could not fix start-end times\n');
     fprintf('Will perform incomplete identification based on trial structure\n');
     
-    visBoundsByTrial = indexByTrial(trialStEnTimes, sort(visPeriodOnOffTimeline(:)));
+    visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
     visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
     visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
 else
@@ -222,6 +221,7 @@ tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
 
 % Could add this in for pasive
 photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
+photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
 if isfield(block.events,'selected_paramsetValues')
     responseWindow = block.events.selected_paramsetValues.responseWindow;
 else
@@ -229,7 +229,7 @@ else
     responseWindow = responseWindow(1); 
 end   
 if isinf(responseWindow); responseWindow = 0; end
-expectedFlashTrainLength = clickRate*responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
+expectedFlashTrainLength = clickRate*responseWindow*2*(stimStartRef*0+1);
 misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
 
 repeatNums = e.repeatNumValues(eIdx)';
@@ -246,7 +246,7 @@ photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial,
 
 visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
 tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
-
+if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = 0; end
 %% MOVEMENT
 responseMadeIdx = responseRecorded ~= 0;
 timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));

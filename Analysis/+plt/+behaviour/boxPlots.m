@@ -38,13 +38,13 @@ for i = 1:length(params.subject)
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
     if any(~alignedBlock)
         fprintf('Missing block alignments. Will try and align...\n')
-        preproc.align.main(currData(~alignedBlock,:), 'process', 'block');
+        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
     end
 
     evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(currData(~evExtracted,:), 'process', 'ev');
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
     end
     
     currData = csv.queryExp(currData);
