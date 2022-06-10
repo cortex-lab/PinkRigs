@@ -2,12 +2,22 @@ function extractedExperiments = queryExp(varargin)
 %%% This function will fetch all possible experiments to check for
 %%% computing alignment, preprocessing etc.
 
-%Assign defaults for params not contained in "inputValidation"
+% Assign defaults for params not contained in "inputValidation"
 varargin = ['timeline2Check', {0}, varargin];
 varargin = ['align2Check', {'*,*,*,*,*,*'}, varargin];
 varargin = ['preproc2Check', {'*,*'}, varargin];
 varargin = ['issorted', {[0 1]}, varargin];
 params = csv.inputValidation(varargin{:});
+
+% Added so that when queryExp is called with "full" data, it only uses
+% essential data (subject/expDate/expNum). This helps to avoid issues with
+% intermittent updates in other fields.
+if length(fields(params))>15 && all(contains({'alignBlkFrontSideEyeMicEphys',...
+        'preProcSpkEV', 'faceMapFrontSideEye', 'micDat'}, fields(params)))
+    removeParams = setdiff(fields(params), {'subject', 'expDate', 'expNum', ...
+        'expDef', 'timeline2Check', 'align2Check', 'preproc2Check', 'issorted'});
+    params = rmfield(params, removeParams);
+end
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.
