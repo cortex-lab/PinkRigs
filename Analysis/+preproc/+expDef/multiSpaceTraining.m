@@ -84,7 +84,6 @@ visInitialAzimuth(visContrast==0) = nan;              %Change case when visContr
 
 
 %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
-trialTimes = [e.newTrialTimes(eIdx)' e.endTrialTimes(eIdx)'];
 stimPeriodStart = e.stimPeriodOnOffTimes(e.stimPeriodOnOffValues == 1)'; 
 stimPeriodStart = stimPeriodStart(eIdx);
 feedbackValues = e.feedbackValues(eIdx)';
@@ -146,91 +145,89 @@ timelineClickOff = timelineTime(strfind((audTrace<min(thresh)*0.2)', [0 1]));
 detectedDuration = round(mean(timelineClickOff-timelineClickOn)*1000);
 
 %Sanity check: same number of onsets and offsets, check that detected duration matches the duration parameter (assumed constant here)
-if length(timelineClickOn)~=length(timelineClickOff); error('There should always be an equal number on/off signals for clicks'); end
-if abs(detectedDuration-(unique(clickDuration)*1000))>3; error('Diff in detected and requested click durations'); end
-
-%Create vector that is sorted by time: [onset time, offset time, 1, 0] and find large gaps between successive onsets (stimulus period onsets)
-aStimOnOffTV = sortrows([[timelineClickOn';timelineClickOff'] [timelineClickOn'*0+1; timelineClickOff'*0]],1);
-largeAudGaps = sort([find(diff([0; aStimOnOffTV(:,1)])>trialGapThresh); find(diff([aStimOnOffTV(:,1); 10e10])>trialGapThresh)]);
-
-%%%%%%%%%%%%%%%%%%%%STILL NEEDS TO BE COMMENTED BELOW%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Sanity check (should be match between stim starts from block and from timeline)
-audstimStartTimeline = aStimOnOffTV(largeAudGaps,1);
-audstimStartTimeline = audstimStartTimeline(aStimOnOffTV(largeAudGaps,2)==1);
-nonAudTrials = audAmplitude(eIdx) == 0; 
-[compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
-audError = 0;
-if any(compareIndex-(1:numel(compareIndex))')
-    audError = 1;
-    [compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline(~nonAudTrials));
-    if ~any(compareIndex-(1:numel(compareIndex))') && length(largeAudGaps)/2 == length(nonAudTrials)
-        fprintf('WARNING: Detected that AmpAud = 0 trials still generated signals in Timeline. Will remove these \n')
-        
-        largeAudGaps([find(nonAudTrials)*2-1 find(nonAudTrials)*2]) = [];
-        audstimStartTimeline = aStimOnOffTV(largeAudGaps,1);
-        audstimStartTimeline = audstimStartTimeline(aStimOnOffTV(largeAudGaps,2)==1);
-        [compareIndex] = getNearestPoint(stimStartBlock(~nonAudTrials), audstimStartTimeline);
-        if ~any(compareIndex-(1:numel(compareIndex)))
-            audError = 0;
-            keepIdx = cell2mat(arrayfun(@(x) largeAudGaps(x):largeAudGaps(x+1), 1:2:length(largeAudGaps), 'uni', 0));
-            aStimOnOffTV = aStimOnOffTV(keepIdx,:);
-            largeAudGaps = sort([find(diff([0; aStimOnOffTV(:,1)])>trialGapThresh); find(diff([aStimOnOffTV(:,1); 10e10])>trialGapThresh)]);
-        end
-    end
+if length(timelineClickOn)~=length(timelineClickOff)
+    error('There should always be an equal number on/off signals for clicks'); 
 end
-if audError; error('Error in matching auditory stimulus start and end times \n'); end
+if abs(detectedDuration-(unique(clickDuration)*1000))>3
+    error('Diff in detected and requested click durations'); 
+end
 
-tExt.audStimOnOff = [aStimOnOffTV(aStimOnOffTV(:,2)==1,1) aStimOnOffTV(aStimOnOffTV(:,2)==0,1)];
-aStimOnOffTV = aStimOnOffTV(largeAudGaps,:);
-tExt.audStimPeriodOnOff = [aStimOnOffTV(aStimOnOffTV(:,2)==1,1) aStimOnOffTV(aStimOnOffTV(:,2)==0,1)];
-
-%% Extract visual onsets (unreliable after initial flip)
-% Change visual stimulus times to timeline version
-photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode');
-
+%Create vector that is sorted by time: [onset time, offset time, 1, 0] and 
+% find large gaps between successive onsets (stimulus period onsets)
 trialGapThresh = 1./max(clickRate)*5;
-largeVisGaps = photoDiodeFlipTimes(sort([find(diff([0; photoDiodeFlipTimes])>trialGapThresh); find(diff([photoDiodeFlipTimes; 10e10])>trialGapThresh)]));
-zeroContrastTrials = visContrast(eIdx)==0;
-largeGapsByTrial = arrayfun(@(x,y) largeVisGaps(largeVisGaps>x & largeVisGaps<y), trialStEnTimes(:,1), trialStEnTimes(:,2), 'uni', 0);
+audPeriodOnTimeline = timelineClickOn(diff([0,timelineClickOn])>trialGapThresh)';
+audPeriodOffTimeline = timelineClickOff(diff([timelineClickOff, 10e10])>trialGapThresh)';
+audPeriodOnOffTimeline = [audPeriodOnTimeline, audPeriodOffTimeline];
+audPeriodOnOffTimeline(diff(audPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
 
-zeroContrastTrials(cellfun(@(x) rem(length(x),2)~=0, largeGapsByTrial)) = 1;
-largeVisGaps = cell2mat(largeGapsByTrial(~zeroContrastTrials));
-stimStartRef = stimStartBlock(~zeroContrastTrials);
-largeVisGaps = [largeVisGaps(1:2:end) largeVisGaps(2:2:end)];
-largeVisGaps(diff(largeVisGaps,[],2)<(1/2000),:) = [];
+%Sanity check (should be match between stim starts from block and from timeline)
+compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
 
-% Sanity check (should be match between stim starts from block and from timeline)
-[compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)');
-if any(compareIndex-(1:numel(compareIndex))')
-    fprintf('WARNING: problem matching visual stimulus start and end times \n');
+nonAudTrials = audAmplitude(eIdx) == 0; 
+stimStartRef = stimStartBlock(~nonAudTrials);
+
+if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
+    fprintf('WARNING: problem matching auditory stimulus start and end times \n');
     fprintf('Will try removing points that do not match stimulus starts \n');
-    
-    [~, nearestPoint] = getNearestPoint(largeVisGaps(:,1), stimStartRef);
-    largeVisGaps(nearestPoint>0.75,:) = [];
-    
-    [compareIndex] = getNearestPoint(stimStartRef, largeVisGaps(:,1)')';
+
+    [~, nearestPoint] = getNearestPoint(audPeriodOnOffTimeline(:,1), stimStartRef);
+    audPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
 end
-if any(compareIndex-(1:numel(compareIndex))')
+if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
     fprintf('WARNING: Could not fix start-end times\n');
     fprintf('Will perform incomplete identification based on trial structure\n');
     
-    visGapsByTrial = indexByTrial(trialStEnTimes, sort(largeVisGaps(:)));
-    visGapsByTrial = visGapsByTrial(~zeroContrastTrials);
-    visGapsByTrial(cellfun(@length, visGapsByTrial)~=2) = [];
-    largeVisGaps = cell2mat(cellfun(@(x) x', visGapsByTrial, 'uni', 0));
+    audBoundsByTrial = indexByTrial(trialStEnTimes, sort(audPeriodOnOffTimeline(:)));
+    audBoundsByTrial(cellfun(@length, audBoundsByTrial)~=2) = [];
+    audPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', audBoundsByTrial, 'uni', 0));
+else
+    audPeriodOnOffTimeline = audPeriodOnOffTimeline(1:length(stimStartRef),:);
 end
-tExt.visStimPeriodOnOff = largeVisGaps;
+tExt.audStimOnOff = [timelineClickOn timelineClickOff];
+tExt.audStimPeriodOnOff = audPeriodOnOffTimeline;
+
+%% Extract visual onsets (unreliable after initial flip)
+%Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
+photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode')';
+trialGapThresh = 1./max(clickRate)*5;
+visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
+visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
+visPeriodOnOffTimeline = [visPeriodOnTimeline, visPeriodOffTimeline];
+visPeriodOnOffTimeline(diff(visPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
+
+%Sanity check (should be match between stim starts from block and from timeline)
+compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
+
+nonVisTrials = visContrast(eIdx)==0;
+stimStartRef = stimStartBlock(~nonVisTrials);
+if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+    fprintf('WARNING: problem matching visual stimulus start and end times \n');
+    fprintf('Will try removing points that do not match stimulus starts \n');
+
+    [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
+    visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
+end
+
+if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+    fprintf('WARNING: Could not fix start-end times\n');
+    fprintf('Will perform incomplete identification based on trial structure\n');
+    
+    visBoundsByTrial = indexByTrial(trialStEnTimes, sort(visPeriodOnOffTimeline(:)));
+    visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
+    visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
+else
+    visPeriodOnOffTimeline = visPeriodOnOffTimeline(1:length(stimStartRef),:);
+end
+tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
 
 % Could add this in for pasive
-photoFlipsByTrial = arrayfun(@(x,y) find(photoDiodeFlipTimes>=x & photoDiodeFlipTimes<=y), tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,2), 'uni', 0);
-
+photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
 if isfield(block.events,'selected_paramsetValues')
     responseWindow = block.events.selected_paramsetValues.responseWindow;
 else
     responseWindow = [block.paramsValues.responseWindow];
     responseWindow = responseWindow(1); 
-end 
-    
+end   
 if isinf(responseWindow); responseWindow = 0; end
 expectedFlashTrainLength = clickRate*responseWindow*2*(tExt.visStimPeriodOnOff(:,1)*0+1);
 misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
@@ -240,16 +237,15 @@ stimMoves = repeatNums*0;
 stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
 stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
 stim_closedLoop = stimMoves;
+stimMoves = stimMoves(~nonVisTrials);
 
-stimMoves = stimMoves(~zeroContrastTrials);
-
-isTimeOut = responseRecorded(~zeroContrastTrials)==0;
+isTimeOut = responseRecorded(~nonVisTrials)==0;
 photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
 photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
 photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
 
-visStimOnOffTimes = sort(photoDiodeFlipTimes(cell2mat(photoFlipsByTrial)))';
-tExt.visStimOnOff = [visStimOnOffTimes(1:2:end)' visStimOnOffTimes(2:2:end)'];
+visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
+tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
 
 %% MOVEMENT
 responseMadeIdx = responseRecorded ~= 0;

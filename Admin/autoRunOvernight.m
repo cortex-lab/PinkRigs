@@ -106,21 +106,12 @@ switch lower(computerType)
             %%% hasn't been aligned...
             
             fprintf('Running preprocessing...\n')
-            paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
-            % paramsPreproc.mice2Check = 'active';
-            % paramsPreproc.mice2Check = {'AV005','EB014','AV013'}; % for now to avoid crashes
             
             % Alignment
-            paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
-            paramsPreproc.preproc2Check = '(*,*)';
-            exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.align.main(exp2checkList)
+            preproc.align.main('expDate', 7, 'align2Check', '(0,0,0,0,0,0)')
             
             % Extracting data
-            paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
-            paramsPreproc.preproc2Check = '(0,0)';
-            exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.extractExpData(exp2checkList)
+            preproc.extractExpData('expDate', 7, 'preproc2Check', '(0,0)')
         end
         fprintf('Stopping now %s. \n',datestr(now))
 end
