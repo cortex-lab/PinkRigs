@@ -183,8 +183,10 @@ function main(varargin)
                             delete(fullfile(ephysPath, 'QMerror.json'))
                         end
                         successQM = 1;
+                        fprintf('Quality metrics done.\n')
                     catch me
                         successQM = 0;
+                        warning('Error when computing quality metrics.\n')
                         
                         % Save error message locally
                         saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
@@ -240,8 +242,10 @@ function main(varargin)
                     if exist(fullfile(ephysPath, 'QMerror.json'),'file')
                         delete(fullfile(ephysPath, 'QMerror.json'))
                     end
+                    fprintf('Quality metrics done.\n')
                 catch me
                     successFinal = -2; % fails at quality metrics stage
+                    warning('Error when computing quality metrics')
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
