@@ -286,7 +286,7 @@ function main(varargin)
         % Update
         for ee = 1:numel(expList)
             [subject, expDate, expNum] = parseExpPath(expList(1,:).expFolder{1});
-            csv.updateRecord(subject, expDate, expNum);
+            csv.updateRecord('subject', subject, 'expDate', expDate, 'expNum', expNum);
         end
     end
     close all

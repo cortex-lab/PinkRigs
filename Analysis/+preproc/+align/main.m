@@ -44,7 +44,9 @@ function main(varargin)
                     'frameTimes', num2cell(nan*ones(3,1)),...
                     'missedFrames', num2cell(nan*ones(3,1)));
                 save(savePath,'block', 'video', 'ephys', 'mic');
-                csv.updateRecord(expInfo.subject{1}, expInfo.expDate{1}, expInfo.expNum{1});
+                csv.updateRecord('subject', expInfo.subject{1}, ...
+                    'expDate', expInfo.expDate{1},...
+                    'expNum', expInfo.expNum{1});
             end
             fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
             continue;
@@ -271,7 +273,9 @@ function main(varargin)
             %% Update the csv
             
             if change
-                csv.updateRecord(expInfo.subject{1}, expInfo.expDate{1}, expInfo.expNum{1});
+                csv.updateRecord('subject', expInfo.subject{1}, ...
+                    'expDate', expInfo.expDate{1},...
+                    'expNum', expInfo.expNum{1});
             end
         end
     end

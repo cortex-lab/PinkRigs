@@ -83,7 +83,8 @@ for i = 1:length(mice2Update)
         delete(csvPathMouse);
     end
     
-    newRecords = cellfun(@(x,y) csv.updateRecord(currSub, x, y, 0), dateList, expNumList, 'uni', 0);
+    newRecords = cellfun(@(x,y) csv.updateRecord('subject', currSub, ...
+        'expDate', x, 'expNum', y, 'saveData', 0, 'queryExp', 0), dateList, expNumList, 'uni', 0);
     newRecords = newRecords(~cellfun(@isempty, newRecords));
     newRecords = vertcat(newRecords{:});
     

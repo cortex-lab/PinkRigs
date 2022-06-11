@@ -1,6 +1,4 @@
 function combinedTable = insertNewData(newData, subject)
-%% Writes a "clean" csv file from "csvData"--meaning no "NaN" or "NaT" 
-
 newDataTypes = varfun(@class,newData,'OutputFormat','cell');
 newDataFields = newData.Properties.VariableNames;
 for i = 1:length(newDataFields)

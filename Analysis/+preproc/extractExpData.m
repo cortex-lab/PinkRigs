@@ -170,7 +170,9 @@ function extractExpData(varargin)
                 %% Update csv
                 
                 if change
-                    csv.updateRecord(expInfo.subject{1}, expInfo.expDate{1}, expInfo.expNum{1});
+                    csv.updateRecord('subject', expInfo.subject{1}, ...
+                        'expDate', expInfo.expDate{1},...
+                        'expNum', expInfo.expNum{1});
                 end
             else
                 fprintf('Alignment for exp. %s does not exist. Skipping.\n', expFolder)

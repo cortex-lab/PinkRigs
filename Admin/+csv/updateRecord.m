@@ -1,16 +1,25 @@
-function csvData = updateRecord(subject, expDate, expNum, saveData)
-if ~exist('subject', 'var'); error('Must provide subject'); end
-if ~exist('expDate', 'var'); error('Must provide expDate'); end
-if ~exist('expNum', 'var'); error('Must provide expNum'); end
-if ~exist('saveData', 'var'); saveData = 1; end
+function csvData = updateRecord(varargin) %subject, expDate, expNum, saveData)
+if isempty(varargin); csvData = []; return; end
+varargin = ['subject', {'active'}, varargin];
+varargin = ['expDate', 1, varargin];
+varargin = ['expNum', {'all'}, varargin];
+varargin = ['saveData', {1}, varargin];
+varargin = ['queryExp', {1}, varargin];
+params = csv.inputValidation(varargin{:});
 
-if iscell(expDate); expDate = expDate{1}; end
-if ~ischar(expDate); error('Cannot parse expDate'); end
+if params.queryExp{1}
+    expList = csv.queryExp(params);
+    csvData = arrayfun(@(x) csv.updateRecord(expList(x,1:3), 'queryExp', 0, ...
+        'saveData', params.saveData{1}), 1:height(expList), 'uni', 0);
+    csvData = vertcat(csvData{:});
+    return;
+end
 
-if iscell(expNum); expNum = expNum{1}; end
-if isnumeric(expNum); expNum = double2str(expNum); end
-if ~ischar(expNum); error('Cannot parse expNum: should be a string.'); end
 csvData = [];
+
+subject = params.subject{1}; 
+expDate = params.expDate{1}; 
+expNum = params.expNum{1}; 
 
 expPath = getExpPath(subject, expDate, expNum);
 nameStub = [expDate '_' expNum '_' subject];
@@ -36,7 +45,7 @@ nDat.issorted = {};
 nDat.preProcSpkEV = {};
 nDat.expFolder = {};
 
-if ~exist(csvPathMouse, 'file') && saveData
+if ~exist(csvPathMouse, 'file') && params.saveData{1}
     csvDataMouse = struct2table(nDat, 'AsArray', 1);
     writetable(csvDataMouse,csvPathMouse,'Delimiter',',');
 end
@@ -44,6 +53,7 @@ end
 if ~exist(blockPath, 'file')
     fprintf('No block file for %s %s %s. Skipping... \n', subject, expDate, expNum);
     pause(0.01);
+    if params.saveData{1}; csv.removeDataRow(subject, expDate, expNum); end
     return
 end
 
@@ -51,6 +61,12 @@ blk = load(blockPath); blk = blk.block;
 if ~contains(blk.rigName, 'zelda'); return; end
 if blk.duration/60<2
     fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
+    if params.saveData{1}; csv.removeDataRow(subject, expDate, expNum); end
+    pause(0.01);
+    return;
+elseif blk.duration/60<5 && contains(blk.expDef, {'training'; 'multiSpaceWorld'})
+    fprintf('Training block < 5 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
+    if params.saveData{1}; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
     return;
 end
@@ -159,7 +175,7 @@ nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeM
 nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
 
 csvData = struct2table(nDat, 'AsArray', 1);
-if saveData
+if params.saveData{1}
     combinedData = csv.insertNewData(csvData, subject);
     csv.writeClean(combinedData, csvPathMouse, 0);
 end
