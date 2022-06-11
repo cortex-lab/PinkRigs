@@ -81,6 +81,11 @@ allLocalFiles = cell2mat(allLocalFiles);
 allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
 allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
 
+% put .cbin files first
+cbinIdx = find(arrayfun(@(x) contains(x,'.cbin'), allLocalFilePaths));
+otherIdx = find(arrayfun(@(x) ~contains(x,'.cbin'), allLocalFilePaths));
+allLocalFilePaths = allLocalFilePaths([cbinIdx otherIdx]);
+
 copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1)
 %%
 cleanEmptyFoldersInDirectory(localFolder);

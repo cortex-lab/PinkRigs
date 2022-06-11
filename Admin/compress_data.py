@@ -15,5 +15,5 @@ for locFile in locFiles:
         compress(locFile, cbinFile, chFile, sample_rate=30000., n_channels=385, 
                  dtype=np.int16, check_after_compress=True)
         
-        os.remove(locFile)
+        # os.remove(locFile)
         

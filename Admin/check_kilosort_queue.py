@@ -62,7 +62,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
             if (mouse_selection in subject) or (mouse_selection in "all"): 
                 #if some dates have been subselected
                 if check_date_selection(date_selection,date):
-                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.*bin' % (server,subject,date) 
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
