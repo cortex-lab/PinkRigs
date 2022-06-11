@@ -255,7 +255,11 @@ timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tE
 timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
 timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
-stimOnsetIdx = round(timelineStimOnset(responseMadeIdx)*sR);
+missedOnset = isnan(timelineStimOnset);
+stimOnsetIdx = round(timelineStimOnset(responseMadeIdx & ~missedOnset)*sR);
+if any(missedOnset)
+    warning('There are missing stimulus onesets?! Will process identified ones');
+end
 
 wheelDeg = extractWheelDeg(timeline);
 wheelVel = diff([0; wheelDeg])*sR;
@@ -269,7 +273,7 @@ else
 end 
     
 velThresh  = sR*(whlDecThr*0.01)/sumWin;
-
+%%
 posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
 negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
 movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
@@ -292,14 +296,18 @@ moveOnsetIdx = abs(velThreshPoints(srtIdx));
 moveOnsetSign = sign(velThreshPoints(srtIdx))';
 moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
 
-onsetTimDirByTrial = indexByTrial([stimOnsetIdx/sR trialStEnTimes(responseMadeIdx,2)], moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
-onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial) | isnan(choiceCrsIdx)) = deal({[nan nan]});
+onsetWindows = [stimOnsetIdx/sR trialStEnTimes(responseMadeIdx & ~missedOnset,2)];
+onsetTimDirByTrial = indexByTrial(onsetWindows, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
+onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
+
+onsetTimDirChoiceTrials = onsetTimDirByTrial;
+onsetTimDirChoiceTrials(isnan(choiceCrsIdx)) = deal({[nan nan]});
 
 %"firstMoveTimes" are the first onsets occuring after stimOnsetIdx. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
 %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
 %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
-firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirByTrial, 'uni', 0));
-choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
+firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirChoiceTrials, 'uni', 0));
+choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirChoiceTrials, num2cell(choiceThreshTime(:,1)), 'uni', 0);
 choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
 choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
@@ -318,6 +326,7 @@ tExt.allMovOnsetsTimDir = cell2mat(onsetTimDirByTrial);
 changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
 trialStEnIdx = (trialStEnTimes*sR);
 points2Keep = sort([1 changePoints changePoints+1 length(wheelDeg) ceil(trialStEnIdx(:,1))'+1, floor(trialStEnIdx(:,2))'-1]);
+points2Keep(points2Keep > length(wheelDeg)) = [];
 tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' wheelDeg(points2Keep)];
 
 %%
@@ -335,6 +344,7 @@ for i = 1:length(rawFields)
     end
     if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
         nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
+        if nColumns == 0; nColumns = size(currData,2); end
         tExt.(currField)(emptyIdx) = {nan*ones(1, nColumns)};
         tExt.(currField) = single(cell2mat(tExt.(currField)));
     end
@@ -378,3 +388,4 @@ ev.stim_closedLoop = stim_closedLoop>0;
 
 ev.response_direction = responseRecorded;
 ev.response_feedback = feedbackValues;
+end
