@@ -1,10 +1,17 @@
 function [t1Corrected, t2Corrected] = try2alignVectors(t1, t2, diffThresh, revTime, plt)
-%% A funciton that tries to align vectors of the "same time points" but there is some issue (large differences, or different numbers of points)
+%% A funciton that tries to align vectors of the "same time points" but 
+%% there is some issue (large differences, or different numbers of points)
+
+% NOTE--If there is an error in "forward" pass, the code will try a reverse
+% pass by calling the same function with revTime = 1. If both fail, it errors 
 
 %INPUTS(default values)
 %t1(required)----------------First set of timepoints
 %t2(required)----------------Second set of timepoints
 %diffThresh(calculated)------The min difference between t1 and t2 timepoints that will be considered an error
+%revTime(0)------------------Whether to reverse timepoints before analysis
+%plt(0)----------------------Whether plot progress in the alignment loop
+
 
 %OUTPUTS
 %t1Corrected-----------------First corrected set of timepoints (after removals)
