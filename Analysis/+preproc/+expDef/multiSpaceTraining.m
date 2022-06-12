@@ -166,15 +166,15 @@ nonAudTrials = audAmplitude(eIdx) == 0;
 stimStartRef = stimStartBlock(~nonAudTrials);
 
 if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
-    fprintf('WARNING: problem matching auditory stimulus start and end times \n');
-    fprintf('Will try removing points that do not match stimulus starts \n');
+    fprintf('****WARNING: problem matching auditory stimulus start and end times \n');
+    fprintf('****Will try removing points that do not match stimulus starts \n');
 
     [~, nearestPoint] = getNearestPoint(audPeriodOnOffTimeline(:,1), stimStartRef);
     audPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
 end
 if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
-    fprintf('WARNING: Could not fix start-end times\n');
-    fprintf('Will perform incomplete identification based on trial structure\n');
+    fprintf('****WARNING: Could not fix start-end times\n');
+    fprintf('****Will perform incomplete identification based on trial structure\n');
     
     audBoundsByTrial = indexByTrial(trialStEnTimes(~nonAudTrials,:), sort(audPeriodOnOffTimeline(:)));
     audBoundsByTrial(cellfun(@length, audBoundsByTrial)~=2) = [];
@@ -200,16 +200,15 @@ compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
 nonVisTrials = visContrast(eIdx)==0;
 stimStartRef = stimStartBlock(~nonVisTrials);
 if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-    fprintf('WARNING: problem matching visual stimulus start and end times \n');
-    fprintf('Will try removing points that do not match stimulus starts \n');
+    fprintf('****Removing photodiode times that do not match stimulus starts \n');
 
     [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
     visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
 end
 
 if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-    fprintf('WARNING: Could not fix start-end times\n');
-    fprintf('Will perform incomplete identification based on trial structure\n');
+    fprintf('****WARNING: Could not fix start-end times\n');
+    fprintf('****Will perform incomplete identification based on trial structure\n');
     
     visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
     visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
@@ -234,6 +233,11 @@ misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial)
 
 repeatNums = e.repeatNumValues(eIdx)';
 stimMoves = repeatNums*0;
+
+%To deal with old mice where closed loop never changed
+if ~isfield(block.events, 'wheelMovementOnValues')
+    block.events.wheelMovementOnValues = block.events.newTrialValues;
+end
 stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
 stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
 stim_closedLoop = stimMoves;
@@ -259,6 +263,9 @@ missedOnset = isnan(timelineStimOnset);
 stimOnsetIdx = round(timelineStimOnset(responseMadeIdx & ~missedOnset)*sR);
 if any(missedOnset)
     warning('There are missing stimulus onesets?! Will process identified ones');
+end
+if isempty(stimOnsetIdx)
+    warning('Looks like the mouse did not make a single choice?!');
 end
 
 wheelDeg = extractWheelDeg(timeline);
@@ -296,31 +303,38 @@ moveOnsetIdx = abs(velThreshPoints(srtIdx));
 moveOnsetSign = sign(velThreshPoints(srtIdx))';
 moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
 
-onsetWindows = [stimOnsetIdx/sR trialStEnTimes(responseMadeIdx & ~missedOnset,2)];
-onsetTimDirByTrial = indexByTrial(onsetWindows, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
+onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
 onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-onsetTimDirChoiceTrials = onsetTimDirByTrial;
-onsetTimDirChoiceTrials(isnan(choiceCrsIdx)) = deal({[nan nan]});
+onsetTimDirByChoiceTrial = onsetTimDirByTrial(responseMadeIdx & ~missedOnset);
+onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
 %"firstMoveTimes" are the first onsets occuring after stimOnsetIdx. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
 %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
 %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
-firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirChoiceTrials, 'uni', 0));
-choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirChoiceTrials, num2cell(choiceThreshTime(:,1)), 'uni', 0);
+firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirByChoiceTrial, 'uni', 0));
+choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByChoiceTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
 choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
 choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
 %SANITY CHECK
 blockTstValues = responseRecorded(responseMadeIdx);
-tstIdx = ~isnan(choiceInitTimeDir(:,2));
-if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
-    error('Why are most of the movements not in the same direction as the response?!?')
+if ~isempty(choiceInitTimeDir)
+    tstIdx = ~isnan(choiceInitTimeDir(:,2));
+    if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
+        error('Why are most of the movements not in the same direction as the response?!?')
+    end
 end
 
-tExt.firstMoveTimeDir = firstMoveTimeDir;
-tExt.choiceInitTimeDir = choiceInitTimeDir;
-tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
+if isempty(stimOnsetIdx)
+    tExt.firstMoveTimeDir = [nan, nan];
+    tExt.choiceInitTimeDir = [nan, nan];
+    tExt.choiceThreshTimeDir = [nan, nan];
+else
+    tExt.firstMoveTimeDir = firstMoveTimeDir;
+    tExt.choiceInitTimeDir = choiceInitTimeDir;
+    tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
+end
 tExt.allMovOnsetsTimDir = cell2mat(onsetTimDirByTrial);
 
 changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);

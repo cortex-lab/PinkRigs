@@ -14,9 +14,8 @@ params = csv.inputValidation(varargin{:});
 % intermittent updates in other fields.
 if length(fields(params))>15 && all(contains({'alignBlkFrontSideEyeMicEphys',...
         'preProcSpkEV', 'faceMapFrontSideEye', 'micDat'}, fields(params)))
-    removeParams = setdiff(fields(params), {'subject', 'expDate', 'expNum', ...
-        'expDef', 'timeline2Check', 'align2Check', 'preproc2Check', 'issorted'});
-    params = rmfield(params, removeParams);
+    varargin = [varargin, 'align2Check', {'*,*,*,*,*,*'}, 'preproc2Check', {'*,*'}];
+    params = csv.inputValidation(varargin{:});
 end
 
 % Loop through csv to look for experiments that weren't
