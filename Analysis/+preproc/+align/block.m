@@ -31,7 +31,8 @@ if ~isempty(params.alignType{1})
 else
     % Chose it depending on expDef
     switch params.expDef{1}{1}
-        case 'imageWorld_AllInOne'
+        case {'imageWorld_AllInOne'; 'AVPassive_ckeckerboard_postactive';...
+                'AP_sparseNoise';'AVPassive_checkerboard_extended'}
             alignType = 'photoDiode';
         case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'}
             alignType = 'wheel';
@@ -84,7 +85,7 @@ if strcmpi(alignType, 'wheel')
         samplePoints = samplePoints(testIdx);
         delayValues = cellfun(@(x) finddelay(blockWheelVelocity(x), timelinehWeelVelocity(x), 1000), samplePoints)./sR;
 
-        % Use a smoothed median to select the evolving delat values, and use these to calculate the evolving reference points for block and timeline
+        % Use a smoothed median to select the evolving delay values, and use these to calculate the evolving reference points for block and timeline
         timelineRefTimes = timelineTime(sampleCentres);
         delayValues = interp1(timelineTime(sampleCentres(testIdx)), delayValues, timelineRefTimes, 'linear', 'extrap');
         delayValues = smooth(delayValues, 0.05, 'rlowess');

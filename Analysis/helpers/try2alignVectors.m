@@ -23,10 +23,11 @@ t2Orig = t2;
 
 t1Diff = diff(t1);
 t2Diff = diff(t2);
-maxLoops = min([abs(length(t1Diff)-length(t2Diff))+50, 250]);
+
+maxLoops = min([round(length(t1Diff)*0.025), 450])+50;
 if ~exist('diffThresh', 'var') || isempty(diffThresh)
     [~, dist] = knnsearch(t2Diff,t1Diff);
-    diffThresh = min([0.2 20*mad(dist)]);
+    diffThresh = max([min([0.2 20*mad(dist)]) 0.1]);
 end
 if ~exist('plt', 'var'); plt = 0; end
 if ~exist('revTime', 'var'); revTime = 0; end

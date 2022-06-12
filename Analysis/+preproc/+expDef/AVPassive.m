@@ -22,13 +22,14 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     % ev.stim_audAzimuth          %nx1 matrix: aud azimuth presented
     % ev.stim_visAzimuth          %nx1 matrix: vis azimuth presented   
 
+    eIdx = 1:numel(block.events.endTrialValues);
 
     % get stim info
-    visTrial = block.events.viscontrastValues(1:numel(block.events.endTrialValues)) > 0;
-    visTrialsLoc = block.events.visazimuthValues(1:numel(block.events.endTrialValues)); visTrialsLoc(~visTrial) = nan;
-    audTrial = block.events.audamplitudeValues(1:numel(block.events.endTrialValues)) > 0;
-    audTrialsLoc = block.events.audazimuthValues(1:numel(block.events.endTrialValues)); audTrialsLoc(~audTrial) = nan;
-    rewTrials = block.outputs.rewardValues(1:numel(block.events.endTrialValues))>0;
+    visTrial = block.events.viscontrastValues(eIdx) > 0;
+    visTrialsLoc = block.events.visazimuthValues(eIdx); visTrialsLoc(~visTrial) = nan;
+    audTrial = block.events.audamplitudeValues(eIdx) > 0;
+    audTrialsLoc = block.events.audazimuthValues(eIdx); audTrialsLoc(~audTrial) = nan;
+    rewTrials = block.outputs.rewardValues(eIdx)>0;
     
     % get trial types, Dr Coen scheme 
     blankTrials  = ((isnan(visTrialsLoc)) & (isnan(audTrialsLoc)) & (rewTrials==0));
@@ -47,59 +48,68 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     
     trialEnd = preproc.align.event2Timeline(block.events.endTrialTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
-    
-    if numel(trialStart)-numel(trialEnd)>0
-        if numel(trialStart)-numel(trialEnd)==1
-            % likely it was stopped manually
-            trialStart(end) = [];
-        else
+
+    if length(trialStart)~=length(trialEnd)
+        trialStart = trialStart(1:end-1);
+        if length(trialStart)~=length(trialEnd)
             error('Discrepancy between the number of started vs. ended trials. Have a look.')
         end
     end
-    
+    trialStEnTimes = [trialStart(:) trialEnd(:)];
+    timelineTime = timeproc.extractChan(timeline,'time');
+
     % Add delay to trial start and end because of issues with alignment?
     % It's a bit of a hacky thing to do.
     delay = 0.2;
     
     %% visual stimulus timings 
-    
     % get all screen flips 
     photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode'); 
     
     % sort by trial
     p = block.paramsValues(1); 
     numClicks = numel((p.clickDuration/2):1/p.clickRate:p.stimDuration); 
-    try
-        visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
-    catch
-        % case where photodiode is crazy -- try something else
-        try
-            warning('Passing in error mode to get photodiode flip times')
-            photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
-            visOnOff = sortClicksByTrial(photoDiodeFlipTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
-        catch
-            error('Can''t find good visual stim onsets. Check photodiode...')
-        end
+    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes);
+    vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
+    visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
+    visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);
+    visPeriodOnOff = cellfun(@(x) [x(1,1) x(end,2)], visOnOffByTrial, 'uni', 0);
+   
+    if sum(~vis2Remove) < 0.9*sum(visTrial)
+        fprintf('****Removing more than 10 percent of visual trials..? \n')
+    end
+    if sum(~vis2Remove) < 0.5*sum(visTrial)
+        warning('Removing more than 50% of visual trials..?!!')
     end
 
-    %% auditory click times 
+    %% auditory click times
     audTrace = timeproc.extractChan(timeline,'audioOut');
-    timelineTime = timeproc.extractChan(timeline,'time');
     audTrace = [0;diff(detrend(audTrace))];
     [~, thresh] = kmeans(audTrace(1:5:end),5);
-    timelineClickOn = timelineTime(strfind((audTrace>max(thresh)*0.2)', [0 1]));
-    timelineClickOff = timelineTime(strfind((audTrace<min(thresh)*0.2)', [0 1]));
-    ClickTimes = sort([timelineClickOn timelineClickOff]);
+    timelineClickOn = timelineTime(strfind((audTrace>max(thresh)*0.2)', [0 1]))';
+    timelineClickOff = timelineTime(strfind((audTrace<min(thresh)*0.2)', [0 1]))';
 
-    % it happens that the offset of the last click happens after the
-    % trial ends. May be due to lack of precision in the alignment?
-    % So just add 100ms of slack here.
-    audOnOff = sortClicksByTrial(ClickTimes,trialStart+delay,trialEnd+delay,numClicks*2,0);
+    if length(timelineClickOn)~=length(timelineClickOff)
+        error('There should always be an equal number on/off signals for clicks');
+    end
+    allClicks = sort([timelineClickOn timelineClickOff]);
+    audOnOffByTrial = indexByTrial(trialStEnTimes+delay, allClicks(:,1), allClicks);
+    aud2Remove = cellfun(@(x) size(x,1)~=numClicks, audOnOffByTrial);
+    audOnOffByTrial(aud2Remove)= deal({nan*ones(1, 2)});
+    audPeriodOnOff = cellfun(@(x) [x(1,1) x(end,2)], audOnOffByTrial, 'uni', 0);
     
+    if sum(~aud2Remove) < 0.9*sum(audTrial)
+        warning('Removing more than 10% of auditory trials..?')
+    end
+    if sum(~aud2Remove) < 0.5*sum(audTrial)
+        error('Removing more than 50% of auditory trials..?!!')
+    end
+
     %% reward times 
     reward = timeproc.getChanEventTime(timeline,'rewardEcho'); 
-    [rewardAll,~] = sortClicksByTrial(reward,trialStart+delay,trialEnd+delay,1,0);
-    
+    rewardAll = indexByTrial(trialStEnTimes+delay, reward(:));
+    rew2Remove = cellfun(@(x) length(x)~=1, rewardAll);
+    rewardAll(rew2Remove) = deal({nan});
     %% save it in ev
  
     ev.is_blankTrial = blankTrials';    
@@ -110,61 +120,21 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     ev.is_rewardTrial = rewTrials';
 
     ev.block_trialOnOff = [trialStart' trialEnd']; 
-    ev.block_stimOn  = stimOnsetRaw'; 
+    ev.block_stimOn  = stimOnsetRaw(eIdx)'; 
 
-    ev.timeline_rewardOn = rewardAll'; 
-    ev.timeline_audOnOff = audOnOff';  
-    ev.timeline_visOnOff = visOnOff';  
+    ev.timeline_rewardOn = cell2mat(rewardAll); 
+    ev.timeline_audOnOff = audOnOffByTrial;  
+    ev.timeline_visOnOff = visOnOffByTrial;  
     
-    ev.timeline_audPeriodOnOff = audOnOff([1 numClicks*2],:)';
-    ev.timeline_visPeriodOnOff = visOnOff([1 numClicks*2],:)';
+    ev.timeline_audPeriodOnOff = cell2mat(audPeriodOnOff);
+    ev.timeline_visPeriodOnOff = cell2mat(visPeriodOnOff);
 
-    ev.stim_audAmplitude = block.events.audamplitudeValues';
-    ev.stim_visContrast = block.events.viscontrastValues';
-    ev.stim_audAzimuth  = audTrialsLoc';
-    ev.stim_visAzimuth  = visTrialsLoc';
+    ev.stim_audAmplitude = block.events.audamplitudeValues(eIdx)';
+    ev.stim_visContrast = block.events.viscontrastValues(eIdx)';
+    ev.stim_audAzimuth  = audTrialsLoc(eIdx)';
+    ev.stim_visAzimuth  = visTrialsLoc(eIdx)';
 
-%%
-
-function [OnsetAll,OffsetAll] = sortClicksByTrial(eventTimes,trialStart,trialEnd,numClicks,sortOnOff)
-% sort events by trial 
-% can be single events (sortOnOff=0) 
-% or event pairs (sortOnOff=1)
-% numClicks = expected events per trial  (% todo: make this more flexible?)
-% 
-
-TimesPerTrial = arrayfun(@(x,y) eventTimes((eventTimes>=x)& ...
-        (eventTimes<=y)),trialStart,trialEnd,'UniformOutput',false);
-nTrials = numel(TimesPerTrial); 
-OnsetAll = nan(numClicks,nTrials);
-OffsetAll = nan(numClicks,nTrials);
-
-if ~visTrial(1)
-    % issue with the alignment here because of the square on and off of the
-    % photodiode that is saved
-    TimesPerTrial{1} = [];
-end
-
-for myTrial=1:nTrials
-    evPerTrial = TimesPerTrial{myTrial};
-    if numel(evPerTrial)>0
-        if numel(evPerTrial)<numClicks
-            continue
-        else
-            if (myTrial==1) && (numel(evPerTrial)>numClicks)
-                evPerTrial(1:numel(evPerTrial)-numClicks)=[];  % empirical that sometimes  the screen does weird stuff on the 1st trial
-            end
-            % can sort on and offsets or just get all
-            if sortOnOff==1
-                audOnOff = sortClicksByTrial(ClickTimes,trialStart,trialEnd+0.01,numClicks*2,0);
-                
-                OnsetAll(:,myTrial) = evPerTrial(1:2:end);
-                OffsetAll(:,myTrial) = evPerTrial(2:2:end);
-            else
-                OnsetAll(:,myTrial) = evPerTrial;
-            end
-        end
+    if length(unique(structfun(@length, ev)))~=1
+        error('All fields of ev should have size [trials] on dim 1')
     end
-end
-end
 end

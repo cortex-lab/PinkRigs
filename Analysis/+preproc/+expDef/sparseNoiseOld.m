@@ -36,7 +36,9 @@ for x = 1:size(stimArray,1)
     end
 end
 
-timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
+photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode');
+
+timelineRefTimes = photoDiodeFlipTimes;
 
 if length(blockRefTimes) ~= length(timelineRefTimes)
     [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,0);
@@ -63,7 +65,7 @@ end
 stimTimes = cellfun(@(x)timelineRefTimes(x), stimTimeInds, 'uni', false); 
 stimTimes = stimTimes{1}; 
 stimPositions = stimPositions{1}; % stim positions in yx 
-stimArrayTimes = timelineRefTimes;
+stimArrayTimes=timelineRefTimes;
 
 %% write event structure 
 ev.stimTimes = stimTimes;
