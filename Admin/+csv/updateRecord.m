@@ -82,6 +82,16 @@ nDat.rigName = blk.rigName;
 camNames = {'front';'side';'eye'};
 %%
 folderContents = dir(fileparts(blockPath));
+upperFolderContents = dir(fileparts(folderContents(1).folder))';
+if any(strcmpi('IgnoreExperiment.txt', [{folderContents.name}'; {upperFolderContents.name}']))
+    fprintf('Ignoring experiment due to .txt file %s \n', folderContents(1).folder)
+    if params.saveData{1}; csv.removeDataRow(subject, expDate, expNum); end
+    pause(0.01);
+    return;
+end
+
+
+
 nDat.block = max([folderContents(contains({folderContents.name}','Block.mat')).bytes 0]);
 nDat.timeline = max([folderContents(contains({folderContents.name}','Timeline.mat')).bytes 0]);
 nDat.sideCam = max([folderContents(contains({folderContents.name}','sideCam.mj2')).bytes 0]);
@@ -175,7 +185,6 @@ if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && str2double(nDat.issorted) == 0
     nDat.issorted = num2str(nan);
 end
 
-upperFolderContents = dir(fileparts(folderContents(1).folder))';
 if any(strcmpi('AllErrorsValidated.txt', [{folderContents.name}'; {upperFolderContents.name}']))
     fprintf('Errors have been validated for %s \n', folderContents(1).folder)
     nDat.preProcSpkEV(nDat.preProcSpkEV==2) = nan;
