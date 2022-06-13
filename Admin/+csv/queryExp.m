@@ -9,14 +9,14 @@ varargin = ['preproc2Check', {'*,*'}, varargin];
 varargin = ['issorted', {[0 1]}, varargin];
 params = csv.inputValidation(varargin{:});
 
-% Added so that when queryExp is called with "full" data, it only uses
-% essential data (subject/expDate/expNum). This helps to avoid issues with
-% intermittent updates in other fields.
-if length(fields(params))>15 && all(contains({'alignBlkFrontSideEyeMicEphys',...
-        'preProcSpkEV', 'faceMapFrontSideEye', 'micDat'}, fields(params)))
-    varargin = [varargin, 'align2Check', {'*,*,*,*,*,*'}, 'preproc2Check', {'*,*'}];
-    params = csv.inputValidation(varargin{:});
-end
+% % Added so that when queryExp is called with "full" data, it only uses
+% % essential data (subject/expDate/expNum). This helps to avoid issues with
+% % intermittent updates in other fields.
+% if length(fields(params))>15 && all(contains({'alignBlkFrontSideEyeMicEphys',...
+%         'preProcSpkEV', 'faceMapFrontSideEye', 'micDat'}, fields(params)))
+%     varargin = [varargin, 'align2Check', {'*,*,*,*,*,*'}, 'preproc2Check', {'*,*'}];
+%     params = csv.inputValidation(varargin{:});
+% end
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.

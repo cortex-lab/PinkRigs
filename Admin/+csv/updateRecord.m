@@ -6,6 +6,7 @@ varargin = ['expNum', {'all'}, varargin];
 varargin = ['saveData', {1}, varargin];
 varargin = ['queryExp', {1}, varargin];
 params = csv.inputValidation(varargin{:});
+serverLocations = getServersList;
 
 if params.queryExp{1}
     expList = csv.queryExp(params);
@@ -15,6 +16,10 @@ if params.queryExp{1}
     return;
 end
 
+%Check if servers are all accessible before updating anything
+if ~all(cellfun(@(x) exist(x, 'dir'), serverLocations))
+    error('No server access so cannot update');
+end
 csvData = [];
 
 subject = params.subject{1}; 
