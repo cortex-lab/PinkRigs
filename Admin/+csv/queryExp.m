@@ -6,7 +6,7 @@ function extractedExperiments = queryExp(varargin)
 varargin = ['timeline2Check', {0}, varargin];
 varargin = ['align2Check', {'*,*,*,*,*,*'}, varargin];
 varargin = ['preproc2Check', {'*,*'}, varargin];
-varargin = ['issorted', {[0 1]}, varargin];
+varargin = ['issortedCheck', -1, varargin];
 params = csv.inputValidation(varargin{:});
 
 % % Added so that when queryExp is called with "full" data, it only uses
@@ -55,8 +55,8 @@ for mm = 1:numel(params.subject)
     if isempty(expListMouse); continue; end
 
     % Get exp with specific sorting status
-    if params.issorted{mm}
-        expListMouse = expListMouse(ismember(expListMouse.issorted, params.issorted{mm}),:);
+    if params.issortedCheck{mm}~=-1
+        expListMouse = expListMouse(ismember(expListMouse.issorted, params.issortedCheck{mm}),:);
     end
     if isempty(expListMouse); continue; end
 
