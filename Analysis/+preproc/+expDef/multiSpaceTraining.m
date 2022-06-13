@@ -262,7 +262,11 @@ timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'om
 missedOnset = isnan(timelineStimOnset);
 stimOnsetIdx = round(timelineStimOnset(responseMadeIdx & ~missedOnset)*sR);
 if any(missedOnset)
-    warning('There are missing stimulus onesets?! Will process identified ones');
+    if sum(missedOnset) >0.25*length(missedOnset)
+        error('Over 25% of stimulus onsets are missing???');
+    else
+        warning('There are missing stimulus onesets?! Will process identified ones');
+    end
 end
 if isempty(stimOnsetIdx)
     warning('Looks like the mouse did not make a single choice?!');
@@ -318,7 +322,7 @@ choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
 choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
 %SANITY CHECK
-blockTstValues = responseRecorded(responseMadeIdx);
+blockTstValues = responseRecorded(responseMadeIdx & ~missedOnset);
 if ~isempty(choiceInitTimeDir)
     tstIdx = ~isnan(choiceInitTimeDir(:,2));
     if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75

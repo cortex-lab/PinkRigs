@@ -81,22 +81,22 @@ nDat.expDuration = blk.duration;
 nDat.rigName = blk.rigName;
 camNames = {'front';'side';'eye'};
 %%
-fileContents = dir(fileparts(blockPath));
-nDat.block = max([fileContents(contains({fileContents.name}','Block.mat')).bytes 0]);
-nDat.timeline = max([fileContents(contains({fileContents.name}','Timeline.mat')).bytes 0]);
-nDat.sideCam = max([fileContents(contains({fileContents.name}','sideCam.mj2')).bytes 0]);
-nDat.frontCam = max([fileContents(contains({fileContents.name}','frontCam.mj2')).bytes 0]);
-nDat.eyeCam = max([fileContents(contains({fileContents.name}','eyeCam.mj2')).bytes 0]);
-nDat.micDat = max([fileContents(contains({fileContents.name}','mic.mat')).bytes 0]);
+folderContents = dir(fileparts(blockPath));
+nDat.block = max([folderContents(contains({folderContents.name}','Block.mat')).bytes 0]);
+nDat.timeline = max([folderContents(contains({folderContents.name}','Timeline.mat')).bytes 0]);
+nDat.sideCam = max([folderContents(contains({folderContents.name}','sideCam.mj2')).bytes 0]);
+nDat.frontCam = max([folderContents(contains({folderContents.name}','frontCam.mj2')).bytes 0]);
+nDat.eyeCam = max([folderContents(contains({folderContents.name}','eyeCam.mj2')).bytes 0]);
+nDat.micDat = max([folderContents(contains({folderContents.name}','mic.mat')).bytes 0]);
 nDat.ephysFolderExists = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
 nDat.expFolder = {fileparts(blockPath)};
 
 nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
 nDat.issorted = '0';
-alignFile = contains({fileContents.name}', [nameStub '_alignment.mat']);
+alignFile = contains({folderContents.name}', [nameStub '_alignment.mat']);
 
 if any(alignFile) 
-    alignment = load([fullfile(fileContents(alignFile).folder,nameStub) '_alignment.mat']);
+    alignment = load([fullfile(folderContents(alignFile).folder,nameStub) '_alignment.mat']);
     
     fileExists = [nDat.block, nDat.frontCam, nDat.sideCam, nDat.eyeCam, nDat.micDat, nDat.ephysFolderExists]>0;
     tDat = nDat.alignBlkFrontSideEyeMicEphys;
@@ -142,13 +142,13 @@ if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
     nDat.issorted = 0;
 end
 
-faceMapDetect = double(cellfun(@(x) any(contains({fileContents.name}', [x 'Cam_proc.npy'])), camNames'));
+faceMapDetect = double(cellfun(@(x) any(contains({folderContents.name}', [x 'Cam_proc.npy'])), camNames'));
 faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
 
 nDat.preProcSpkEV = zeros(1,2);
-preProcFile = contains({fileContents.name}','preprocData.mat');
+preProcFile = contains({folderContents.name}','preprocData.mat');
 if any(preProcFile)
-    preProcDat = load([fullfile(fileContents(alignFile).folder,nameStub) '_preprocData.mat']);
+    preProcDat = load([fullfile(folderContents(alignFile).folder,nameStub) '_preprocData.mat']);
     if isfield(preProcDat, 'ev'); ev = preProcDat.ev; else, ev = 0; end
     if isfield(preProcDat, 'spk'); spk = preProcDat.spk; else, spk = 0; end
     
@@ -175,6 +175,13 @@ if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && str2double(nDat.issorted) == 0
     nDat.issorted = num2str(nan);
 end
 
+upperFolderContents = dir(fileparts(folderContents(1).folder))';
+if any(strcmpi('AllErrorsValidated.txt', [{folderContents.name}'; {upperFolderContents.name}']))
+    fprintf('Errors have been validated for %s \n', folderContents(1).folder)
+    nDat.preProcSpkEV(nDat.preProcSpkEV==2) = nan;
+    nDat.alignBlkFrontSideEyeMicEphys(nDat.alignBlkFrontSideEyeMicEphys==2) = nan;
+    faceMapDetect(faceMapDetect==2) = nan;
+end
 nDat.preProcSpkEV = regexprep(num2str(nDat.preProcSpkEV),'\s+',',');
 nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeMicEphys),'\s+',',');
 nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
