@@ -45,4 +45,8 @@ To set up regular deletion of camera data on timeline/ephys computers on Windows
 If you added new packages to the environment, overwrite the current `environment.yml` by running the following before you git add/commit: 
 `conda env export -f environment.yml`
 
+## 'Manual curation' of experiments
 
+1. If you record and experiment which, for whatever reason, is not worth keeping, please add "IgnoreExperiment.txt" to the experiment path on the server (see \\zinu.cortexlab.net\Subjects\CB020\2021-11-25\1) for an example. This will mean the experiment isn't added to the .csv and so you won't have to deal with inevitable errors etc.
+2. Alternatively, if an experiment is worth keeping, but you have checked the errors and you are satisfied that nothing can be done (e.g. you want to keep the behavior even though the flipper wasn't working), please add "AllErrorsValidated.txt" to the experiment folder. (see \\zinu.cortexlab.net\Subjects\FT025\2021-10-06\1 for an example)
+In both cases, please write a few words to explain in the text file. In this way we can continue to keep our csv's tidy, with an accurate reflection of the current state of processing.
