@@ -87,6 +87,7 @@ otherIdx = find(arrayfun(@(x) ~contains(x,'.cbin'), allLocalFilePaths));
 allLocalFilePaths = allLocalFilePaths([cbinIdx; otherIdx]);
 allServerFilePaths = allServerFilePaths([cbinIdx; otherIdx]);
 
+%Sanity check to make sure that the files are in the correct order
 allLocalFilePathsTest = cellfun(@(x) x(max(strfind(x, '\'))+1:end), allLocalFilePaths, 'uni', 0);
 allServerFilePathsTest = cellfun(@(x) x(max(strfind(x, '\'))+1:end), allServerFilePaths, 'uni', 0);
 matchTest = all(cellfun(@(x,y) strcmp(x,y), allLocalFilePathsTest, allServerFilePathsTest));
