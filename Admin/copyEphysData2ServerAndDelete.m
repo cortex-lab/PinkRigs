@@ -84,7 +84,15 @@ allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serv
 % put .cbin files first
 cbinIdx = find(arrayfun(@(x) contains(x,'.cbin'), allLocalFilePaths));
 otherIdx = find(arrayfun(@(x) ~contains(x,'.cbin'), allLocalFilePaths));
-allLocalFilePaths = allLocalFilePaths([cbinIdx otherIdx]);
+allLocalFilePaths = allLocalFilePaths([cbinIdx; otherIdx]);
+allServerFilePaths = allServerFilePaths([cbinIdx; otherIdx]);
+
+allLocalFilePathsTest = cellfun(@(x) x(max(strfind(x, '\'))+1:end), allLocalFilePaths, 'uni', 0);
+allServerFilePathsTest = cellfun(@(x) x(max(strfind(x, '\'))+1:end), allServerFilePaths, 'uni', 0);
+matchTest = all(cellfun(@(x,y) strcmp(x,y), allLocalFilePathsTest, allServerFilePathsTest));
+if ~matchTest
+    error('File paths names do not correspond..?')
+end
 
 copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1)
 %%
