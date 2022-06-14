@@ -1,15 +1,17 @@
 function plotData = boxPlots(varargin)
 %% Generate box plots for the behaviour of a mouse/mice
 %% Input validation and default assingment
-varargin = ['sepPlots', {1}, varargin];
+varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
 params = csv.inputValidation(varargin{:});
 
-if length(params.subject) > 1 && params.sepPlots{1}==1
+if length(params.subject) > 1 && isnan(params.sepPlots{1})
     fprintf('Multiple subjects, so will combine within subjects \n');
     params.sepPlots = repmat({0},length(params.subject),1);
+elseif isnan(params.sepPlots{1})
+    params.sepPlots = repmat({1},length(params.subject),1);
 end
 
 expList = csv.queryExp(params);
