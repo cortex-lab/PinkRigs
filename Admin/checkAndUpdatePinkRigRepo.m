@@ -37,6 +37,7 @@ function checkAndUpdatePinkRigRepo
             fprintf('Work tree for Pink Rig repo is clean \n');
         else
             warning(warnMessage3);
+            fprintf(cmdout);
         end
     end
 end
