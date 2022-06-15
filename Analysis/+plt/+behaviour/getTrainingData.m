@@ -1,0 +1,100 @@
+function extracted = getTrainingData(varargin)
+varargin = ['sepPlots', {nan}, varargin];
+varargin = ['expDef', {'t'}, varargin];
+varargin = ['plotType', {'res'}, varargin];
+varargin = ['noPlot', {0}, varargin];
+params = csv.inputValidation(varargin{:});
+
+if length(params.subject) > 1 && isnan(params.sepPlots{1})
+    fprintf('Multiple subjects, so will combine within subjects \n');
+    params.sepPlots = repmat({0},length(params.subject),1);
+elseif isnan(params.sepPlots{1})
+    params.sepPlots = repmat({1},length(params.subject),1);
+end
+
+expList = csv.queryExp(params);
+if isempty(expList); error('No subjects found to match criteria'); end
+if params.sepPlots{1}
+    params = csv.inputValidation(varargin{:}, expList);
+    params.sepPlots = repmat({1},length(params.subject),1);
+end
+
+[extracted.blkDates, extracted.rigNames] = deal(repmat({{'X'}},length(params.subject),1));
+extracted.data = cell(length(params.subject),1);
+
+extracted.validSubjects = ones(length(params.subject),1);
+for i = 1:length(params.subject)
+    if params.sepPlots{1}
+        currData = expList(i,:);
+        extracted.blkDates{i} = currData.expDate;
+        extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
+    else
+        currData = expList(strcmp(expList.subject, params.subject{i}),:);
+    end
+    if isempty(currData)
+        fprintf('No matching data for %s \n', params.subject{i});
+        extracted.validSubjects(i) = 0;
+        continue;
+    end
+
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
+    if any(~alignedBlock)
+        fprintf('Missing block alignments. Will try and align...\n')
+        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
+    end
+
+    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+    if any(~evExtracted)
+        fprintf('EV extractions. Will try to extract...\n')
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
+    end
+    
+    currData = csv.queryExp(currData);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
+    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+
+    failIdx = any(~[alignedBlock, evExtracted],2);
+    if any(failIdx)
+        failNames = currData.expFolder(failIdx);
+        cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
+        currData = currData(~failIdx,:);
+    end
+    if isempty(currData); continue; end
+
+    if length(unique(currData.expDate)) ~= length(currData.expDate)
+        expDurations = cellfun(@str2double, currData.expDuration);
+        [~, ~, uniIdx] = unique(currData.expDate);
+        keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
+        currData = currData(keepIdx,:);
+    end
+    extracted.blkDates{i} = currData.expDate;
+    extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
+
+    loadedEV = csv.loadData(currData, 'loadTag', 'ev');
+    evData = [loadedEV.evData{:}];
+
+    for j = 1:length(evData)
+        evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
+        evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
+        evData(j).stim_audDiff = evData(j).stim_audAzimuth;
+        evData(j).AVParams = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
+    end
+
+    [uniParams, ~, uniMode] = unique(arrayfun(@(x) num2str(x.AVParams(:)'), evData, 'uni', 0));
+    modeIdx = uniMode == mode(uniMode);
+    if numel(uniParams) ~= 1
+        fprintf('Multiple param sets detected for %s, using mode \n', currData.subject{1});
+    end
+    names = fieldnames(evData);
+    cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
+
+    extracted.data{i,1} = cell2struct(cellData, names);
+    extracted.data{i,1}.nExperiments = sum(modeIdx);
+    extracted.blkDates{i} = extracted.blkDates{i}(modeIdx);
+    extracted.rigNames{i} = extracted.rigNames{i}(modeIdx);
+end
+if all(cellfun(@isempty, extracted.data))
+    warning('No sessions match criteria, returning')
+    return;
+end
+end

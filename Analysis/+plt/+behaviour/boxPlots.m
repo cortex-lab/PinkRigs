@@ -6,131 +6,44 @@ varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
 params = csv.inputValidation(varargin{:});
+extracted = plt.behaviour.getTrainingData(params);
 
-if length(params.subject) > 1 && isnan(params.sepPlots{1})
-    fprintf('Multiple subjects, so will combine within subjects \n');
-    params.sepPlots = repmat({0},length(params.subject),1);
-elseif isnan(params.sepPlots{1})
-    params.sepPlots = repmat({1},length(params.subject),1);
-end
+blkDates = extracted.blkDates;
+rigNames = extracted.rigNames;
 
-expList = csv.queryExp(params);
-if params.sepPlots{1}
-    params = csv.inputValidation(varargin{:}, expList);
-end
-
-[blkDates, rigNames] = deal(repmat({{'X'}},length(params.subject),1));
-extractedData = cell(length(params.subject),1);
-
-validSub = ones(length(params.subject),1);
-for i = 1:length(params.subject)
-    if params.sepPlots{1}
-        currData = expList(i,:);
-        blkDates{i} = currData.expDate;
-        rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
-    else
-        currData = expList(strcmp(expList.subject, params.subject{i}),:);
-    end
-    if isempty(currData)
-        fprintf('No matching data for %s \n', params.subject{i});
-        validSub(i) = 0;
-        continue;
-    end
-
-    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
-    if any(~alignedBlock)
-        fprintf('Missing block alignments. Will try and align...\n')
-        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
-    end
-
-    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
-    if any(~evExtracted)
-        fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
-    end
-    
-    currData = csv.queryExp(currData);
-    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
-    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
-
-    failIdx = any(~[alignedBlock, evExtracted],2);
-    if any(failIdx)
-        failNames = currData.expFolder(failIdx);
-        cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
-        currData = currData(~failIdx,:);
-    end
-    if isempty(currData); continue; end
-
-    if length(unique(currData.expDate)) ~= length(currData.expDate)
-        expDurations = cellfun(@str2double, currData.expDuration);
-        [~, ~, uniIdx] = unique(currData.expDate);
-        keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
-        currData = currData(keepIdx,:);
-    end
-    blkDates{i} = currData.expDate;
-    rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
-
-    loadedEV = csv.loadData(currData, 'loadTag', 'ev');
-    evData = [loadedEV.evData{:}];
-
-    for j = 1:length(evData)
-        evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
-        evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
-        evData(j).stim_audDiff = evData(j).stim_audAzimuth;
-        evData(j).AVParams = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
-    end
-
-    [uniParams, ~, uniMode] = unique(arrayfun(@(x) num2str(x.AVParams(:)'), evData, 'uni', 0));
-    modeIdx = uniMode == mode(uniMode);
-    if numel(uniParams) ~= 1
-        fprintf('Multiple param sets detected for %s, using mode \n', currData.subject{1});
-    end
-    names = fieldnames(evData);
-    cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
-
-    extractedData{i,1} = cell2struct(cellData, names);
-    extractedData{i,1}.nExperiments = sum(modeIdx);
-    blkDates{i} = blkDates{i}(modeIdx);
-    rigNames{i} = rigNames{i}(modeIdx);
-end
-if all(cellfun(@isempty, extractedData))
-    warning('No sessions match criteria, returning')
-    return;
-end
-%%
-maxGrid = arrayfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], evData, 'uni', 0);
+maxGrid = cellfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], extracted.data, 'uni', 0);
 maxGrid = max(cell2mat(maxGrid),2);
 axesOpt.figureHWRatio = maxGrid(2)/(1.3*maxGrid(1));
 axesOpt.btlrMargins = [100 80 60 100];
 axesOpt.gapBetweenAxes = [100 40];
-axesOpt.totalNumOfAxes = sum(validSub);
+axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 
-plotData = cell(length(extractedData), 1);
+plotData = cell(length(extracted.data), 1);
 if ~params.noPlot{1}; figure; end
-for i = find(validSub)'
+for i = find(extracted.validSubjects)'
     boxPlot.subject = params.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);
 
-    if isempty(extractedData{i}) || extractedData{i}.nExperiments == 1 
+    if isempty(extracted.data{i}) || extracted.data{i}.nExperiments == 1 
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     else
-        boxPlot.extraInf = num2str([extractedData{i}.nExperiments 'Sess']);
+        boxPlot.extraInf = num2str([extracted.data{i}.nExperiments 'Sess']);
     end
-    if ~isempty(extractedData{i})
-        tDat = rmfield(extractedData{i}, {'nExperiments', 'AVParams'});
-        boxPlot.nExperiments = extractedData{i}.nExperiments;
+    if ~isempty(extracted.data{i})
+        tDat = rmfield(extracted.data{i}, {'nExperiments', 'AVParams'});
+        boxPlot.nExperiments = extracted.data{i}.nExperiments;
     end
 
-    if isempty(extractedData{i})
+    if isempty(extracted.data{i})
         boxPlot.xyValues = {0; 0};
         boxPlot.plotData = nan;
         boxPlot.trialCount = 0;
         boxPlot.totTrials = nan;
         boxPlot.nExperiments = nan;
     elseif strcmpi(params.plotType{1}(1:3), 'res')
-        tkIdx = extractedData{i}.is_validTrial & extractedData{i}.response_direction;
+        tkIdx = extracted.data{i}.is_validTrial & extracted.data{i}.response_direction;
         tDat = filterStructRows(tDat, tkIdx);
 
         [~,~,vLabel] = unique(tDat.stim_visDiff);
@@ -145,7 +58,7 @@ for i = find(validSub)'
         colorBar.colorYTick = {'0'; '1'};
     end
     if ~params.noPlot{1}
-        plt.general.getAxes(axesOpt, find(find(validSub)'==i));
+        plt.general.getAxes(axesOpt, find(find(extracted.validSubjects)'==i));
         makePlot(boxPlot);
     end
     plotData{i,1} = boxPlot;
