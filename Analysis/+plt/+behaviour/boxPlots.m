@@ -11,7 +11,8 @@ params = csv.inputValidation(varargin{:});
 blkDates = extracted.blkDates;
 rigNames = extracted.rigNames;
 
-maxGrid = cellfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], extracted.data, 'uni', 0);
+maxGrid = cellfun(@(x) [length(unique(x.stim_audDiff)) length(unique(x.stim_visDiff))], ...
+    extracted.data(extracted.validSubjects>0), 'uni', 0);
 maxGrid = max(cell2mat(maxGrid),2);
 axesOpt.figureHWRatio = maxGrid(2)/(1.3*maxGrid(1));
 axesOpt.btlrMargins = [100 80 60 100];
@@ -21,7 +22,7 @@ axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 plotData = cell(length(extracted.data), 1);
 if ~params.noPlot{1}; figure; end
 for i = find(extracted.validSubjects)'
-    boxPlot.subject = params.subject{i};
+    boxPlot.subject = extracted.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);

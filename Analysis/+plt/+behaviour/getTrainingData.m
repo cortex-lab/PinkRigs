@@ -18,7 +18,7 @@ if params.sepPlots{1}
     params = csv.inputValidation(varargin{:}, 'sepPlots', 1,  expList);
 end
 
-[extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
+[extracted.subject, extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
     ] = deal(repmat({{'X'}},length(params.subject),1));
 extracted.data = cell(length(params.subject),1);
 
@@ -73,6 +73,7 @@ for i = 1:length(params.subject)
     loadedEV = csv.loadData(currData, 'loadTag', 'ev');
     evData = [loadedEV.evData{:}];
 
+    AVParams = cell(length(evData),1);
     for j = 1:length(evData)
         evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
         evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
@@ -88,6 +89,7 @@ for i = 1:length(params.subject)
     names = fieldnames(evData);
     cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
 
+    extracted.subject{i} = currData.subject{1};
     extracted.data{i} = cell2struct(cellData, names);
     extracted.nExp{i} = sum(modeIdx);
     extracted.AVParams{i} = AVParams(find(modeIdx,1));    
