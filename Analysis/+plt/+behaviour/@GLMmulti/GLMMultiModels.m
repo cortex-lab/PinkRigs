@@ -1,14 +1,14 @@
 function logOddsLR = GLMMultiModels(obj, tag, P)
 if ~exist('P', 'var'); obj.modelString = tag; end
-[obj.blockData.audValues, uniA] = deal(unique(obj.blockData.tri.stim.audDiff));
-[obj.blockData.visValues, uniV] = deal(unique(obj.blockData.tri.stim.visDiff));
+[obj.blockData.audValues, uniA] = deal(unique(obj.blockData.stim_audDiff));
+[obj.blockData.visValues, uniV] = deal(unique(obj.blockData.stim_visDiff));
 uniA = sort(uniA, 'descend'); uniV = sort(uniV, 'descend');
 
 [audGrid,visGrid] = meshgrid(uniA,uniV);
-comb = unique([obj.blockData.tri.stim.visDiff obj.blockData.tri.stim.audDiff], 'rows');
+comb = unique([obj.blockData.stim_visDiff obj.blockData.stim_audDiff], 'rows');
 switch tag
     case 'eval'; visDiff = obj.evalPoints(:,1); audDiff = obj.evalPoints(:,2);
-    otherwise, audDiff = obj.blockData.tri.stim.audDiff; visDiff = obj.blockData.tri.stim.visDiff;
+    otherwise, audDiff = obj.blockData.stim_audDiff; visDiff = obj.blockData.stim_visDiff;
 end
 repAud = repmat({audDiff},1,length(uniA));
 repVis = repmat({visDiff},1,length(uniV));

@@ -15,12 +15,12 @@ classdef GLMmulti < matlab.mixin.Copyable
     methods
         function obj = GLMmulti(inputBlockData, modelString)
             %% Input blockData must be a struct with fields: conditions and responseCalc
-            inputBlockData.origMax = [max(abs(inputBlockData.tri.stim.visDiff)) max(abs(inputBlockData.tri.stim.audDiff))];
-            inputBlockData.tri.stim.visDiff = inputBlockData.tri.stim.visDiff./inputBlockData.origMax(1);
-            inputBlockData.tri.stim.audDiff = inputBlockData.tri.stim.audDiff./inputBlockData.origMax(2);
+            inputBlockData.origMax = [max(abs(inputBlockData.stim_visDiff)) max(abs(inputBlockData.stim_audDiff))];
+            inputBlockData.stim_visDiff = inputBlockData.stim_visDiff./inputBlockData.origMax(1);
+            inputBlockData.stim_audDiff = inputBlockData.stim_audDiff./inputBlockData.origMax(2);
             obj.blockData = inputBlockData;
-            obj.blockData.tri.outcome.selectedTrials = ones(size(inputBlockData.tri.stim.audDiff,1),1);
-            tab = tabulate(obj.blockData.tri.outcome.responseCalc)/100;
+            obj.blockData.selectedTrials = ones(size(inputBlockData.stim_audDiff,1),1);
+            tab = tabulate(obj.blockData.response_direction)/100;
             obj.initGuess = sum(tab(:,3).*log2(tab(:,3)));
             if exist('modelString', 'var')
                 obj.GLMMultiModels(modelString); 
@@ -32,10 +32,10 @@ classdef GLMmulti < matlab.mixin.Copyable
             if isempty(obj.modelString); error('Set model first'); end
             options = optimset('algorithm','interior-point','MaxFunEvals',100000,'MaxIter',2000, 'Display', 'none');
             
-            mulIdx = obj.blockData.tri.trialType.coherent | obj.blockData.tri.trialType.conflict;
+            mulIdx = obj.blockData.is_coherentTrial | obj.blockData.is_coherentTrial;
             if ~strcmpi(obj.modelString, 'simpLogSplitVSplitAUnisensory'); mulIdx = mulIdx*0; end
             backUpBlock = obj.blockData;
-            obj.blockData = prc.filtBlock(obj.blockData, ~mulIdx);
+            obj.blockData = filterStructRows(obj.blockData, ~mulIdx);
             
             fittingObjective = @(b) (obj.calculateLogLik(b));
             [obj.prmFits,~,exitflag] = fmincon(fittingObjective, obj.prmInit, [], [], [], [], obj.prmBounds(1,:), obj.prmBounds(2,:), [], options);
@@ -54,7 +54,7 @@ classdef GLMmulti < matlab.mixin.Copyable
             if ~exist('nFolds', 'var') || isempty(nFolds); nFolds = 5; end
             
             options = optimset('algorithm','interior-point','MaxFunEvals',100000,'MaxIter',2000, 'Display', 'none');
-            cvObj = cvpartition(obj.blockData.tri.outcome.responseCalc,'KFold',nFolds);
+            cvObj = cvpartition(obj.blockData.response_direction,'KFold',nFolds);
             mulIdx = obj.blockData.tri.trialType.coherent | obj.blockData.tri.trialType.conflict;
             if ~strcmpi(obj.modelString, 'simpLogSplitVSplitAUnisensory'); mulIdx = mulIdx*0; end
 
@@ -73,15 +73,15 @@ classdef GLMmulti < matlab.mixin.Copyable
                 cvTestObj = copy(obj); 
                 cvTestObj.blockData = prc.filtBlock(cvTestObj.blockData, cvObj.test(i));
                 pHatTested = cvTestObj.calculatepHat(obj.prmFits(i,:));
-                obj.pHat(cvObj.test(i)) = pHatTested(sub2ind(size(pHatTested),(1:size(pHatTested,1))', cvTestObj.blockData.tri.outcome.responseCalc));
+                obj.pHat(cvObj.test(i)) = pHatTested(sub2ind(size(pHatTested),(1:size(pHatTested,1))', cvTestObj.blockData.response_direction));
                 obj.logLik(i) = -mean(log2(obj.pHat(cvObj.test(i))));
             end
         end
         
         function h = plotBlockData(obj)
             %%
-            numTrials = prc.makeGrid(obj.blockData, ~isnan(obj.blockData.tri.outcome.responseCalc), @length, 1, 0, 1);
-            numRightTurns = prc.makeGrid(obj.blockData, obj.blockData.tri.outcome.responseCalc==2, @sum, 1, 0, 1);
+            numTrials = prc.makeGrid(obj.blockData, ~isnan(obj.blockData.response_direction), @length, 1, 0, 1);
+            numRightTurns = prc.makeGrid(obj.blockData, obj.blockData.response_direction==2, @sum, 1, 0, 1);
             
             audValues = [obj.blockData.audValues]./abs(max(obj.blockData.audValues));
             colorChoices = plt.selectRedBlueColors(audValues);
@@ -149,7 +149,7 @@ classdef GLMmulti < matlab.mixin.Copyable
         
         function logLik = calculateLogLik(obj,testParams)
             pHatCalculated = obj.calculatepHat(testParams);
-            responseCalc = obj.blockData.tri.outcome.responseCalc;
+            responseCalc = obj.blockData.response_direction;
             logLik = -mean(log2(pHatCalculated(sub2ind(size(pHatCalculated),(1:size(pHatCalculated,1))', responseCalc))));
         end
         

@@ -15,11 +15,11 @@ end
 expList = csv.queryExp(params);
 if isempty(expList); error('No subjects found to match criteria'); end
 if params.sepPlots{1}
-    params = csv.inputValidation(varargin{:}, expList);
-    params.sepPlots = repmat({1},length(params.subject),1);
+    params = csv.inputValidation(varargin{:}, 'sepPlots', 1,  expList);
 end
 
-[extracted.blkDates, extracted.rigNames] = deal(repmat({{'X'}},length(params.subject),1));
+[extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
+    ] = deal(repmat({{'X'}},length(params.subject),1));
 extracted.data = cell(length(params.subject),1);
 
 extracted.validSubjects = ones(length(params.subject),1);
@@ -77,10 +77,10 @@ for i = 1:length(params.subject)
         evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
         evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
         evData(j).stim_audDiff = evData(j).stim_audAzimuth;
-        evData(j).AVParams = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
+        AVParams{j,1} = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
     end
 
-    [uniParams, ~, uniMode] = unique(arrayfun(@(x) num2str(x.AVParams(:)'), evData, 'uni', 0));
+    [uniParams, ~, uniMode] = unique(cellfun(@(x) num2str(x(:)'), AVParams, 'uni', 0));
     modeIdx = uniMode == mode(uniMode);
     if numel(uniParams) ~= 1
         fprintf('Multiple param sets detected for %s, using mode \n', currData.subject{1});
@@ -88,8 +88,9 @@ for i = 1:length(params.subject)
     names = fieldnames(evData);
     cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
 
-    extracted.data{i,1} = cell2struct(cellData, names);
-    extracted.data{i,1}.nExperiments = sum(modeIdx);
+    extracted.data{i} = cell2struct(cellData, names);
+    extracted.nExp{i} = sum(modeIdx);
+    extracted.AVParams{i} = AVParams(find(modeIdx,1));    
     extracted.blkDates{i} = extracted.blkDates{i}(modeIdx);
     extracted.rigNames{i} = extracted.rigNames{i}(modeIdx);
 end

@@ -26,14 +26,14 @@ for i = find(extracted.validSubjects)'
     boxPlot.axisLimits = [0 1];
     boxPlot.colorMap = plt.general.redBlueMap(64);
 
-    if isempty(extracted.data{i}) || extracted.data{i}.nExperiments == 1 
+    if isempty(extracted.data{i}) || extracted.nExp{i} == 1 
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     else
-        boxPlot.extraInf = num2str([extracted.data{i}.nExperiments 'Sess']);
+        boxPlot.extraInf = num2str([extracted.nExp{i} 'Sess']);
     end
     if ~isempty(extracted.data{i})
-        tDat = rmfield(extracted.data{i}, {'nExperiments', 'AVParams'});
-        boxPlot.nExperiments = extracted.data{i}.nExperiments;
+        tDat = extracted.data{i};
+        boxPlot.nExp = extracted.nExp{i};
     end
 
     if isempty(extracted.data{i})
@@ -41,10 +41,10 @@ for i = find(extracted.validSubjects)'
         boxPlot.plotData = nan;
         boxPlot.trialCount = 0;
         boxPlot.totTrials = nan;
-        boxPlot.nExperiments = nan;
+        boxPlot.nExp = nan;
     elseif strcmpi(params.plotType{1}(1:3), 'res')
-        tkIdx = extracted.data{i}.is_validTrial & extracted.data{i}.response_direction;
-        tDat = filterStructRows(tDat, tkIdx);
+        keepIdx = tDat.is_validTrial & tDat.response_direction;
+        tDat = filterStructRows(tDat, keepIdx);
 
         [~,~,vLabel] = unique(tDat.stim_visDiff);
         [~,~,aLabel] = unique(tDat.stim_audDiff);
