@@ -41,8 +41,15 @@ else
             blockRefTimes = nan;
             timelineRefTimes = nan;
         otherwise
-            fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',params.expDef{1}{1})
-            alignType = 'photoDiode';
+            %deals with Tim's vid files for now...
+            if contains(params.expDef{1}{1}, 'Vid')
+                alignType = 'none';
+                blockRefTimes = nan;
+                timelineRefTimes = nan;
+            else
+                fprintf('No alignment type recorded for expDef %s. Using photodiode.\n',params.expDef{1}{1})
+                alignType = 'photoDiode';
+            end
     end
 end
 
