@@ -102,8 +102,8 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
         new_queue = new_queue.drop_duplicates('ephysName')
 
     new_queue.to_csv(queue_file,index = False)
-    # pyksqueue_file = os.path.join(root,'pykilosort_queue.csv')
-    # new_queue.to_csv(pyksqueue_file,index = False)
+    pyksqueue_file = os.path.join(root,'pykilosort_queue.csv')
+    new_queue.to_csv(pyksqueue_file,index = False)
     print('%d files are waiting to be sorted ...'
         % (len(new_queue[new_queue['sortedTag']==0])))
 
