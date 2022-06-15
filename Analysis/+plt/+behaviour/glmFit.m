@@ -11,11 +11,8 @@ varargin = ['noPlot', {0}, varargin];
 varargin = ['onlyPlt', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
 
+extracted = plt.behaviour.getTrainingData(varargin{:});
 params = csv.inputValidation(varargin{:});
-extracted = plt.behaviour.getTrainingData(params);
-
-blkDates = extracted.blkDates;
-rigNames = extracted.rigNames;
 
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];

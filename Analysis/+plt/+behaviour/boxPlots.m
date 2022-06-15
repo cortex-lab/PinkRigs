@@ -5,8 +5,8 @@ varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
+extracted = plt.behaviour.getTrainingData(varargin{:});
 params = csv.inputValidation(varargin{:});
-extracted = plt.behaviour.getTrainingData(params);
 
 blkDates = extracted.blkDates;
 rigNames = extracted.rigNames;
