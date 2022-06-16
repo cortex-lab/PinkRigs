@@ -43,6 +43,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
             ephysPath = {ephysFiles.folder};
         end
     end
+    ephysPath = unique(ephysPath); 
     
     % Get the sync for each recording
     ephysFlipperTimes = cell(1,numel(ephysPath));
