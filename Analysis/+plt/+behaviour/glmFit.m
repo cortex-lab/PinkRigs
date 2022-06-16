@@ -33,7 +33,7 @@ for i = find(extracted.validSubjects)'
     end
 
     if params.useCurrentAxes{i}; obj.hand.axes = gca; 
-    elseif ~params.noPlot{i}; obj.hand.axes = plt.getAxes(axesOpt, i); 
+    elseif ~params.noPlot{i}; obj.hand.axes = plt.general.getAxes(axesOpt, i); 
     end
     
     if ~params.onlyPlt{i}
