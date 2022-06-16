@@ -50,7 +50,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
     for ee = 1:numel(ephysPath)
         % Get meta data
         dataFile = dir(fullfile(ephysPath{ee},'*ap.*bin'));
-        metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
+        metaS = readMetaData_spikeGLX(dataFile(1).name,dataFile(1).folder);
         
         % Load sync data
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));

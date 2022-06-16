@@ -1,10 +1,10 @@
-function [eventTimes, trialGroups, opt] = conflict(ev)
+function [eventTimes, trialGroups, opt] = coherent(ev)
 
     opt = struct;
     choiceLabels = (ev.response_direction*2-3).*(ev.response_direction>0);
     choiceNames = {'MoveL'; 'Timeout'; 'MoveR'}; 
 
-    idx = (ev.is_conflictTrial) & (ev.stim_audAzimuth==60);     
+    idx = (ev.is_coherentTrial) & (ev.stim_audAzimuth==-60);     
 
     
     eventTimes = {...

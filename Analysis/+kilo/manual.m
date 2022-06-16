@@ -1,8 +1,8 @@
 subject = 'AV013';
 server = '\\zinu';
-date = '2022-06-07';
+date = '2022-06-13';
 
-d = dir(fullfile(server,'Subjects',subject,date,'**','ephys','**','*.ap.*bin'));
+d = dir(fullfile(server,'Subjects',subject,date,'**','ephys','**','*.ap.cbin'));
 clear recList
 for idx = 1:numel(d)
     recList{idx} = fullfile(d(idx).folder,d(idx).name);

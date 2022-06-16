@@ -18,6 +18,8 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'multiSpaceTraining';
     elseif contains(expDef,'AVPassive')
         expDefRef = 'AVPassive';
+    elseif contains(expDef,'Vid')
+        expDefRef = 'spontaneous';
     else
         error('ExpDef reference does not exist for expDef %s',expDef)
     end
