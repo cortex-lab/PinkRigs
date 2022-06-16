@@ -114,57 +114,23 @@ switch lower(computerType)
             preproc.extractExpData('expDate', 7, 'preproc2Check', '(0,0)')
         end
         
-        
+
     case {'kilo2'}
-      
-        fprintf('Detected kilo2 computer... \n')
-        fprintf('Starting now %s... \n',datestr(now))
-        
-        dbstop if error % temporarily, to debug
-        
-        fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
-        csv.checkForNewPinkRigRecordings('days2check', 1);
-        
         c = clock;
-        if c(4) > 20
-            fprintf('Update on training... \n')
-            % Get plot of the mice trained today.
-            expList = csv.queryExp('expDate', 0, 'expDef', 'training');
-            if ~isempty(expList)
-                plt.behaviour.boxPlots(expList, 'sepPlots', 1)
-                saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
-                close(gcf)
-            end
-            
-            % Check status and send email.
-            checkTrainingPath = which('check_training_mice.py');
-            [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
-                'python ' checkTrainingPath ' &&' ...
-                'conda deactivate']);
-            if statusTrain > 0
-                fprintf('Updating on training failed with error "%s".\n', resultTrain)
-            end
-        end
-        
-        fprintf('Getting kilosort queue... \n')
-        checkQueuePath = which('check_kilosort_queue.py');
-        checkWhichMice = 'all';
-        checkWhichDates = 'last7';
-        [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
-            'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
-            'conda deactivate']);
-        if statusQueue > 0
-            fprintf('Updating the queue failed with error "%s".\n', resultQueue)
-        end
-        
-        fprintf('Running pykilosort on the queue... \n')
-        runpyKS = which('C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py');
-        [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
+        if c(4) > 20 && c(5) > 15
+
+            fprintf('Detected kilo2 computer... \n')
+            fprintf('Starting now %s... \n',datestr(now))
+
+            dbstop if error % temporarily, to debug
+            fprintf('Running pykilosort on the queue... \n')
+            runpyKS = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py';
+            [statuspyKS,resultpyKS] = system(['conda activate pyks2 && ' ...
             'python ' runpyKS ' && ' ...
             'conda deactivate']);
-        if statusQueue > 0
-            fprintf('Running pyKS failed... "%s".\n', resultQueue)
+            if statuspyKS > 0
+                fprintf('Running pyKS failed... "%s".\n', resultpyKS)
+            end
         end
-        
         fprintf('Stopping now %s. \n',datestr(now))
 end

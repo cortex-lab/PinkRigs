@@ -19,6 +19,7 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 root = r'\\zserver.cortexlab.net\Code\AVrig'
 queue_csv_file = '%s\pykilosort_queue.csv' % root
 queue_csv = pd.read_csv(queue_csv_file)
+print('checking the pyks queue...')
 for idx,rec in queue_csv.iterrows():
     #check if recording is not being sorted already 
     if rec.sortedTag==0: 
