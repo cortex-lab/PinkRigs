@@ -63,6 +63,9 @@ end
 if exist(fullfile(ksDir, 'cluster_group.tsv')) 
    cgsFile = fullfile(ksDir, 'cluster_group.tsv');
 end 
+if isempty(cgsFile)
+   cgsFile = fullfile(ksDir, 'cluster_KSLabel.tsv');
+end
 if ~isempty(cgsFile)
     [cids, cgs] = readClusterGroupsCSV(cgsFile);
 
