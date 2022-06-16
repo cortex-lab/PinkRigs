@@ -105,7 +105,7 @@ function plotRecordingLocations2(mouseName, varargin)
             if isempty(binFile)
                 fprintf('No bin file in %s. Skipping.\n',ephysPaths{pp})
             else
-                metaData = readMetaData_spikeGLX(binFile.name,binFile.folder);
+                metaData = readMetaData_spikeGLX(binFile(1).name,binFile(1).folder);
                 
                 %% Extract info from metadata
                 
