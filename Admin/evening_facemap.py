@@ -1274,7 +1274,7 @@ def main():
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
-    subset_mice_to_use = ['FT038', 'FT039']
+    subset_mice_to_use = None
 
     while continue_running:
         e = datetime.datetime.now()
