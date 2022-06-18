@@ -31,9 +31,7 @@ fprintf('Checking subject in file name against probe serials in CSV... \n')
 serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
 
 [uniqueProbes, ~, uniIdx] = unique(serialsFromMeta);
-
-%%%%%%THIS IS A TEMP HACK BECAUSE OF NAMING ISSUE IN CSV%%%%%
-matchedSubjects = subjectFromBinName; %csv.getCurrentSubjectFromProbeSerial(uniqueProbes);
+matchedSubjects = csv.getCurrentSubjectFromProbeSerial(uniqueProbes);
 
 expectedSubject = matchedSubjects(uniIdx);
 if any(cellfun(@isempty, expectedSubject))
