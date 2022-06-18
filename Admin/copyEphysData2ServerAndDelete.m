@@ -6,7 +6,7 @@ if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
 fprintf('Starting now %s...',datestr(now))
 
 % find all folders with bin files
-localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.*bin'}, 'uni', 0));
+localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.bin'}, 'uni', 0));
 if isempty(localEphysFiles)
     fprintf('There are no ephys files in the local directory. Returning... \n');
     pause(1);
