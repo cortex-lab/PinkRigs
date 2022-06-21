@@ -28,10 +28,10 @@ for mm = 1:numel(params.subject)
     % Add implant info
     datNums = num2cell(datenum(expListMouse.expDate, 'yyyy-mm-dd'));
     if strcmp(params.implantDate(mm), 'none')
-        expListMouse.daysSinceImplant = repmat({'NaN'}, height(expListMouse), 1);
+        expListMouse.daysSinceImplant = repmat({nan}, height(expListMouse), 1);
     else
         currImplant = datenum(params.implantDate{mm}, 'yyyy-mm-dd');
-        expListMouse.daysSinceImplant = cellfun(@(x) num2str(x-currImplant), datNums, 'uni', 0);
+        expListMouse.daysSinceImplant = cellfun(@(x) (x-currImplant), datNums, 'uni', 0);
     end
 
     % Get list of exp for this mouse
@@ -89,7 +89,7 @@ function extractedDateIdx = extractDates(currDate, mouseData)
 todayDate = datenum(date);
 dateList = mouseData.expDate;
 dateNumsCSV = datenum(dateList);
-daysSinceImplant = cellfun(@(x) str2double(x), mouseData.daysSinceImplant);
+daysSinceImplant = cell2mat(mouseData.daysSinceImplant);
 sortedDatesCSV = unique(dateNumsCSV);
 datePat = '\d\d\d\d-\d\d-\d\d';
 

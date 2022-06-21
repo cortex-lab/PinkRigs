@@ -73,6 +73,7 @@ if strcmp(outP.subject{1},'active')
     outP.subject = mouseList.Subject(strcmp(mouseList.IsActive,'1'));
 elseif strcmp(outP.subject{1},'implanted')
     implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mouseList.P0_implantDate);
+    implanted(strcmpi(mouseList.P0_type, 'P3B')) = 0;
     outP.subject = mouseList.Subject(implanted);
 elseif strcmp(outP.subject{1},'all')
     outP.subject = mouseList.Subject;
