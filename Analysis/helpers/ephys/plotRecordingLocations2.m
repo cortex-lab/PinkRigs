@@ -174,7 +174,8 @@ function plotRecordingLocations2(mouseName, varargin)
     
     %% Plot the basic layout
     
-    fig = figure('Position', [1 31 1920 973],'Name', params.subject);
+    fig = figure('Position', [1 31 1920 973],'Name', params.subject,'color','w');
+
     clear probeAxes behaviorAxes
     
     recNumPerChan = cellfun(@(x) size(x,2), chanExpRef);
