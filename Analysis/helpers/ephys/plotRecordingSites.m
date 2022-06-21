@@ -8,7 +8,7 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
         recompute = 0;
     end
     if ~iscell(recFolderList)
-        recFolderList = {recFolderList}
+        recFolderList = {recFolderList};
     end
     
     probeColor = [0.4 0.6 0.2; ...
@@ -35,8 +35,8 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
                     f = figure('Position', [992   566   248   412]); hold all
                 end
                 for probeNum = 1:numel(probeFolders)
-                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name));
-                    [chanPos, elecPos, shank] = getRecordingSites(binFile.name,binFile.folder);
+                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.*bin'));
+                    [chanPos, elecPos, shank] = getRecordingSites(binFile(1).name,binFile(1).folder);
                     
                     % make a plot of all the electrode positions
                     shankSep = 250;

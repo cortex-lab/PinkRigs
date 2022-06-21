@@ -25,6 +25,15 @@ for mm = 1:numel(params.subject)
     % Loop through subjects
     expListMouse = csv.readTable(csv.getLocation(params.subject{mm}));
 
+    % Add implant info
+    datNums = num2cell(datenum(expListMouse.expDate, 'yyyy-mm-dd'));
+    if strcmp(params.implantDate(mm), 'none')
+        expListMouse.daysSinceImplant = repmat({nan}, height(expListMouse), 1);
+    else
+        currImplant = datenum(params.implantDate{mm}, 'yyyy-mm-dd');
+        expListMouse.daysSinceImplant = cellfun(@(x) (x-currImplant), datNums, 'uni', 0);
+    end
+
     % Get list of exp for this mouse
     expListMouse.subject = repmat(params.subject(mm), size(expListMouse,1),1);
     expListMouse = [expListMouse(:,end) expListMouse(:,1:end-1)];
@@ -68,17 +77,19 @@ for mm = 1:numel(params.subject)
     %Convert date inputs to actual dates based on the CSV data
     currDate = params.expDate{mm};
     if ~iscell(currDate); currDate = {currDate}; end
-    selectedDates = arrayfun(@(x) extractDates(x, expListMouse.expDate), currDate, 'uni', 0);
+    selectedDates = arrayfun(@(x) extractDates(x, expListMouse), currDate, 'uni', 0);
     expListMouse = expListMouse(sum(cell2mat(selectedDates(:)'),2)>0,:);
     if isempty(expListMouse); continue; end
-    
+
     extractedExperiments = [extractedExperiments; expListMouse];
 end
 end
 
-function extractedDateIdx = extractDates(currDate, dateList)
+function extractedDateIdx = extractDates(currDate, mouseData)
 todayDate = datenum(date);
+dateList = mouseData.expDate;
 dateNumsCSV = datenum(dateList);
+daysSinceImplant = cell2mat(mouseData.daysSinceImplant);
 sortedDatesCSV = unique(dateNumsCSV);
 datePat = '\d\d\d\d-\d\d-\d\d';
 
@@ -101,6 +112,8 @@ for i = 1:length(currDate)
     elseif ~isempty(regexp(currDate{i}, datePat, 'once'))
         currDateNums = datenum(regexp(currDate{i}, datePat,'match'), 'yyyy-mm-dd');
         extractedDateIdx =  ismember(dateNumsCSV, currDateNums);
+    elseif strcmpi(currDate{i}, 'postimplant')
+        extractedDateIdx = daysSinceImplant>=0;
     elseif strcmpi(currDate{i}, 'all')
         extractedDateIdx = ones(length(dateList), 1);
     else, error('Did not understand your date input')
