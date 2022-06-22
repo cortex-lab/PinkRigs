@@ -36,7 +36,7 @@ for idx,rec in queue_csv.iterrows():
             queue_csv.to_csv(queue_csv_file,index = False)
             add_default_handler(level='INFO') # print output as the algorithm runs
             # find the compressed file of the same name 
-            input_dir = list((input_dir.parents[0]).glob('*.cbin'))[0] 
+            input_dir = list((input_dir.parents[0]).glob('*.bin'))[0] 
             run(input_dir, probe=channel_map, low_memory=True, dir_path=output_dir)
             queue_csv.sortedTag.iloc[idx]= 1
             queue_csv.to_csv(queue_csv_file,index = False)

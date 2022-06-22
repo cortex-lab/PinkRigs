@@ -117,7 +117,7 @@ switch lower(computerType)
 
     case {'kilo2'}
         c = clock;
-        if c(4) > 20 && c(5) > 15
+        if c(4) > 20 
 
             fprintf('Detected kilo2 computer... \n')
             fprintf('Starting now %s... \n',datestr(now))
