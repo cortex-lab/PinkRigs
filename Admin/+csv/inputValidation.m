@@ -71,12 +71,17 @@ mouseList = csv.readTable(mainCSVLoc);
 %Validate subjects and deal with "all" and "active" cases for subject selection
 if strcmp(outP.subject{1},'active')
     outP.subject = mouseList.Subject(strcmp(mouseList.IsActive,'1'));
+elseif strcmp(outP.subject{1},'implanted')
+    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mouseList.P0_implantDate);
+    implanted(strcmpi(mouseList.P0_type, 'P3B')) = 0;
+    outP.subject = mouseList.Subject(implanted);
 elseif strcmp(outP.subject{1},'all')
     outP.subject = mouseList.Subject;
 end
 if ~all(ismember(outP.subject, mouseList.Subject))
     error('Unrecognized mouse names!')
 end
+outP.implantDate = csv.getImplantDateFromSubject(outP.subject);
 
 %Make all fields the same length as "subject"
 nSubjects = length(outP.subject);

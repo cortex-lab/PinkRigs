@@ -16,8 +16,10 @@ function expDefRef = getExpDefRef(expDef)
             contains(expDef, 'multiSpaceWorld_checker')
 %         expDefRef = 'AVprotocol';
         expDefRef = 'multiSpaceTraining';
-    elseif contains(expDef,'AVPassive')
+    elseif contains(expDef,'postactive')
         expDefRef = 'AVPassive';
+    elseif contains(expDef,'extended')
+        expDefRef = 'AVPassive_extended';
     elseif contains(expDef,'Vid')
         expDefRef = 'spontaneous';
     else

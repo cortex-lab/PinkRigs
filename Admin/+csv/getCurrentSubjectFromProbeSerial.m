@@ -12,12 +12,12 @@ serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
 
 implantDatesFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'implantDate')), 'uni', 0)';
 implantDatesFromCSV = cat(2,implantDatesFromCSV{:});
-dateFormats1 = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDatesFromCSV);
+dateFormats1 = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), implantDatesFromCSV);
 dateFormats2 = cellfun(@(x) ~isempty(regexp(x,'\d\d/\d\d/\d\d\d\d', 'once')), implantDatesFromCSV);
 dateFormats = dateFormats1 | dateFormats2;
-implantDatesFromCSV(dateFormats2) = cellfun(@(x) datestr(datenum(x,'dd/mm/yyyy'), 'yyyy-mm-dd'), implantDatesFromCSV(dateFormats2), 'UniformOutput', false);
-implantDatesFromCSV(~dateFormats) = deal({['"' datestr(now-5000, 'yyyy-mm-dd') '"']});
-implantDatesFromCSV = cellfun(@(x) datenum(x, '"yyyy-mm-dd"'), implantDatesFromCSV);
+implantDatesFromCSV(dateFormats2) = cellfun(@(x) datestr(datenum(x,'dd/mm/yyyy'), 'yyyy_mm_dd'), implantDatesFromCSV(dateFormats2), 'UniformOutput', false);
+implantDatesFromCSV(~dateFormats) = deal({[datestr(now-5000, 'yyyy_mm_dd')]});
+implantDatesFromCSV = cellfun(@(x) datenum(x, 'yyyy_mm_dd'), implantDatesFromCSV);
 
 probeDates = cellfun(@(x) max(implantDatesFromCSV(serialsFromCSV == x)), probeSerial, 'uni', 0);
 probeDates(cellfun(@isempty, probeDates)) = deal({now+20});
