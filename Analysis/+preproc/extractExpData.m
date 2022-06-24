@@ -104,9 +104,9 @@ function extractExpData(varargin)
                 
                 if shouldProcess('spk')
                     alignment = load(alignmentFile,'ephys','block');
-                    if isstruct(alignment.ephys)
-                        try
-                            fprintf(1, '* Extracting spikes... *\n');
+                    if isfield(alignment,'ephys')
+                        if isstruct(alignment.ephys)
+                            fprintf (1, '* Extracting spikes... *\n');
                             
                             if ~exist('block','var')
                                 loadedData = csv.loadData(expInfo, 'loadTag', 'block');
@@ -115,28 +115,41 @@ function extractExpData(varargin)
                             
                             spk = cell(1,numel(alignment.ephys));
                             for probeNum = 1:numel(alignment.ephys)
-                                % Get spikes times & cluster info
-                                spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
-                                
-                                % Align them
-                                spk{probeNum}.spikes.time = preproc.align.event2Timeline(spk{probeNum}.spikes.time, ...
-                                    alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
-                                
-                                % Subselect the ones that are within this experiment
-                                expLength = block.duration;
-                                spk2keep = (spk{probeNum}.spikes.time>0) & (spk{probeNum}.spikes.time<expLength);
-                                spk{probeNum}.spikes.time = spk{probeNum}.spikes.time(spk2keep);
-                                spk{probeNum}.spikes.cluster = spk{probeNum}.spikes.cluster(spk2keep);
-                                spk{probeNum}.spikes.xpos = spk{probeNum}.spikes.xpos(spk2keep);
-                                spk{probeNum}.spikes.depth = spk{probeNum}.spikes.depth(spk2keep);
-                                spk{probeNum}.spikes.tempScalingAmp = spk{probeNum}.spikes.tempScalingAmp(spk2keep);
-                                
-                                % Recompute spike numbers
-                                for c = 1:numel(spk{probeNum}.clusters)
-                                    spk{probeNum}.clusters(c).Spknum = sum(spk{probeNum}.spikes.cluster == spk{probeNum}.clusters(c).ID);
+                                if ~isnan(alignment.ephys(probeNum).ephysPath)
+                                    try
+                                        % Get spikes times & cluster info
+                                        spk{probeNum} = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath);
+                                        
+                                        % Align them
+                                        spk{probeNum}.spikes.time = preproc.align.event2Timeline(spk{probeNum}.spikes.time, ...
+                                            alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+                                        
+                                        % Subselect the ones that are within this experiment
+                                        expLength = block.duration;
+                                        spk2keep = (spk{probeNum}.spikes.time>0) & (spk{probeNum}.spikes.time<expLength);
+                                        spk{probeNum}.spikes.time = spk{probeNum}.spikes.time(spk2keep);
+                                        spk{probeNum}.spikes.cluster = spk{probeNum}.spikes.cluster(spk2keep);
+                                        spk{probeNum}.spikes.xpos = spk{probeNum}.spikes.xpos(spk2keep);
+                                        spk{probeNum}.spikes.depth = spk{probeNum}.spikes.depth(spk2keep);
+                                        spk{probeNum}.spikes.tempScalingAmp = spk{probeNum}.spikes.tempScalingAmp(spk2keep);
+                                        
+                                        % Recompute spike numbers
+                                        for c = 1:numel(spk{probeNum}.clusters)
+                                            spk{probeNum}.clusters(c).Spknum = sum(spk{probeNum}.spikes.cluster == spk{probeNum}.clusters(c).ID);
+                                        end
+                                        
+                                        fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
+                                    catch me
+                                        warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,me.message)
+                                        spk{probeNum} = 'error';
+                                        
+                                        % Save error message locally
+                                        saveErrMess(me.message,fullfile(expFolder, 'GetSpkError.json'))
+                                    end
+                                else
+                                    spk{probeNum} = nan;
                                 end
                             end
-                            fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                             
                             % Remove any error file
                             if exist(fullfile(expFolder, 'GetSpkError.json'),'file')
@@ -144,17 +157,15 @@ function extractExpData(varargin)
                             end
                             
                             fprintf(1, '* Spikes extraction done. *\n');
-                        catch me
-                            warning(me.identifier,'Couldn''t get spikes (spk): threw an error (%s)',me.message)
+                        elseif ischar(alignment.ephys) && strcmp(alignment.ephys,'error')
                             spk = 'error';
-                            
-                            % Save error message locally
-                            saveErrMess(me.message,fullfile(expFolder, 'GetSpkError.json'))
+                        elseif isa(alignment.ephys,'double') && isnan(alignment.ephys)
+                            spk = nan;
+                        else
+                            error('Unknown format for ephys alignment variable.')
                         end
-                    elseif ischar(alignment.ephys) && strcmp(alignment.ephys,'error')
-                        spk = 'error';
-                    elseif isnan(alignment.ephys)
-                        spk = nan;
+                    else
+                        error('Ephys wasn''t aligned.')
                     end
                               
                     change = 1;

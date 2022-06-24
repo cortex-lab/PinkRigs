@@ -81,21 +81,17 @@ function main(varargin)
                     try
                         % Align it
                         fprintf(1, '* Aligning ephys... *\n');
-                        [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expInfo);
+                        [ephysFlipperTimes, timelineFlipperTimes, ephysPath, serialNumber] = preproc.align.ephys(expInfo);
                         fprintf(1, '* Ephys alignment done. *\n');
                         
                         % Save it
-                        if isempty(ephysPath)
-                            % Couldn't find matching ephys for that experiment.
-                            ephys = nan;
-                        else
-                            % Found a (set of) matching ephys for that exp.
-                            ephys = struct();
-                            for p = 1:numel(ephysPath)
-                                ephys(p).originTimes = ephysFlipperTimes{p};
-                                ephys(p).timelineTimes = timelineFlipperTimes{p};
-                                ephys(p).ephysPath = ephysPath{p}; % can have several probes
-                            end
+                        % Found a (set of) matching ephys for that exp.
+                        ephys = struct();
+                        for p = 1:numel(ephysPath) % can have several probes
+                            ephys(p).originTimes = ephysFlipperTimes{p};
+                            ephys(p).timelineTimes = timelineFlipperTimes{p};
+                            ephys(p).ephysPath = ephysPath{p}; 
+                            ephys(p).serialNumber = serialNumber(p); 
                         end
                         
                         % Remove any error file
@@ -139,7 +135,7 @@ function main(varargin)
                     block = struct;
                     fprintf(1, '* Aligning block... *\n');
                     if contains(expInfo.expDef{1}, 'spontaneousActivity')
-                        %expDefs that aren't expected to have alignement
+                        % expDefs that aren't expected to have alignement
                         block = nan;
                     else
                         [blockRefTimes, timelineRefTimes] = preproc.align.block(expInfo);
@@ -176,7 +172,7 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if any(cellfun(@(x)shouldProcess(x, 'video'), params.videoNames{1}))                               
+            if any(cellfun(@(x)shouldProcess(x, 'video'), params.videoNames{ee}))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
                 % Align each of them
