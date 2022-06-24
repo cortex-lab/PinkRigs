@@ -229,7 +229,7 @@ function main(varargin)
         end
         
         if successKS && isnan(successQM)
-            if ~exist(fullfile(KSOutFolderServer,'qMetrics.m'),'var') || params.recomputeQMetrics
+            if ~exist(fullfile(KSOutFolderServer,'qualityMetrics.mat'),'file') || params.recomputeQMetrics
                 %% Running quality metrics (directly on the server)
                 % Independent of previous block to be able to run this
                 % without redoing the KSing.
