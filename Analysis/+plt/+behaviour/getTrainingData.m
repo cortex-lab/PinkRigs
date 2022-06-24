@@ -16,6 +16,8 @@ expList = csv.queryExp(params);
 if isempty(expList); error('No subjects found to match criteria'); end
 if params.sepPlots{1}
     params = csv.inputValidation(varargin{:}, 'sepPlots', 1,  expList);
+else
+    params.subject = unique(params.subject);
 end
 
 [extracted.subject, extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
@@ -28,6 +30,7 @@ for i = 1:length(params.subject)
         currData = expList(i,:);
         extracted.blkDates{i} = currData.expDate;
         extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
+        fprintf('Getting training data for %s on %s... \n', currData.subject{1}, currData.expDate{1});
     else
         currData = expList(strcmp(expList.subject, params.subject{i}),:);
     end
@@ -64,8 +67,8 @@ for i = 1:length(params.subject)
     if length(unique(currData.expDate)) ~= length(currData.expDate)
         expDurations = cellfun(@str2double, currData.expDuration);
         [~, ~, uniIdx] = unique(currData.expDate);
-        keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx));
-        currData = currData(keepIdx,:);
+        keepIdx = arrayfun(@(x) find(expDurations == max(expDurations(x == uniIdx))), unique(uniIdx), 'uni', 0);
+        currData = currData(cell2mat(keepIdx),:);
     end
     extracted.blkDates{i} = currData.expDate;
     extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');

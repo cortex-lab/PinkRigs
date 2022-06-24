@@ -101,7 +101,7 @@ for i = find(extracted.validSubjects)'
     xTickLabel(2:2:end) = deal({[]});
     set(gca, 'xTick', xTickLoc, 'xTickLabel', xTickLabel);
 
-    title(sprintf('%s: %d Tri in %d Exp', params.subject{i}, length(responseDir), extracted.nExp{i}))
+    title(sprintf('%s: %d Tri in %d Exp', extracted.subject{i}, length(responseDir), extracted.nExp{i}))
     xL = xlim; hold on; plot(xL,[midPoint midPoint], '--k', 'linewidth', 1.5);
     yL = ylim; hold on; plot([0 0], yL, '--k', 'linewidth', 1.5);
 end

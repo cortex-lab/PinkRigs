@@ -63,7 +63,9 @@ if ~exist(blockPath, 'file')
 end
 
 blk = load(blockPath); blk = blk.block;
-if ~contains(blk.rigName, 'zelda'); return; end
+if ~contains(blk.rigName, 'zelda') && ~strcmp(subject, 'FT009')
+    return; 
+end
 if blk.duration/60<2
     fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     if params.saveData{1}; csv.removeDataRow(subject, expDate, expNum); end
