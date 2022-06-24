@@ -52,12 +52,16 @@ function main(varargin)
             continue;
         end
         alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
+        alignStatus.video = 0;
 
         %Anonymous funciton to decide whether something should be processed
-        shouldProcess = @(x,y) (contains(recompute,{'all';x}) || alignStatus.(x)...
-            || ~ismember(y, varListInFile)) && contains(process,{'all';x});
+        shouldProcess = @(x,y) (...
+            any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
+            || alignStatus.(x)...
+            || ~ismember(y, varListInFile))...
+            && contains(process,{'all';x});
 
-        if ~(strcmp(params.recompute{1},'none') && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
+        if ~(contains('none', params.recompute{1}) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
             %% If all isn't good...
                         
             % monitors if anything has changed
@@ -153,7 +157,7 @@ function main(varargin)
                         delete(fullfile(expFolder, 'AlignBlockError.json'))
                     end
                 catch me
-                    warning('Couldn''t align block: threw an error (%s)',me.message)
+                    warning('Couldn''t align block: threw an error (%s)', me.message)
                     block = 'error';
                     
                     % Save error message locally
@@ -176,13 +180,24 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if any(cellfun(@(x)shouldProcess(x, 'video'), params.videoNames{1}))                               
+            if any(cellfun(@(x)shouldProcess(x, 'video'), [params.videoNames{1}; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
+                if contains('video', varListInFile)
+                    video = load(savePath, 'video');
+                    video = video.video;
+                else
+                    video = struct();
+                end
+
+                if ~isempty(video) && ~any(contains({'video'; 'all'}, recompute))
+                    vids2Process = params.videoNames{1}(contains(recompute, params.videoNames{1},  'IgnoreCase', 1));
+                else, vids2Process = params.videoNames{1};
+                end
+
                 % Align each of them
-                video = struct();
-                for v = 1:numel(params.videoNames{1})
-                    vidName = params.videoNames{1}{v};
+                for v = 1:numel(vids2Process)
+                    vidName = vids2Process{v};
                     expInfo.vidName{1} = vidName;
                     expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     video(v).name = vidName;
