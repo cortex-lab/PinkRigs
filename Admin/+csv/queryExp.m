@@ -46,7 +46,7 @@ for mm = 1:numel(params.subject)
 
     % Remove expNums that don't match
     if ~strcmp(params.expNum{mm},'all')
-        expListMouse = expListMouse(contains(expListMouse.expNum, params.expNum{mm}),:);
+        expListMouse = expListMouse(strcmp(expListMouse.expNum, params.expNum{mm}),:);
     end
     if isempty(expListMouse); continue; end
 
