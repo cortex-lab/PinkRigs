@@ -1161,7 +1161,13 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
 
         # remove the *lastFrames.mj2 videos
         video_files = [x for x in video_files if 'lastFrames' not in x]
-        video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+        # TODO: use .count('_') instead
+        try:
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+        except:
+            print('WARNING: video filename format is strange for %s, skipping' % exp_folder)
+            continue
 
         print('%.f Candidate videos to look over' % len(video_files))
         print('\n'.join(video_files))
