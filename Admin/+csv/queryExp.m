@@ -11,9 +11,9 @@ params = csv.inputValidation(varargin{:});
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.
+extractedExperiments = table();
 for mm = 1:numel(params.subject)
-    extractedExperiments = table();
-
+    
     % Loop through subjects
     expListMouse = csv.readTable(csv.getLocation(params.subject{mm}));
 
