@@ -1,5 +1,5 @@
 function csvData = readTable(csvPath)
-%% Writes a "clean" csv file from "csvData"--meaning no "NaN" or "NaT" 
+%% GET RID OF THIS FUNCTION NOW...?! 
 opts = detectImportOptions(csvPath);
 
 dateFields = find(contains(opts.VariableNames, 'date','IgnoreCase',true));
