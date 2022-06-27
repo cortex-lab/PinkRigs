@@ -46,7 +46,7 @@ for i=1:height(expList)
         end
     end
 
-    %Load block data if requested
+    %Load timeline data if requested
     if contains(currLoadTag, {'tim'; 'timeline'})
         preProcPath = cell2mat([currExp.expFolder '\' pathStub '_timeline.mat']);
         if ~exist(preProcPath, 'file'); continue; end

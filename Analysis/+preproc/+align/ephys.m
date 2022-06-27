@@ -1,4 +1,4 @@
-function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
+function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumberReord] = ephys(varargin)
     %%% This function will align the flipper of the ephys data to the
     %%% flipper taken from the timeline.
     %%%
@@ -37,6 +37,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
     if isempty(ephysPath)
         % Just take them all, whatever the architecture..?
         ephysFiles = dir(fullfile(fileparts(params.expFolder{1}),'ephys','**','*.ap.*bin'));
+        ephysFiles(contains({ephysFiles.folder},'.kilosort')) = [];
         if isempty(ephysFiles)
             error('No ephys file here: %s', fullfile(fileparts(params.expFolder{1}),'ephys'))
         else
@@ -51,6 +52,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
     for ee = 1:numel(ephysPath)
         % Get meta data
         dataFile = dir(fullfile(ephysPath{ee},'*ap.*bin'));
+        dataFile(contains({dataFile.folder},'.kilosort')) = [];
         metaS = readMetaData_spikeGLX(dataFile(1).name,dataFile(1).folder);
         
         % Load sync data
@@ -140,3 +142,41 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(varargin)
     ephysRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
     timelineRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
   
+    %% Reorder according to the probes
+    if ~isempty(ephysPath)
+        % Get expected serial numbers
+        csvData = csv.readTable(csv.getLocation('main'));
+        csvData = csvData(strcmp(csvData.Subject,subject),:);
+        csvFields = fields(csvData);
+        serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
+        serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
+        
+        % Get actual serial numbers
+        ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
+        metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
+        serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
+        
+        % Throw error if unexpected SN was found
+        unexpectedSerial = ~ismember(serialsFromMeta,serialsFromCSV);
+        if any(unexpectedSerial)
+            error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
+        end
+        
+        % Reorder them
+        ephysPathReord = cell(numel(serialsFromCSV),1);
+        ephysRefTimesReord = cell(numel(serialsFromCSV),1);
+        timelineRefTimesReord = cell(numel(serialsFromCSV),1);
+        for pp = 1:numel(serialsFromCSV)
+            corresProbe = serialsFromMeta == serialsFromCSV(pp);
+            if any(corresProbe)
+                ephysPathReord(pp) = ephysPath(corresProbe);
+                ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);
+                timelineRefTimesReord(pp) = timelineRefTimes(corresProbe);
+            else
+                ephysPathReord(pp) = {nan};
+                ephysRefTimesReord(pp) = {nan};
+                timelineRefTimesReord(pp) = {nan};
+            end
+        end
+        serialNumberReord = serialsFromCSV;
+    end

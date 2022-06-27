@@ -975,18 +975,33 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
                         '!MouseList.csv']
 
     pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+    subset_mouse_info_csv_paths = []
+
     for n_path, path in enumerate(mouse_info_csv_paths):
+        print(path)
         if os.path.basename(path) in files_to_exclude:
-            mouse_info_csv_paths.remove(path)
+            # mouse_info_csv_paths.remove(path)
+            print('File : %s excluded' % path)
+            # del mouse_info_csv_paths[n_path]
         else:
             fname = os.path.basename(path)
             fname_without_ext = fname.split('.')[0]
             str_match = re.match(pattern_to_match, fname_without_ext) is not None
 
             if not str_match:
-                mouse_info_csv_paths.remove(path)
+                # mouse_info_csv_paths.remove(path)
+                # del mouse_info_csv_paths[n_path]
+                status_str = 'reject'
+            else:
+                status_str = 'accept'
+                subset_mouse_info_csv_paths.append(path)
+
+
+            print('File : %s, status: %s' % (fname, status_str))
     
     all_mouse_info = []
+    mouse_info_csv_paths = subset_mouse_info_csv_paths
 
     for csv_path in mouse_info_csv_paths:
         mouse_info = pd.read_csv(csv_path)
@@ -1012,6 +1027,7 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
             (all_mouse_info['expDate'] <= subset_date_range[1])
             ]
 
+    # pdb.set_trace()
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
 
@@ -1139,9 +1155,19 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
         # look for video files
         video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
 
+        if len(video_files) == 0:
+            print('WARNING: no video files found in %s' % exp_folder)
+            continue
+
         # remove the *lastFrames.mj2 videos
         video_files = [x for x in video_files if 'lastFrames' not in x]
-        video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+        # TODO: use .count('_') instead
+        try:
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+        except:
+            print('WARNING: video filename format is strange for %s, skipping' % exp_folder)
+            continue
 
         print('%.f Candidate videos to look over' % len(video_files))
         print('\n'.join(video_files))

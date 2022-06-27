@@ -29,7 +29,7 @@ else
     csvData = csv.readTable(csvLocation);
     csvRef = cellfun(@(x,y) [x,num2str(y)], csvData.expDate, csvData.expNum, 'uni', 0);
     insertRef = cellfun(@(x,y) [x,num2str(y)], newData.expDate, newData.expNum, 'uni', 0);
-    csvData(contains(csvRef,insertRef),:) = [];
+    csvData(ismember(csvRef,insertRef),:) = [];
 end
 
 % Concatenate "newData" with modified "csvData" and sort according to 
