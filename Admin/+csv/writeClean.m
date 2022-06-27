@@ -15,6 +15,9 @@ if ~exist('removeNaN', 'var'); removeNaN = 0; end
 % Create backup of csv
 csv.createBackup(csvLocation);
 
+if contains('expDate', csvData.Properties.VariableNames)
+    csvData.expDate = cellfun(@(x) strrep(x, '-', '_'), csvData.expDate, 'uni', 0);
+end
 
 try
     % Write table with csv
