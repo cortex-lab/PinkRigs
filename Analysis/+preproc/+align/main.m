@@ -200,7 +200,7 @@ function main(varargin)
                 for v = 1:numel(vids2Process)
                     vidName = vids2Process{v};
                     expInfo.vidName = vidName;
-                    expInfo.vidInfo = dir(fullfile(expFolder,['*' vidName '.mj2']));
+                    expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     video(v).name = vidName;
                     if ~isempty(expInfo.vidInfo)
                         try

@@ -20,6 +20,8 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'AVPassive';
     elseif contains(expDef,'extended')
         expDefRef = 'AVPassive_extended';
+    elseif contains(expDef,'spatialIntegrationFlora')
+        expDefRef = 'AVPassive_extended';
     elseif contains(expDef,'Vid')
         expDefRef = 'spontaneous';
     else

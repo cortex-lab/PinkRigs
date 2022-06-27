@@ -29,7 +29,13 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     visTrialsLoc = block.events.visazimuthValues(eIdx); visTrialsLoc(~visTrial) = nan;
     audTrial = block.events.audamplitudeValues(eIdx) > 0;
     audTrialsLoc = block.events.audazimuthValues(eIdx); audTrialsLoc(~audTrial) = nan;
-    rewTrials = block.outputs.rewardValues(eIdx)>0;
+    
+    % in the old data there was no reward valve
+    if isfield(block.outputs,'rewardValues') 
+        rewTrials = block.outputs.rewardValues(eIdx)>0;
+    else 
+        rewTrials = false(1,numel(eIdx));
+    end 
     
     % get trial types, Dr Coen scheme 
     blankTrials  = ((isnan(visTrialsLoc)) & (isnan(audTrialsLoc)) & (rewTrials==0));
