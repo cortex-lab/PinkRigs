@@ -203,7 +203,7 @@ if any(alignFile)
                 tDat(i+1) = 1;
             end
         end
-    elseif isempty(fields(alignment.video))
+    elseif isfield(alignment, 'video') && isempty(fields(alignment.video))
         % If the video structure is empty for some reason, issue errors
         tDat(2:4) = 2;
     else
@@ -246,7 +246,7 @@ if any(alignFile)
         nDat.issortedKS2 = nan;
         nDat.issortedPyKS = nan;
     end
-    
+
     % Assign tDat to alignBlkFrontSideEyeMicEphys field
     nDat.alignBlkFrontSideEyeMicEphys = tDat;
 end

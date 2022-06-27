@@ -20,7 +20,7 @@ function extractExpData(varargin)
         % Assign variables from exp2checkList to ease of use later
         expDate = exp2checkList.expDate{ee,1};
         expNum = exp2checkList.expNum{ee,1};
-        expDef = expInfo.expDef{ee,1};
+        expDef = exp2checkList.expDef{ee,1};
         subject = exp2checkList.subject{ee,1};
         expFolder = exp2checkList.expFolder{ee,1};
         recompute = exp2checkList.recompute{ee,1};
