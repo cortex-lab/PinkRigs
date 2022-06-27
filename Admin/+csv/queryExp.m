@@ -16,12 +16,17 @@ for mm = 1:numel(params.subject)
     % Loop through subjects
     expListMouse = csv.readTable(csv.getLocation(params.subject{mm}));
 
+    % Add "subject" to the csv table
+    listFields = expListMouse.Properties.VariableNames;
+    expListMouse.subject = repmat(params.subject(mm), size(expListMouse,1),1);
+    expListMouse = expListMouse(:, ['subject', listFields]);
+
     % Add optional parameteres as new csvFields
-%     newfields = setdiff(fields(params), [fields(expListMouse); ...
-%         'timeline2Check'; 'align2Check'; 'preproc2Check'; 'issortedCheck']);
-%     for i = 1:legnth(newfields)
-%         expListMouse.(newfields(i)) = repmat(params.newfields(1), height(expListMouse),1);
-%     end
+    newfields = setdiff(fields(params), [expListMouse.Properties.VariableNames'; ...
+        'timeline2Check'; 'align2Check'; 'preproc2Check'; 'issortedCheck']);
+    for i = 1:length(newfields)
+        expListMouse.(newfields{i}) = repmat(params.(newfields{i})(mm), height(expListMouse),1);
+    end
 
     % Add implant info
     datNums = num2cell(datenum(expListMouse.expDate, 'yyyy-mm-dd'));
@@ -31,10 +36,6 @@ for mm = 1:numel(params.subject)
         currImplant = datenum(params.implantDate{mm}, 'yyyy-mm-dd');
         expListMouse.daysSinceImplant = cellfun(@(x) (x-currImplant), datNums, 'uni', 0);
     end
-
-    % Get list of exp for this mouse
-    expListMouse.subject = repmat(params.subject(mm), size(expListMouse,1),1);
-    expListMouse = [expListMouse(:,end) expListMouse(:,1:end-1)];
 
     % Remove the expDefs that don't match
     if ~strcmp(params.expDef{mm},'all')

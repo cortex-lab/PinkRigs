@@ -181,7 +181,7 @@ if any(alignFile)
     tDat(~fileExists) = NaN;
 
     % This loop checks the alignement status for each video
-    if isfield(alignment, 'video')
+    if isfield(alignment, 'video') && ~isempty(fields(alignment.video))
         for i = 1:length(camNames) % Loop over the camera names
             % Find the idx corresponding to the current camera
             camIdx = contains({alignment.video.name}', camNames(i));
@@ -203,6 +203,9 @@ if any(alignFile)
                 tDat(i+1) = 1;
             end
         end
+    elseif isempty(fields(alignment.video))
+        % If the video structure is empty for some reason, issue errors
+        tDat(2:4) = 2;
     else
         % If "video" field is missing then issue "0" to all video fields
         tDat(2:4) = 0;
@@ -232,19 +235,20 @@ if any(alignFile)
         % they do, then give a "1" to issortedKS2 or issortedPyKS. Note
         % that an "issorted" value of 0.5 indicates that 1 file is sorted,
         % and one isn't, in a two-probe recording
-        issortedKS2 = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), {alignment.ephys.ephysPath});
+        ephysPaths = {alignment.ephys.ephysPath};
+        ephysPaths(cellfun(@(x) any(isnan(x)), ephysPaths)) = [];
+        issortedKS2 = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), ephysPaths);
         nDat.issortedKS2 = num2str(mean(issortedKS2));
-        issortedPyKS = cellfun(@(x) ~isempty(dir([x '\**\output\spike_times.npy'])), {alignment.ephys.ephysPath});
+        issortedPyKS = cellfun(@(x) ~isempty(dir([x '\**\output\spike_times.npy'])), ephysPaths);
         nDat.issortedPyKS = num2str(mean(issortedPyKS));
     elseif isnan(tDat(6))
         % Issue a "NaN" if ephys alignment isn't "1"
         nDat.issortedKS2 = nan;
         nDat.issortedPyKS = nan;
-    else
-
-        % Assign tDat to alignBlkFrontSideEyeMicEphys field
-        nDat.alignBlkFrontSideEyeMicEphys = tDat;
     end
+    
+    % Assign tDat to alignBlkFrontSideEyeMicEphys field
+    nDat.alignBlkFrontSideEyeMicEphys = tDat;
 end
 
 % If ephys alignment is a NaN, but the recording was made in the past 7

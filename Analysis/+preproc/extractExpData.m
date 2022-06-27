@@ -13,16 +13,21 @@ function extractExpData(varargin)
     
     %% --------------------------------------------------------
     %% Will compute the 'preprocData' file for each experiment.   
-    varargin = varargin(cellfun(@(x) ~istable(x), varargin));
     for ee = 1:size(exp2checkList,1)
         % Get exp info
-        expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
-        expFolder = expInfo.expFolder{1};
-        recompute = params.recompute{1};
-        process = params.process{1};
+        expInfo = exp2checkList(ee,:);
+
+        % Assign variables from exp2checkList to ease of use later
+        expDate = exp2checkList.expDate{ee,1};
+        expNum = exp2checkList.expNum{ee,1};
+        expDef = expInfo.expDef{ee,1};
+        subject = exp2checkList.subject{ee,1};
+        expFolder = exp2checkList.expFolder{ee,1};
+        recompute = exp2checkList.recompute{ee,1};
+        process = exp2checkList.process{ee,1};
         
         % Define savepath for the preproc results
-        pathStub = fullfile(expFolder, [expInfo.expDate{1} '_' expInfo.expNum{1} '_' expInfo.subject{1}]);
+        pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         savePath = [pathStub '_preprocData.mat'];
 
         if exist(savePath,'file')
@@ -41,7 +46,7 @@ function extractExpData(varargin)
         shouldProcess = @(x) (contains(recompute,{'all';x}) || preprocStatus.(x)...
             || ~ismember(x, varListInFile)) && contains(process,{'all';x});
 
-        if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV{1},'1,1')) 
+        if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV,'1,1')) 
             %% If all isn't good...
                         
             % monitors if anything has changed
@@ -69,7 +74,6 @@ function extractExpData(varargin)
                         block = loadedData.blockData{1};
                         
                         % Get the appropriate ref for the exp def
-                        expDef = expInfo.expDef{1}{1};
                         expDefRef = preproc.getExpDefRef(expDef);
                         
                         % Call specific preprocessing function
@@ -181,9 +185,9 @@ function extractExpData(varargin)
                 %% Update csv
                 
                 if change
-                    csv.updateRecord('subject', expInfo.subject{1}, ...
-                        'expDate', expInfo.expDate{1},...
-                        'expNum', expInfo.expNum{1});
+                    csv.updateRecord('subject', subject, ...
+                        'expDate', expDate,...
+                        'expNum', expNum);
                 end
             else
                 fprintf('Alignment for exp. %s does not exist. Skipping.\n', expFolder)

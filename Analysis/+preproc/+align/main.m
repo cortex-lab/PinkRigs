@@ -5,7 +5,7 @@ function main(varargin)
     %%% experiments (input 2), given by their paths.
     
     %% Get parameters and list of mice to check
-    % Parameters for processing (can be inputs in varargin{1})
+    % Parameters for processing (can be inputs in varargin)
     varargin = ['recompute', 'none', varargin];
     varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
     varargin = ['process', 'all', varargin];
@@ -14,16 +14,21 @@ function main(varargin)
     %% --------------------------------------------------------
 
     %% Will compute the 'alignment' file for each experiment.
-    varargin = varargin(cellfun(@(x) ~istable(x), varargin));
     for ee = 1:size(exp2checkList,1)
-        % Get exp info
-        expInfo = csv.inputValidation(varargin{:}, exp2checkList(ee,:));
-        expFolder = expInfo.expFolder{1};
-        recompute = params.recompute{1};
-        process = params.process{1};
+        % Get expInfo for current experiment (passed to sub functions)
+        expInfo = exp2checkList(ee,:);
+
+        % Assign variables from exp2checkList to ease of use later
+        expDate = exp2checkList.expDate{ee, 1};
+        expNum = exp2checkList.expNum{ee, 1};
+        subject = exp2checkList.subject{ee, 1};
+        expFolder = exp2checkList.expFolder{ee, 1};
+        recompute = exp2checkList.recompute{ee, 1};
+        process = exp2checkList.process{ee, 1};
+        videoNames = exp2checkList.videoNames{ee, 1};
         
         % Define savepath for the alignment results
-        pathStub = fullfile(expFolder, [expInfo.expDate{1} '_' expInfo.expNum{1} '_' expInfo.subject{1}]);
+        pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         savePath = [pathStub '_alignment.mat'];
         if exist(savePath,'file')
             % To check if anything's missing (and that the csv hasn't seen
@@ -34,19 +39,19 @@ function main(varargin)
         end
         
         % Get preproc status
-        alignStatus = csv.parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
+        alignStatus = csv.parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys);
         
         %If there is no timeline. All alignment is NaN
-        if strcmp(expInfo.timeline{1}, '0')
+        if strcmp(expInfo.timeline, '0')
             if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
                 [block, mic, ephys] = deal(nan);
-                video = struct('name', expInfo.videoNames{1}, ...
+                video = struct('name', expInfo.videoNames, ...
                     'frameTimes', num2cell(nan*ones(3,1)),...
                     'missedFrames', num2cell(nan*ones(3,1)));
                 save(savePath,'block', 'video', 'ephys', 'mic');
-                csv.updateRecord('subject', expInfo.subject{1}, ...
-                    'expDate', expInfo.expDate{1},...
-                    'expNum', expInfo.expNum{1});
+                csv.updateRecord('subject', subject, ...
+                    'expDate', expDate,...
+                    'expNum', expNum);
             end
             fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
             continue;
@@ -61,7 +66,7 @@ function main(varargin)
             || ~ismember(y, varListInFile))...
             && contains(process,{'all';x});
 
-        if ~(contains('none', params.recompute{1}) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
+        if ~(contains('none', recompute) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys,'1,1,1,1,1,1')) % If good already
             %% If all isn't good...
                         
             % monitors if anything has changed
@@ -138,7 +143,7 @@ function main(varargin)
                 try
                     block = struct;
                     fprintf(1, '* Aligning block... *\n');
-                    if contains(expInfo.expDef{1}, 'spontaneousActivity')
+                    if contains(expInfo.expDef, 'spontaneousActivity')
                         % expDefs that aren't expected to have alignement
                         block = nan;
                     else
@@ -176,7 +181,7 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if any(cellfun(@(x)shouldProcess(x, 'video'), [params.videoNames{1}; 'video']))                               
+            if any(cellfun(@(x)shouldProcess(x, 'video'), [videoNames; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
                 if contains('video', varListInFile)
@@ -187,17 +192,17 @@ function main(varargin)
                 end
 
                 if ~isempty(video) && ~any(contains({'video'; 'all'}, recompute))
-                    vids2Process = params.videoNames{1}(contains(recompute, params.videoNames{1},  'IgnoreCase', 1));
-                else, vids2Process = params.videoNames{1};
+                    vids2Process = videoNames(contains(recompute, videoNames,  'IgnoreCase', 1));
+                else, vids2Process = videoNames;
                 end
 
                 % Align each of them
                 for v = 1:numel(vids2Process)
                     vidName = vids2Process{v};
-                    expInfo.vidName{1} = vidName;
-                    expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
+                    expInfo.vidName = vidName;
+                    expInfo.vidInfo = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     video(v).name = vidName;
-                    if ~isempty(expInfo.vidInfo{1})
+                    if ~isempty(expInfo.vidInfo)
                         try
                             [video(v).frameTimes, video(v).missedFrames] = preproc.align.video(expInfo);
                             
@@ -248,7 +253,7 @@ function main(varargin)
             if shouldProcess('mic', 'mic')
 
                 % Align it
-                if str2double(expInfo.micDat{1}) > 0
+                if str2double(expInfo.micDat) > 0
                     try
                         fprintf(1, '* Aligning mic... *\n');
                         %%% TODO
@@ -284,9 +289,7 @@ function main(varargin)
             %% Update the csv
             
             if change
-                csv.updateRecord('subject', expInfo.subject{1}, ...
-                    'expDate', expInfo.expDate{1},...
-                    'expNum', expInfo.expNum{1});
+                csv.updateRecord('subject', subject, 'expDate', expDate, 'expNum', expNum);
             end
         end
     end

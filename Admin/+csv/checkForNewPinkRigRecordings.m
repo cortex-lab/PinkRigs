@@ -3,8 +3,9 @@ function checkForNewPinkRigRecordings(varargin)
 % NOTE: This function uses csv.inputValidate to parse inputs
 
 % Add default values for extra inputs:
-% days2check: integer--numver of days into the past to check for new data
+% days2Check: integer--numver of days into the past to check for new data
 % recompute: logical--whether csv should be deleted and remade anew
+% NOTE "days2Check" can be 'all'--faster than a bit integer
 varargin = ['days2Check', {0}, varargin];
 varargin = ['recompute', {0}, varargin];
 params = csv.inputValidation(varargin{:});
@@ -32,7 +33,7 @@ end
 % For each mouse that needs to be updated (default is 'active' mice),
 % generate a list of folders to check. 
 mice2Update = params.subject;
-if recompute
+if recompute || (ischar(days2Check) && strcmpi(days2Check, 'all'))
     % If recompute is true, generate the list of "base" folders for each
     % mouse (because the entire folder needs to be checked since the csv 
     % is being remade).
