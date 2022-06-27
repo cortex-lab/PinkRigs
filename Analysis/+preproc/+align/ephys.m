@@ -144,30 +144,40 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
   
     %% Reorder according to the probes
     if ~isempty(ephysPath)
-        % Get expected serial numbers
-        csvData = csv.readTable(csv.getLocation('main'));
-        csvData = csvData(strcmp(csvData.Subject,subject),:);
-        csvFields = fields(csvData);
-        serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
-        serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
-        
         % Get actual serial numbers
         ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
         metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
         serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
         
-        % Throw error if unexpected SN was found
-        unexpectedSerial = ~ismember(serialsFromMeta,serialsFromCSV);
-        if any(unexpectedSerial)
-            error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
+        % Get expected serial numbers
+        csvData = csv.readTable(csv.getLocation('main'));
+        csvData = csvData(strcmp(csvData.Subject,subject),:);
+        
+        if ~strcmp(csvData.P0_type,'Acute')
+            % Check if it matches the correct probe when chronic recording
+            
+            csvFields = fields(csvData);
+            serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
+            serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
+
+            % Throw error if unexpected SN was found
+            unexpectedSerial = ~ismember(serialsFromMeta,serialsFromCSV);
+            if any(unexpectedSerial)
+                error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
+            end
+            
+            expectedSerial = serialsFromCSV;
+        else
+            % No check in acute recordings
+            expectedSerial = serialsFromMeta;
         end
         
         % Reorder them
-        ephysPathReord = cell(numel(serialsFromCSV),1);
-        ephysRefTimesReord = cell(numel(serialsFromCSV),1);
-        timelineRefTimesReord = cell(numel(serialsFromCSV),1);
-        for pp = 1:numel(serialsFromCSV)
-            corresProbe = serialsFromMeta == serialsFromCSV(pp);
+        ephysPathReord = cell(numel(expectedSerial),1);
+        ephysRefTimesReord = cell(numel(expectedSerial),1);
+        timelineRefTimesReord = cell(numel(expectedSerial),1);
+        for pp = 1:numel(expectedSerial)
+            corresProbe = serialsFromMeta == expectedSerial(pp);
             if any(corresProbe)
                 ephysPathReord(pp) = ephysPath(corresProbe);
                 ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);
@@ -178,5 +188,5 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
                 timelineRefTimesReord(pp) = {nan};
             end
         end
-        serialNumberReord = serialsFromCSV;
+        serialNumberReord = expectedSerial;
     end
