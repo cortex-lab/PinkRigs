@@ -1,5 +1,5 @@
 function matchedSubject = getCurrentSubjectFromProbeSerial(probeSerial)
-%% Determine which subject is implanted with a gien probe (from serial num)
+%% Determine which subject is implanted with a given probe (from serial num)
 matchedSubject = cell(length(probeSerial),1);
 if isnumeric(probeSerial); probeSerial = num2cell(probeSerial); end
 

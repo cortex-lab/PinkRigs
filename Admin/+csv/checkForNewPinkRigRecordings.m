@@ -3,7 +3,7 @@ function checkForNewPinkRigRecordings(varargin)
 % NOTE: This function uses csv.inputValidate to parse inputs
 
 % Add default values for extra inputs:
-% days2Check: integer--numver of days into the past to check for new data
+% days2Check: integer--number of days into the past to check for new data
 % recompute: logical--whether csv should be deleted and remade anew
 % NOTE "days2Check" can be 'all'--faster than a bit integer
 varargin = ['days2Check', {0}, varargin];

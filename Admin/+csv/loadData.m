@@ -1,21 +1,41 @@
 function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
+% NOTE: This function uses csv.inputValidate to parse inputs
+
+% Add default values for extra inputs:
+% loadTag (default='ev'): string--indicates data types to laod
+%   'blk' or 'block to load ev files (output = blockData)
+%   'ev' to load ev files (output = evData)
+%   'spk' to load ev files (output = spkData)
+%   'tim' or 'timeline' to load ev files (output = timelineData)
+%   'all' to load all data
+% NOTE: loadtag continuous. i.e. 'timblk' loads timeline and block
 varargin = ['loadTag', {'ev'}, varargin];
 params = csv.inputValidation(varargin{:});
 expList = csv.queryExp(params);
 
+% Add new fields for loaded data to the expList
 newFields = {'blockData'; 'evData'; 'spkData'; 'timelineData'};
 for i = 1:length(newFields)
-expList.(newFields{i}) = cell(size(expList,1),1);
+    expList.(newFields{i}) = cell(size(expList,1),1);
 end
 
-if isempty(expList); error('No sessions matched params'); end
+% End function if there are no experiments matching search criteria
+if isempty(expList)
+    warning('No sessions matched params so will not load any data'); 
+    return
+end
+
+% Loop over each line of the expList and load the requested data
 for i=1:height(expList)
+    % Clear any existing data and get current exp details
     clear ev spk blk tim;
     currExp = expList(i,:);
-    currMouseIdx = strcmpi(params.subject, currExp.subject);
-    currLoadTag = params.loadTag{currMouseIdx};
-    pathStub = cell2mat([currExp.expDate '_' currExp.expNum '_' currExp.subject]);
+    currLoadTag = currExp.loadTag{1};
+    if strcmp(currLoadTag, 'all')
+        currLoadTag = 'evspkblktim'; 
+    end
+    pathStub = strcat(currExp.expDate, {'_'}, currExp.expNum, {'_'}, currExp.subject);
     
     %Load ev/spk data if requested
     if contains(currLoadTag, {'ev', 'spk'})
