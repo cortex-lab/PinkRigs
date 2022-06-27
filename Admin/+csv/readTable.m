@@ -33,7 +33,7 @@ for i = dateFields
 end
 if reWrite == 1
     fprintf('WARNING: Check data format in %s. Should be uuuu_MM_dd!\n', csvPath)
-    fprintf('WARNING: Updating Main .csv with correct date formats... \n')
+    fprintf('WARNING: Updating %s with correct date formats... \n', csvPath)
     csv.createBackup(csvPath);
     csv.writeClean(csvData, csvPath);
 end
