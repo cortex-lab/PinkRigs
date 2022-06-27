@@ -67,7 +67,7 @@ def queryExp(mice2check='all',days2check='all',expdef2check='all'):
     exp2checkList = []
     for mm in mouse2checkList:
         expList = pd.read_csv(r'%s\%s.csv' % (root,mm))
-
+        expList.expDate=[expDate.replace('_','-').lower() for expDate in expList.expDate.values]
         if 'all' not in expdef2check:
             expList = expList[expList.expDef.str.contains(expdef2check)]
         if 'all' not in days2check: 
