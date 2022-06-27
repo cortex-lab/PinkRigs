@@ -4,6 +4,12 @@ function combinedTable = insertNewData(newData, subject)
 % "newData" is a table with fields matching the existing  mouse csv. 
 % "subject" is the name of the mouse that the new data corresponds to
 
+% If "newData" is empty then "return"
+if isempty(newData)
+    fprintf('Asked to write empty data for %s, returning... \n', subject)
+    return
+end
+
 % Check whether each field of "newData" is a cell. If not, then convert it
 % to a cell
 newDataTypes = varfun(@class,newData,'OutputFormat','cell');

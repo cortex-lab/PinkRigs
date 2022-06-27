@@ -150,6 +150,11 @@ for i = 1:length(mice2Update)
     newRecords = newRecords(~cellfun(@isempty, newRecords));
     newRecords = vertcat(newRecords{:});
     
+    if isempty(newRecords)
+        fprintf('No new data for %s. Skipping... \n', currSub);
+        continue;
+    end
+
     % Concatenate the new records with the current subjects existing csv
     combinedData = csv.insertNewData(newRecords, currSub);    
     % Overwrite the old csv with the combined data
