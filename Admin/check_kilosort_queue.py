@@ -38,7 +38,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     print(date_selection)
 
     # check which mice are active on Master csv
-    root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
+    root = r'\\zserver.cortexlab.net\Code\AVrig'
     master_csv = pd.read_csv(os.path.join(root,'!MouseList.csv'))
     mice_to_check=master_csv[master_csv['IsActive']==1].Subject
 
@@ -88,7 +88,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
     print(new_recs_to_sort)
     # clean current queue
-    queue_file = os.path.join(root,'kilosort_queue.csv')
+    queue_file = os.path.join(root,'Helpers','kilosort_queue.csv')
     old_queue = pd.read_csv(queue_file,index_col=False)
     new_queue = old_queue[old_queue['sortedTag'] != 1]
 

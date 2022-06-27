@@ -5,13 +5,14 @@ import datetime
 from os.path import exists
 import dateutil.parser
 import smtplib
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 def send_email(mname):
     # Get sender and receiver emails.    
-    with open(r'\\zserver.cortexlab.net\Code\AVrig\AVrigEmail.txt') as f:
+    with open(r'\\zserver.cortexlab.net\Code\AVrig\Helpers\AVrigEmail.txt') as f:
         sender_email,pwd = f.read().splitlines()
     receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
@@ -60,7 +61,7 @@ for mname in activeMice:
     if (sess2check.shape[0]>0):
         # take the last day for the update
         expPath = sess2check['expFolder'].iloc[0]
-        expDate = sess2check['expDate'].iloc[0]
+        expDate = re.sub('_','-',sess2check['expDate'].iloc[0])
         try: # date formats aren't homogeneous...
             datetime.datetime.strptime(expDate, '%Y-%m-%d')
         except:

@@ -9,4 +9,7 @@ function csvLocation = getLocation(subject)
         subject = '!MouseList';
     end
         
+    if strcmp(subject,'kilosort_queue')
+        subject = 'Helpers\kilosort_queue';
+    end
     csvLocation = fullfile(csvPath, [subject '.csv']);
