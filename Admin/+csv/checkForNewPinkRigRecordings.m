@@ -118,24 +118,27 @@ for i = 1:length(mice2Update)
     expNumList = cellfun(@(x) x{end}, pathInfo(currIdx), 'uni', 0);
     csvPathMouse = csv.getLocation(currSub);
    
+    if recompute && exist(csvPathMouse, 'file') && ~isempty(dateList)
+        % If recompute is true, backup the old mouse csv and delete since 
+        % this file will be completely recomputed
+        csv.createBackup(csvPathMouse);
+        delete(csvPathMouse);
+    elseif exist(csvPathMouse, 'file') && ~isempty(dateList)
+        % If recompute is not true, then don't rerun experiments that are
+        % already enetered in the csv
+        mouseCSV = csv.readTable(csvPathMouse);
+        csvRef = strcat(mouseCSV.expDate, mouseCSV.expNum);
+        procRef = strcat(dateList, expNumList);
+        doneIdx = ismember(procRef, csvRef);
+        dateList(doneIdx) = [];
+        expNumList(doneIdx) = [];
+    end
+
     % If dateList is empty, it indicates that no "new" paths exist for that
     % mouse, so continue to next loop
     if isempty(dateList)
         fprintf('No new data for %s. Skipping... \n', currSub);
         continue;
-    end
-
-    % If recompute is true, backup the old mouse csv and delete since this
-    % file will be completely recomputed
-    if recompute && exist(csvPathMouse, 'file')
-        csv.createBackup(csvPathMouse);
-        delete(csvPathMouse);
-%     elseif exist(csvPathMouse, 'file')
-        %%% THIS SHOULD REMOVE "DONE" ROWS AND SAVE TIME, BUT NEEDS TESTING
-%         mouseCSV = csv.readTable(csvPathMouse);
-%         doneIdx = ismember(mouseCSV.expDate, dateList) & ismember(mouseCSV.expNum, expNumList);
-%         dateList(doneIdx) = [];
-%         expNumList(doneIdx) = [];
     end
 
     % Run "csv.updateRecord" on each detected experiment path to generate a

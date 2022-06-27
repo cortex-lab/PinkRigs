@@ -36,11 +36,10 @@ end
 % expNum and expDate 
 csvData = [csvData;newData];
 
-%%% NEEDS TEST: SHOULD MAKE IT SO '10' IS NOT BEFORE '2' %%%
-% [~, sortRef] = sort(str2double(csvData.expNum));
-% csvData = sortrows(csvData(sortRef,:), 'expDate', 'ascend');
+% Sort csv by date, and expNum within each date
+[~, sortRef] = sort(str2double(csvData.expNum));
+csvData = sortrows(csvData(sortRef,:), 'expDate', 'ascend');
 
-csvData = sortrows(csvData, 'expNum', 'ascend');
-csvData = sortrows(csvData, 'expDate', 'ascend');
+% Assign output
 combinedTable = csvData;
 end

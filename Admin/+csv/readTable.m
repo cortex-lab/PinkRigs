@@ -1,12 +1,22 @@
 function csvData = readTable(csvPath)
-%% GET RID OF THIS FUNCTION NOW...?! 
-opts = detectImportOptions(csvPath);
+%% This function reads CSV files with all cells being "characters"
+%  This is generally imporant for consistency, as otherwise data types can
+%  potentially change depending on, for example, if there are NaN's
 
+% "csvPath" is the path to the csv file 
+
+% These lines set the reading options of the csv to "char" for all columns
+opts = detectImportOptions(csvPath);
 dateFields = find(contains(opts.VariableNames, 'date','IgnoreCase',true));
 opts = setvartype(opts, 'char');
 
+% Read the csv
 csvData = readtable(csvPath, opts');
 
+% This loop should never be used anymore.. it was to deal with cases where
+% the dates had been entered with backslash format instead of the standard
+% format. If that happens, they are changed to standard format and the csv
+% is overwritten. 
 reWrite = 0;
 for i = 1:dateFields
     if any(contains(csvData.(opts.VariableNames{i}), {'\';'/'}))

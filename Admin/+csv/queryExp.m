@@ -63,7 +63,7 @@ for mm = 1:numel(params.subject)
 
     % Get exp with specific sorting status
     if params.issortedCheck{mm}~=-1
-        expListMouse = expListMouse(ismember(expListMouse.issorted, params.issortedCheck{mm}),:);
+        expListMouse = expListMouse(ismember(expListMouse.issortedKS2, params.issortedKS2{mm}),:);
     end
     if isempty(expListMouse); continue; end
 

@@ -16,8 +16,8 @@ if ~exist(csvPathMouse, 'file'); return; end
 
 % Read data from mouse csv and identify the idx of the row to be removed
 csvData = csv.readTable(csvPathMouse);
-csvRef = cellfun(@(x,y) [x,num2str(y)], csvData.expDate, csvData.expNum, 'uni', 0);
-removeRef = cellfun(@(x,y) [x,num2str(y)], expDate, expNum, 'uni', 0);
+csvRef = strcat(csvData.expDate, csvData.expNum);
+removeRef = strcat(expDate, expNum);
 
 % Remove the row corresponding to function inputs and overwrite the csv
 csvData(contains(csvRef,removeRef),:) = [];
