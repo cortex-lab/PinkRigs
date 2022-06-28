@@ -38,7 +38,8 @@ if reWrite == 1
     csv.writeClean(csvData, csvPath);
 end
 
-if contains('expDate', opts.VariableNames)
-    csvData.expDate = cellfun(@(x) strrep(x, '_', '-'), csvData.expDate, 'uni', 0);
+dateColumns = find(contains(opts.VariableNames,'Date'));
+for dd = 1:numel(dateColumns)
+    csvData.(opts.VariableNames{dateColumns(dd)}) = cellfun(@(x) strrep(x, '_', '-'), csvData.(opts.VariableNames{dateColumns(dd)}), 'uni', 0);
 end
 end
