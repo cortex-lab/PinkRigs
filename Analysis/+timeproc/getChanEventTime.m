@@ -14,7 +14,7 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
         switch chanName
             case 'flipper'
                 % Get flips of the flipper
-                tlFlipThresh = [2 3]; % these seem to work well
+                tlFlipThresh = [0.2*min(chan) 0.8*max(chan)]; % these seem to work well
                 evTimes = schmittTimes(timelineTime, chan, tlFlipThresh); % all flips, both up and down
                 
             case 'photoDiode'
@@ -65,7 +65,7 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
                 
             case 'camSync'
                 % Get cam Sync events (onset of dark flash)
-                tlSyncThresh = [2 3]; % these seem to work well
+                tlSyncThresh = [0.2*min(chan) 0.8*max(chan)]; % these seem to work well
                 [~, ~, evTimes] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 
             case {'faceCamStrobe','eyeCamStrobe','sideCamStrobe'}
