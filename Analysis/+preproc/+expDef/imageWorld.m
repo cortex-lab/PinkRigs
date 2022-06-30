@@ -10,6 +10,9 @@ function ev = imageWorld(timeline, block, alignmentBlock)
     ev.imageOnsetTime = preproc.align.event2Timeline(block.events.stimulusOnTimes(block.events.stimulusOnValues), ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
             
+    ev.imageOffsetTime = preproc.align.event2Timeline(block.events.stimulusOnTimes(~block.events.stimulusOnValues), ...
+        alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+    
     %% Get image ID
     
     ev.imageID = block.events.numValues;
