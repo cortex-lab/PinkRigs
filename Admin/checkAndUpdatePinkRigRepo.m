@@ -1,6 +1,7 @@
 function checkAndUpdatePinkRigRepo
     %% Function to check and update the local copy of the PinkRig repo
     % Go to the pink rig repo folder and get git status
+    startFolder = cd;
     cd(fileparts(which('zeldaStartup')));
     [~, ~] = system('git remote update');
     [status, cmdout] = system('git status');
@@ -39,4 +40,5 @@ function checkAndUpdatePinkRigRepo
             fprintf(cmdout);
         end
     end
+    cd(startFolder);
 end
