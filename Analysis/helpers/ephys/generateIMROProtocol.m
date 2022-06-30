@@ -10,7 +10,22 @@ function generateIMROProtocol(basePath,imroprop,days)
         mkdir(basePath)
     end
     
-    % Loop through days and protocols
+    %% Find serial numbers
+    [~,protocolName] = fileparts(basePath);
+    
+    % Get expected serial numbers
+    csvData = csv.readTable(csv.getLocation('main'));
+    csvData = csvData(strcmp(csvData.Subject,protocolName),:);
+    if ~isempty(csvData)
+        csvFields = fields(csvData);
+        serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
+        serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
+    else
+        warning('Can''t recognize subject. Won''t put the serial numbers.')
+        serialsFromCSV = [nan nan];
+    end
+    
+    %% Loop through days and protocols
     for d = 1:numel(imroprop)
                 
         if exist(fullfile(basePath,days{d}),'dir')
@@ -27,7 +42,7 @@ function generateIMROProtocol(basePath,imroprop,days)
             mkdir(savePath)
             for probeNum = 1:numel(imroprop{d}{p}.probe)
                 probeProp = imroprop{d}{p}.probe(probeNum);
-                prefix = sprintf('Probe%d_%d_%s_',probeNum-1,d,protocol);
+                prefix = sprintf('Probe%d_%d_%s_SN%d_',probeNum-1,d,protocol,serialsFromCSV(probeNum));
                 fileName = generateIMRO_P24(probeProp.patternTag, probeProp.botRow, probeProp.shankChoice, probeProp.refElec, savePath);
                 [path,file,ext] = fileparts(fileName);
                 movefile(fileName,fullfile(path,[prefix file ext]))
