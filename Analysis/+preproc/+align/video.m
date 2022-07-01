@@ -157,7 +157,7 @@ if exist([pathStub, '_times.txt'], 'file')
         numFramesMissed = 0;
     end
 
-    if numFramesMissed && params.crashMissedFrames
+    if numFramesMissed && params.crashMissedFrames{1}
         % Then error the whole thing to make sure you don't miss it
         error('missed frames: %d \n', numFramesMissed)
     else
@@ -204,7 +204,7 @@ if ~isempty(strobeSamps)
     fprintf(1, 'missed frames with the strobes: %d \n', numMissedFrames_wStrobes);
 end
 
-if exist([pathStub, '_times.txt'], 'file') && numFramesMissed && params.plt
+if exist([pathStub, '_times.txt'], 'file') && numFramesMissed && params.plt{1}
     % Check which ones have been lost to further understand the issue
     % missedidx = find(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),3))>1) + vidSyncOnFrames(1)-1;
     missedidx = largeIFI;
