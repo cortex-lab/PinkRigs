@@ -122,6 +122,17 @@ switch lower(computerType)
             fprintf('Detected kilo2 computer... \n')
             fprintf('Starting now %s... \n',datestr(now))
 
+            fprintf('Getting pyKS queue... \n')
+            checkQueuePath = which('check_pyKS_queue.py');
+            checkWhichMice = 'all';
+            checkWhichDates = 'last7';
+            [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
+                'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
+                'conda deactivate']);
+            if statusQueue > 0
+                fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+            end
+
             dbstop if error % temporarily, to debug
             fprintf('Running pykilosort on the queue... \n')
             runpyKS = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py';

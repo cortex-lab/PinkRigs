@@ -66,8 +66,8 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
-                        # look for KS folder with rez in the same folder as ap.bin
-                        KS_rez = r'%s\**\kilosort2\**\rez.mat' % (os.path.dirname(ephys_file))
+                        # look for pyKS folder with spike times in the same folder as ap.bin
+                        KS_rez = r'%s\**\pyKS2\**\spike_times.npy' % (os.path.dirname(ephys_file))
                         KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
 
                         # check if is there, and not empty
@@ -88,7 +88,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
     print(new_recs_to_sort)
     # clean current queue
-    queue_file = os.path.join(root,'Helpers','kilosort_queue.csv')
+    queue_file = os.path.join(root,'Helpers','pykilosort_queue.csv')
     old_queue = pd.read_csv(queue_file,index_col=False)
     new_queue = old_queue[old_queue['sortedTag'] != 1]
 
