@@ -1,7 +1,8 @@
-function [chanPos, elecPos, shank] = getRecordingSites(binFileName,binFileFolder)
+function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binFileFolder)
 
     metaData = readMetaData_spikeGLX(binFileName,binFileFolder);
-
+    probeSN = metaData.imDatPrb_sn;
+    
     %% Extract info from metadata
     %%% Same as in plotIMROProtocol
     out = regexp(metaData.imroTbl,'\(|\)(|\)','split');
