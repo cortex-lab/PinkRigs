@@ -100,21 +100,23 @@ while(numel(intensDown)~=expectedNumSyncs)
         case 3
             vidIntensThresh = intensMin+(intensMed-intensMin)*[0.15 0.25];
         otherwise
-            switch loadAttemptNum
-                case 1
-                    fprintf(1, 'trying to load more frames...\n')
-                    vidproc.getAvgMovInt(pathStub, 10000);
-                    load(intensFile,'avgIntensity');
-                    avgIntensity = [avgIntensity lf.avgIntensity];
-                    attemptNum = 0;
-                case 2
-                    fprintf(1, 'trying to load all frames...\n')
-                    vidproc.getAvgMovInt(pathStub, inf);
-                    load(intensFile,'avgIntensity');
-                    avgIntensity = [avgIntensity lf.avgIntensity];
-                    attemptNum = 0;
-                otherwise
-                    error('Cannot find a threshold that works. You tell me...');
+            if sum(abs(diff(avgIntensity))>0)/numel(avgIntensity)<0.5 % not all frames are already loaded
+                switch loadAttemptNum
+                    case 1
+                        fprintf(1, 'trying to load more frames...\n')
+                        vidproc.getAvgMovInt(pathStub, 10000);
+                        load(intensFile,'avgIntensity');
+                        avgIntensity = [avgIntensity lf.avgIntensity];
+                        attemptNum = 0;
+                    case 2
+                        fprintf(1, 'trying to load all frames...\n')
+                        vidproc.getAvgMovInt(pathStub, inf);
+                        load(intensFile,'avgIntensity');
+                        avgIntensity = [avgIntensity lf.avgIntensity];
+                        attemptNum = 0;
+                end
+            else
+                error('Cannot find a threshold that works. You tell me...');
             end
             loadAttemptNum = loadAttemptNum+1;
     end
