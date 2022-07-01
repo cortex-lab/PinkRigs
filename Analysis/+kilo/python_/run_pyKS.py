@@ -16,7 +16,7 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 
 
 # get queue
-root = r'\\zserver.cortexlab.net\Code\AVrig'
+root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
 queue_csv_file = '%s\pykilosort_queue.csv' % root
 queue_csv = pd.read_csv(queue_csv_file)
 print('checking the pyks queue...')
