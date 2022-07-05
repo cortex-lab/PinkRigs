@@ -1,7 +1,7 @@
 clc; clear; 
-params.mice2Check = 'AV008';
-params.days2Check = {'2022-03-10'};
-params.expDef2Check = 't';
+params.subject = 'AV008';
+params.expDate = {'2022-03-10'};
+params.expDef = 't';
 exp2checkList = csv.queryExp(params);
 
 expInfo = exp2checkList(1,:);

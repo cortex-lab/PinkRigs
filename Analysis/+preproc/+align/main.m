@@ -188,7 +188,7 @@ function main(varargin)
                     video = load(savePath, 'video');
                     video = video.video;
                 else
-                    video = struct();
+                    video = struct([]);
                 end
 
                 if ~isempty(video) && ~any(contains({'video'; 'all'}, recompute))

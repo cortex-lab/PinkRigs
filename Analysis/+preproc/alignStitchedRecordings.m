@@ -1,10 +1,10 @@
 % align recordings that have been stitched by pyKilosort
 clc; clear;
 clear params
-params.mice2Check = 'AV008';
-%params.days2Check = 1;
-params.days2Check = {'2022-03-20'};
-params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.subject = 'AV008';
+%params.expDate = 1;
+params.expDate = {'2022-03-20'};
+params.expDef = 'AVPassive_ckeckerboard_postactive';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
 % params.preproc2Check = '*,2';
@@ -33,7 +33,7 @@ filenames = mcFileMeta{2}{1};
 % parse the filenames to be able to get the dataset_idx of the recording in
 % question
 rec_separation_idx = regexp(filenames,'.ap.bin');
-datecheck = regexp(filenames,params.days2Check{1});
+datecheck = regexp(filenames,params.expDate{1});
 dataset_idx = numel(find(rec_separation_idx-datecheck(1)<0)); % note that this indexing starts from 0 since pyKS
 %
 alignmentFile = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));

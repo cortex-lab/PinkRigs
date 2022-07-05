@@ -52,7 +52,6 @@ for i = 1:length(params.subject)
         preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
     end
     
-    currData = csv.queryExp(currData);
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
     evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
 
@@ -61,8 +60,12 @@ for i = 1:length(params.subject)
         failNames = currData.expFolder(failIdx);
         cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
         currData = currData(~failIdx,:);
+        extracted.validSubjects(i) = 0;
     end
-    if isempty(currData); continue; end
+    if isempty(currData)
+                extracted.validSubjects(i) = 0;
+                continue
+    end
 
     if length(unique(currData.expDate)) ~= length(currData.expDate)
         expDurations = cellfun(@str2double, currData.expDuration);

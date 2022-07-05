@@ -5,10 +5,10 @@ close all
 clear params
 % 
 
-params.mice2Check = {'FT008'};
-%params.days2Check = 3;
-%params.days2Check = {{'2021-11-30'}};
-%params.expDef2Check = 'sparseNoise';
+params.subject = {'FT008'};
+%params.expDate = 3;
+%params.expDate = {{'2021-11-30'}};
+%params.expDef = 'sparseNoise';
 % params.timeline2Check = 1;
 % params.align2Check = '*,*,*,*,*,~1'; % "any 0"
 params.preproc2Check = '*,*';
