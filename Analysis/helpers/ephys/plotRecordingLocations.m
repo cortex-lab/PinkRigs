@@ -4,10 +4,10 @@
 %% Get experiments
 
 clear params
-params.mice2Check = 'AV005';
-params.days2Check = 14;
-% params.expDef2Check = 'spontaneousActivity';
-params.expDef2Check = 'AVPassive_ckeckerboard_postactive';
+params.subject = 'AV005';
+params.expDate = 14;
+% params.expDef = 'spontaneousActivity';
+params.expDef = 'AVPassive_ckeckerboard_postactive';
 params.align2Check = '*,*,*,*,*,1';
 exp2checkList = csv.queryExp(params); 
 pltClusters = 1;
@@ -16,11 +16,11 @@ pltClusters = 1;
 
 % Get probes layout
 mainCSV = csv.readTable(csv.getLocation('main'));
-mouseIdx = strcmpi(mainCSV.Subject,params.mice2Check);
+mouseIdx = strcmpi(mainCSV.Subject,params.subject);
 probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type) + ~isempty(mainCSV(mouseIdx,:).P1_type);
 
 % Plot the basic layout
-figure('Position', [680    32   551   964],'Name', params.mice2Check); hold all
+figure('Position', [680    32   551   964],'Name', params.subject); hold all
 for pp = 1:probeNum
     probeType = mainCSV(mouseIdx,:).(sprintf('P%d_type',pp-1)){1};
     switch probeType
@@ -139,8 +139,8 @@ set (gcf, 'WindowButtonMotionFcn', @mouseBotRow);
 %% Add a reference recording to visualize clusters
 
 if pltClusters
-    params.days2Check = {'2022-03-28','2022-03-29'};
-    params.expDef2Check = 'spontaneousActivity';
+    params.expDate = {'2022-03-28','2022-03-29'};
+    params.expDef = 'spontaneousActivity';
     exp2checkList = csv.queryExp(params);
     
     qMetricFilter = 2;

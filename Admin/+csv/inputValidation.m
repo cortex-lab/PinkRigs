@@ -65,17 +65,6 @@ for i = 1:length(unmatchedFields)
     outP.(unmatchedFields{i}) = p.Unmatched.(unmatchedFields{i});
 end
 
-% This is due to old version of queryExp and should be removed asap
-%%%% FOR BACKWARDS COMPATIBILITY. SHOULD BE REMOVED IN TIME
-fieldTest = {'mice2Check', 'expDef2Check', 'days2Check'};
-fieldReplace = {'subject', 'expDef', 'expDate'};
-for i = 1:length(fieldTest)
-    if isfield(outP, fieldTest{i})
-        outP.(fieldReplace{i}) = outP.(fieldTest{i});
-    end
-end
-%%%%
-
 % This runs the "mkCell" function on all fields of "outP" to convert to
 % cells if they aren't already cells.
 outP = structfun(@mkCell, outP, 'uni', 0);
