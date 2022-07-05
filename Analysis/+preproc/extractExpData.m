@@ -102,6 +102,11 @@ function extractExpData(varargin)
                     else
                         save(savePath,'ev')
                     end
+                    % Save it IBL style
+                    s.trials = ev;
+                    if isstruct(ev)
+                        % preproc.saveNPYFiles(s,fullfile(expFolder,'preproc','ev'))
+                    end
                 end    
                     
                 %% Extract spikes and clusters info (depth, etc.)
@@ -142,6 +147,9 @@ function extractExpData(varargin)
                                             spk{probeNum}.clusters(c).Spknum = sum(spk{probeNum}.spikes.cluster == spk{probeNum}.clusters(c).ID);
                                         end
                                         
+                                        % Get probe info
+                                        spk{probeNum}.probe.serialNumber = alignment.ephys(probeNum).serialNumber;
+                                        
                                         fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                                     catch me
                                         warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,me.message)
@@ -179,6 +187,11 @@ function extractExpData(varargin)
                         save(savePath,'spk','-append')
                     else
                         save(savePath,'spk')
+                    end
+                    
+                    % Save it IBL style
+                    for p = 1:numel(spk)
+                        preproc.saveNPYFiles(spk{p},fullfile(expFolder,'preproc',sprintf('imec%d', p-1)))
                     end
                 end
                 
