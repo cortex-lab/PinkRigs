@@ -3,16 +3,16 @@ function checkForNewPinkRigRecordings(varargin)
 % NOTE: This function uses csv.inputValidate to parse inputs
 
 % Add default values for extra inputs:
-% days2Check: integer--number of days into the past to check for new data
+% expDate: integer--number of days into the past to check for new data
 % recompute: logical--whether csv should be deleted and remade anew
-% NOTE "days2Check" can be 'all'--faster than a bit integer
-varargin = ['days2Check', {0}, varargin];
+% NOTE "expDate" can be 'all'--faster than a bit integer
+varargin = ['expDate', {0}, varargin];
 varargin = ['recompute', {0}, varargin];
 params = csv.inputValidation(varargin{:});
 
 % Take first value since these inputs cannot differ between mice
 recompute = params.recompute{1};
-days2Check = params.days2Check{1};
+expDate = params.expDate{1};
 
 % Get the server locations and load the main mouse csv
 serverLocations = getServersList;
@@ -33,7 +33,7 @@ end
 % For each mouse that needs to be updated (default is 'active' mice),
 % generate a list of folders to check. 
 mice2Update = params.subject;
-if recompute || (ischar(days2Check) && strcmpi(days2Check, 'all'))
+if recompute || (ischar(expDate) && strcmpi(expDate, 'all'))
     % If recompute is true, generate the list of "base" folders for each
     % mouse (because the entire folder needs to be checked since the csv 
     % is being remade).
@@ -42,12 +42,12 @@ if recompute || (ischar(days2Check) && strcmpi(days2Check, 'all'))
     paths2Check = vertcat(paths2Check{:});
 else
     % If recompute is faulse, generate a list of folders with dates
-    % corresponding to the "days2Check" for each mouse. It is much quicker
+    % corresponding to the "expDate" for each mouse. It is much quicker
     % to check all folders than to first check which of them exist
     cycles = 1;
     paths2Check = cellfun(@(y) cellfun(@(x) [y x], mice2Update, 'uni', 0), serverLocations, 'uni', 0);
     
-    pastXDays = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-days2Check:now, 'uni', 0)';
+    pastXDays = arrayfun(@(x) datestr(x, 'yyyy-mm-dd'), now-expDate:now, 'uni', 0)';
     paths2Check = cellfun(@(y) cellfun(@(x) [y filesep x], pastXDays, 'uni', 0), vertcat(paths2Check{:}), 'uni', 0);
     paths2Check = vertcat(paths2Check{:});
 end

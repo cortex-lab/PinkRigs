@@ -112,7 +112,7 @@ for i = 1:length(currDate)
     elseif strcmpi(currDate{i}(1:3), 'fir')
         % If 'firstn' return the first n exps
         if numel(currDate{i})==5; currDate{i} = [currDate{i} '1']; end %#ok<*AGROW>
-        lastDate = str2double(currDate{i}(5:end));
+        lastDate = str2double(currDate{i}(6:end));
         extractedDateIdx = ismember(dateNumsCSV, sortedDatesCSV(1:min([length(sortedDatesCSV), lastDate])));
         
     elseif contains(lower(currDate{i}), ':')

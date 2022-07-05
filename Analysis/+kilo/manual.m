@@ -8,7 +8,7 @@ for idx = 1:numel(d)
     recList{idx} = fullfile(d(idx).folder,d(idx).name);
 end
 
-% params.mice2Check = 'AV009';
+% params.subject = 'AV009';
 % exp2checkList = csv.queryExp(params);
 % idx = 1;
 % for ee = 1:size(exp2checkList,1)

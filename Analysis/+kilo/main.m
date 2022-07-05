@@ -280,7 +280,7 @@ function main(varargin)
         %% Update the csv for associated experiments
 
         % Get experments
-        [partmp.mice2Check, partmp.days2Check, ~] = parseExpPath(ephysPath);
+        [partmp.subject, partmp.expDate, ~] = parseExpPath(ephysPath);
         expList = csv.queryExp(partmp);
         
         % Update
