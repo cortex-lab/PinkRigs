@@ -9,7 +9,8 @@ pinkRigsDir = fileparts(which('zeldaStartup'));
 % The string that will be replaced
 oldString = sprintf(oldName);
 % The replacement string
-newString = sprintf(newName);
+if ~exist('newName', 'var'), replace = 0; else, replace = 1; end
+if replace; newString = sprintf(newName); end
 
 %% Determine files to update, and update them as necessary
 % Put the details of all files and folders in that current directory into a structure
@@ -36,30 +37,32 @@ for idx = 1 : length(fileList)
     if any(contains(splitFile, 'function'))
         splitFile = splitFile(~contains(splitFile, 'function'));
     end
-        
+
     % If an occurrence is found...
     if any(contains(splitFile, oldString))
-        
-        % Replace any occurrences of oldString with newString
-        fileTextNew = strrep(fileText, oldString, newString);
-        
-        % Open the file for writing
-        fileIdWrite = fopen(filePaths{idx}, 'w');
-        
-        % Write the modified text
-        fprintf(fileIdWrite, '%c', fileTextNew);
-        
-        % Close the file
-        fclose(fileIdWrite);
-        
         % Update the index for files that contained oldString
         changedIdx(idx) = 1;
+
+        if replace
+            % Replace any occurrences of oldString with newString
+            fileTextNew = strrep(fileText, oldString, newString);
+
+            % Open the file for writing
+            fileIdWrite = fopen(filePaths{idx}, 'w');
+
+            % Write the modified text
+            fprintf(fileIdWrite, '%c', fileTextNew);
+
+            % Close the file
+            fclose(fileIdWrite);
+
+        end
     end
 end
 %% Display what files were changed, and what were not
 % If the variable filesWithString exists in the workspace
 if any(changedIdx)
-    disp('Files that contained the target string that were updated:');
+    disp('Files that contained the target string were:');
     % Display their names
     cellfun(@(x) fprintf('%s \n', x), filePaths(changedIdx), 'uni', 0);
 else
