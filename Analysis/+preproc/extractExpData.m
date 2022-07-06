@@ -190,9 +190,9 @@ function extractExpData(varargin)
                     end
                     
                     % Save it IBL style
-                    for p = 1:numel(spk)
-                        preproc.saveNPYFiles(spk{p},fullfile(expFolder,'preproc',sprintf('imec%d', p-1)))
-                    end
+%                     for p = 1:numel(spk)
+%                         preproc.saveNPYFiles(spk{p},fullfile(expFolder,'preproc',sprintf('imec%d', p-1)))
+%                     end
                 end
                 
                 %% Update csv
