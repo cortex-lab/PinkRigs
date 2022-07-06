@@ -44,12 +44,14 @@ for i = 1:length(params.subject)
     if any(~alignedBlock)
         fprintf('Missing block alignments. Will try and align...\n')
         preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
+        currData = csv.queryExp(currData);
     end
 
     evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
         preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
+        currData = csv.queryExp(currData);
     end
     
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
@@ -63,8 +65,8 @@ for i = 1:length(params.subject)
         extracted.validSubjects(i) = 0;
     end
     if isempty(currData)
-                extracted.validSubjects(i) = 0;
-                continue
+        extracted.validSubjects(i) = 0;
+        continue
     end
 
     if length(unique(currData.expDate)) ~= length(currData.expDate)
