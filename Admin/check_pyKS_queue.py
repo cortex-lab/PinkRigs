@@ -67,7 +67,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
                     for ephys_file in ephys_files:
                         # look for pyKS folder with spike times in the same folder as ap.bin
-                        KS_rez = r'%s\**\pyKS2\**\spike_times.npy' % (os.path.dirname(ephys_file))
+                        KS_rez = r'%s\**\pyKS\**\spike_times.npy' % (os.path.dirname(ephys_file))
                         KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
 
                         # check if is there, and not empty
@@ -107,3 +107,4 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
 if __name__ == "__main__":
    stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])
+   #stage_KS_queue(mouse_selection='AV014',date_selection='last10')
