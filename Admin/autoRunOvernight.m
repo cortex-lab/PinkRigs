@@ -126,7 +126,7 @@ switch lower(computerType)
             checkQueuePath = which('check_pyKS_queue.py');
             checkWhichMice = 'all';
             checkWhichDates = 'last7';
-            [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
+            [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
                 'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
             if statusQueue > 0
@@ -135,8 +135,41 @@ switch lower(computerType)
 
             dbstop if error % temporarily, to debug
             fprintf('Running pykilosort on the queue... \n')
-            runpyKS = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py';
-            [statuspyKS,resultpyKS] = system(['conda activate pyks2 && ' ...
+            githubPath = fileparts(fileparts(checkQueuePath));
+            runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+            [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
+            'python ' runpyKS ' && ' ...
+            'conda deactivate']);
+            if statuspyKS > 0
+                fprintf('Running pyKS failed... "%s".\n', resultpyKS)
+            end
+        end
+        fprintf('Stopping now %s. \n',datestr(now))
+
+    case {'pips'}
+        c = clock;
+        if c(4) > 20 
+
+            fprintf('Detected kilo2 computer... \n')
+            fprintf('Starting now %s... \n',datestr(now))
+
+            fprintf('Getting pyKS queue... \n')
+            checkQueuePath = 'XMatlabProg\GitHub\PinkRigs\Admin\check_pyKS_queue.py';
+            checkWhichMice = 'all';
+            checkWhichDates = 'last7';
+            [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
+                'cd C:\Users\Pip\Dropbox (Personal) &&' ...
+                'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
+                'conda deactivate']);
+            if statusQueue > 0
+                fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+            end
+
+            dbstop if error % temporarily, to debug
+            fprintf('Running pykilosort on the queue... \n')
+            runpyKS = 'XMatlabProg\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py';
+            [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
+                'cd C:\Users\Pip\Dropbox (Personal) &&' ...
             'python ' runpyKS ' && ' ...
             'conda deactivate']);
             if statuspyKS > 0
