@@ -126,7 +126,7 @@ switch lower(computerType)
             checkQueuePath = which('check_pyKS_queue.py');
             checkWhichMice = 'all';
             checkWhichDates = 'last7';
-            [statusQueue,resultQueue] = system(['conda activate PinkRigs && ' ...
+            [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
                 'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
             if statusQueue > 0
@@ -135,8 +135,9 @@ switch lower(computerType)
 
             dbstop if error % temporarily, to debug
             fprintf('Running pykilosort on the queue... \n')
-            runpyKS = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\+kilo\python_\run_pyKS.py';
-            [statuspyKS,resultpyKS] = system(['conda activate pyks2 && ' ...
+            githubPath = fileparts(fileparts(checkQueuePath));
+            runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+            [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
             'python ' runpyKS ' && ' ...
             'conda deactivate']);
             if statuspyKS > 0
