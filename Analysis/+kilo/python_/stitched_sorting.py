@@ -1,9 +1,10 @@
 # generic packages 
-import glob,re,pickle
+import sys,glob,re,pickle,json
 from pathlib import Path
 import numpy as np
 #ephys data specific packages 
 from ReadSGLXData.readSGLX import readMeta
+from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 
 def match_recordings(Subject='AV005'):
     """
@@ -21,12 +22,12 @@ def match_recordings(Subject='AV005'):
         - deal with data coming from different servers 
 
     """
-    serverroot = r'\\zinu.cortexlab.net\Subjects'
-    ephyspath = r'%s\%s\**\ephys\**\*.cbin' % (serverroot,Subject)
+    server = r'\\zinu.cortexlab.net\Subjects'
+    ephyspath = r'%s\%s\**\ephys\**\*.cbin' % (server,Subject)
 
     # main stitchedPyKS dir 
 
-    saveroot = Path(r'%s\%s\stitchedPyKS' % (serverroot,Subject))
+    saveroot = Path(r'%s\%s\stitchedPyKS' % (server,Subject))
     saveroot.mkdir(parents=False, exist_ok=True)  
 
     sn_list = []
@@ -74,3 +75,65 @@ def match_recordings(Subject='AV005'):
     f=open(saveroot / 'matched_imros.pcl','wb')
     pickle.dump(stitched_sorting_data,f)
     f.close()
+
+def run_stitchPyKS(Subject='AV005'):
+    """
+    function to read in the pickle and sort using the stitched recordings
+    """
+
+    # if the recordings have not been aready matched, match it 
+    server = r'\\zinu.cortexlab.net\Subjects'
+    stitch_root= Path(r'%s\%s\stitchedPyKS' % (server,Subject))
+    matched_data_path = list((stitch_root).glob('matched_imros.pcl'))
+    if not matched_data_path: 
+        match_recordings(Subject=Subject)
+    # recheck
+    matched_data_path = list((stitch_root).glob('matched_imros.pcl'))[0]
+
+    # read in the pickle
+    f=open(matched_data_path,'rb')
+    matched_dat=pickle.load(f)
+    f.close()
+
+    for config in matched_dat.keys(): 
+        if len(matched_dat[config])>1:
+            # sort some stitched stuff 
+            print('we have something to sort!!')
+            try:  
+                output_dir  = stitch_root / config
+                output_dir.mkdir(parents=False, exist_ok=True)
+
+                check_dir = output_dir / 'output'
+                check_sorted = list(check_dir.glob('spike_times.npy'))
+                # if it has not been sorted alr
+                if not check_sorted:           
+
+                    input_dirs = matched_dat[config]
+                    channel_map = neuropixel_probe_from_metafile(input_dirs[0])
+                    # get the channelmap for the example config data 
+
+                    input_dirs = [Path(ephysfilepath) for ephysfilepath in input_dirs]
+
+                    print('starting sorting ...')
+                    add_default_handler(level='INFO') # print output as the algorithm runs
+                    run(input_dirs, probe=channel_map, low_memory=True, dir_path=output_dir)
+
+            except: 
+                # save error message 
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+        
+                errdict = {
+                    'err_type:': str(exc_type), 
+                    'err_message': str(exc_obj),
+                    'traceback': str(exc_tb)
+                    }
+
+                errmessage = json.dumps(errdict)
+                
+                errfile = open(output_dir / 'pyKS_error.json',"w")
+                errfile.write(errmessage)
+                errfile.close()
+
+if __name__ == "__main__":
+   #run_stitchPyKS(Subject=sys.argv[1])
+    run_stitchPyKS(Subject='AV008')
