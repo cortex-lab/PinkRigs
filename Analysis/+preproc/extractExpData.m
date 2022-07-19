@@ -102,11 +102,6 @@ function extractExpData(varargin)
                     else
                         save(savePath,'ev')
                     end
-                    % Save it IBL style
-                    s.trials = ev;
-                    if isstruct(ev)
-                        % preproc.saveNPYFiles(s,fullfile(expFolder,'preproc','ev'))
-                    end
                 end    
                     
                 %% Extract spikes and clusters info (depth, etc.)
@@ -141,6 +136,8 @@ function extractExpData(varargin)
                                         spk{probeNum}.spikes.xpos = spk{probeNum}.spikes.xpos(spk2keep);
                                         spk{probeNum}.spikes.depth = spk{probeNum}.spikes.depth(spk2keep);
                                         spk{probeNum}.spikes.tempScalingAmp = spk{probeNum}.spikes.tempScalingAmp(spk2keep);
+                                        [~,shankID] = min(abs(spk{probeNum}.spikes.xpos - repmat([0 200 400 600], [numel(spk{probeNum}.spikes.xpos),1])),[],2);
+                                        shankID = shankID-1;
                                         
                                         % Recompute spike numbers
                                         for c = 1:numel(spk{probeNum}.clusters)
@@ -149,6 +146,36 @@ function extractExpData(varargin)
                                         
                                         % Get probe info
                                         spk{probeNum}.probe.serialNumber = alignment.ephys(probeNum).serialNumber;
+                                        
+                                        % -----------
+                                        % TEMPORARY save IBL style -- 
+                                        % Needs to rework directly on the spk structure to rename everything correctly,
+                                        % and then just everything in it with a function (e.g., preproc.saveNPYFiles)
+                                        probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
+                                        if ~exist(probeONEFolder,'dir')
+                                            mkdir(probeONEFolder);
+                                        end
+                                        stub = [expDate '_' expNum '_' subject '_' ...
+                                            sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
+                                        
+                                        % spikes
+                                        saveONEFormat(spk{probeNum}.spikes.time,probeONEFolder,'spikes','times','npy',stub);
+                                        saveONEFormat(spk{probeNum}.spikes.depth,probeONEFolder,'spikes','depths','npy',stub);
+                                        saveONEFormat(spk{probeNum}.spikes.xpos,probeONEFolder,'spikes','_av_xpos','npy',stub);
+                                        saveONEFormat(shankID,probeONEFolder,'spikes','_av_shankID','npy',stub);
+                                        saveONEFormat(spk{probeNum}.spikes.tempScalingAmp,probeONEFolder,'spikes','amps','npy',stub);
+                                        saveONEFormat(spk{probeNum}.spikes.cluster,probeONEFolder,'spikes','templates','npy',stub);
+                                        
+                                        % templates
+                                        saveONEFormat(spk{probeNum}.clusters.ID,probeONEFolder,'templates','_av_ID','npy',stub);
+                                        saveONEFormat(spk{probeNum}.clusters.KSLab,probeONEFolder,'templates','_av_KSlabels','npy',stub);
+                                        saveONEFormat(spk{probeNum}.clusters.Depth,probeONEFolder,'templates','depths','npy',stub);
+                                        saveONEFormat(spk{probeNum}.clusters.XPos,probeONEFolder,'templates','_av_xpos','npy',stub);
+                                        saveONEFormat(spk{probeNum}.clusters.Shank,probeONEFolder,'templates','_av_shankID','npy',stub);
+                                        
+                                        % go get qmetrics??
+                                        % TODO
+                                        % -----------
                                         
                                         fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                                     catch me
@@ -188,11 +215,6 @@ function extractExpData(varargin)
                     else
                         save(savePath,'spk')
                     end
-                    
-                    % Save it IBL style
-%                     for p = 1:numel(spk)
-%                         preproc.saveNPYFiles(spk{p},fullfile(expFolder,'preproc',sprintf('imec%d', p-1)))
-%                     end
                 end
                 
                 %% Update csv

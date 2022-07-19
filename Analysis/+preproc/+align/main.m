@@ -243,6 +243,16 @@ function main(varargin)
                 else
                     save(savePath,'video')
                 end
+                          
+                % Save frame times under ONE format
+                for v = 1:numel(vids2Process)
+                    videoONEFolder = fullfile(expFolder,'ONE_preproc',video(v).name);
+                    if ~exist(videoONEFolder,'dir')
+                        mkdir(videoONEFolder);
+                    end
+                    stub = [expDate '_' expNum '_' subject '_' video(v).name];
+                    saveONEFormat(video(v).frameTimes,videoONEFolder,'camera','times','npy',stub);
+                end
             end
             
             %% Align microphone to timeline
