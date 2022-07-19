@@ -8,8 +8,10 @@ function plotDriftMap4shank(varargin)
         ksDir = uigetdir; 
     end
     [spikeTimes, spikeAmps, spikeDepths, spikeXpos,~] =ksDriftmap(ksDir);
-    if exist([ksDir '\' 'drift.times.npy'])
+    if exist([ksDir '\drift'])
         plotDrift = true; 
+%         spikeDepths = readNPY([ksDir '\drift\spike_depths.npy']);
+%         spikeAmps = readNPY([ksDir '\drift\spike_amps.npy']);
     else 
         plotDrift = false;
     end
@@ -40,11 +42,16 @@ function plotDriftMap4shank(varargin)
     % add the calculated drift from pyKS on the plots. 
     %the drift is not calculated per shank but as total drift
     if plotDrift 
-        drift_times = readNPY([ksDir '\' 'drift.times.npy']); 
-        drift_um = readNPY([ksDir '\' 'drift.um.npy']); 
-        drift_depths_um = readNPY([ksDir '\' 'drift_depths.um.npy']); 
+%         drift_times = readNPY([ksDir '\' 'drift.times.npy']); 
+%         drift_um = readNPY([ksDir '\' 'drift.um.npy']); 
+%         drift_depths_um = readNPY([ksDir '\' 'drift_depths.um.npy']); 
 
-<<<<<<< HEAD
+        drift_um = readNPY([ksDir '\drift\' 'dshift.npy']); 
+        drift_depths_um = (readNPY([ksDir '\drift\' 'yblk.npy']))'; 
+        
+        dl = size(drift_um); 
+        drift_times = 1:dl(1); 
+
 % add the calculated drift from pyKS on the plots. 
 % the drift is not calculated per shank but as total drift
 % drift_times = readNPY([ksDir '\' 'drift.times.npy']); 
@@ -57,7 +64,6 @@ function plotDriftMap4shank(varargin)
 % plot(drift_times,drift_um_corrected_start);
 % ylim([min(spikeDepths)*0.98,max(spikeDepths)*1.02]);
 % title('drift estimate by pykilosort');
-=======
         subplot(1,numel(recorded_shanks)+1,numel(recorded_shanks)+1);
         % add the starting position to each driftunm
         drift_um_corrected_start = drift_um + repmat(drift_depths_um,numel(drift_times),1); 
@@ -66,4 +72,3 @@ function plotDriftMap4shank(varargin)
         title('drift estimate by pykilosort');
     end
 end
->>>>>>> 1d90065ed0fb183f3a4a205a12962044d45d6309
