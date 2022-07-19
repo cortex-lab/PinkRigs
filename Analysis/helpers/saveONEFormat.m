@@ -14,6 +14,11 @@ function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensio
     switch extensionName
         case 'npy'
             writeNPY(var, filePath);
+        case 'pqt'
+            if istype(var,'struct')
+                var = struct2table(var);
+            end
+            parquetwrite(filePath, var);
         otherwise
             error('Sorry, can''t find this extension: %s.',subfilename)
     end

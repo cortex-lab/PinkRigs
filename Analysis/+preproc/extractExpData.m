@@ -85,6 +85,14 @@ function extractExpData(varargin)
                         end
                         
                         fprintf(1, '* Events extraction done. *\n');
+                        
+                        eventsONEFolder = fullfile(expFolder,'ONE_preproc','events');
+                        if ~exist(eventsONEFolder,'dir')
+                            mkdir(eventsONEFolder);
+                        end
+                        stub = [expDate '_' expNum '_' subject];
+                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                        
                     catch me
                         msgText = getReport(me);
                         warning('%s \n Could not get events (ev): threw an error\n %s',me.identifier, msgText)
