@@ -119,7 +119,8 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     ev.is_conflictTrial = conflictTrials'; 
     ev.is_rewardTrial = rewTrials';
 
-    ev.block_trialOnOff = [trialStart' trialEnd']; 
+    ev.block_trialOn = [trialStart' trialEnd']; 
+    ev.block_trialOff = trialEnd'; 
     ev.block_stimOn  = stimOnsetRaw(eIdx)'; 
 
     ev.timeline_rewardOn = cell2mat(rewardAll); 

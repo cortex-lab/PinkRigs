@@ -182,7 +182,7 @@ if any(compareTest(stimStartRef, audPeriodOnOffTimeline))
 else
     audPeriodOnOffTimeline = audPeriodOnOffTimeline(1:length(stimStartRef),:);
 end
-tExt.audStimOnOff = [timelineClickOn timelineClickOff];
+tExt.audStimOnOff = [timelineClickOn' timelineClickOff'];
 tExt.audStimPeriodOnOff = audPeriodOnOffTimeline;
 
 %% Extract visual onsets (unreliable after initial flip)
@@ -378,15 +378,20 @@ ev.is_coherentTrial = is_coherentTrial;
 ev.is_conflictTrial = is_conflictTrial;   
 ev.is_validTrial = vIdx(:);
 
-ev.block_trialOnOff = trialStEnTimes;
+ev.block_trialOn = trialStEnTimes(:,1);
+ev.block_trialOff = trialStEnTimes(:,2);
 ev.block_stimOn = stimPeriodStart;
 
 ev.timeline_rewardOn = tExt.rewardTimes;
-ev.timeline_audOnOff = tExt.audStimOnOff;
-ev.timeline_visOnOff = tExt.visStimOnOff;
+ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0); 
+ev.timeline_audOff = cellfun(@(x) x(:,2), tExt.audStimOnOff, 'uni', 0); 
+ev.timeline_visOn = cellfun(@(x) x(:,1), tExt.visStimOnOff, 'uni', 0); 
+ev.timeline_visOff = cellfun(@(x) x(:,2), tExt.visStimOnOff, 'uni', 0);
 
-ev.timeline_audPeriodOnOff = tExt.audStimPeriodOnOff;
-ev.timeline_visPeriodOnOff = tExt.visStimPeriodOnOff; 
+ev.timeline_audPeriodOn = tExt.audStimPeriodOnOff(:,1);
+ev.timeline_audPeriodOff = tExt.audStimPeriodOnOff(:,2);
+ev.timeline_visPeriodOn = tExt.visStimPeriodOnOff(:,1); 
+ev.timeline_visPeriodOff = tExt.visStimPeriodOnOff(:,1); 
 ev.timeline_firstMoveOn = tExt.firstMoveTimeDir(:,1); 
 ev.timeline_firstMoveDir = tExt.firstMoveTimeDir(:,2); 
 ev.timeline_choiceMoveOn = tExt.choiceInitTimeDir(:,1); 
@@ -394,7 +399,8 @@ ev.timeline_choiceMoveDir = tExt.choiceInitTimeDir(:,2);
 ev.timeline_choiceThreshOn = tExt.choiceThreshTimeDir(:,1); 
 ev.timeline_allMoveOn = cellfun(@(x) x(:,1), tExt.allMovOnsetsTimDir, 'uni', 0); 
 ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0); 
-ev.timeline_wheelTimeValue  = tExt.wheelTraceTimeValue;  
+ev.timeline_wheelTime  = cellfun(@(x) x(:,1), tExt.wheelTraceTimeValue, 'uni', 0); 
+ev.timeline_wheelValue  = cellfun(@(x) x(:,2), tExt.wheelTraceTimeValue, 'uni', 0); 
 
 ev.stim_correctResponse = correctResponse;     
 ev.stim_repeatNum = repeatNums;         

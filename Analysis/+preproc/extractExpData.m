@@ -94,7 +94,7 @@ function extractExpData(varargin)
                         fprintf(1, '* Events extraction done. *\n');
 
                         stub = [expDate '_' expNum '_' subject];
-                        % saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
                         
                     catch me
                         msgText = getReport(me);
