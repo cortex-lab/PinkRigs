@@ -119,21 +119,28 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     ev.is_conflictTrial = conflictTrials'; 
     ev.is_rewardTrial = rewTrials';
 
-    ev.block_trialOn = [trialStart' trialEnd']; 
-    ev.block_trialOff = trialEnd'; 
-    ev.block_stimOn  = stimOnsetRaw(eIdx)'; 
+    ev.block_trialOn = single(trialStart'); 
+    ev.block_trialOff = single(trialEnd'); 
+    ev.block_stimOn  = single(stimOnsetRaw(eIdx)'); 
 
-    ev.timeline_rewardOn = cell2mat(rewardAll); 
-    ev.timeline_audOnOff = audOnOffByTrial;  
-    ev.timeline_visOnOff = visOnOffByTrial;  
-    
-    ev.timeline_audPeriodOnOff = cell2mat(audPeriodOnOff);
-    ev.timeline_visPeriodOnOff = cell2mat(visPeriodOnOff);
+    ev.timeline_rewardOn = single(cell2mat(rewardAll)); 
+    ev.timeline_audOn = cellfun(@(x) single(x(:,1)), audOnOffByTrial, 'uni', 0);
+    ev.timeline_audOff = cellfun(@(x) single(x(:,2)), audOnOffByTrial, 'uni', 0);
+    ev.timeline_visOn = cellfun(@(x) single(x(:,1)), visOnOffByTrial, 'uni', 0);
+    ev.timeline_visOff = cellfun(@(x) single(x(:,2)), visOnOffByTrial, 'uni', 0);
 
-    ev.stim_audAmplitude = block.events.audamplitudeValues(eIdx)';
-    ev.stim_visContrast = block.events.viscontrastValues(eIdx)';
-    ev.stim_audAzimuth  = audTrialsLoc(eIdx)';
-    ev.stim_visAzimuth  = visTrialsLoc(eIdx)';
+    audPeriodOnOff = cell2mat(audPeriodOnOff);
+    ev.timeline_audPeriodOff = single(audPeriodOnOff(:,1));
+    ev.timeline_audPeriodOn = single(audPeriodOnOff(:,2));
+
+    visPeriodOnOff = cell2mat(visPeriodOnOff);
+    ev.timeline_visPeriodOn = single(visPeriodOnOff(:,1));
+    ev.timeline_visPeriodOff = single(visPeriodOnOff(:,2));
+
+    ev.stim_audAmplitude = single(block.events.audamplitudeValues(eIdx)');
+    ev.stim_visContrast = single(block.events.viscontrastValues(eIdx)');
+    ev.stim_audAzimuth  = single(audTrialsLoc(eIdx)');
+    ev.stim_visAzimuth  = single(visTrialsLoc(eIdx)');
 
     if length(unique(structfun(@length, ev)))~=1
         error('All fields of ev should have size [trials] on dim 1')

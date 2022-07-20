@@ -250,7 +250,7 @@ photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial,
 
 visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
 tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
-if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = 0; end
+if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
 %% MOVEMENT
 responseMadeIdx = responseRecorded ~= 0;
 timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
@@ -356,7 +356,11 @@ for i = 1:length(rawFields)
     emptyIdx = cellfun(@isempty, tExt.(currField));
 
     if any(strcmp(currField, {'allMovOnsetsTimDir'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
-        nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
+        if contains(currField, {'OnOff', 'TimeValue', 'TimDir'}, 'IgnoreCase',1)
+            nColumns = 2;
+        else
+            nColumns = 1;
+        end      
         tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
         tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
     end
