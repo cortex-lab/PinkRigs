@@ -1,7 +1,7 @@
 clc; clear; 
-params.subject = 'AV008';
-params.expDate = {'2022-03-10'};
-params.expDef = 't';
+params.subject = 'FT031';
+params.expDate = {'2021-12-03'};
+params.expDef = 'postactive';
 exp2checkList = csv.queryExp(params);
 
 expInfo = exp2checkList(1,:);
@@ -9,7 +9,7 @@ expPath = dir([expInfo.expFolder{1} '\' '*_preprocData.mat']);
 load([expPath.folder '\' expPath.name]); 
 
 %%
-opt.paramTag = 'default';
+opt.paramTag = 'passive';
 plt.spk.cellRaster(spk,ev,[],opt); 
 
 %%
