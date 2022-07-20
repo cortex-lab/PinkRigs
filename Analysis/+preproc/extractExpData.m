@@ -91,7 +91,7 @@ function extractExpData(varargin)
                             mkdir(eventsONEFolder);
                         end
                         stub = [expDate '_' expNum '_' subject];
-                        % saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
                         
                     catch me
                         msgText = getReport(me);
