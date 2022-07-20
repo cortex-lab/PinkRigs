@@ -91,7 +91,7 @@ function extractExpData(varargin)
                             mkdir(eventsONEFolder);
                         end
                         stub = [expDate '_' expNum '_' subject];
-                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                        % saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
                         
                     catch me
                         msgText = getReport(me);
@@ -175,11 +175,11 @@ function extractExpData(varargin)
                                         saveONEFormat(spk{probeNum}.spikes.cluster,probeONEFolder,'spikes','templates','npy',stub);
                                         
                                         % templates
-                                        saveONEFormat(spk{probeNum}.clusters.ID,probeONEFolder,'templates','_av_ID','npy',stub);
-                                        saveONEFormat(spk{probeNum}.clusters.KSLab,probeONEFolder,'templates','_av_KSlabels','npy',stub);
-                                        saveONEFormat(spk{probeNum}.clusters.Depth,probeONEFolder,'templates','depths','npy',stub);
-                                        saveONEFormat(spk{probeNum}.clusters.XPos,probeONEFolder,'templates','_av_xpos','npy',stub);
-                                        saveONEFormat(spk{probeNum}.clusters.Shank,probeONEFolder,'templates','_av_shankID','npy',stub);
+                                        saveONEFormat([spk{probeNum}.clusters.ID],probeONEFolder,'templates','_av_ID','npy',stub);
+                                        saveONEFormat([spk{probeNum}.clusters.KSLab],probeONEFolder,'templates','_av_KSlabels','npy',stub);
+                                        saveONEFormat([spk{probeNum}.clusters.Depth],probeONEFolder,'templates','depths','npy',stub);
+                                        saveONEFormat([spk{probeNum}.clusters.XPos],probeONEFolder,'templates','_av_xpos','npy',stub);
+                                        saveONEFormat([spk{probeNum}.clusters.Shank],probeONEFolder,'templates','_av_shankID','npy',stub);
                                         
                                         % go get qmetrics??
                                         % TODO
