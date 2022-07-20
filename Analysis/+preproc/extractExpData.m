@@ -67,7 +67,10 @@ function extractExpData(varargin)
                     alignment = load(alignmentFile, 'block');
                     
                     eventsONEFolder = fullfile(expFolder,'ONE_preproc','events');
-                    delete(eventsONEFolder)
+                    if exist(eventsONEFolder,'dir')
+                        rmdir(eventsONEFolder,'s')
+                    end
+                    mkdir(eventsONEFolder);
                     
                     try
                         fprintf(1, '* Extracting events... *\n');
@@ -84,15 +87,12 @@ function extractExpData(varargin)
                         ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                         
                         % Remove any error file
-                        if exist(fullfile(expFolder, 'GetEvError.json'),'file')
-                            delete(fullfile(expFolder, 'GetEvError.json'))
+                        if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
+                            delete(fullfile(eventsONEFolder, 'GetEvError.json'))
                         end
                         
                         fprintf(1, '* Events extraction done. *\n');
 
-                        if ~exist(eventsONEFolder,'dir')
-                            mkdir(eventsONEFolder);
-                        end
                         stub = [expDate '_' expNum '_' subject];
                         % saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
                         
@@ -102,7 +102,7 @@ function extractExpData(varargin)
                         ev = 'error';
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(expFolder, 'GetEvError.json'))
+                        saveErrMess(me.message,fullfile(eventsONEFolder, 'GetEvError.json'))
                     end
                     
                     change = 1;
@@ -130,8 +130,14 @@ function extractExpData(varargin)
                             
                             spk = cell(1,numel(alignment.ephys));
                             for probeNum = 1:numel(alignment.ephys)
+                                
                                 probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
-                                delete(probeONEFolder)
+                                if exist(probeONEFolder,'dir')
+                                    % Need to do differently if only
+                                    % reprocessing the q metrics?
+                                    rmdir(probeONEFolder,'s')
+                                end
+                                mkdir(probeONEFolder);
                                 
                                 if ~isnan(alignment.ephys(probeNum).ephysPath)
                                     try
@@ -170,7 +176,7 @@ function extractExpData(varargin)
                                         spkONE{probeNum} = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath);
                                         
                                         % Align them
-                                        spkONE{probeNum}.spikes.times = preproc.align.event2Timeline(spkONE{probeNum}.spikes.time, ...
+                                        spkONE{probeNum}.spikes.times = preproc.align.event2Timeline(spkONE{probeNum}.spikes.times, ...
                                             alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
                                         
                                         % Subselect the ones that are within this experiment
@@ -178,22 +184,33 @@ function extractExpData(varargin)
                                         spk2keep = (spkONE{probeNum}.spikes.times>0) & (spkONE{probeNum}.spikes.times<expLength);
                                         spkONE{probeNum}.spikes.times = spkONE{probeNum}.spikes.times(spk2keep);
                                         spkONE{probeNum}.spikes.templates = spkONE{probeNum}.spikes.templates(spk2keep);
-                                        spkONE{probeNum}.spikes.av_xpos = spkONE{probeNum}.spikes.av_xpos(spk2keep);
-                                        spkONE{probeNum}.spikes.av_depths = spkONE{probeNum}.spikes.av_depths(spk2keep);
                                         spkONE{probeNum}.spikes.amps = spkONE{probeNum}.spikes.amps(spk2keep);
+                                        spkONE{probeNum}.spikes.depths = spkONE{probeNum}.spikes.depths(spk2keep);
+                                        spkONE{probeNum}.spikes.av_xpos = spkONE{probeNum}.spikes.av_xpos(spk2keep);
                                         spkONE{probeNum}.spikes.av_shankIDs = spkONE{probeNum}.spikes.av_shankIDs(spk2keep);
                                         
                                         % go get qmetrics??
                                         % TODO
                                         
-                                        if ~exist(probeONEFolder,'dir')
-                                            mkdir(probeONEFolder);
-                                        end
                                         stub = [expDate '_' expNum '_' subject '_' ...
                                             sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
+                                        fieldsSpk = fieldnames(spkONE{probeNum});
+                                        for ff = 1:numel(fieldsSpk)
+                                            obj = fieldsSpk{ff};
+                                            fieldsObj = fieldnames(spkONE{probeNum}.(obj));
+                                            for fff = 1:numel(fieldsObj)
+                                                attr = fieldsObj{fff};
+                                                saveONEFormat(spkONE{probeNum}.(obj).(attr), ...
+                                                    probeONEFolder,obj,attr,'npy',stub);
+                                            end
+                                        end
                                         
-
                                         % -----------
+                                        
+                                        % Remove any error file
+                                        if exist(fullfile(probeONEFolder, 'GetSpkError.json'),'file')
+                                            delete(fullfile(probeONEFolder, 'GetSpkError.json'))
+                                        end
                                         
                                         fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                                     catch me
@@ -201,16 +218,11 @@ function extractExpData(varargin)
                                         spk{probeNum} = 'error';
                                         
                                         % Save error message locally
-                                        saveErrMess(me.message,fullfile(expFolder, 'GetSpkError.json'))
+                                        saveErrMess(me.message,fullfile(probeONEFolder, 'GetSpkError.json'))
                                     end
                                 else
                                     spk{probeNum} = nan;
                                 end
-                            end
-                            
-                            % Remove any error file
-                            if exist(fullfile(expFolder, 'GetSpkError.json'),'file')
-                                delete(fullfile(expFolder, 'GetSpkError.json'))
                             end
                             
                             fprintf(1, '* Spikes extraction done. *\n');

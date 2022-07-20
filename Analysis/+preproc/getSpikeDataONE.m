@@ -50,7 +50,6 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     ycoords = coords(:,2); xcoords = coords(:,1);
     
     % Compute depths
-    %%% SHOULD FIND A BETTER WAY TO DO IT?
     pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
     pcFeat(pcFeat<0) = 0; % some entries are negative, but we don't really want to push the CoM away from there.
     
@@ -64,8 +63,8 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spikeFeatXcoords = xcoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
     spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
 
-    [~,shankIDs] = min(abs(spikeXPos - repmat([0 200 400 600], [numel(spikeXPos),1])),[],2);
-    shankIDs = shankIDs-1;
+    [~,spikeShankIDs] = min(abs(spikeXPos - repmat([0 200 400 600], [numel(spikeXPos),1])),[],2);
+    spikeShankIDs = spikeShankIDs-1;
     
     %% Get cluster info
     
@@ -75,18 +74,19 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     
     %%% clusterList not exactly the same as sp.cids..???
     templatesList = unique(spikeTemplates);
-    temp_av_KSLab = nan(1,numel(templatesList));
-    temp_av_xpos = nan(1,numel(templatesList));
+    temp_KSLabels = nan(1,numel(templatesList));
+    temp_xpos = nan(1,numel(templatesList));
     temp_depths = nan(1,numel(templatesList));
+    temp_shankIDs = nan(1,numel(templatesList));
     for ii = 1:numel(templatesList)
         temp = templatesList(ii);
         spkIdx = spikeTemplates == temp;
 
-        temp_av_KSLab(ii) = cgs(cids == temp);
-        temp_av_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
+        temp_KSLabels(ii) = cgs(cids == temp);
+        temp_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
         temp_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
+        temp_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
     end
-    temp_av_shankIDs = floor(temp_XPos/200);
     
     %% Save it in spk
     
@@ -96,15 +96,14 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.spikes.amps = tempScalingAmps;
     spk.spikes.depths = spikeDepths;
     spk.spikes.av_xpos = spikeXPos;
-    spk.spikes.av_shankIDs = shankIDs;
+    spk.spikes.av_shankIDs = spikeShankIDs;
     
     % templates
     spk.templates.av_IDs = templatesList;
     spk.templates.av_KSLabels = temp_KSLabels;
+    spk.templates.waveforms = temps; % maybe to remove/redundant with qMetrics?
+    spk.templates.waveformsChannels = temps_ind; % maybe to remove/redundant with qMetrics?
     spk.templates.depths = temp_depths;
-    spk.templates.av_xpos
+    spk.templates.av_xpos = temp_xpos;
     spk.templates.av_shankIDs = temp_shankIDs;
-    % maybe to remove/redundant with qMetrics?
-    spk.templates.waveforms = temps;
-    spk.templates.waveformsChannels = temps_ind; 
     
