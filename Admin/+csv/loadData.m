@@ -31,22 +31,18 @@ for i=1:height(expList)
     % Clear any existing data and get current exp details
     clear ev spk blk tim;
     currExp = expList(i,:);
+    currONEStub = [currExp.expFolder '\ONE_preproc\'];
+
     currLoadTag = currExp.loadTag{1};
     if strcmp(currLoadTag, 'all')
         currLoadTag = 'evspkblktim'; 
     end
-    pathStub = strcat(currExp.expDate, {'_'}, currExp.expNum, {'_'}, currExp.subject);
+    expPathStub = strcat(currExp.expDate, {'_'}, currExp.expNum, {'_'}, currExp.subject);
     
     %Load ev/spk data if requested
-    if contains(currLoadTag, {'ev', 'spk'})
-        preProcPath = cell2mat([currExp.expFolder '\' pathStub '_preprocData.mat']);
+    if contains(currLoadTag, {'spk'})
+        preProcPath = cell2mat([currExp.expFolder '\' expPathStub '_preprocData.mat']);
         if ~exist(preProcPath, 'file'); continue; end
-        if contains(currLoadTag, {'ev'})
-            ev = load(preProcPath, 'ev');
-            if exist('ev', 'var')
-                expList.evData{i} = ev.ev;
-            end
-        end
         if contains(currLoadTag, {'spk'})
             spk = load(preProcPath, 'spk');
             if exist('spk', 'var')
@@ -55,10 +51,16 @@ for i=1:height(expList)
         end
     end
 
+    if contains(currLoadTag, {'ev'})
+        evPQTPath = cell2mat([currONEStub '\events\_av_trials.table.' expPathStub '.pqt' ]);
+        if ~exist(evPQTPath, 'file'); continue; end
+        expList.evData{i} = table2struct(parquetread(evPQTPath),"ToScalar",1);
+    end
+
 
     %Load block data if requested
     if contains(currLoadTag, {'blk', 'block'})
-        preProcPath = cell2mat([currExp.expFolder '\' pathStub '_block.mat']);
+        preProcPath = cell2mat([currExp.expFolder '\' expPathStub '_block.mat']);
         if ~exist(preProcPath, 'file'); continue; end
         blk = load(preProcPath, 'block');
         if exist('blk', 'var')
@@ -68,7 +70,7 @@ for i=1:height(expList)
 
     %Load timeline data if requested
     if contains(currLoadTag, {'tim'; 'timeline'})
-        preProcPath = cell2mat([currExp.expFolder '\' pathStub '_timeline.mat']);
+        preProcPath = cell2mat([currExp.expFolder '\' expPathStub '_timeline.mat']);
         if ~exist(preProcPath, 'file'); continue; end
         tim = load(preProcPath, 'Timeline');
         if exist('tim', 'var')

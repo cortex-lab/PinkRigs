@@ -382,11 +382,11 @@ ev.is_coherentTrial = is_coherentTrial;
 ev.is_conflictTrial = is_conflictTrial;   
 ev.is_validTrial = vIdx(:);
 
-ev.block_trialOn = trialStEnTimes(:,1);
-ev.block_trialOff = trialStEnTimes(:,2);
-ev.block_stimOn = stimPeriodStart;
+ev.block_trialOn = single(trialStEnTimes(:,1));
+ev.block_trialOff = single(trialStEnTimes(:,2));
+ev.block_stimOn = single(stimPeriodStart);
 
-ev.timeline_rewardOn = tExt.rewardTimes;
+ev.timeline_rewardOn = single(tExt.rewardTimes);
 ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0); 
 ev.timeline_audOff = cellfun(@(x) x(:,2), tExt.audStimOnOff, 'uni', 0); 
 ev.timeline_visOn = cellfun(@(x) x(:,1), tExt.visStimOnOff, 'uni', 0); 
@@ -406,14 +406,14 @@ ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0
 ev.timeline_wheelTime  = cellfun(@(x) x(:,1), tExt.wheelTraceTimeValue, 'uni', 0); 
 ev.timeline_wheelValue  = cellfun(@(x) x(:,2), tExt.wheelTraceTimeValue, 'uni', 0); 
 
-ev.stim_correctResponse = correctResponse;     
-ev.stim_repeatNum = repeatNums;         
-ev.stim_audAmplitude = audAmplitude;      
-ev.stim_audAzimuth = audInitialAzimuth;       
-ev.stim_visContrast = visContrast;         
-ev.stim_visAzimuth = visInitialAzimuth;   
-ev.stim_closedLoop = stim_closedLoop>0;   
+ev.stim_correctResponse = single(correctResponse);     
+ev.stim_repeatNum = single(repeatNums);         
+ev.stim_audAmplitude = single(audAmplitude);      
+ev.stim_audAzimuth = single(audInitialAzimuth);       
+ev.stim_visContrast = single(visContrast);         
+ev.stim_visAzimuth = single(visInitialAzimuth);   
+ev.stim_closedLoop = single(stim_closedLoop>0);   
 
-ev.response_direction = responseRecorded;
-ev.response_feedback = feedbackValues;
+ev.response_direction = single(responseRecorded);
+ev.response_feedback = single(feedbackValues);
 end

@@ -17,12 +17,19 @@ switch extensionName
         writeNPY(var, filePath);
     case {'pqt','parquet'}
         if isstruct(var)
+          
+            largeVar = struct;
+            for currField = fields(var)'
+                if iscell(var.(currField{1}))
+                    largeVar.(currField{1}) = var.(currField{1});
+                    var = rmfield(var, currField{1});
+                end
+            end
+
             Sbytes=whosstruct(var);
             totalSize = sum(structfun(@(x) x, Sbytes));
             fracSize =  structfun(@(x) x, Sbytes)/totalSize;
-            
-            largeVar = struct;
-            while length(fracSize) > 4 && sum(maxk(fracSize,floor(0.2*length(fracSize))))>0.5
+            while length(fracSize) > 4 && sum(maxk(fracSize,floor(0.2*length(fracSize))))>0.75
                 varFields = fields(var);
                 maxField = varFields(fracSize == max(fracSize));
                 largeVar.(maxField{1}) = var.(maxField{1});
@@ -36,6 +43,7 @@ switch extensionName
             var = struct2table(var);
             largeVar = struct2table(largeVar);
         end
+        
 
         parquetwrite(filePath, var);
         parquetwrite(filePathLarge, largeVar);
