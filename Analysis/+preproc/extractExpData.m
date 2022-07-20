@@ -200,6 +200,7 @@ function extractExpData(varargin)
                                             fieldsObj = fieldnames(spkONE{probeNum}.(obj));
                                             for fff = 1:numel(fieldsObj)
                                                 attr = fieldsObj{fff};
+                                                attr = regexprep(attr,'av_','_av_');
                                                 saveONEFormat(spkONE{probeNum}.(obj).(attr), ...
                                                     probeONEFolder,obj,attr,'npy',stub);
                                             end
@@ -235,8 +236,8 @@ function extractExpData(varargin)
                             saveErrMess(sprintf('Error in alignment.'), ...
                                 fullfile(probeONEFolder, 'GetSpkError.json'))
                         elseif isa(alignment.ephys,'double') && isnan(alignment.ephys)
-                            saveErrMess(sprintf('Couldn''t find ephys.'), ...
-                                fullfile(probeONEFolder, 'GetSpkError.json'))
+                            % case when no ephys folder?
+                            % do nothing?
                         else
                             error('Unknown format for ephys alignment variable.')
                         end
