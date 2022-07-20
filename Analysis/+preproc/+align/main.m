@@ -202,13 +202,23 @@ function main(varargin)
                     expInfo.vidName = vidName;
                     expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     video(v).name = vidName;
+                    
+                    videoONEFolder = fullfile(expFolder,'ONE_preproc',video(v).name);
+                    if exist(videoONEFolder,'dir')
+                        rmdir(videoONEFolder,'s');
+                    end
+                    mkdir(videoONEFolder);
+                    
                     if ~isempty(expInfo.vidInfo)
                         try
                             [video(v).frameTimes, video(v).missedFrames] = preproc.align.video(expInfo);
                             
+                            stub = [expDate '_' expNum '_' subject '_' video(v).name];
+                            saveONEFormat(video(v).frameTimes,videoONEFolder,'camera','times','npy',stub);
+                            
                             % Remove any error file
-                            if exist(fullfile(expFolder, sprintf('AlignVideoError_%s.json',vidName)),'file')
-                                delete(fullfile(expFolder, sprintf('AlignVideoError_%s.json',vidName)))
+                            if exist(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)),'file')
+                                delete(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                             end
                         catch me
                             warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
@@ -225,12 +235,15 @@ function main(varargin)
                             end
                             
                             % Save error message locally
-                            saveErrMess(me.message,fullfile(expFolder, sprintf('AlignVideoError_%s.json',vidName)))
+                            saveErrMess(me.message,fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                         end
                     else
                         % Couldn't find the file.
                         video(v).frameTimes = nan;
                         video(v).missedFrames = nan;
+                        
+                        saveErrMess(sprintf('Couldn''t find the video %s',vidName), ...
+                            fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                     end
                 end
                 fprintf(1, '* Video alignment done. *\n');
@@ -244,15 +257,6 @@ function main(varargin)
                     save(savePath,'video')
                 end
                           
-                % Save frame times under ONE format
-                for v = 1:numel(vids2Process)
-                    videoONEFolder = fullfile(expFolder,'ONE_preproc',video(v).name);
-                    if ~exist(videoONEFolder,'dir')
-                        mkdir(videoONEFolder);
-                    end
-                    stub = [expDate '_' expNum '_' subject '_' video(v).name];
-                    saveONEFormat(video(v).frameTimes,videoONEFolder,'camera','times','npy',stub);
-                end
             end
             
             %% Align microphone to timeline

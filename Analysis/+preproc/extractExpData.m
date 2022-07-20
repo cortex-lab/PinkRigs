@@ -222,14 +222,21 @@ function extractExpData(varargin)
                                     end
                                 else
                                     spk{probeNum} = nan;
+                                    
+                                    saveErrMess(sprintf('Couldn''t find ephys.'), ...
+                                        fullfile(probeONEFolder, 'GetSpkError.json'))
                                 end
                             end
                             
                             fprintf(1, '* Spikes extraction done. *\n');
                         elseif ischar(alignment.ephys) && strcmp(alignment.ephys,'error')
                             spk = 'error';
+                            
+                            saveErrMess(sprintf('Error in alignment.'), ...
+                                fullfile(probeONEFolder, 'GetSpkError.json'))
                         elseif isa(alignment.ephys,'double') && isnan(alignment.ephys)
-                            spk = nan;
+                            saveErrMess(sprintf('Couldn''t find ephys.'), ...
+                                fullfile(probeONEFolder, 'GetSpkError.json'))
                         else
                             error('Unknown format for ephys alignment variable.')
                         end
