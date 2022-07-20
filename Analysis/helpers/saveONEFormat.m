@@ -38,7 +38,7 @@ switch extensionName
         end
 
         parquetwrite(filePath, var);
-        parquetwrite(filePathLarge, var);
+        parquetwrite(filePathLarge, largeVar);
     otherwise
         error('Sorry, can''t find this extension: %s.',subfilename)
 end

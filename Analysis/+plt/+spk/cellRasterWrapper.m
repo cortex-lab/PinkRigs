@@ -9,7 +9,7 @@ if size(expList) > 2
 end
 loadedData = csv.loadData(expList, 'loadTag', 'evspk');
 for i = 1:height(loadedData)
-    if loadedData.expD
+    if ~containsloadedData.expDef{i}
     end
     [eventTimes, trialGroups, opt] = paramFunc(loadedData.evData{i});
 end
