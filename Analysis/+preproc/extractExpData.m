@@ -67,10 +67,7 @@ function extractExpData(varargin)
                     alignment = load(alignmentFile, 'block');
                     
                     eventsONEFolder = fullfile(expFolder,'ONE_preproc','events');
-                    if exist(eventsONEFolder,'dir')
-                        rmdir(eventsONEFolder,'s')
-                    end
-                    mkdir(eventsONEFolder);
+                    initONEFolder(eventsONEFolder)
                     
                     try
                         fprintf(1, '* Extracting events... *\n');
@@ -133,12 +130,8 @@ function extractExpData(varargin)
                             for probeNum = 1:numel(alignment.ephys)
                                 
                                 probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
-                                if exist(probeONEFolder,'dir')
-                                    % Need to do differently if only
-                                    % reprocessing the q metrics?
-                                    rmdir(probeONEFolder,'s')
-                                end
-                                mkdir(probeONEFolder);
+                                initONEFolder(probeONEFolder) %%% will have to see what to do when recomputing the qMetrics only
+                                
                                 %%%% CHECK IF 1 IN CSV%%%%%
                                 if ~isnan(alignment.ephys(probeNum).ephysPath)
                                     try

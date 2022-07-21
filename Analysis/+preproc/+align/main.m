@@ -205,10 +205,7 @@ function main(varargin)
                     video(v).name = vidName;
                     
                     videoONEFolder = fullfile(expFolder,'ONE_preproc',video(v).name);
-                    if exist(videoONEFolder,'dir')
-                        rmdir(videoONEFolder,'s');
-                    end
-                    mkdir(videoONEFolder);
+                    initONEFolder(videoONEFolder)
                     
                     if ~isempty(expInfo.vidInfo)
                         try
