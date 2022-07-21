@@ -31,8 +31,8 @@ function extractExpData(varargin)
         alignmentFile = [pathStub '_alignment.mat'];
         
         %%% temporary--delete the old preproc files
-        oldpreprocFile = regexprep(alignmentFile,'alignment','preproc');
-        delete(oldpreprocFile);
+        oldPreprocFile = regexprep(alignmentFile,'alignment','preproc');
+        delete(oldPreprocFile);
         %%%
         
         % Get preproc status

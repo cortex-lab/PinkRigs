@@ -80,19 +80,28 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
        cgsFile = fullfile(KSFolder, 'cluster_group.tsv');
        [cids, cgs] = readClusterGroupsCSV(cgsFile);
     end 
-    clu = readNPY(fullfile(KSFolder, 'spike_clusters.npy')); 
+    
+    if (numel(cgs) == numel(cgs_KS)) && all(cgs == cgs_KS)
+        manuallyCurated = 1;
+    else
+        manuallyCurated = 0;
+    end
+    
+    if manuallyCurated
+        clu = readNPY(fullfile(KSFolder, 'spike_clusters.npy')); 
 
-    clus_KSLabels = nan(1,numel(cids));
-    clus_xpos = nan(1,numel(cids));
-    clus_depths = nan(1,numel(cids));
-    clus_shankIDs = nan(1,numel(cids));
-    for ii = 1:numel(cids)
-        temp = cids(ii);
-        spkIdx = clu == temp;
-        clus_KSLabels(ii) = cgs(cids == temp);
-        clus_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
-        clus_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
-        clus_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
+        clus_KSLabels = nan(1,numel(cids));
+        clus_xpos = nan(1,numel(cids));
+        clus_depths = nan(1,numel(cids));
+        clus_shankIDs = nan(1,numel(cids));
+        for ii = 1:numel(cids)
+            temp = cids(ii);
+            spkIdx = clu == temp;
+            clus_KSLabels(ii) = cgs(cids == temp);
+            clus_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
+            clus_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
+            clus_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
+        end
     end
 
 
@@ -104,8 +113,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.spikes.amps = tempScalingAmps;
     spk.spikes.depths = spikeDepths;
     spk.spikes.av_xpos = spikeXPos;
-    spk.spikes.av_shankIDs = spikeShankIDs;
-    spk.spikes.clusters = clu; 
+    spk.spikes.av_shankIDs = spikeShankIDs; 
     
     % templates
     spk.templates.av_IDs = templatesList;
@@ -115,13 +123,17 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.templates.depths = temp_depths;
     spk.templates.av_xpos = temp_xpos;
     spk.templates.av_shankIDs = temp_shankIDs;
-
-    %clusters (that can be manually curated)
-    spk.clusters.av_IDs = cids; 
-    spk.clusters.depths = clus_depths; 
-    spk.clusters.av_xpos = clus_xpos; 
-    spk.clusters.av_shankID = clus_shankIDs;
-    spk.clusters.av_Labels = clus_KSLabels;
-
+    
+    if manuallyCurated
+        % spikes
+        spk.spikes.clusters = clu;
+        
+        % clusters (that can be manually curated)
+        spk.clusters.av_IDs = cids;
+        spk.clusters.depths = clus_depths;
+        spk.clusters.av_xpos = clus_xpos;
+        spk.clusters.av_shankID = clus_shankIDs;
+        spk.clusters.av_Labels = clus_KSLabels;
+    end
     
     
