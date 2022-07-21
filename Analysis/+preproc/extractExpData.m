@@ -201,9 +201,8 @@ function extractExpData(varargin)
                                             fieldsObj = fieldnames(spkONE{probeNum}.(obj));
                                             for fff = 1:numel(fieldsObj)
                                                 attr = fieldsObj{fff};
-                                                attr = regexprep(attr,'av_','_av_');
                                                 saveONEFormat(spkONE{probeNum}.(obj).(attr), ...
-                                                    probeONEFolder,obj,attr,'npy',stub);
+                                                    probeONEFolder,obj,regexprep(attr,'av_','_av_'),'npy',stub);
                                             end
                                         end
                                         
@@ -223,7 +222,7 @@ function extractExpData(varargin)
                                         saveErrMess(me.message,fullfile(probeONEFolder, 'GetSpkError.json'))
                                     end
                                 else
-                                    spk{probeNum} = nan;
+                                    spk{probeNum} = 'error';
                                     
                                     saveErrMess(sprintf('Couldn''t find ephys.'), ...
                                         fullfile(probeONEFolder, 'GetSpkError.json'))
