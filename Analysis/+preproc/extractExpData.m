@@ -238,6 +238,8 @@ function extractExpData(varargin)
                         elseif isa(alignment.ephys,'double') && isnan(alignment.ephys)
                             % case when no ephys folder?
                             % do nothing?
+                            
+                            spk = nan;
                         else
                             error('Unknown format for ephys alignment variable.')
                         end

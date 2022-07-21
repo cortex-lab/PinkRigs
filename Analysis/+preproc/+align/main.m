@@ -45,7 +45,7 @@ function main(varargin)
         if strcmp(expInfo.timeline, '0')
             if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
                 [block, mic, ephys] = deal(nan);
-                video = struct('name', expInfo.videoNames, ...
+                video = struct('name', expInfo.videoNames{1}, ...
                     'frameTimes', num2cell(nan*ones(3,1)),...
                     'missedFrames', num2cell(nan*ones(3,1)));
                 save(savePath,'block', 'video', 'ephys', 'mic');
@@ -115,9 +115,12 @@ function main(varargin)
                         saveErrMess(me.message,fullfile(expFolder, 'AlignEphysError.json'))
                     end
                 else
-                    % Case where the ephys fodler did not exist. It's either
+                    % Case where the ephys folder did not exist. It's either
                     % because it's not supposed to exist, or wasn't copied.
                     ephys = nan;
+                    
+                    % Save error message locally
+                    saveErrMess('No ephys folder.',fullfile(expFolder, 'AlignEphysError.json'))
                 end
                                 
                 change = 1;
