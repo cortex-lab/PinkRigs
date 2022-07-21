@@ -108,11 +108,12 @@ function main(varargin)
                             delete(fullfile(expFolder, 'AlignEphysError.json'))
                         end
                     catch me
-                        warning('Couldn''t align ephys: threw an error (%s)',me.message)
+                        msgText = getReport(me);
+                        warning('Couldn''t align ephys: threw an error (%s)',msgText)
                         ephys = 'error';
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(expFolder, 'AlignEphysError.json'))
+                        saveErrMess(msgText,fullfile(expFolder, 'AlignEphysError.json'))
                     end
                 else
                     % Case where the ephys folder did not exist. It's either
@@ -159,11 +160,12 @@ function main(varargin)
                         delete(fullfile(expFolder, 'AlignBlockError.json'))
                     end
                 catch me
-                    warning('Couldn''t align block: threw an error (%s)', me.message)
+                    msgText = getReport(me);
+                    warning('Couldn''t align block: threw an error (%s)', msgText)
                     block = 'error';
                     
                     % Save error message locally
-                    saveErrMess(me.message,fullfile(expFolder, 'AlignBlockError.json'))
+                    saveErrMess(msgText,fullfile(expFolder, 'AlignBlockError.json'))
                 end
                                 
                 change = 1;
@@ -219,14 +221,15 @@ function main(varargin)
                                 delete(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                             end
                         catch me
-                            warning('Could not align video %s: threw an error (%s)',vidName,me.message)
+                            msgText = getReport(me);
+                            warning('Could not align video %s: threw an error (%s)',vidName,msgText)
 
                             % Another error occured. Save it.
                             video(v).frameTimes = 'error';
                             video(v).missedFrames = 'error';
 
                             % Save error message locally
-                            saveErrMess(me.message,fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
+                            saveErrMess(msgText,fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                         end
                     else
                         % Couldn't find the file. %%% CELIAN TO REMOVE %%%
@@ -270,11 +273,12 @@ function main(varargin)
                             delete(fullfile(expFolder, 'AlignMicError.json'))
                         end
                     catch me
-                        warning('Could not align mic: threw an error (%s)',me.message)
+                        msgText = getReport(me);
+                        warning('Could not align mic: threw an error (%s)',msgText)
                         mic = 'error';
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(expFolder, 'AlignMicError.json'))
+                        saveErrMess(msgText,fullfile(expFolder, 'AlignMicError.json'))
                     end
                 else
                     % Mic data wasn't there.

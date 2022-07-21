@@ -99,7 +99,7 @@ function extractExpData(varargin)
                         ev = 'error';
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(eventsONEFolder, 'GetEvError.json'))
+                        saveErrMess(msgText,fullfile(eventsONEFolder, 'GetEvError.json'))
                     end
                     
                     change = 1;
@@ -208,11 +208,12 @@ function extractExpData(varargin)
                                         
                                         fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
                                     catch me
-                                        warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,me.message)
+                                        msgText = getReport(me);
+                                        warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,msgText)
                                         spk{probeNum} = 'error';
                                         
                                         % Save error message locally
-                                        saveErrMess(me.message,fullfile(probeONEFolder, 'GetSpkError.json'))
+                                        saveErrMess(msgText,fullfile(probeONEFolder, 'GetSpkError.json'))
                                     end
                                 else
                                     spk{probeNum} = 'error';
