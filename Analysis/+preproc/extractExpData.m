@@ -86,16 +86,16 @@ function extractExpData(varargin)
                         % Call specific preprocessing function
                         ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                         
+                        stub = [expDate '_' expNum '_' subject];
+                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+
                         % Remove any error file
                         if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
                             delete(fullfile(eventsONEFolder, 'GetEvError.json'))
                         end
                         
-                        fprintf(1, '* Events extraction done. *\n');
+                        fprintf(1, '* Events extraction done. *\n');     
 
-                        stub = [expDate '_' expNum '_' subject];
-                        saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
-                        
                     catch me
                         msgText = getReport(me);
                         warning('%s \n Could not get events (ev): threw an error\n %s',me.identifier, msgText)
@@ -120,6 +120,7 @@ function extractExpData(varargin)
                 if shouldProcess('spk')
                     alignment = load(alignmentFile,'ephys','block');
                     if isfield(alignment,'ephys')
+                        %%%% CHECK IF 1 IN CSV%%%%%
                         if isstruct(alignment.ephys)
                             fprintf (1, '* Extracting spikes... *\n');
                             
@@ -138,7 +139,7 @@ function extractExpData(varargin)
                                     rmdir(probeONEFolder,'s')
                                 end
                                 mkdir(probeONEFolder);
-                                
+                                %%%% CHECK IF 1 IN CSV%%%%%
                                 if ~isnan(alignment.ephys(probeNum).ephysPath)
                                     try
                                         % -----------
