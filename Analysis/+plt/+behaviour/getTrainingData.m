@@ -60,7 +60,7 @@ for i = 1:length(params.subject)
     failIdx = any(~[alignedBlock, evExtracted],2);
     if any(failIdx)
         failNames = currData.expFolder(failIdx);
-        cellfun(@(x) fprintf('WARNING: Files mising for %s. Skipping...\n', x), failNames);
+        cellfun(@(x) fprintf('WARNING: Files missing for %s. Skipping...\n', x), failNames);
         currData = currData(~failIdx,:);
         extracted.validSubjects(i) = 0;
     end
