@@ -117,7 +117,8 @@ function main(varargin)
                 else
                     % Case where the ephys fodler did not exist. It's either
                     % because it's not supposed to exist, or wasn't copied.
-                    ephys = nan;
+                    ephys = 'error';
+                    saveErrMess('No ephys folder detected',fullfile(expFolder, 'AlignEphysError.json'))
                 end
                                 
                 change = 1;
@@ -221,28 +222,21 @@ function main(varargin)
                                 delete(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                             end
                         catch me
-                            warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
-                            
-                            if strcmp(me.message,'Failed to initialize internal resources.')
-                                % Very likely that video is corrupted. Make it a
-                                % nan because there's not much we can do for now.
-                                video(v).frameTimes = nan;
-                                video(v).missedFrames = nan;
-                            else
-                                % Another error occured. Save it.
-                                video(v).frameTimes = 'error';
-                                video(v).missedFrames = 'error';
-                            end
-                            
+                            warning('Could not align video %s: threw an error (%s)',vidName,me.message)
+
+                            % Another error occured. Save it.
+                            video(v).frameTimes = 'error';
+                            video(v).missedFrames = 'error';
+
                             % Save error message locally
                             saveErrMess(me.message,fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                         end
                     else
-                        % Couldn't find the file.
-                        video(v).frameTimes = nan;
-                        video(v).missedFrames = nan;
+                        % Couldn't find the file. %%% CELIAN TO REMOVE %%%
+                        video(v).frameTimes = 'error';
+                        video(v).missedFrames = 'error';
                         
-                        saveErrMess(sprintf('Couldn''t find the video %s',vidName), ...
+                        saveErrMess(sprintf('Could not find the video %s',vidName), ...
                             fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                     end
                 end
@@ -271,7 +265,7 @@ function main(varargin)
                     try
                         fprintf(1, '* Aligning mic... *\n');
                         %%% TODO
-                        error('Haven''t found or coded a way to align file yet.') % for now
+                        error('Have not found or coded a way to align file yet.') % for now
                         fprintf(1, '* Mic alignment done. *\n');
                         
                         % Remove any error file
@@ -279,7 +273,7 @@ function main(varargin)
                             delete(fullfile(expFolder, 'AlignMicError.json'))
                         end
                     catch me
-                        warning('Couldn''t align mic: threw an error (%s)',me.message)
+                        warning('Could not align mic: threw an error (%s)',me.message)
                         mic = 'error';
                         
                         % Save error message locally
@@ -287,9 +281,12 @@ function main(varargin)
                     end
                 else
                     % Mic data wasn't there.
-                    mic = nan;
+                    mic = 'error';
+
+                    % Save error message locally
+                    saveErrMess('Could not find the mic data',fullfile(expFolder, 'AlignMicError.json'))
                 end
-                
+
                 change = 1;
                 
                 % Save it
