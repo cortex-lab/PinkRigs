@@ -34,18 +34,9 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
 
     % Load KS labels
 	cgsFile = fullfile(KSFolder, 'cluster_KSLabel.tsv');
-    [cids, cgs] = readClusterGroupsCSV(cgsFile); % cids should be the same as unique(spikeTemplates)??
+    [cids_KS, cgs_KS] = readClusterGroupsCSV(cgsFile); % cids should be the same as unique(spikeTemplates)??
     
-    % Remove noise clusters
-    noiseTemplates = cids(cgs==0);
-    st = st(~ismember(spikeTemplates, noiseTemplates));
-    tempScalingAmps = tempScalingAmps(~ismember(spikeTemplates, noiseTemplates));
-    pcFeat = pcFeat(~ismember(spikeTemplates, noiseTemplates), :,:);
-    spikeTemplates = spikeTemplates(~ismember(spikeTemplates, noiseTemplates));
-    pcFeatInd = pcFeatInd(~ismember(cids, noiseTemplates),:);
-    cgs = cgs(~ismember(cids, noiseTemplates));
-    cids = cids(~ismember(cids, noiseTemplates));
-    
+  
     coords = readNPY(fullfile(KSFolder, 'channel_positions.npy'));
     ycoords = coords(:,2); xcoords = coords(:,1);
     
@@ -65,6 +56,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
 
     [~,spikeShankIDs] = min(abs(spikeXPos - repmat([0 200 400 600], [numel(spikeXPos),1])),[],2);
     spikeShankIDs = spikeShankIDs-1;
+
     
     %% Get cluster info
     
@@ -78,16 +70,47 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     temp_xpos = nan(1,numel(templatesList));
     temp_depths = nan(1,numel(templatesList));
     temp_shankIDs = nan(1,numel(templatesList));
+
+    
     for ii = 1:numel(templatesList)
         temp = templatesList(ii);
         spkIdx = spikeTemplates == temp;
 
-        temp_KSLabels(ii) = cgs(cids == temp);
+        temp_KSLabels(ii) = cgs_KS(cids_KS == temp);
         temp_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
         temp_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
         temp_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
     end
     
+
+    % get cluster info after manual curation too (phy)
+    if exist(fullfile(KSFolder, 'cluster_group.tsv')) 
+       cgsFile = fullfile(KSFolder, 'cluster_group.tsv');
+       [cids, cgs] = readClusterGroupsCSV(cgsFile);
+    end 
+    clu = readNPY(fullfile(KSFolder, 'spike_clusters.npy')); 
+
+    % Remove noise clusters 
+    noiseTemplates = cids(cgs==0);
+    st = st(~ismember(spikeTemplates, noiseTemplates));
+    tempScalingAmps = tempScalingAmps(~ismember(spikeTemplates, noiseTemplates));
+    pcFeat = pcFeat(~ismember(spikeTemplates, noiseTemplates), :,:);
+    spikeTemplates = spikeTemplates(~ismember(spikeTemplates, noiseTemplates));
+    pcFeatInd = pcFeatInd(~ismember(cids, noiseTemplates),:);
+    cgs = cgs(~ismember(cids, noiseTemplates));
+    cids = cids(~ismember(cids, noiseTemplates));
+
+    for ii = 1:numel(cids)
+        temp = cids(ii);
+        spkIdx = clu == temp;
+
+        clus_KSLabels(ii) = cgs(cids == temp);
+        clus_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
+        clus_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
+        clus_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
+    end
+
+
     %% Save it in spk
     
     % spikes
@@ -97,6 +120,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.spikes.depths = spikeDepths;
     spk.spikes.av_xpos = spikeXPos;
     spk.spikes.av_shankIDs = spikeShankIDs;
+    spk.spikes.clusters = clu; 
     
     % templates
     spk.templates.av_IDs = templatesList;
@@ -106,4 +130,13 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.templates.depths = temp_depths;
     spk.templates.av_xpos = temp_xpos;
     spk.templates.av_shankIDs = temp_shankIDs;
+
+    %clusters (that can be manually curated)
+    spk.clusters.av_IDs = cids; 
+    spk.clusters.depths = clus_depths; 
+    spk.clusters.av_xpos = clus_xpos; 
+    spk.clusters.av_shankID = clus_shankIDs;
+    spk.clusters.av_Labels = clus_KSLabels;
+
+    
     
