@@ -1,7 +1,7 @@
-function [subjects, implantDate, explantDate] = checkProbeUse(probeSN,select,plt)
+function [subjects, implantDate, explantDate] = checkProbeUse(probeSerial,select,plt)
     %%% Will give past info about this probe
-    %%% probeSN can be an array
-    
+    %%% probeSN can be a cell array
+ 
     if ~exist('select','var')
         select = 'all';
     end
@@ -15,40 +15,44 @@ function [subjects, implantDate, explantDate] = checkProbeUse(probeSN,select,plt
     serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
     serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
     
-    if ~exist('probeSN','var') | isempty(probeSN)
-        probeSN = unique(serialsFromCSV);
-        probeSN(isnan(probeSN)) = [];
-    end
-    
-    subjects = cell(1,numel(probeSN));
-    implantDate = cell(1,numel(probeSN));
-    explantDate = cell(1,numel(probeSN));
-    for psn = 1:numel(probeSN)  
+    if ~exist('probeSerial','var') || isempty(probeSerial)
+        probeSerial = unique(serialsFromCSV);
+        probeSerial(isnan(probeSerial)) = [];
+    end     
+    if isnumeric(probeSerial); probeSerial = num2cell(probeSerial); end
+   
+    subjects = cell(1,numel(probeSerial));
+    implantDate = cell(1,numel(probeSerial));
+    explantDate = cell(1,numel(probeSerial));
+    for psn = 1:numel(probeSerial)  
         % get their orders and dates
-        snIdx = find(serialsFromCSV == probeSN(psn));
+        snIdx = find(serialsFromCSV == probeSerial{psn});
         [subjectIdx,probeIdx] = ind2sub(size(serialsFromCSV),snIdx);
-        for pp = 1:numel(probeIdx)
-            subjects{psn}{pp} = csvData.Subject{subjectIdx(pp)};
-            implantDate{psn}{pp} = csvData.(sprintf('P%d_implantDate',probeIdx(pp)-1)){subjectIdx(pp)};
-            explantDate{psn}{pp} = csvData.(sprintf('P%d_explantDate',probeIdx(pp)-1)){subjectIdx(pp)};
+        if ~isempty(subjectIdx)
+            for pp = 1:numel(probeIdx)
+                subjects{psn}{pp} = csvData.Subject{subjectIdx(pp)};
+                implantDate{psn}{pp} = csvData.(sprintf('P%d_implantDate',probeIdx(pp)-1)){subjectIdx(pp)};
+                explantDate{psn}{pp} = csvData.(sprintf('P%d_explantDate',probeIdx(pp)-1)){subjectIdx(pp)};
+            end
+            undefIdx = cellfun(@isempty, explantDate{psn}) | ...
+                cellfun(@(x) strcmp(x,'Permanent'), explantDate{psn});
+            explantDate{psn}(undefIdx) = {datestr(now+20,'yyyy-mm-dd')};
+            
+            % resort it
+            [~,sortIdx] = sort(datenum(explantDate{psn},'yyyy-mm-dd'),'ascend');
+            subjects{psn} = subjects{psn}(sortIdx);
+            implantDate{psn} = implantDate{psn}(sortIdx);
+            explantDate{psn} = explantDate{psn}(sortIdx);
+        else
+            fprintf('No valid entry found for serial number: %d \n', probeSerial{psn})
         end
-        undefIdx = cellfun(@isempty, explantDate{psn}) | ...
-            cellfun(@(x) strcmp(x,'Permanent'), explantDate{psn});
-        implantDate{psn}(undefIdx) = {datestr(now+20,'yyyy-mm-dd')};
-        explantDate{psn}(undefIdx) = {datestr(now+20,'yyyy-mm-dd')};
-        
-        % resort it
-        [~,sortIdx] = sort(datenum(explantDate{psn},'yyyy-mm-dd'),'ascend');
-        subjects{psn} = subjects{psn}(sortIdx);
-        implantDate{psn} = implantDate{psn}(sortIdx);
-        explantDate{psn} = explantDate{psn}(sortIdx);
     end
     
     %% Plot figure
     if plt  
         figure;
-        for psn = 1:numel(probeSN)
-            subplot(ceil(sqrt(numel(probeSN))),ceil(sqrt(numel(probeSN))),psn); hold all
+        for psn = 1:numel(probeSerial)
+            subplot(ceil(sqrt(numel(probeSerial))),ceil(sqrt(numel(probeSerial))),psn); hold all
             minDate = datenum(implantDate{psn}{1},'yyyy-mm-dd');
             maxDate = datenum(explantDate{psn}{end},'yyyy-mm-dd');
             miceMat = zeros(numel(subjects{psn}),maxDate-minDate+1);
@@ -73,20 +77,35 @@ function [subjects, implantDate, explantDate] = checkProbeUse(probeSN,select,plt
             xtickangle(45)
             
             % SN in title
-            title(sprintf('Probe #%d',probeSN(psn)))
+            title(sprintf('Probe #%d',probeSerial{psn}))
         end
     end
 
-    %% Subselect if wanted
+    %% Subselect for output if wanted
+    
     switch select
         case 'all'
             % do nothing
         case 'last'
-            for psn = 1:numel(probeSN) 
+            for psn = 1:numel(probeSerial) 
                 subjects{psn} = subjects{psn}(end);
                 implantDate{psn} = implantDate{psn}(end);
                 explantDate{psn} = explantDate{psn}(end);
             end
+        case 'current'
+            % put nan when the probe has been explanted
+            for psn = 1:numel(probeSerial)
+                if datenum(explantDate{psn}(end))>now
+                    subjects{psn} = subjects{psn}(end);
+                    implantDate{psn} = implantDate{psn}(end);
+                    explantDate{psn} = explantDate{psn}(end);
+                else
+                    subjects{psn} = [];
+                    implantDate{psn} = [];
+                    explantDate{psn} = [];
+                end
+            end
         otherwise
             error('Selection not understood.')
     end
+end
