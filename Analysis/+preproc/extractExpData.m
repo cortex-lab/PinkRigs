@@ -58,8 +58,6 @@ function extractExpData(varargin)
             alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
             if exist(alignmentFile, 'file')
-                %% Load alignment file
-                
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
