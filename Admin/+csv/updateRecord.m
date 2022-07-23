@@ -137,12 +137,15 @@ nDat.expDuration = blk.duration;
 nDat.rigName = blk.rigName;
 
 % Get experiment folder contents and ONE folder contents
-expFoldContents = dir([fileparts(blockPath) '\**\*']);
-ONEContents = dir([fileparts(blockPath) '\ONE_preproc\**\*']);
+expFoldContents = dir([fileparts(blockPath) '\**\*.*']);
+expFoldContents = expFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{expFoldContents.name}'));
+ONEContents = dir([fileparts(blockPath) '\ONE_preproc\**\*.*']);
+ONEContents = ONEContents(cellfun(@(x) ~strcmp(x(1),'.'),{ONEContents.name}'));
 
 % Check if a file called "IgnoreExperiment.txt" exists in the experiment
 % folder (or one level higher). If so, remove any existing row and "return"
-dateFoldContents = dir(fileparts(expFoldContents(1).folder))';
+dateFoldContents = dir([fileparts(expFoldContents(1).folder)])';
+dateFoldContents = dateFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{dateFoldContents.name}'));
 if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Ignoring experiment due to .txt file %s \n', expFoldContents(1).folder)
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
@@ -152,12 +155,12 @@ end
 
 % Populate fields of nDat with the exist of the corresponding file (will
 % have a value of 0 if no file matching the name exists)
-nDat.existBlock = any(contains({expFoldContents.name}','Block.mat'));
-nDat.existTimeline = any(contains({expFoldContents.name}','Timeline.mat'));
-nDat.existSideCam = any(contains({expFoldContents.name}','sideCam.mj2'));
-nDat.existFrontCam = any(contains({expFoldContents.name}','frontCam.mj2'));
-nDat.existEyeCam = any(contains({expFoldContents.name}','eyeCam.mj2'));
-nDat.existMic = any(contains({expFoldContents.name}','mic.mat'));
+nDat.existBlock = num2str(any(contains({expFoldContents.name}','Block.mat')));
+nDat.existTimeline = num2str(any(contains({expFoldContents.name}','Timeline.mat')));
+nDat.existSideCam = num2str(any(contains({expFoldContents.name}','sideCam.mj2')));
+nDat.existFrontCam = num2str(any(contains({expFoldContents.name}','frontCam.mj2')));
+nDat.existEyeCam = num2str(any(contains({expFoldContents.name}','eyeCam.mj2')));
+nDat.existMic = num2str(any(contains({expFoldContents.name}','mic.mat')));
 
 % Check if there is an ephys folder
 nDat.existEphys = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
@@ -193,19 +196,19 @@ if any(alignFile)
     for i = 1:size(tstName,1)
         if nDat.(['exist' tstName{i}]) == 0 || ~nDat.existTimeline
             % Issue a "NaN" if correspoding file or timeline doesn't exist
-            nDat.(['align' tstName{i}]) = NaN;
+            nDat.(['align' tstName{i}]) = 'NaN';
         elseif~isfield(alignment, lower(tstName{i}))
             % Issue a "0" if field is missing from "alignment"
-            nDat.(['align' tstName{i}]) = 0;
+            nDat.(['align' tstName{i}]) = '0';
         elseif isstruct(alignment.(lower(tstName{i})))
             % Issue a "1" if a strcture is detected
-            nDat.(['align' tstName{i}]) = 1;
+            nDat.(['align' tstName{i}]) = '1';
         elseif isnan(alignment.(lower(tstName{i})))
             % Issue a "nan" if value is nan (e.g. spontaneous block)
-            nDat.(['align' tstName{i}]) = nan;
+            nDat.(['align' tstName{i}]) = 'NaN';
         elseif strcmpi(alignment.(lower(tstName{i})), 'error')
             % Issue a "2" if the field is labeled with "error"
-            nDat.(['align' tstName{i}]) = 2;
+            nDat.(['align' tstName{i}]) = '2';
         end
     end
 
@@ -238,8 +241,8 @@ if any(alignFile)
         nDat.alignEphys = 2*ones(1, potentialProbes);
     end
 else
-    nDat.alignBlock = 0;
-    nDat.alignMic = 0;
+    nDat.alignBlock = '0';
+    nDat.alignMic = '0';
     nDat.alignEphys = zeros(1, potentialProbes);    
 end
 
@@ -247,13 +250,13 @@ end
 for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     if ~nDat.(['exist' vidName{1}]) && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no video, but less than 7 days since recording
-        nDat.(['align' vidName{1}]) = 0;
+        nDat.(['align' vidName{1}]) = '0';
     elseif ~nDat.(['exist' vidName{1}]) || ~nDat.existTimeline
         % Issue a "NaN" if correspoding file or timeline doesn't exist
         nDat.(['align' vidName{1}]) = NaN;
     elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
         % Issue a "1" if an ONE file is detected
-        nDat.(['align' vidName{1}]) = 1;
+        nDat.(['align' vidName{1}]) = '1';
     elseif any(contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1))
         errIdx = contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1);
         errFile = (fullfile(ONEContents(errIdx).folder, ONEContents(errIdx).name));
@@ -262,25 +265,25 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
         fclose(fid);
         if contains(errText, 'initialize internal resources')
             % Issue a "NaN" if video is corrupt
-            nDat.(['align' vidName{1}]) = NaN;
+            nDat.(['align' vidName{1}]) = 'NaN';
         else
             % Issue a "2" if error is something else
-            nDat.(['align' vidName{1}]) = 2;
+            nDat.(['align' vidName{1}]) = '2';
         end
     else
         % Issue a "0" if nothing detected but camera exists LOOK AT THIS
-        nDat.(['align' vidName{1}]) = 0;
+        nDat.(['align' vidName{1}]) = '0';
     end
 
     % Check whether facemap processing exists
     if ~isnan(nDat.(['align' vidName{1}]))
         if any(contains({expFoldContents.name}', [vidName{1} 'Cam_proc.npy'], 'ignorecase', 1));
-            nDat.(['fMap' vidName{1}]) = 1;
+            nDat.(['fMap' vidName{1}]) = '1';
         else
-            nDat.(['fMap' vidName{1}]) = 0;
+            nDat.(['fMap' vidName{1}]) = '0';
         end
     else
-        nDat.(['fMap' vidName{1}]) = nan;
+        nDat.(['fMap' vidName{1}]) = 'NaN';
     end
 end
 
@@ -336,23 +339,23 @@ nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 % and timelines) and "spk" which is the spike output from the sorting
 
 % Assign status for events extraction
-if nDat.alignBlock == 1
-    if contains({ONEContents.name}', '.pqt', 'ignorecase', 1)
+if strcmpi(nDat.alignBlock, '1')
+    if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
-        nDat.eventExtraction = 1;
+        nDat.eventExtraction = '1';
     elseif contains({ONEContents.name}', 'Error.json', 'ignorecase', 1)
         % Issue a "2" if error file is in folder
-        nDat.eventExtraction = 2;
+        nDat.eventExtraction = '2';
     else
         % Issue a "0" if neither error or .pqt exist yet.
-        nDat.eventExtraction = 0;
+        nDat.eventExtraction = '0';
     end
-elseif isnan(nDat.alignBlock)
+elseif strcmpi(nDat.alignBlock, 'nan')
     % Issue a "nan" if block alignment is a nan
-    nDat.eventExtraction = nan;
-elseif nDat.alignBlock == 0
+    nDat.eventExtraction = 'NaN';
+elseif strcmpi(nDat.alignBlock, '0')
     % Issue a "0" if block alignment isn't complete yet
-    nDat.eventExtraction = 0;
+    nDat.eventExtraction = '0';
 end
 
 % Assign status for spike extraction.
@@ -362,10 +365,10 @@ for pIdx = find(nDat.issortedKS2 == 1)
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
     probeStr = ['probe' num2str(pIdx-1)];
     fullNames = cellfun(@(x,y) fullfile(x,y), {ONEContents.folder}', {ONEContents.name}', 'uni', 0);
-    if any(cellfun(@(x) ~isempty(regexp([probeStr '*.npy'], x)), fullNames)) %#ok<RGXP1> 
+    if any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*.npy'])), fullNames)) %#ok<RGXP1> 
         % Issue a "1" if "results" file for KS2 exists
         nDat.spikeExtraction(pIdx) = 1;
-    elseif any(cellfun(@(x) ~isempty(regexp([probeStr '*GetSpkError.json'], x)), fullNames)) %#ok<RGXP1> 
+    elseif any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*GetSpkError.json'])), fullNames)) %#ok<RGXP1> 
         % Issue a "2" if error file is in folder
         nDat.spikeExtraction(pIdx) = 2;
     else

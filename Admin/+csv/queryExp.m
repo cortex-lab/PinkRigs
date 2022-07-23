@@ -22,12 +22,12 @@ params = csv.inputValidation(varargin{:});
 % aligned, or all if recompute isn't none.
 extractedExperiments = table();
 
-alignExpFields = {'alignBlock', 'alignFrontCam', 'alignSideCam', 'alignEyeCam', 'alignMic', 'alignEphys'}';
-stringExpFields = {'alignBlock', 'alignFrontCam', 'alignSideCam', 'alignEyeCam', 'alignMic', 'alignEphys'};
 for mm = 1:numel(params.subject)
     
     % Loop through subjects
     mouseExps = csv.readTable(csv.getLocation(params.subject{mm}));
+    csvHeaders = mouseExps.Properties.VariableNames';
+
 
     % Add "subject" to the csv table
     listFields = mouseExps.Properties.VariableNames;
@@ -61,41 +61,84 @@ for mm = 1:numel(params.subject)
     end
     if isempty(mouseExps); continue; end
 
-    % Get exp with timeline only
+    % Get exp with matching timeline status
     if ~strcmp(params.checkTimeline{mm}, 'ignore')
-        mouseExps = mouseExps(mouseExps.timeline==params.checkTimeline{mm});
+        chkVal = num2str(params.checkTimeline{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.existTimeline, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.existTimeline, chkVal),:);
+        end
     end
     if isempty(mouseExps); continue; end
 
     % Get exp with specific alignment status
-    alignCheckVals = inf(6, 1);
-    if ~strcmp(params.checkAlignBlock{mm}, 'ignore')
-        alignCheckVals(1) = params.checkAlignBlock{mm};
-    end
-    if ~strcmp(params.checkAlignCam{mm}, 'ignore')
-        alignCheckVals(2:4) = params.checkAlignCam{mm};
-    end
-    if ~strcmp(params.checkAlignMic{mm}, 'ignore')
-        alignCheckVals(5) = params.checkAlignMic{mm};
-    end
-    if ~strcmp(params.checkAlignEphys{mm}, 'ignore')
-        alignCheckVals(6) = params.checkAlignEphys{mm};
-    end
-
-    for i = find(~isinf(alignCheckVals(i)))
-        mouseExps = mouseExps(mouseExps.(alignExpFields(i))==alignCheckVals(i));
-    end
-
-    % Get exp with specific sorting status
-    if ~strcmp(params.checkSorting{mm}, 'ignore')
-%         sortingVals = cellfun(@(x, y), mouseExps.issortedKS2
-%         mouseExps = mouseExps(any(mouseExps.issortedKS2), params.issortedKS2{mm}),:);
+    alignFields = csvHeaders(contains(csvHeaders, 'align'));
+    chkVals = cell(6,1);
+    chkVals{1} = num2str(params.checkAlignBlock{mm});
+    chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
+    chkVals{5} = num2str(params.checkAlignMic{mm});
+    chkVals{6} = num2str(params.checkAlignEphys{mm});
+    for i = find(~contains(chkVals, 'ignore'))
+        if isempty(i); continue; end
+        if strcmpi(chkVals{i}(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.(alignFields{i}), chkVals{i}),:);
+        end
     end
     if isempty(mouseExps); continue; end
 
-    % Get exp with specific preprocessing state
-    preproc2Check = csv.checkStatusCode(mouseExps.preProcSpkEV,params.preproc2Check{mm});
-    mouseExps = mouseExps(all(preproc2Check,2),:);
+    if ~strcmp(params.checkAlignAny{mm}, 'ignore')
+        chkVal = num2str(params.checkAlignAny{mm});
+        % Since alignMic is currently always 2, ignore if looking for 2's
+        if strcmpi(chkVal, '2'); alignFields = alignFields([1:4,6]); end
+        combAlign = cellfun(@(x) mouseExps.(x), alignFields, 'uni', 0);
+        combAlign = [combAlign{:}];
+        combAlign = arrayfun(@(x) cell2mat(combAlign(x,:)), 1:size(combAlign,1), 'uni', 0)';
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(combAlign, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(combAlign, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
+
+    % Get exp with specific sorting status
+    sortFields = csvHeaders(contains(csvHeaders, 'issorted'));
+    if ~strcmp(params.checkSorting{mm}, 'ignore')
+        chkVal = num2str(params.checkSorting{mm});
+        combSort = cellfun(@(x) mouseExps.(x), sortFields, 'uni', 0);
+        combSort = [combSort{:}];
+        combSort = arrayfun(@(x) cell2mat(combSort(x,:)), 1:size(combSort,1), 'uni', 0)';
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(combSort, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(combSort, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
+
+    % Get exp with any spikeExtractions matching input state
+    if ~strcmp(params.checkSpikes{mm}, 'ignore')
+        chkVal = num2str(params.checkSpikes{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.spikeExtraction, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.spikeExtraction, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
+
+    % Get exp with any eventExtractions matching input state
+    if ~strcmp(params.checkEvents{mm}, 'ignore')
+        chkVal = num2str(params.checkEvents{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.eventExtraction, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.eventExtraction, chkVal),:);
+        end
+    end
     if isempty(mouseExps); continue; end
 
     %Convert date inputs to actual dates based on the CSV data
