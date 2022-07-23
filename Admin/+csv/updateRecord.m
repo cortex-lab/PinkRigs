@@ -171,7 +171,7 @@ nDat.expFolder = {fileparts(blockPath)};
 % cameras, ephys, and microphone. Note that this begins as a vector of 6
 % values and is converted to a string later
 
-probeInfo = csv.checkProbeUse(subject);
+probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
 if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
     potentialProbes = 0;
 else
@@ -210,7 +210,10 @@ if any(alignFile)
     end
 
     % EPHYS alignment
-    if ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    if potentialProbes == 0
+        % Issue a "NaN" if no implantations in main CSV
+        nDat.alignEphys = nan;
+    elseif ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no ephys, but less than 7 days since recording
         nDat.alignEphys = zeros(1, potentialProbes);
     elseif ~nDat.existEphys || ~nDat.existTimeline
@@ -371,9 +374,10 @@ for pIdx = find(nDat.issortedKS2 == 1)
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.issortedPyKS(isnan(nDat.issortedKS2)) = nan;
-nDat.issortedPyKS(nDat.issortedKS2 == 0) = 0;
-nDat.issortedPyKS(nDat.issortedKS2 == 2) = 0;
+nDat.spikeExtraction(isnan(nDat.issortedKS2)) = nan;
+nDat.spikeExtraction(nDat.issortedKS2 == 0) = 0;
+nDat.spikeExtraction(nDat.issortedKS2 == 2) = 0;
+
 
 %% This section is a final cleanup and dealing with some edge cases
 

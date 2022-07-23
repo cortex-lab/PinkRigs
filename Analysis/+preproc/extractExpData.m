@@ -50,8 +50,11 @@ function extractExpData(varargin)
             change = 0;
             
             fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
+            
+            % get alignment file location
+            alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
-            if exist(alignmentFile, 'file') && (shouldProcess('ev') || shouldProcess('spk'))
+            if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 

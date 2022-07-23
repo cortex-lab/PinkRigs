@@ -1,8 +1,10 @@
-function probeInfo = checkProbeUse(queryData, implantSelect, mkPlt)
+function probeInfo = checkProbeUse(queryData, implantSelect, mkPlt, csvData)
 %% Function to give implantation info about a probe, or a mouse
 % "queryData" can be a cell array/vector or probe numbers or mice names
 
-csvData = csv.readTable(csv.getLocation('main'));
+if ~exist('csvData', 'var')
+    csvData = csv.readTable(csv.getLocation('main'));
+end
 csvFields = fields(csvData);
 serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
 serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
@@ -41,7 +43,7 @@ if isnumeric(queryData{1})
         subjects{i} = subjects{i}(sortIdx);
         implantDate{i} = implantDate{i}(sortIdx);
         explantDate{i} = explantDate{i}(sortIdx);
-        
+
 
         probeInfo.implantedSubjects{i,1} = subjects{i};
         probeInfo.implantDates{i,1} = implantDate{i};
