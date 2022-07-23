@@ -1073,7 +1073,61 @@ def plot_facemap_results():
     return 0
 
 
-def batch_process_facemap():
+def convert_facemap_output_to_ONE_format(facemap_output_file):
+    """
+    Convert facemap output to ONE format
+    """
+
+
+    # Make folder for the camera
+    eye_proc_basename = os.path.basename(facemap_output_file)
+
+    exp_date = eye_proc_basename.split('_')[0]
+    exp_num = eye_proc_basename.split('_')[1]
+    subject = eye_proc_basename.split('_')[2]
+    fov_name = eye_proc_basename.split('_')[3]
+
+    exp_folder = os.path.dirname(facemap_output_file)
+    fov_folder = os.path.join(exp_folder, 'ONE_%s' % fov_name)
+
+    if not os.path.isdir(fov_folder):
+        os.makedirs(fov_folder)
+
+    # Load facemap output
+    facemap_output = np.load(facemap_output_file, allow_pickle=True).item()
+
+    # Save motion SVD
+    motion_svd = facemap_output['motSVD'][1]  # the first is empty, frame x numSVD
+    motion_svd_save_path = os.path.join(fov_folder, 'motion.SVD.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_svd_save_path, motion_svd)
+
+    # Save motion SVD masks
+    motMask_reshape = facemap_output['motMask_reshape'][1]  # x pixel X y pixel X nPC
+    motion_svdmasks_save_path = os.path.join(fov_folder,
+                                        'motion.SVDmasks.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_svdmasks_save_path, motMask_reshape)
+
+    # Save motion Energy
+    motion_energy = facemap_output['motion'][1]
+    motion_energy_save_path = os.path.join(fov_folder,
+                                        'motion.energy.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_energy_save_path, motion_energy)
+
+    # Save average frame
+    frame_average = facemap_output['avgframe_reshape']
+    frame_average_save_path = os.path.join(fov_folder,
+                                           'frame.average.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(frame_average_save_path, frame_average)
+
+    return 0
+
+def batch_process_facemap(output_format='flat'):
+    """
+    output_format : str
+        'flat' : save original facemap output in the main folder
+        'ONE' : save facemap output in ONE format; extract outputs into numpy arrays and save as separate .npy,
+                with one folder per camera
+    """
     num_videos_to_run_per_call = 1
     num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
@@ -1369,6 +1423,13 @@ def batch_process_facemap():
                 processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
                 os.rename(processing_facemap_txt_file, processed_txt_file_name)
 
+                # Convert things to ONE format
+                if output_format == 'ONE':
+                    print('Converting files to ONE format')
+                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+                    convert_facemap_output_to_ONE_format(facemap_output_path)
+
+
                 if plot_results:
                     # load facemap results
                     facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
@@ -1582,6 +1643,11 @@ def main():
     summarize_progress = False
     update_mouse_csvs = False
     run_plot_facemap_results = True
+    output_format = 'ONE'
+
+    # Temp for testing
+    # test_path = '/Users/timothysit/FT038/2021-11-04/1/2021-11-04_1_FT038_eyeCam_proc.npy'
+    # convert_facemap_output_to_ONE_format(test_path)
 
     if update_mouse_csvs:
         update_mouse_csv_record()
@@ -1605,7 +1671,7 @@ def main():
 
         if (hour_int < 8) | (hour_int >= 20) | override_time_check:
             print('It is prime time to run some facemap!')
-            batch_process_facemap()
+            batch_process_facemap(output_format=output_format)
 
             if override_time_check:
                 override_counter += 1
