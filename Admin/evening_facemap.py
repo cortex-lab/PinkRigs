@@ -911,6 +911,45 @@ def update_file_list(all_mouse_info, file_list_csv_path=None, load_from_server=F
 
     return all_file_info
 
+
+def get_mouse_info_csv_paths(subset_mice_to_use=None, subset_date_range=None):
+
+    if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
+        main_info_folder_in_server = True
+        mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+        default_server_path = 'smb://128.40.224.65/subjects/'
+    else:  # Zelda rigs
+        main_info_folder_in_server = False
+        mouse_info_folder = '//zserver/Code/AVrig'
+        default_server_path = '//128.40.224.65/subjects/'
+
+    if main_info_folder_in_server:
+        gvfs = Gio.Vfs.get_default()
+        mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
+
+    if subset_mice_to_use is not None:
+        mouse_info_csv_paths = []
+        for mouse_name in subset_mice_to_use:
+            mouse_info_csv_paths.append(
+                glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
+            )
+    else:
+        mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
+
+    files_to_exclude = []
+
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+    for path in mouse_info_csv_paths:
+        if os.path.basename(path) in files_to_exclude:
+            mouse_info_csv_paths.remove(path)
+        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+        if not pattern_to_match.match(fname_without_ext):
+            mouse_info_csv_paths.remove(path)
+
+    return mouse_info_csv_paths
+
+
 def update_mouse_csv_record():
 
     if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
@@ -980,6 +1019,55 @@ def update_mouse_csv_record():
 
 
         # mouse_info['subject'] = mouse_name
+
+
+    return 0
+
+
+def plot_facemap_results():
+
+    # TODO: first locate the csv with all the information
+    mouse_info_csv_paths = get_mouse_info_csv_paths()
+
+
+
+
+    # Loop through each folder, check if there is a plot already made, if not, load results and make plot
+    for csv_path in mouse_info_csv_paths:
+        mouse_info = pd.read_csv(csv_path)
+        mouse_name = os.path.basename(csv_path).split('.')[0]
+
+        for row_idx, exp_info in mouse_info.iterrows():
+
+            exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
+                                      exp_info['expDate'], str(exp_info['expNum']))
+            # look for video files
+            video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+
+            # remove the *lastFrames.mj2 videos
+            video_files = [x for x in video_files if 'lastFrames' not in x]
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+            pdb.set_trace()
+
+            # load facemap results
+            facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+            facemap_output = np.load(facemap_output_path, allow_pickle=True).item()
+
+
+
+            # Plot average frame
+            avgframe_reshape = facemap_output['avgframe_reshape']
+            fig, ax = plt.subplots()
+            ax.imshow(avgframe_reshape, aspect='auto', cmap='gray')
+            ax.set_xlabel('x axis pixel', size=12)
+            ax.set_ylabel('y axis pixel', size=12)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            fig_name = 'facemap_avgframe_reshaped.png'
+            fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
 
 
     return 0
@@ -1492,13 +1580,17 @@ def main():
     override_counter = 0
     continue_running = True
     summarize_progress = False
-    update_mouse_csvs = True
+    update_mouse_csvs = False
+    run_plot_facemap_results = True
 
     if update_mouse_csvs:
         update_mouse_csv_record()
 
     if summarize_progress:
         run_summarize_progress()
+
+    if run_plot_facemap_results:
+        plot_facemap_results()
 
     while continue_running:
         e = datetime.datetime.now()
@@ -1517,6 +1609,9 @@ def main():
 
             if override_time_check:
                 override_counter += 1
+
+
+
 
         else:
             print('It is after 8am, will stop running facemap')
