@@ -26,7 +26,7 @@ function extractExpData(varargin)
         recompute = exp2checkList.recompute{ee,1};
         process = exp2checkList.process{ee,1};
         
-        % Define savepath for the preproc results
+        % Get the alignment file
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         alignmentFile = [pathStub '_alignment.mat'];
         
@@ -50,9 +50,6 @@ function extractExpData(varargin)
             change = 0;
             
             fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
-            
-            % get alignment file location
-            alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
             if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
