@@ -35,15 +35,15 @@ function extractExpData(varargin)
         delete(oldPreprocFile);
         %%%
         
-        % Get preproc status
-        preprocStatus = csv.parseStatusCode(expInfo.preProcSpkEV);
-        preprocStatus = structfun(@(x) strcmp(x,'0'), preprocStatus,'uni',0);
+        % Get extraction status
+        extractFields = {'extractEvents', 'extractSpikes'};
+        extractionStatus = structfun(@(x) strcmp(x,'0'), extractFields,'uni',0);
 
         % Anonymous function to decide whether something should be processed
-        shouldProcess = @(x) (contains(recompute,{'all';x}) || preprocStatus.(x)...
+        shouldProcess = @(x) (contains(recompute,{'all';x}) || extractionStatus.(x)...
             || ~ismember(x, varListInFile)) && contains(process,{'all';x});
 
-        if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV,'1,1')) 
+        if ~(strcmp(recompute,'none') && all(extractionStatus))
             %% If all isn't good...
                         
             % monitors if anything has changed

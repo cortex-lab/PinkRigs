@@ -90,8 +90,8 @@ nDat.fMapSideCam = {}; % facemap status for side cam
 nDat.fMapEyeCam = {}; % facemap status for eye cam
 nDat.issortedKS2 = {}; % logical--is there a Kilosort output yet
 nDat.issortedPyKS = {}; % logical--is there a PyKilosort output yet
-nDat.spikeExtraction = {}; % extraction status for spikes
-nDat.eventExtraction = {}; % extraction status for events
+nDat.extractSpikes = {}; % extraction status for spikes
+nDat.extractEvents = {}; % extraction status for events
 nDat.expFolder = {}; % the experiment folder
 
 % If a mouse csv doesn't exist, write empty data to a csv and create it
@@ -342,24 +342,24 @@ nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 if strcmpi(nDat.alignBlock, '1')
     if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
-        nDat.eventExtraction = '1';
+        nDat.extractEvents = '1';
     elseif contains({ONEContents.name}', 'Error.json', 'ignorecase', 1)
         % Issue a "2" if error file is in folder
-        nDat.eventExtraction = '2';
+        nDat.extractEvents = '2';
     else
         % Issue a "0" if neither error or .pqt exist yet.
-        nDat.eventExtraction = '0';
+        nDat.extractEvents = '0';
     end
 elseif strcmpi(nDat.alignBlock, 'nan')
     % Issue a "nan" if block alignment is a nan
-    nDat.eventExtraction = 'NaN';
+    nDat.extractEvents = 'NaN';
 elseif strcmpi(nDat.alignBlock, '0')
     % Issue a "0" if block alignment isn't complete yet
-    nDat.eventExtraction = '0';
+    nDat.extractEvents = '0';
 end
 
 % Assign status for spike extraction.
-nDat.spikeExtraction = zeros(1, potentialProbes);
+nDat.extractSpikes = zeros(1, potentialProbes);
 for pIdx = find(nDat.issortedKS2 == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
@@ -367,19 +367,19 @@ for pIdx = find(nDat.issortedKS2 == 1)
     fullNames = cellfun(@(x,y) fullfile(x,y), {ONEContents.folder}', {ONEContents.name}', 'uni', 0);
     if any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*.npy'])), fullNames)) %#ok<RGXP1> 
         % Issue a "1" if "results" file for KS2 exists
-        nDat.spikeExtraction(pIdx) = 1;
+        nDat.extractSpikes(pIdx) = 1;
     elseif any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*GetSpkError.json'])), fullNames)) %#ok<RGXP1> 
         % Issue a "2" if error file is in folder
-        nDat.spikeExtraction(pIdx) = 2;
+        nDat.extractSpikes(pIdx) = 2;
     else
         % Issue a "0" if no error, but extraction doesn't exist yet
-        nDat.spikeExtraction(pIdx) = 0;
+        nDat.extractSpikes(pIdx) = 0;
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.spikeExtraction(isnan(nDat.issortedKS2)) = nan;
-nDat.spikeExtraction(nDat.issortedKS2 == 0) = 0;
-nDat.spikeExtraction(nDat.issortedKS2 == 2) = 0;
+nDat.extractSpikes(isnan(nDat.issortedKS2)) = nan;
+nDat.extractSpikes(nDat.issortedKS2 == 0) = 0;
+nDat.extractSpikes(nDat.issortedKS2 == 2) = 0;
 
 
 %% This section is a final cleanup and dealing with some edge cases
@@ -397,7 +397,7 @@ end
 nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
 nDat.issortedKS2 = regexprep(num2str(nDat.alignEphys),'\s+',',');
 nDat.issortedPyKS = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.spikeExtraction = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.alignEphys),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);
