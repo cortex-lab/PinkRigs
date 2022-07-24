@@ -29,10 +29,12 @@ function extractExpData(varargin)
         % Define savepath for the preproc results
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         alignmentFile = [pathStub '_alignment.mat'];
-        
+
         %%% temporary--delete the old preproc files
         oldPreprocFile = regexprep(alignmentFile,'alignment','preproc');
-        delete(oldPreprocFile);
+        if exist(oldPreprocFile, 'file')
+            delete(oldPreprocFile);
+        end
         %%%
         
         % Get extraction status
@@ -43,7 +45,7 @@ function extractExpData(varargin)
         shouldProcess = @(x) (contains(recompute,{'all';x}) || ...
             extracted.(x)) && contains(process,{'all';x});
 
-        if ~strcmp(recompute,'none') && all(structfun(@(x) x==1, extracted))
+        if ~(strcmp(recompute,'none') && all(structfun(@(x) x==1, extracted)))
             %% If all isn't good...
                         
             % monitors if anything has changed
@@ -75,10 +77,10 @@ function extractExpData(varargin)
                             expDefRef = preproc.getExpDefRef(expDef);
                             
                             % Call specific preprocessing function
-                            ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
+                            events = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                             
                             stub = [expDate '_' expNum '_' subject];
-                            saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
                             
                             % Remove any error file
                             if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
@@ -104,8 +106,8 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if shouldProcess('spk')
-                    if expInfo.alignEphys == 1
+                if shouldProcess('spikes')
+                    if strcmp(expInfo.alignEphys, '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');

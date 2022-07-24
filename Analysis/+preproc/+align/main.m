@@ -41,8 +41,9 @@ function main(varargin)
             varListInFile = {};
         end
         
-        % Get preproc status
-        alignStatus = csv.parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys);
+        % Get align status
+        alignFields = contains(expInfo.Properties.VariableNames, 'align');
+        alignStatus = table2struct(expInfo(:,alignFields));
         
         %If there is no timeline. All alignment is NaN
         if strcmp(expInfo.timeline, '0')
