@@ -119,24 +119,24 @@ for mm = 1:numel(params.subject)
     end
     if isempty(mouseExps); continue; end
 
-    % Get exp with any spikeExtractions matching input state
+    % Get exp with any extractSpikess matching input state
     if ~strcmp(params.checkSpikes{mm}, 'ignore')
         chkVal = num2str(params.checkSpikes{mm});
         if strcmpi(chkVal(1), '~')
-            mouseExps = mouseExps(~contains(mouseExps.spikeExtraction, chkVal(2:end)),:);
+            mouseExps = mouseExps(~contains(mouseExps.extractSpikes, chkVal(2:end)),:);
         else
-            mouseExps = mouseExps(contains(mouseExps.spikeExtraction, chkVal),:);
+            mouseExps = mouseExps(contains(mouseExps.extractSpikes, chkVal),:);
         end
     end
     if isempty(mouseExps); continue; end
 
-    % Get exp with any eventExtractions matching input state
+    % Get exp with any extractEventss matching input state
     if ~strcmp(params.checkEvents{mm}, 'ignore')
         chkVal = num2str(params.checkEvents{mm});
         if strcmpi(chkVal(1), '~')
-            mouseExps = mouseExps(~contains(mouseExps.eventExtraction, chkVal(2:end)),:);
+            mouseExps = mouseExps(~contains(mouseExps.extractEvents, chkVal(2:end)),:);
         else
-            mouseExps = mouseExps(contains(mouseExps.eventExtraction, chkVal),:);
+            mouseExps = mouseExps(contains(mouseExps.extractEvents, chkVal),:);
         end
     end
     if isempty(mouseExps); continue; end
