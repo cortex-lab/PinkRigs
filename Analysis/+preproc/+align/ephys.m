@@ -20,7 +20,7 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
     % Get timeline
     if isempty(params.timeline{1}) || ischar(params.timeline{1})
         fprintf(1, 'Loading timeline\n');
-        loadedData = csv.loadData(params, 'loadTag','timeline');
+        loadedData = csv.loadData(params, 'dataType','timeline');
         timeline = loadedData.dataTimeline{1};
     else
         timeline = params.timeline{1};

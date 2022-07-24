@@ -107,13 +107,13 @@ function extractExpData(varargin)
                 %% Extract spikes and clusters info (depth, etc.)
                 
                 if shouldProcess('spikes')
-                    if strcmp(expInfo.alignEphys, '1')
+                    if contains(expInfo.alignEphys, '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
                         
                         if ~exist('block','var')
-                            loadedData = csv.loadData(expInfo, 'loadTag', 'block');
+                            loadedData = csv.loadData(expInfo, 'dataType', 'block');
                             block = loadedData.dataBlock{1};
                         end
 

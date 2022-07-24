@@ -78,7 +78,7 @@ for i = 1:length(params.subject)
     extracted.blkDates{i} = currData.expDate;
     extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 
-    loadedEV = csv.loadData(currData, 'loadTag', 'ev');
+    loadedEV = csv.loadData(currData, 'dataType', 'ev');
     evData = [loadedEV.evData{:}];
 
     AVParams = cell(length(evData),1);

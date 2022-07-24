@@ -7,7 +7,7 @@ expList = csv.queryExp(params);
 if size(expList) > 2
     error('You have requested > 2 sessions--Not possible')
 end
-loadedData = csv.loadData(expList, 'loadTag', 'evspk');
+loadedData = csv.loadData(expList, 'dataType', 'evspk');
 for i = 1:height(loadedData)
     if ~containsloadedData.expDef{i}
     end
