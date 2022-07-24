@@ -41,7 +41,7 @@ saveData = params.saveData{1};
 % good coding practice... but it works here
 if queryExp
     expList = csv.queryExp(params);
-    csvData = arrayfun(@(x) csv.updateRecord(expList(x,1:3), 'queryExp', 0, ...
+    csvData = arrayfun(@(x) csv.updateRecord(expList, 'queryExp', 0, ...
         'saveData', saveData), 1:height(expList), 'uni', 0);
     csvData = vertcat(csvData{:});
     % Once complete, return to the original function
@@ -72,18 +72,26 @@ nDat.expNum = {expNum}; % Number of experiment
 nDat.expDef = {}; % exp definition used for experiment
 nDat.expDuration = {}; % duration of experiment
 nDat.rigName = {}; % name of rig (stim server) where experiment ran
-nDat.block = {}; % size of block file
-nDat.timeline = {}; % size of timeline file
-nDat.frontCam = {}; % size of frontCam file
-nDat.sideCam = {}; % size of sideCam file
-nDat.eyeCam = {}; % size of eyeCam file
-nDat.micDat = {}; % size of microphone data file
-nDat.ephysFolderExists = {}; % logical--if ephys folder exists on date
-nDat.alignBlkFrontSideEyeMicEphys = {}; % string defining alignment status
-nDat.faceMapFrontSideEye = {}; %
+nDat.existBlock = {}; % exist of block file
+nDat.existTimeline = {}; % exist of timeline file
+nDat.existFrontCam = {}; % exist of frontCam file
+nDat.existSideCam = {}; % exist of sideCam file
+nDat.existEyeCam = {}; % exist of eyeCam file
+nDat.existMic = {}; % exist of microphone data file
+nDat.existEphys = {}; % exist ephysFolder
+nDat.alignBlock = {}; % alignment status for block file
+nDat.alignFrontCam = {}; % alignment status for front file
+nDat.alignSideCam = {}; % alignment status for side cam
+nDat.alignEyeCam = {}; % alignment status for eye cam
+nDat.alignMic = {}; % alignment status for microphone
+nDat.alignEphys = {}; % alignment status for ephys
+nDat.fMapFrontCam = {}; % facemap status for front cam
+nDat.fMapSideCam = {}; % facemap status for side cam
+nDat.fMapEyeCam = {}; % facemap status for eye cam
 nDat.issortedKS2 = {}; % logical--is there a Kilosort output yet
 nDat.issortedPyKS = {}; % logical--is there a PyKilosort output yet
-nDat.preProcSpkEV = {}; % string defining preprocessing status
+nDat.extractSpikes = {}; % extraction status for spikes
+nDat.extractEvents = {}; % extraction status for events
 nDat.expFolder = {}; % the experiment folder
 
 % If a mouse csv doesn't exist, write empty data to a csv and create it
@@ -128,230 +136,268 @@ end
 nDat.expDuration = blk.duration;
 nDat.rigName = blk.rigName;
 
-% These are the cam names on the pink rigs. Currently HARDCODED
-camNames = {'front';'side';'eye'};
+% Get experiment folder contents and ONE folder contents
+expFoldContents = dir([fileparts(blockPath) '\**\*.*']);
+expFoldContents = expFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{expFoldContents.name}'));
+ONEContents = dir([fileparts(blockPath) '\ONE_preproc\**\*.*']);
+ONEContents = ONEContents(cellfun(@(x) ~strcmp(x(1),'.'),{ONEContents.name}'));
 
 % Check if a file called "IgnoreExperiment.txt" exists in the experiment
 % folder (or one level higher). If so, remove any existing row and "return"
-folderContents = dir(fileparts(blockPath));
-upperFolderContents = dir(fileparts(folderContents(1).folder))';
-if any(strcmpi('IgnoreExperiment.txt', [{folderContents.name}'; {upperFolderContents.name}']))
-    fprintf('Ignoring experiment due to .txt file %s \n', folderContents(1).folder)
+dateFoldContents = dir([fileparts(expFoldContents(1).folder)])';
+dateFoldContents = dateFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{dateFoldContents.name}'));
+if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
+    fprintf('Ignoring experiment due to .txt file %s \n', expFoldContents(1).folder)
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
     return;
 end
 
-% Populate fields of nDat with the size of the corresponding file (will
+% Populate fields of nDat with the exist of the corresponding file (will
 % have a value of 0 if no file matching the name exists)
-nDat.block = max([folderContents(contains({folderContents.name}','Block.mat')).bytes 0]);
-nDat.timeline = max([folderContents(contains({folderContents.name}','Timeline.mat')).bytes 0]);
-nDat.sideCam = max([folderContents(contains({folderContents.name}','sideCam.mj2')).bytes 0]);
-nDat.frontCam = max([folderContents(contains({folderContents.name}','frontCam.mj2')).bytes 0]);
-nDat.eyeCam = max([folderContents(contains({folderContents.name}','eyeCam.mj2')).bytes 0]);
-nDat.micDat = max([folderContents(contains({folderContents.name}','mic.mat')).bytes 0]);
+nDat.existBlock = num2str(any(contains({expFoldContents.name}','Block.mat')));
+nDat.existTimeline = num2str(any(contains({expFoldContents.name}','Timeline.mat')));
+nDat.existSideCam = num2str(any(contains({expFoldContents.name}','sideCam.mj2')));
+nDat.existFrontCam = num2str(any(contains({expFoldContents.name}','frontCam.mj2')));
+nDat.existEyeCam = num2str(any(contains({expFoldContents.name}','eyeCam.mj2')));
+nDat.existMic = num2str(any(contains({expFoldContents.name}','mic.mat')));
 
 % Check if there is an ephys folder
-nDat.ephysFolderExists = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
+nDat.existEphys = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
 
 % Record the experiment folder
 nDat.expFolder = {fileparts(blockPath)};
 
-%% This section deals with the "alignment" and "sorted" status
+%% This section deals with the "alignment" and "facemap" status
 % alignBlkFrontSideEyeMicEphys is a string with 6 comma-separated
 % entries to indicate the alignment status of the block, front/side/eye
 % cameras, ephys, and microphone. Note that this begins as a vector of 6
 % values and is converted to a string later
 
-% Initialize alignBlkFrontSideEyeMicEphys and "issorted" with zeros
-nDat.alignBlkFrontSideEyeMicEphys = zeros(1,6);
-nDat.issortedKS2 = '0';
-nDat.issortedPyKS = '0';
+probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
+if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
+    potentialProbes = 0;
+else
+    potentialProbes = length(probeInfo.serialNumbers{1});
+end
 
-% Get the path of the alignement file. If so, check the alignement status
-alignFile = contains({folderContents.name}', [nameStub '_alignment.mat']);
+
+% Initialize "issorted" with zeros
+nDat.issortedKS2 = zeros(1, potentialProbes);
+nDat.issortedPyKS = zeros(1, potentialProbes);
+
+% Get the path of the alignment file. If so, check the alignment status
+alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
+% Populate alignBlock, alignEphys, and alignMic
 if any(alignFile)
     % Load the alignment file
-    alignment = load([fullfile(folderContents(alignFile).folder,nameStub) '_alignment.mat']);
-
-    % Check if files exist. If not, then corresponding alignment is NaN.
-    % Here "tDat" is just a temp variable to save writing alignBlkFrontSideEyeMicEphys
-    fileExists = [nDat.block, nDat.frontCam, nDat.sideCam, nDat.eyeCam, nDat.micDat, nDat.ephysFolderExists]>0;
-    tDat = nDat.alignBlkFrontSideEyeMicEphys;
-    tDat(~fileExists) = NaN;
-
-    % This loop checks the alignement status for each video
-    if isfield(alignment, 'video') && ~isempty(fields(alignment.video))
-        for i = 1:length(camNames) % Loop over the camera names
-            % Find the idx corresponding to the current camera
-            camIdx = contains({alignment.video.name}', camNames(i));
-
-            % Sanity check: return if cam file exists but name is wrong
-            if (isempty(camIdx) || ~any(camIdx)) && ~isnan(tDat(i + i))
-                fprintf('FAILED: Conflict between cameras detected by align file and CSV?! for %s %s %s. ... \n', subject, expDate, expNum);
-                return;
-            end
-
-            if isempty(camIdx) || ~any(camIdx) || isnan(alignment.video(camIdx).frameTimes(1))
-                % Issue a "NaN" if cam entry is missing or a NaN
-                tDat(i+1) = nan;
-            elseif strcmpi(alignment.video(camIdx).frameTimes, 'error')
-                % Issue a "2" if there was an error in processing
-                tDat(i+1) = 2;
-            elseif isnumeric(alignment.video(camIdx).frameTimes)
-                % Issue a "1" if frameTimes are numerci (i.e. alignment worked)
-                tDat(i+1) = 1;
-            end
-        end
-    elseif isfield(alignment, 'video') && isempty(fields(alignment.video))
-        % If the video structure is empty for some reason, issue errors
-        tDat(2:4) = 2;
-    else
-        % If "video" field is missing then issue "0" to all video fields
-        tDat(2:4) = 0;
-    end
-
-    % This loop checks the alignment status for "block", "ephys", and "mic"
-    tstDat = {'block', 1; 'mic', 5; 'ephys', 6};
-    for i = 1:size(tstDat,1)
-        if ~isfield(alignment, tstDat{i,1})
+    alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
+    tstName = {'Block'; 'Mic'};
+    for i = 1:size(tstName,1)
+        if nDat.(['exist' tstName{i}]) == 0 || ~nDat.existTimeline
+            % Issue a "NaN" if correspoding file or timeline doesn't exist
+            nDat.(['align' tstName{i}]) = 'NaN';
+        elseif~isfield(alignment, lower(tstName{i}))
             % Issue a "0" if field is missing from "alignment"
-            tDat(tstDat{i,2}) = 0;
-        elseif isstruct(alignment.(tstDat{i,1}))
+            nDat.(['align' tstName{i}]) = '0';
+        elseif isstruct(alignment.(lower(tstName{i})))
             % Issue a "1" if a strcture is detected
-            tDat(tstDat{i,2}) = 1;
-        elseif strcmpi(alignment.(tstDat{i,1}), 'error')
+            nDat.(['align' tstName{i}]) = '1';
+        elseif isnan(alignment.(lower(tstName{i})))
+            % Issue a "nan" if value is nan (e.g. spontaneous block)
+            nDat.(['align' tstName{i}]) = 'NaN';
+        elseif strcmpi(alignment.(lower(tstName{i})), 'error')
             % Issue a "2" if the field is labeled with "error"
-            tDat(tstDat{i,2}) = 2;
-        elseif isnan(alignment.(tstDat{i,1}))
-            % Issue a "NaN" if the field is labeled with "NaN"
-            tDat(tstDat{i,2}) = NaN;
+            nDat.(['align' tstName{i}]) = '2';
         end
     end
 
-    % This loop checks the issorted fields if ephys alignment is good ("1")
-    if tDat(6) == 1
-        % If ephys alignment is "good" check if sorting files exist. If
-        % they do, then give a "1" to issortedKS2 or issortedPyKS. Note
-        % that an "issorted" value of 0.5 indicates that 1 file is sorted,
-        % and one isn't, in a two-probe recording
-        ephysPaths = {alignment.ephys.ephysPath};
-        ephysPaths(cellfun(@(x) any(isnan(x)), ephysPaths)) = [];
-        issortedKS2 = cellfun(@(x) ~isempty(dir([x '\**\*rez.mat'])), ephysPaths);
-        nDat.issortedKS2 = num2str(mean(issortedKS2));
-        issortedPyKS = cellfun(@(x) ~isempty(dir([x '\**\output\spike_times.npy'])), ephysPaths);
-        nDat.issortedPyKS = num2str(mean(issortedPyKS));
-    elseif isnan(tDat(6))
-        % Issue a "NaN" if ephys alignment isn't "1"
-        nDat.issortedKS2 = nan;
-        nDat.issortedPyKS = nan;
+    % EPHYS alignment
+    if potentialProbes == 0
+        % Issue a "NaN" if no implantations in main CSV
+        nDat.alignEphys = nan;
+    elseif ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
+        % Issue a "0" if no ephys, but less than 7 days since recording
+        nDat.alignEphys = zeros(1, potentialProbes);
+    elseif ~nDat.existEphys || ~nDat.existTimeline
+        % Issue a "NaN" if correspoding file or timeline doesn't exist
+        nDat.alignEphys = nan*ones(1, potentialProbes);
+    elseif ~isfield(alignment, 'ephys')
+        % Issue a "0" if field is missing from "alignment"
+        nDat.alignEphys = zeros(1, potentialProbes);
+    elseif isstruct(alignment.ephys)
+        % Issue a "1" if a strcture is detected
+        if size(alignment.ephys,2) ~= potentialProbes
+            fprintf('WARNING: mismatch between recorded and expected probe number')
+            nDat.alignEphys = 2*ones(1, potentialProbes);
+        else
+            nDat.alignEphys = double(arrayfun(@(x) ~any(isnan(x.ephysPath)), alignment.ephys));
+            if round(now-blk.endDateTime)>7
+                nDat.alignEphys(nDat.alignEphys == 0) = nan;
+            end
+        end
+    elseif strcmpi(alignment.ephys, 'error')
+        % Issue a "2" if the field is labeled with "error"
+        nDat.alignEphys = 2*ones(1, potentialProbes);
+    end
+else
+    nDat.alignBlock = '0';
+    nDat.alignMic = '0';
+    nDat.alignEphys = zeros(1, potentialProbes);    
+end
+
+%Populate alignCamera entries
+for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
+    if ~nDat.(['exist' vidName{1}]) && round(now-blk.endDateTime)<7 && nDat.existTimeline
+        % Issue a "0" if no video, but less than 7 days since recording
+        nDat.(['align' vidName{1}]) = '0';
+    elseif ~nDat.(['exist' vidName{1}]) || ~nDat.existTimeline
+        % Issue a "NaN" if correspoding file or timeline doesn't exist
+        nDat.(['align' vidName{1}]) = NaN;
+    elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
+        % Issue a "1" if an ONE file is detected
+        nDat.(['align' vidName{1}]) = '1';
+    elseif any(contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1))
+        errIdx = contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1);
+        errFile = (fullfile(ONEContents(errIdx).folder, ONEContents(errIdx).name));
+        fid = fopen(errFile);
+        errText = jsondecode(char(fread(fid, inf)'));
+        fclose(fid);
+        if contains(errText, 'initialize internal resources')
+            % Issue a "NaN" if video is corrupt
+            nDat.(['align' vidName{1}]) = 'NaN';
+        else
+            % Issue a "2" if error is something else
+            nDat.(['align' vidName{1}]) = '2';
+        end
+    else
+        % Issue a "0" if nothing detected but camera exists LOOK AT THIS
+        nDat.(['align' vidName{1}]) = '0';
     end
 
-    % Assign tDat to alignBlkFrontSideEyeMicEphys field
-    nDat.alignBlkFrontSideEyeMicEphys = tDat;
+    % Check whether facemap processing exists
+    if ~isnan(nDat.(['align' vidName{1}]))
+        if any(contains({expFoldContents.name}', [vidName{1} 'Cam_proc.npy'], 'ignorecase', 1));
+            nDat.(['fMap' vidName{1}]) = '1';
+        else
+            nDat.(['fMap' vidName{1}]) = '0';
+        end
+    else
+        nDat.(['fMap' vidName{1}]) = 'NaN';
+    end
 end
 
-% If ephys alignment is a NaN, but the recording was made in the past 7
-% days, then change the values of ephys alignment and sorting to "0"
-% because the ephys data may not have transferred yet
-if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && round(now-blk.endDateTime) < 7
-    nDat.alignBlkFrontSideEyeMicEphys(6) = 0;
-    nDat.issortedKS2 = 0;
-    nDat.issortedPyKS = 0;
-end
 
-% Determine if the facemap files exist for each camera. If not, issue a "0"
-% unless the camera alignment is a "NaN" in which case issue a "NaN"
-faceMapDetect = double(cellfun(@(x) any(contains({folderContents.name}', [x 'Cam_proc.npy'])), camNames'));
-faceMapDetect(isnan(nDat.alignBlkFrontSideEyeMicEphys(2:4))) = nan;
+%% This section deals with "sorted" status
+% This loop checks the issortedKS2 fields if ephys alignment is good ("1")
+nDat.issortedKS2 = zeros(1, potentialProbes);
+for pIdx = find(nDat.alignEphys == 1)
+    % If ephys alignment is "good" check if sorting files exist. If
+    % they do, then give a "1" to issortedKS2 or issortedPyKS.
+    ephysPath = alignment.ephys(potentialProbes).ephysPath;
+    if ~isempty(dir([ephysPath '\**\*rez.mat']))
+        % Issue a "1" if "results" file for KS2 exists
+        nDat.issortedKS2(pIdx) = 1;
+    elseif ~isempty(dir([ephysPath '\KSerror.json']))
+        % Issue a "2" if error file is in folder
+        nDat.issortedKS2(pIdx) = 0;
+    else
+        % Issue a "0" if no error, but sorting doesn't exist yet
+        nDat.issortedKS2(pIdx) = 1;
+    end
+end
+% Assign "nan" or "0" if ephys alignment isn't "1" accordingly
+nDat.issortedKS2(isnan(nDat.alignEphys)) = nan;
+nDat.issortedKS2(nDat.alignEphys == 0) = 0;
+nDat.issortedKS2(nDat.alignEphys == 2) = 0;
+
+% This loop checks the issortedKS2 fields if ephys alignment is good ("1")
+nDat.issortedPyKS = zeros(1, potentialProbes);
+for pIdx = find(nDat.alignEphys == 1)
+    % If ephys alignment is "good" check if sorting files exist. If
+    % they do, then give a "1" to issortedKS2 or issortedPyKS.
+    ephysPath = alignment.ephys(pIdx).ephysPath;
+    if ~isempty(dir([ephysPath '\**\output\spike_times.npy']))
+        % Issue a "1" if "results" file for KS2 exists
+        nDat.issortedPyKS(pIdx) = 1;
+    elseif ~isempty(dir([ephysPath '\KSerror.json']))
+        % Issue a "2" if error file is in folder
+        nDat.issortedPyKS(pIdx) = 0;
+    else
+        % Issue a "0" if no error, but sorting doesn't exist yet
+        nDat.issortedPyKS(pIdx) = 1;
+    end
+end
+% Assign "nan" or "0" if ephys alignment isn't "1" accordingly
+nDat.issortedPyKS(isnan(nDat.alignEphys)) = nan;
+nDat.issortedPyKS(nDat.alignEphys == 0) = 0;
+nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 
 %% This section deals with the "preProcSpkEV" status
-% preProcSpkEV is a string with 2 comma-separated entries to indicate the 
+% preProcSpkEV is a string with 2 comma-separated entries to indicate the
 % preproc statuse for "ev" (which are the events extracted from the block
 % and timelines) and "spk" which is the spike output from the sorting
 
-% Get the path of the preproc file. If it exists, check status
-preProcFile = contains({folderContents.name}','preprocData.mat');
-
-% Initialize preProcSpkEV with zeros
-nDat.preProcSpkEV = zeros(1,2);
-if any(preProcFile)
-    % Load the preproc file as "preProcDat"
-    preProcDat = load([fullfile(folderContents(alignFile).folder,nameStub) '_preprocData.mat']);
-
-    % Check whether the "ev" and "spk" fields exist. If they do, then
-    % assign them to variables "ev" and "spk". If they don't, set both
-    % variables equal to zero
-    if isfield(preProcDat, 'ev'); ev = preProcDat.ev; else, ev = 0; end
-    if isfield(preProcDat, 'spk'); spk = preProcDat.spk; else, spk = 0; end
-
-    % If "spk" is a cell, then just use the first entry to check whether
-    % spks were properly processed. @Celian, this needs to change now?!
-    if iscell(spk); spk = spk{1}; end
-
-    % Loop over "spk" and "ev" and issue the correct status
-    tstDat = {spk, 1; ev, 2};
-    for i = 1:size(tstDat,1)
-        if isnumeric(tstDat{i,1}) && tstDat{i,1} == 0
-            % Issue a "0" if the value is "0" (i.e. didn't exist above)
-            nDat.preProcSpkEV(tstDat{i,2}) = 0;
-        elseif isstruct(tstDat{i,1})
-            % Issue "1" if it's a struct
-            nDat.preProcSpkEV(tstDat{i,2}) = 1;
-        elseif strcmpi(tstDat{i,1}, 'error')
-            % Issue a "2" if the field is labeled with "error"
-            nDat.preProcSpkEV(tstDat{i,2}) = 2;
-        elseif isnan(tstDat{i,1}) 
-            % Issue a "NaN" if the field is labeled with "NaN"
-            nDat.preProcSpkEV(tstDat{i,2}) = NaN;
-        elseif ~isempty(tstDat{i,1})
-            % Otherwise, if it isn't empty, then issue a "1"
-            nDat.preProcSpkEV(tstDat{i,2}) = 1;
-        end
+% Assign status for events extraction
+if strcmpi(nDat.alignBlock, '1')
+    if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
+        % Issue a "1" if .pqt output is in in folder
+        nDat.extractEvents = '1';
+    elseif contains({ONEContents.name}', 'Error.json', 'ignorecase', 1)
+        % Issue a "2" if error file is in folder
+        nDat.extractEvents = '2';
+    else
+        % Issue a "0" if neither error or .pqt exist yet.
+        nDat.extractEvents = '0';
     end
-    
-    % If "issorted" is not "1" (i.e. sorting is incomplete", the make the 
-    % preProcSpkEV(1) = "0" even if it was previously something else. This
-    % can happen if, for example, one probe has been sorted and the other
-    % hasn't
-    if str2double(nDat.issortedKS2) ~= 1 && nDat.preProcSpkEV(1) == 1
-        nDat.preProcSpkEV(1) = 0;
-    end
-%%%%%%% NOTE: Below would require PyKS sorting, which we are leaving atm
-%     if str2double(nDat.issortedPyKS) ~= 1 && nDat.preProcSpkEV(1) == 1
-%         nDat.preProcSpkEV(1) = 0;
-%     end
+elseif strcmpi(nDat.alignBlock, 'nan')
+    % Issue a "nan" if block alignment is a nan
+    nDat.extractEvents = 'NaN';
+elseif strcmpi(nDat.alignBlock, '0')
+    % Issue a "0" if block alignment isn't complete yet
+    nDat.extractEvents = '0';
 end
+
+% Assign status for spike extraction.
+nDat.extractSpikes = zeros(1, potentialProbes);
+for pIdx = find(nDat.issortedKS2 == 1)
+    % If ephys alignment is "good" check if sorting files exist. If
+    % they do, then give a "1" to issortedKS2 or issortedPyKS.
+    probeStr = ['probe' num2str(pIdx-1)];
+    fullNames = cellfun(@(x,y) fullfile(x,y), {ONEContents.folder}', {ONEContents.name}', 'uni', 0);
+    if any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*.npy'])), fullNames)) %#ok<RGXP1> 
+        % Issue a "1" if "results" file for KS2 exists
+        nDat.extractSpikes(pIdx) = 1;
+    elseif any(cellfun(@(x) ~isempty(regexp(x, [probeStr '.*GetSpkError.json'])), fullNames)) %#ok<RGXP1> 
+        % Issue a "2" if error file is in folder
+        nDat.extractSpikes(pIdx) = 2;
+    else
+        % Issue a "0" if no error, but extraction doesn't exist yet
+        nDat.extractSpikes(pIdx) = 0;
+    end
+end
+% Assign "nan" or "0" if ephys alignment isn't "1" accordingly
+nDat.extractSpikes(isnan(nDat.issortedKS2)) = nan;
+nDat.extractSpikes(nDat.issortedKS2 == 0) = 0;
+nDat.extractSpikes(nDat.issortedKS2 == 2) = 0;
+
 
 %% This section is a final cleanup and dealing with some edge cases
-
-% If ephys alignement is "NaN" then issue "NaN" to preProcSpkEV(1)
-if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && nDat.preProcSpkEV(1) == 0
-    nDat.preProcSpkEV(1) = nan;
-end
-% If ephys alignement is "NaN" then issue "NaN" and sorting is still "0"
-% (i.e. in a "waiting" state) then issue "NaN" to issorted field. 
-% NOTE that this only applies to KS2 atm, since PyKS is new.
-if isnan(nDat.alignBlkFrontSideEyeMicEphys(6)) && str2double(nDat.issortedKS2) == 0
-    nDat.issortedKS2 = num2str(nan);
-end
 
 % If a file called "AllErrorsValidated.txt" is detected in the exp folder,
 % or the parent folder, then replace all cases of "2" with a "NaN" as the
 % presence of the files indicates that those errors have been checked and
 % could not be resolved.
-if any(strcmpi('AllErrorsValidated.txt', [{folderContents.name}'; {upperFolderContents.name}']))
-    fprintf('Errors have been validated for %s \n', folderContents(1).folder)
-    nDat.preProcSpkEV(nDat.preProcSpkEV==2) = nan;
-    nDat.alignBlkFrontSideEyeMicEphys(nDat.alignBlkFrontSideEyeMicEphys==2) = nan;
-    faceMapDetect(faceMapDetect==2) = nan;
+if any(strcmpi('AllErrorsValidated.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
+    fprintf('Errors have been validated for %s \n', expFoldContents(1).folder)
+    %%% NEED TO DO THIS %%%%%
 end
 
-% Change "alignBlkFrontSideEyeMicEphys", "preProcSpkEV", and
-% "faceMapFrontSideEye" from vectors to comma-separated strings
-nDat.preProcSpkEV = regexprep(num2str(nDat.preProcSpkEV),'\s+',',');
-nDat.alignBlkFrontSideEyeMicEphys = regexprep(num2str(nDat.alignBlkFrontSideEyeMicEphys),'\s+',',');
-nDat.faceMapFrontSideEye = regexprep(num2str(faceMapDetect),'\s+',',');
+% % Change probe-related fields from vectors to comma-separated strings
+nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedKS2 = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedPyKS = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.alignEphys),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);

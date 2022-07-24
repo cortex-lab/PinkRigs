@@ -16,8 +16,7 @@ expDate = params.expDate{1};
 
 % Get the server locations and load the main mouse csv
 serverLocations = getServersList;
-csvLocation = csv.getLocation('main');
-csvData = csv.readTable(csvLocation);
+csvData = params.mainCSV{1};
 
 % Checks that all the "active" mice are at the top of the main csv.  
 % Sorts mice alphabetically. Any changes are saved.
@@ -146,7 +145,7 @@ for i = 1:length(mice2Update)
     % row of data in each case. Remove empty cells (where that row was
     % skipped for some reason, e.g. the experiment was <2 mins)
     newRecords = cellfun(@(x,y) csv.updateRecord('subject', currSub, ...
-        'expDate', x, 'expNum', y, 'saveData', 0, 'queryExp', 0), dateList, expNumList, 'uni', 0);
+        'expDate', x, 'expNum', y, 'saveData', 0, 'queryExp', 0, 'mainCSV', csvData), dateList, expNumList, 'uni', 0);
     newRecords = newRecords(~cellfun(@isempty, newRecords));
     newRecords = vertcat(newRecords{:});
     

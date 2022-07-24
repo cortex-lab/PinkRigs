@@ -70,31 +70,39 @@ end
 outP = structfun(@mkCell, outP, 'uni', 0);
 
 % Get location of the main csv and load it 
-mainCSVLoc = csv.getLocation('main');
-mouseList = csv.readTable(mainCSVLoc);
+if ~isfield(outP, 'mainCSV')
+    mainCSVLoc = csv.getLocation('main');
+    mainCSV = csv.readTable(mainCSVLoc);
+else
+    mainCSV = outP.mainCSV{1};
+end
 
 %Validate subjects and interpret input optional input strings
 if strcmp(outP.subject{1},'active')
     % All “active” mice in the main csv
-    outP.subject = mouseList.Subject(strcmp(mouseList.IsActive,'1'));
+    outP.subject = mainCSV.Subject(strcmp(mainCSV.IsActive,'1'));
 elseif strcmp(outP.subject{1},'implanted')
     % All mice with an implant-date with a probe in the main csv
-    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mouseList.P0_implantDate);
-    implanted(strcmpi(mouseList.P0_type, 'P3B')) = 0;
-    outP.subject = mouseList.Subject(implanted);
+    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mainCSV.P0_implantDate);
+    implanted(strcmpi(mainCSV.P0_type, 'P3B')) = 0;
+    outP.subject = mainCSV.Subject(implanted);
 elseif strcmp(outP.subject{1},'all')
     % All mice in the main csv
-    outP.subject = mouseList.Subject;
+    outP.subject = mainCSV.Subject;
 end
 
 % Check that all "subjects" exist in the main csv. If not, error
-if ~all(ismember(outP.subject, mouseList.Subject))
+if ~all(ismember(outP.subject, mainCSV.Subject))
     error('Unrecognized mouse names!')
 end
-outP.implantDate = csv.getImplantDateFromSubject(outP.subject);
+implantDates = cellfun(@(x) mainCSV.P0_implantDate{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);
+validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDates);
+implantDates(~validImplants) = deal({'none'});
+outP.implantDate = implantDates;
 
 % Check the lenth 
 nSubjects = length(outP.subject);
+outP.mainCSV = repmat({mainCSV}, nSubjects); % saves loading time later;
 paramLengths = structfun(@length, outP);
 
 % NOTE: all inputs must have length=length(subjects) or length=1. Otherwise

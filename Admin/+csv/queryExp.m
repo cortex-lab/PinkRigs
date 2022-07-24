@@ -3,85 +3,152 @@ function extractedExperiments = queryExp(varargin)
 %%% computing alignment, preprocessing etc.
 
 % Assign defaults for params not contained in "inputValidation"
-varargin = ['timeline2Check', {0}, varargin];
-varargin = ['align2Check', {'*,*,*,*,*,*'}, varargin];
-varargin = ['preproc2Check', {'*,*'}, varargin];
-varargin = ['issortedCheck', -1, varargin];
+checkFields = {'checkTimeline', ...
+    'checkAlignAny', ...
+    'checkAlignEphys', ...
+    'checkAlignBlock', ...
+    'checkAlignCam', ...
+    'checkAlignMic', ...
+    'checkSorting', ...
+    'checkSpikes', ...
+    'checkEvents', ...
+    };
+
+defVals = cellfun(@(x) [x, {'ignore'}], checkFields, 'uni', 0);
+varargin = [[defVals{:}], varargin];
 params = csv.inputValidation(varargin{:});
 
 % Loop through csv to look for experiments that weren't
 % aligned, or all if recompute isn't none.
 extractedExperiments = table();
+
 for mm = 1:numel(params.subject)
     
     % Loop through subjects
-    expListMouse = csv.readTable(csv.getLocation(params.subject{mm}));
+    mouseExps = csv.readTable(csv.getLocation(params.subject{mm}));
+    csvHeaders = mouseExps.Properties.VariableNames';
+
 
     % Add "subject" to the csv table
-    listFields = expListMouse.Properties.VariableNames;
-    expListMouse.subject = repmat(params.subject(mm), size(expListMouse,1),1);
-    expListMouse = expListMouse(:, ['subject', listFields]);
+    listFields = mouseExps.Properties.VariableNames;
+    mouseExps.subject = repmat(params.subject(mm), size(mouseExps,1),1);
+    mouseExps = mouseExps(:, ['subject', listFields]);
 
     % Add optional parameteres as new csvFields
-    newfields = setdiff(fields(params), [expListMouse.Properties.VariableNames'; ...
-        'timeline2Check'; 'align2Check'; 'preproc2Check'; 'issortedCheck']);
+    newfields = setdiff(fields(params), [mouseExps.Properties.VariableNames'; checkFields']);
     for i = 1:length(newfields)
-        expListMouse.(newfields{i}) = repmat(params.(newfields{i})(mm), height(expListMouse),1);
+        mouseExps.(newfields{i}) = repmat(params.(newfields{i})(mm), height(mouseExps),1);
     end
 
     % Add implant info
-    datNums = num2cell(datenum(expListMouse.expDate, 'yyyy-mm-dd'));
+    datNums = num2cell(datenum(mouseExps.expDate, 'yyyy-mm-dd'));
     if strcmp(params.implantDate(mm), 'none')
-        expListMouse.daysSinceImplant = repmat({nan}, height(expListMouse), 1);
+        mouseExps.daysSinceImplant = repmat({nan}, height(mouseExps), 1);
     else
         currImplant = datenum(params.implantDate{mm}, 'yyyy-mm-dd');
-        expListMouse.daysSinceImplant = cellfun(@(x) (x-currImplant), datNums, 'uni', 0);
+        mouseExps.daysSinceImplant = cellfun(@(x) (x-currImplant), datNums, 'uni', 0);
     end
 
     % Remove the expDefs that don't match
     if ~strcmp(params.expDef{mm},'all')
-        expListMouse = expListMouse(contains(expListMouse.expDef, params.expDef{mm}),:);
+        mouseExps = mouseExps(contains(mouseExps.expDef, params.expDef{mm}),:);
     end
-    if isempty(expListMouse); continue; end
+    if isempty(mouseExps); continue; end
 
     % Remove expNums that don't match
     if ~strcmp(params.expNum{mm},'all')
-        expListMouse = expListMouse(strcmp(expListMouse.expNum, params.expNum{mm}),:);
+        mouseExps = mouseExps(strcmp(mouseExps.expNum, params.expNum{mm}),:);
     end
-    if isempty(expListMouse); continue; end
+    if isempty(mouseExps); continue; end
 
-    % Get exp with timeline only
-    if params.timeline2Check{mm}==1
-        expListMouse = expListMouse(str2double(expListMouse.timeline)>0,:);
-    elseif params.timeline2Check{mm}==-1
-        expListMouse = expListMouse(str2double(expListMouse.timeline)==0,:);
+    % Get exp with matching timeline status
+    if ~strcmp(params.checkTimeline{mm}, 'ignore')
+        chkVal = num2str(params.checkTimeline{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.existTimeline, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.existTimeline, chkVal),:);
+        end
     end
-    if isempty(expListMouse); continue; end
+    if isempty(mouseExps); continue; end
 
     % Get exp with specific alignment status
-    alignCodeChecked = csv.checkStatusCode(expListMouse.alignBlkFrontSideEyeMicEphys,params.align2Check{mm});
-    expListMouse = expListMouse(alignCodeChecked,:);
-    if isempty(expListMouse); continue; end
+    alignFields = csvHeaders(contains(csvHeaders, 'align'));
+    chkVals = cell(6,1);
+    chkVals{1} = num2str(params.checkAlignBlock{mm});
+    chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
+    chkVals{5} = num2str(params.checkAlignMic{mm});
+    chkVals{6} = num2str(params.checkAlignEphys{mm});
+    for i = find(~contains(chkVals, 'ignore'))
+        if isempty(i); continue; end
+        if strcmpi(chkVals{i}(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.(alignFields{i}), chkVals{i}),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
+
+    if ~strcmp(params.checkAlignAny{mm}, 'ignore')
+        chkVal = num2str(params.checkAlignAny{mm});
+        % Since alignMic is currently always 2, ignore if looking for 2's
+        if strcmpi(chkVal, '2'); alignFields = alignFields([1:4,6]); end
+        combAlign = cellfun(@(x) mouseExps.(x), alignFields, 'uni', 0);
+        combAlign = [combAlign{:}];
+        combAlign = arrayfun(@(x) cell2mat(combAlign(x,:)), 1:size(combAlign,1), 'uni', 0)';
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(combAlign, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(combAlign, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
 
     % Get exp with specific sorting status
-    if params.issortedCheck{mm}~=-1
-        expListMouse = expListMouse(ismember(expListMouse.issortedKS2, params.issortedKS2{mm}),:);
+    sortFields = csvHeaders(contains(csvHeaders, 'issorted'));
+    if ~strcmp(params.checkSorting{mm}, 'ignore')
+        chkVal = num2str(params.checkSorting{mm});
+        combSort = cellfun(@(x) mouseExps.(x), sortFields, 'uni', 0);
+        combSort = [combSort{:}];
+        combSort = arrayfun(@(x) cell2mat(combSort(x,:)), 1:size(combSort,1), 'uni', 0)';
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(combSort, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(combSort, chkVal),:);
+        end
     end
-    if isempty(expListMouse); continue; end
+    if isempty(mouseExps); continue; end
 
-    % Get exp with specific preprocessing state
-    preproc2Check = csv.checkStatusCode(expListMouse.preProcSpkEV,params.preproc2Check{mm});
-    expListMouse = expListMouse(all(preproc2Check,2),:);
-    if isempty(expListMouse); continue; end
+    % Get exp with any extractSpikess matching input state
+    if ~strcmp(params.checkSpikes{mm}, 'ignore')
+        chkVal = num2str(params.checkSpikes{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.extractSpikes, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.extractSpikes, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
+
+    % Get exp with any extractEventss matching input state
+    if ~strcmp(params.checkEvents{mm}, 'ignore')
+        chkVal = num2str(params.checkEvents{mm});
+        if strcmpi(chkVal(1), '~')
+            mouseExps = mouseExps(~contains(mouseExps.extractEvents, chkVal(2:end)),:);
+        else
+            mouseExps = mouseExps(contains(mouseExps.extractEvents, chkVal),:);
+        end
+    end
+    if isempty(mouseExps); continue; end
 
     %Convert date inputs to actual dates based on the CSV data
     currDate = params.expDate{mm};
     if ~iscell(currDate); currDate = {currDate}; end
-    selectedDates = arrayfun(@(x) extractDates(x, expListMouse), currDate, 'uni', 0);
-    expListMouse = expListMouse(sum(cell2mat(selectedDates(:)'),2)>0,:);
-    if isempty(expListMouse); continue; end
+    selectedDates = arrayfun(@(x) extractDates(x, mouseExps), currDate, 'uni', 0);
+    mouseExps = mouseExps(sum(cell2mat(selectedDates(:)'),2)>0,:);
+    if isempty(mouseExps); continue; end
 
-    extractedExperiments = [extractedExperiments; expListMouse];
+    extractedExperiments = [extractedExperiments; mouseExps];
 end
 end
 

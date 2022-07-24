@@ -29,37 +29,36 @@ function extractExpData(varargin)
         % Define savepath for the preproc results
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         alignmentFile = [pathStub '_alignment.mat'];
-        
+
         %%% temporary--delete the old preproc files
         oldPreprocFile = regexprep(alignmentFile,'alignment','preproc');
-        delete(oldPreprocFile);
+        if exist(oldPreprocFile, 'file')
+            delete(oldPreprocFile);
+        end
         %%%
         
-        % Get preproc status
-        preprocStatus = csv.parseStatusCode(expInfo.preProcSpkEV);
-        preprocStatus = structfun(@(x) strcmp(x,'0'), preprocStatus,'uni',0);
-
+        % Get extraction status
+        extracted.events = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        extracted.spikes = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        
         % Anonymous function to decide whether something should be processed
-        shouldProcess = @(x) (contains(recompute,{'all';x}) || preprocStatus.(x)...
-            || ~ismember(x, varListInFile)) && contains(process,{'all';x});
+        shouldProcess = @(x) (contains(recompute,{'all';x}) || ...
+            extracted.(x)) && contains(process,{'all';x});
 
-        if ~(strcmp(recompute,'none') && strcmp(expInfo.preProcSpkEV,'1,1')) 
+        if ~(strcmp(recompute,'none') && all(structfun(@(x) x==1, extracted)))
             %% If all isn't good...
                         
             % monitors if anything has changed
             change = 0;
             
             fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
-            
-            % get alignment file location
-            alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
             if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
-                if shouldProcess('ev')
-                    if expInfo.alignBlock == 1
+                if shouldProcess('events')
+                    if strcmp(expInfo.alignBlock, '1')
                         alignment = load(alignmentFile, 'block');
                         
                         % Get the events ONE folder
@@ -70,18 +69,18 @@ function extractExpData(varargin)
                             fprintf(1, '* Extracting events... *\n');
                             
                             % Get Block and Timeline
-                            loadedData = csv.loadData(expInfo, 'loadTag', 'timelineblock');
-                            timeline = loadedData.timelineData{1};
-                            block = loadedData.blockData{1};
+                            loadedData = csv.loadData(expInfo, 'dataType', {{'timeline'; 'block'}});
+                            timeline = loadedData.dataTimeline{1};
+                            block = loadedData.dataBlock{1};
                             
                             % Get the appropriate ref for the exp def
                             expDefRef = preproc.getExpDefRef(expDef);
                             
                             % Call specific preprocessing function
-                            ev = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
+                            events = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                             
                             stub = [expDate '_' expNum '_' subject];
-                            saveONEFormat(ev,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
                             
                             % Remove any error file
                             if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
@@ -107,15 +106,15 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if shouldProcess('spk')
-                    if expInfo.alignEphys == 1
+                if shouldProcess('spikes')
+                    if contains(expInfo.alignEphys, '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
                         
                         if ~exist('block','var')
-                            loadedData = csv.loadData(expInfo, 'loadTag', 'block');
-                            block = loadedData.blockData{1};
+                            loadedData = csv.loadData(expInfo, 'dataType', 'block');
+                            block = loadedData.dataBlock{1};
                         end
 
                         for probeNum = 1:numel(alignment.ephys)

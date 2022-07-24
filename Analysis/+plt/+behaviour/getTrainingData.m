@@ -40,14 +40,14 @@ for i = 1:length(params.subject)
         continue;
     end
 
-    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock);
     if any(~alignedBlock)
         fprintf('Missing block alignments. Will try and align...\n')
         preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
         currData = csv.queryExp(currData);
     end
 
-    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+    evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.eventExtraction);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
         preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
@@ -78,7 +78,7 @@ for i = 1:length(params.subject)
     extracted.blkDates{i} = currData.expDate;
     extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 
-    loadedEV = csv.loadData(currData, 'loadTag', 'ev');
+    loadedEV = csv.loadData(currData, 'dataType', 'ev');
     evData = [loadedEV.evData{:}];
 
     AVParams = cell(length(evData),1);
