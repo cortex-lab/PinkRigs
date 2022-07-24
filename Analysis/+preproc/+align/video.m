@@ -187,7 +187,7 @@ end
 if isempty(params.timeline{1}) || ischar(params.timeline{1})
     fprintf(1, 'Loading timeline\n');
     loadedData = csv.loadData(params, 'loadTag','timeline');
-    timeline = loadedData.timelineData{1};
+    timeline = loadedData.dataTimeline{1};
 else
     timeline = params.timeline{1};
 end

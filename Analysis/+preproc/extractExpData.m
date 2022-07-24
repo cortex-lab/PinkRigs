@@ -36,30 +36,27 @@ function extractExpData(varargin)
         %%%
         
         % Get extraction status
-        extractFields = {'extractEvents', 'extractSpikes'};
-        extractionStatus = structfun(@(x) strcmp(x,'0'), extractFields,'uni',0);
-
+        extracted.events = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        extracted.spikes = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        
         % Anonymous function to decide whether something should be processed
-        shouldProcess = @(x) (contains(recompute,{'all';x}) || extractionStatus.(x)...
-            || ~ismember(x, varListInFile)) && contains(process,{'all';x});
+        shouldProcess = @(x) (contains(recompute,{'all';x}) || ...
+            extracted.(x)) && contains(process,{'all';x});
 
-        if ~(strcmp(recompute,'none') && all(extractionStatus))
+        if ~strcmp(recompute,'none') && all(structfun(@(x) x==1, extracted))
             %% If all isn't good...
                         
             % monitors if anything has changed
             change = 0;
             
             fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
-            
-            % get alignment file location
-            alignmentFile = strrep(savePath, 'preprocData', 'alignment');
 
             if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
-                if shouldProcess('ev')
-                    if expInfo.alignBlock == 1
+                if shouldProcess('events')
+                    if strcmp(expInfo.alignBlock, '1')
                         alignment = load(alignmentFile, 'block');
                         
                         % Get the events ONE folder
@@ -70,9 +67,9 @@ function extractExpData(varargin)
                             fprintf(1, '* Extracting events... *\n');
                             
                             % Get Block and Timeline
-                            loadedData = csv.loadData(expInfo, 'loadTag', 'timelineblock');
-                            timeline = loadedData.timelineData{1};
-                            block = loadedData.blockData{1};
+                            loadedData = csv.loadData(expInfo, 'dataType', {{'timeline'; 'block'}});
+                            timeline = loadedData.dataTimeline{1};
+                            block = loadedData.dataBlock{1};
                             
                             % Get the appropriate ref for the exp def
                             expDefRef = preproc.getExpDefRef(expDef);
@@ -115,7 +112,7 @@ function extractExpData(varargin)
                         
                         if ~exist('block','var')
                             loadedData = csv.loadData(expInfo, 'loadTag', 'block');
-                            block = loadedData.blockData{1};
+                            block = loadedData.dataBlock{1};
                         end
 
                         for probeNum = 1:numel(alignment.ephys)

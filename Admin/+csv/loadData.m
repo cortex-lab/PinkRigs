@@ -113,7 +113,7 @@ for i=1:height(expList)
     end
 
     %% Load dataBlock if requested
-    if contains(currDataType, {'blk', 'block'})
+    if any(contains(currDataType, {'blk', 'block'}))
         blockPath = cell2mat([currExp.expFolder '\' expPathStub '_block.mat']);
         if exist(blockPath, 'file')
             blk = load(blockPath, 'block');
@@ -124,7 +124,7 @@ for i=1:height(expList)
     end
 
     %% Load timeline data if requested
-    if contains(currDataType, {'tim'; 'timeline'})
+    if any(contains(currDataType, {'tim'; 'timeline'}))
         timelinePath = cell2mat([currExp.expFolder '\' expPathStub '_timeline.mat']);
         if exist(timelinePath, 'file')
             tim = load(timelinePath, 'Timeline');

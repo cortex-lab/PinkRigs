@@ -1,14 +1,14 @@
 function logOddsLR = GLMMultiModels(obj, tag, P)
 if ~exist('P', 'var'); obj.modelString = tag; end
-[obj.blockData.audValues, uniA] = deal(unique(obj.blockData.stim_audDiff));
-[obj.blockData.visValues, uniV] = deal(unique(obj.blockData.stim_visDiff));
+[obj.dataBlock.audValues, uniA] = deal(unique(obj.dataBlock.stim_audDiff));
+[obj.dataBlock.visValues, uniV] = deal(unique(obj.dataBlock.stim_visDiff));
 uniA = sort(uniA, 'descend'); uniV = sort(uniV, 'descend');
 
 [audGrid,visGrid] = meshgrid(uniA,uniV);
-comb = unique([obj.blockData.stim_visDiff obj.blockData.stim_audDiff], 'rows');
+comb = unique([obj.dataBlock.stim_visDiff obj.dataBlock.stim_audDiff], 'rows');
 switch tag
     case 'eval'; visDiff = obj.evalPoints(:,1); audDiff = obj.evalPoints(:,2);
-    otherwise, audDiff = obj.blockData.stim_audDiff; visDiff = obj.blockData.stim_visDiff;
+    otherwise, audDiff = obj.dataBlock.stim_audDiff; visDiff = obj.dataBlock.stim_visDiff;
 end
 repAud = repmat({audDiff},1,length(uniA));
 repVis = repmat({visDiff},1,length(uniV));
@@ -32,7 +32,7 @@ switch modChoose
         end
         
         freeP = zeros(1,length(obj.prmLabels));
-        if ~isfield(obj.blockData, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.blockData.freeP); freeP(obj.blockData.freeP) = 1; end
+        if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
         
         if exist('P', 'var')
             pOld = obj.prmInit;
@@ -69,7 +69,7 @@ switch modChoose
         
         
         freeP = zeros(1,length(obj.prmLabels));
-        if ~isfield(obj.blockData, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.blockData.freeP); freeP(obj.blockData.freeP) = 1; end
+        if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
         
         if exist('P', 'var')
             pOld = obj.prmInit;
@@ -163,7 +163,7 @@ end
 %     case {'ReducedLogCNSplitDelta'}
 %         obj.prmLabels = {'bias';'visScaleR';'visScaleL';'N';'audScaleR';'audScaleL'};
 %         freeP = zeros(1,length(obj.prmLabels));
-%         if ~isfield(obj.blockData, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.blockData.freeP); freeP(obj.blockData.freeP) = 1; end
+%         if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
 %         if exist('P', 'var')
 %             pOld = obj.prmInit;
 %             allPrms = [pOld; P; freeP];
@@ -208,7 +208,7 @@ end
 %     case {'SimpLogSplitDelta'}
 %         obj.prmLabels = [{'bias';'visScaleR';'visScaleL';'N';'C50'}; audTags];
 %         freeP = zeros(1,length(obj.prmLabels));
-%         if ~isfield(obj.blockData, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.blockData.freeP); freeP(obj.blockData.freeP) = 1; end
+%         if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
 %         if exist('P', 'var')
 %             pOld = obj.prmInit;
 %             visContributionLR = ((P(2)*freeP(2)+pOld(2))*(getC50(abs(visDiff.*(visDiff>0)), P(4)*freeP(4)+pOld(4), P(5)*freeP(5)+pOld(5))) + ...
