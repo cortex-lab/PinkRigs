@@ -6,7 +6,7 @@ function getQualityMetrics(ksFolder,ephysFolder)
     
     %% Set paths
     savePath = ksFolder;
-    ephysRawFile = dir(fullfile(ephysFolder,'*ap.cbin'));
+    ephysRawFile = dir(fullfile(ephysFolder,'*ap.bin'));
     ephysap_path = fullfile(ephysRawFile.folder,ephysRawFile.name);
 
     %% quality metric parameters and thresholds
