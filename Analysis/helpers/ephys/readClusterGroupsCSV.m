@@ -25,3 +25,6 @@ cgs = zeros(size(cids));
 cgs(isMUA) = 1;
 cgs(isGood) = 2;
 cgs(isUns) = 3;
+
+cgs = uint8(cgs);
+cids = uint32(cids);
