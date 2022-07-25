@@ -18,12 +18,12 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
 
     %% Get timeline flipper times
     % Get timeline
-    if isempty(params.timeline{1}) || ischar(params.timeline{1})
+    if ~isfield(params,'dataTimeline')
         fprintf(1, 'Loading timeline\n');
         loadedData = csv.loadData(params, 'dataType','timeline');
         timeline = loadedData.dataTimeline{1};
     else
-        timeline = params.timeline{1};
+        timeline = params.dataTimeline{1};
     end
     % Detect sync events from timeline
     timelineFlipperTimes = timeproc.getChanEventTime(timeline,'flipper');

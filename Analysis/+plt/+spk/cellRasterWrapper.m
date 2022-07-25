@@ -11,7 +11,7 @@ loadedData = csv.loadData(expList, 'dataType', 'evspk');
 for i = 1:height(loadedData)
     if ~containsloadedData.expDef{i}
     end
-    [eventTimes, trialGroups, opt] = paramFunc(loadedData.evData{i});
+    [eventTimes, trialGroups, opt] = paramFunc(loadedData.dataEvents{i});
 end
 
 plt.spk.cellRasterNew(ev, spk);

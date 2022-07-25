@@ -188,6 +188,9 @@ nDat.issortedPyKS = zeros(1, potentialProbes);
 
 % Get the path of the alignment file. If so, check the alignment status
 alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
+
+%%%%%
+
 % Populate alignBlock, alignEphys, and alignMic
 if any(alignFile)
     % Load the alignment file
@@ -243,7 +246,11 @@ if any(alignFile)
 else
     nDat.alignBlock = '0';
     nDat.alignMic = '0';
-    nDat.alignEphys = zeros(1, potentialProbes);    
+    if potentialProbes == 0
+        nDat.alignEphys = nan;
+    else
+        nDat.alignEphys = zeros(1, potentialProbes);
+    end
 end
 
 %Populate alignCamera entries
@@ -395,9 +402,9 @@ end
 
 % % Change probe-related fields from vectors to comma-separated strings
 nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedKS2 = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedPyKS = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.extractSpikes = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedKS2 = regexprep(num2str(nDat.issortedKS2),'\s+',',');
+nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);

@@ -11,13 +11,14 @@ varargin = ['timeline', {[]}, varargin]; % for timeline input
 params = csv.inputValidation(varargin{:});
 
 %% Get timeline and block
-if isempty(params.timeline{1}) || ischar(params.timeline{1})
+if ~isfield(params,'dataTimeline')
     fprintf(1, 'Loading timeline\n');
     loadedData = csv.loadData(params, 'dataType', 'timelineblock');
     timeline = loadedData.dataTimeline{1};
     block = loadedData.dataBlock{1};
 else
     loadedData = csv.loadData(params, 'dataType', 'block');
+    timeline = params.dataTimeline{1};
     block = loadedData.dataBlock{1};
 end
 

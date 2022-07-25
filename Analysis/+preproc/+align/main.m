@@ -30,29 +30,22 @@ function main(varargin)
         % Define savepath for the alignment results
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         savePath = [pathStub '_alignment.mat'];
-        if strcmp(recompute, 'all')
+        if strcmp(recompute, 'all') && exist(savePath,'file')
            delete(savePath) 
-        end
-        if exist(savePath,'file')
-            % To check if anything's missing (and that the csv hasn't seen
-            % for some reason)
-            varListInFile = who('-file', savePath);
-        else
-            varListInFile = {};
         end
         
         % Get align status
         alignFields = contains(expInfo.Properties.VariableNames, 'align');
-        alignStatus = table2struct(expInfo(:,alignFields));
-        
+        notAlignedYet = struct();
+        for i = expInfo.Properties.VariableNames(alignFields)
+            notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
+        end
+
         %If there is no timeline. All alignment is NaN
-        if strcmp(expInfo.timeline, '0')
-            if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
-                [block, mic, ephys] = deal(nan);
-                video = struct('name', expInfo.videoNames{1}, ...
-                    'frameTimes', num2cell(nan*ones(3,1)),...
-                    'missedFrames', num2cell(nan*ones(3,1)));
-                save(savePath,'block', 'video', 'ephys', 'mic');
+        if strcmp(expInfo.existTimeline, '0')
+            if ~all(structfun(@(x) strcmpi(x,'nan'), notAlignedYet))
+                [block, ephys] = deal(nan);
+                save(savePath,'block', 'ephys');
                 csv.updateRecord('subject', subject, ...
                     'expDate', expDate,...
                     'expNum', expNum);
@@ -60,21 +53,23 @@ function main(varargin)
             fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
             continue;
         end
-        alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
-        alignStatus.video = 0;
+        notAlignedYet = structfun(@(x) contains(x,'0'), notAlignedYet,'uni',0);
+        notAlignedYet.video = 0;
 
         % Anonymous function to decide whether something should be processed
-        shouldProcess = @(x,y) (...
+        shouldProcess = @(x) (...
             any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
-            || alignStatus.(x)...
-            || ~ismember(y, varListInFile))...
+            || notAlignedYet.(lower(x)))...
             && contains(process,{'all';x});
 
-        if ~(contains('none', recompute) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys,'1,1,1,1,1,1')) % If good already
+        if ~(contains('none', recompute) && ~any(structfun(@(x)all(x==1), notAlignedYet))) % If good already
             %% If all isn't good...
                         
-            % monitors if anything has changed
+            % Monitors if anything has changed
             change = 0;
+            
+            % Loads timeline once
+            expInfo = csv.loadData(expInfo, 'dataType','timeline');
             
             fprintf(1, '*** Aligning experiment %s... ***\n', expFolder);
             
@@ -87,7 +82,7 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if shouldProcess('ephys', 'ephys')
+            if shouldProcess('ephys')
                 try
                     % Align it
                     fprintf(1, '* Aligning ephys... *\n');
@@ -133,7 +128,7 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if shouldProcess('block', 'block')
+            if shouldProcess('block')
                 % Note that block file should always exist.
                 try
                     block = struct;
@@ -177,13 +172,10 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if any(cellfun(@(x)shouldProcess(x, 'video'), [videoNames; 'video']))                               
+            if any(cellfun(@(x)shouldProcess(x), [videoNames; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
-                if ~isempty(video) && ~any(contains({'video'; 'all'}, recompute))
-                    vids2Process = videoNames(contains(recompute, videoNames,  'IgnoreCase', 1));
-                else, vids2Process = videoNames;
-                end
+                vids2Process = videoNames(cellfun(@(x) shouldProcess(x), videoNames));
 
                 % Align each of them
                 for v = 1:numel(vids2Process)
@@ -226,7 +218,7 @@ function main(varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if shouldProcess('mic', 'mic')
+            if shouldProcess('mic')
                 
                 micONEFolder = fullfile(expFolder,'ONE_preproc','mic');
                 initONEFolder(micONEFolder)
@@ -234,7 +226,7 @@ function main(varargin)
                 % Align it
                 try
                     fprintf(1, '* Aligning mic... *\n');
-                    %%% TODO
+                    %%% TODO -- ERRORS FOR NOW
                     error('Have not found or coded a way to align file yet.') % for now
                     fprintf(1, '* Mic alignment done. *\n');
                     

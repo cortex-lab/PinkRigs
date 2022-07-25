@@ -47,15 +47,15 @@ for i = 1:length(params.subject)
         currData = csv.queryExp(currData);
     end
 
-    evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.eventExtraction);
+    evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.extractEvents);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'ev');
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'events');
         currData = csv.queryExp(currData);
     end
     
-    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlkFrontSideEyeMicEphys);
-    evExtracted = cellfun(@(x) strcmp(x(end), '1'), currData.preProcSpkEV);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock);
+    evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.extractEvents);
 
     failIdx = any(~[alignedBlock, evExtracted],2);
     if any(failIdx)
@@ -79,14 +79,14 @@ for i = 1:length(params.subject)
     extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 
     loadedEV = csv.loadData(currData, 'dataType', 'ev');
-    evData = [loadedEV.evData{:}];
+    dataEvents = [loadedEV.dataEvents{:}];
 
-    AVParams = cell(length(evData),1);
-    for j = 1:length(evData)
-        evData(j).stim_visAzimuth(isnan(evData(j).stim_visAzimuth)) = 0;
-        evData(j).stim_visDiff = evData(j).stim_visContrast.*sign(evData(j).stim_visAzimuth);
-        evData(j).stim_audDiff = evData(j).stim_audAzimuth;
-        AVParams{j,1} = unique([evData(j).stim_audDiff evData(j).stim_visDiff], 'rows');
+    AVParams = cell(length(dataEvents),1);
+    for j = 1:length(dataEvents)
+        dataEvents(j).stim_visAzimuth(isnan(dataEvents(j).stim_visAzimuth)) = 0;
+        dataEvents(j).stim_visDiff = dataEvents(j).stim_visContrast.*sign(dataEvents(j).stim_visAzimuth);
+        dataEvents(j).stim_audDiff = dataEvents(j).stim_audAzimuth;
+        AVParams{j,1} = unique([dataEvents(j).stim_audDiff dataEvents(j).stim_visDiff], 'rows');
     end
 
     [uniParams, ~, uniMode] = unique(cellfun(@(x) num2str(x(:)'), AVParams, 'uni', 0));
@@ -94,8 +94,14 @@ for i = 1:length(params.subject)
     if numel(uniParams) ~= 1
         fprintf('Multiple param sets detected for %s, using mode \n', currData.subject{1});
     end
-    names = fieldnames(evData);
-    cellData = cellfun(@(f) {vertcat(evData(modeIdx).(f))}, names);
+    names = fieldnames(dataEvents);
+    cellData = cellfun(@(f) {vertcat(dataEvents(modeIdx).(f))}, names);
+
+    for j = 1:length(cellData)
+        if isa(cellData{j}, 'single')
+            cellData{j} = double(cellData{j});
+        end
+    end
 
     extracted.subject{i} = currData.subject{1};
     extracted.data{i} = cell2struct(cellData, names);

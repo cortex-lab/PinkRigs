@@ -102,7 +102,7 @@ outP.implantDate = implantDates;
 
 % Check the lenth 
 nSubjects = length(outP.subject);
-outP.mainCSV = repmat({mainCSV}, nSubjects); % saves loading time later;
+outP.mainCSV = repmat({mainCSV}, nSubjects,1); % saves loading time later;
 paramLengths = structfun(@length, outP);
 
 % NOTE: all inputs must have length=length(subjects) or length=1. Otherwise
