@@ -43,7 +43,11 @@ function main(varargin)
         
         % Get align status
         alignFields = contains(expInfo.Properties.VariableNames, 'align');
-        notAlignedYet = table2struct(expInfo(:,alignFields));
+        for i = expInfo.Properties.VariableNames(alignFields)
+            notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
+        end
+
+
         
         %If there is no timeline. All alignment is NaN
         if strcmp(expInfo.existTimeline, '0')
@@ -66,7 +70,7 @@ function main(varargin)
         % Anonymous function to decide whether something should be processed
         shouldProcess = @(x,y) (...
             any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
-            || notAlignedYet.(x)...
+            || notAlignedYet.(lower(x))...
             || ~ismember(y, varListInFile))...
             && contains(process,{'all';x});
 
