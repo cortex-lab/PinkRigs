@@ -97,6 +97,12 @@ for i = 1:length(params.subject)
     names = fieldnames(dataEvents);
     cellData = cellfun(@(f) {vertcat(dataEvents(modeIdx).(f))}, names);
 
+    for j = 1:length(cellData)
+        if isa(cellData{j}, 'single')
+            cellData{j} = double(cellData{j});
+        end
+    end
+
     extracted.subject{i} = currData.subject{1};
     extracted.data{i} = cell2struct(cellData, names);
     extracted.nExp{i} = sum(modeIdx);
