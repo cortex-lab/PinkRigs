@@ -30,9 +30,10 @@ function main(varargin)
         % Define savepath for the alignment results
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         savePath = [pathStub '_alignment.mat'];
-        if strcmp(recompute, 'all')
+        if strcmp(recompute, 'all') && exist(savePath,'file')
            delete(savePath) 
         end
+        
         if exist(savePath,'file')
             % To check if anything's missing (and that the csv hasn't seen
             % for some reason)
@@ -46,13 +47,10 @@ function main(varargin)
         alignStatus = table2struct(expInfo(:,alignFields));
         
         %If there is no timeline. All alignment is NaN
-        if strcmp(expInfo.timeline, '0')
+        if strcmp(expInfo.existTimeline, '0')
             if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
-                [block, mic, ephys] = deal(nan);
-                video = struct('name', expInfo.videoNames{1}, ...
-                    'frameTimes', num2cell(nan*ones(3,1)),...
-                    'missedFrames', num2cell(nan*ones(3,1)));
-                save(savePath,'block', 'video', 'ephys', 'mic');
+                [block, ephys] = deal(nan);
+                save(savePath,'block', 'ephys');
                 csv.updateRecord('subject', subject, ...
                     'expDate', expDate,...
                     'expNum', expNum);
@@ -73,8 +71,11 @@ function main(varargin)
         if ~(contains('none', recompute) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys,'1,1,1,1,1,1')) % If good already
             %% If all isn't good...
                         
-            % monitors if anything has changed
+            % Monitors if anything has changed
             change = 0;
+            
+            % Loads timeline once
+            expInfo = csv.loadData(expInfo, 'dataType','timeline');
             
             fprintf(1, '*** Aligning experiment %s... ***\n', expFolder);
             
@@ -180,7 +181,7 @@ function main(varargin)
             if any(cellfun(@(x)shouldProcess(x, 'video'), [videoNames; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
-                if ~isempty(video) && ~any(contains({'video'; 'all'}, recompute))
+                if ~any(contains({'video'; 'all'}, recompute))
                     vids2Process = videoNames(contains(recompute, videoNames,  'IgnoreCase', 1));
                 else, vids2Process = videoNames;
                 end

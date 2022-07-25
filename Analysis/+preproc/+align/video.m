@@ -184,12 +184,12 @@ if exist([pathStub, '_times.txt'], 'file')
 end
 %% IN TIMELINE
 % Load timeline if not an input
-if isempty(params.timeline{1}) || ischar(params.timeline{1})
+if ~isfield(params,'dataTimeline')
     fprintf(1, 'Loading timeline\n');
     loadedData = csv.loadData(params, 'dataType','timeline');
     timeline = loadedData.dataTimeline{1};
 else
-    timeline = params.timeline{1};
+    timeline = params.dataTimeline{1};
 end
 tlTime = timeproc.extractChan(timeline,'time');
 
