@@ -402,9 +402,9 @@ end
 
 % % Change probe-related fields from vectors to comma-separated strings
 nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedKS2 = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedPyKS = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.extractSpikes = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedKS2 = regexprep(num2str(nDat.issortedKS2),'\s+',',');
+nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);

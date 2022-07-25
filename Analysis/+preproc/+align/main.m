@@ -44,6 +44,7 @@ function main(varargin)
         
         % Get align status
         alignFields = contains(expInfo.Properties.VariableNames, 'align');
+        notAlignedYet = struct();
         for i = expInfo.Properties.VariableNames(alignFields)
             notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
         end
