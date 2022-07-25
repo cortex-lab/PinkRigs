@@ -38,14 +38,14 @@ function extractExpData(varargin)
         %%%
         
         % Get extraction status
-        extracted.events = any(contains(exp2checkList.extractEvents{ee,1},'0'));
-        extracted.spikes = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        notExtracted.events = any(contains(exp2checkList.extractEvents{ee,1},'0'));
+        notExtracted.spikes = any(contains(exp2checkList.extractEvents{ee,1},'0'));
         
         % Anonymous function to decide whether something should be processed
         shouldProcess = @(x) (contains(recompute,{'all';x}) || ...
-            extracted.(x)) && contains(process,{'all';x});
+            notExtracted.(x)) && contains(process,{'all';x});
 
-        if ~(strcmp(recompute,'none') && all(structfun(@(x) x==1, extracted)))
+        if ~(strcmp(recompute,'none') && all(structfun(@(x) x~=1, notExtracted)))
             %% If all isn't good...
                         
             % monitors if anything has changed
