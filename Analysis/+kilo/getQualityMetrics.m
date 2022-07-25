@@ -5,8 +5,8 @@ function getQualityMetrics(ksFolder,ephysFolder)
         templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ksFolder);
     
     %% Set paths
-    savePath = fullfile(ksFolder,'qualityMetrics.mat');
-    ephysRawFile = dir(fullfile(ephysFolder,'*ap.bin'));
+    savePath = ksFolder;
+    ephysRawFile = dir(fullfile(ephysFolder,'*ap.cbin'));
     ephysap_path = fullfile(ephysRawFile.folder,ephysRawFile.name);
 
     %% quality metric parameters and thresholds
@@ -17,4 +17,4 @@ function getQualityMetrics(ksFolder,ephysFolder)
         templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, savePath);
     
     %% save
-    save(savePath,'qMetric','unitType','param', '-v7.3')
+    bc_saveQMetrics(qMetric,param,savePath)
