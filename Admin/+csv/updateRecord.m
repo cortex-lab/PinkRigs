@@ -4,7 +4,7 @@ function csvData = updateRecord(varargin)
 
 % In genral, the following meanings should be ascrived to the values in the
 % csv files, and this code attempts to be consistent with that:
-%   '1' indicates "all good" whether it's alingment, spk, etc.
+%   '1' indicates "all good" whether it's alignment, spk, etc.
 %   '0' indicates "not attempted yet"
 %   '2' indicates there was an error in processing this
 %   'NaN' indicates "not done, and not expected to be done"
@@ -195,12 +195,12 @@ alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
 if any(alignFile)
     % Load the alignment file
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
-    tstName = {'Block'; 'Mic'};
+    tstName = {'Block'};
     for i = 1:size(tstName,1)
         if nDat.(['exist' tstName{i}]) == 0 || ~nDat.existTimeline
             % Issue a "NaN" if correspoding file or timeline doesn't exist
             nDat.(['align' tstName{i}]) = 'NaN';
-        elseif~isfield(alignment, lower(tstName{i}))
+        elseif ~isfield(alignment, lower(tstName{i}))
             % Issue a "0" if field is missing from "alignment"
             nDat.(['align' tstName{i}]) = '0';
         elseif isstruct(alignment.(lower(tstName{i})))
@@ -245,7 +245,6 @@ if any(alignFile)
     end
 else
     nDat.alignBlock = '0';
-    nDat.alignMic = '0';
     if potentialProbes == 0
         nDat.alignEphys = nan;
     else
@@ -259,7 +258,7 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
         % Issue a "0" if no video, but less than 7 days since recording
         nDat.(['align' vidName{1}]) = '0';
     elseif ~nDat.(['exist' vidName{1}]) || ~nDat.existTimeline
-        % Issue a "NaN" if correspoding file or timeline doesn't exist
+        % Issue a "NaN" if corresponding file or timeline doesn't exist
         nDat.(['align' vidName{1}]) = NaN;
     elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
         % Issue a "1" if an ONE file is detected
@@ -292,6 +291,23 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     else
         nDat.(['fMap' vidName{1}]) = 'NaN';
     end
+end
+
+% Populate alignMic entry
+if ~nDat.existMic && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    % Issue a "0" if no video, but less than 7 days since recording
+    nDat.alignMic = '0';
+elseif ~nDat.existMic || ~nDat.existTimeline
+    % Issue a "NaN" if corresponding file or timeline doesn't exist
+    nDat.alignMic = NaN;
+elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
+    % Issue a "1" if an ONE file is detected
+    nDat.alignMic = '1';
+elseif any(contains({ONEContents.name}', 'Error.json', 'ignorecase', 1))
+    nDat.alignMic = '2';
+else
+    % LOOK AT THIS
+    nDat.alignMic = '0';
 end
 
 
