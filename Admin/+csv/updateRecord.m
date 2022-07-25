@@ -113,7 +113,7 @@ end
 % pink rigs, but this may not be true (e.g. see current exception for
 % FT009). Need to decide how to change this in the future...??
 blk = load(blockPath); blk = blk.block;
-if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT027'})
+if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT010';'FT011';'FT027'})
     return;
 end
 
@@ -197,7 +197,7 @@ if any(alignFile)
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
     tstName = {'Block'};
     for i = 1:size(tstName,1)
-        if nDat.(['exist' tstName{i}]) == 0 || ~nDat.existTimeline
+        if nDat.(['exist' tstName{i}]) == 0 || ~strcmpi(nDat.existTimeline, '1')
             % Issue a "NaN" if correspoding file or timeline doesn't exist
             nDat.(['align' tstName{i}]) = 'NaN';
         elseif ~isfield(alignment, lower(tstName{i}))
@@ -222,7 +222,7 @@ if any(alignFile)
     elseif ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no ephys, but less than 7 days since recording
         nDat.alignEphys = zeros(1, potentialProbes);
-    elseif ~nDat.existEphys || ~nDat.existTimeline
+    elseif ~nDat.existEphys || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if correspoding file or timeline doesn't exist
         nDat.alignEphys = nan*ones(1, potentialProbes);
     elseif ~isfield(alignment, 'ephys')
@@ -257,7 +257,7 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     if ~nDat.(['exist' vidName{1}]) && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no video, but less than 7 days since recording
         nDat.(['align' vidName{1}]) = '0';
-    elseif ~nDat.(['exist' vidName{1}]) || ~nDat.existTimeline
+    elseif ~nDat.(['exist' vidName{1}]) || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if corresponding file or timeline doesn't exist
         nDat.(['align' vidName{1}]) = NaN;
     elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
@@ -297,7 +297,7 @@ end
 if ~nDat.existMic && round(now-blk.endDateTime)<7 && nDat.existTimeline
     % Issue a "0" if no video, but less than 7 days since recording
     nDat.alignMic = '0';
-elseif ~nDat.existMic || ~nDat.existTimeline
+elseif ~nDat.existMic || ~strcmpi(nDat.existTimeline, '1')
     % Issue a "NaN" if corresponding file or timeline doesn't exist
     nDat.alignMic = NaN;
 elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
