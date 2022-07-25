@@ -44,11 +44,13 @@ function main(varargin)
         
         % Get align status
         alignFields = contains(expInfo.Properties.VariableNames, 'align');
-        alignStatus = table2struct(expInfo(:,alignFields));
-        
+        for i = expInfo.Properties.VariableNames(alignFields)
+            notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
+        end
+
         %If there is no timeline. All alignment is NaN
         if strcmp(expInfo.existTimeline, '0')
-            if ~all(structfun(@(x) strcmpi(x,'nan'), alignStatus))
+            if ~all(structfun(@(x) strcmpi(x,'nan'), notAlignedYet))
                 [block, ephys] = deal(nan);
                 save(savePath,'block', 'ephys');
                 csv.updateRecord('subject', subject, ...
@@ -58,17 +60,17 @@ function main(varargin)
             fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
             continue;
         end
-        alignStatus = structfun(@(x) strcmp(x,'0'), alignStatus,'uni',0);
-        alignStatus.video = 0;
+        notAlignedYet = structfun(@(x) contains(x,'0'), notAlignedYet,'uni',0);
+        notAlignedYet.video = 0;
 
         % Anonymous function to decide whether something should be processed
         shouldProcess = @(x,y) (...
             any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
-            || alignStatus.(x)...
+            || notAlignedYet.(lower(x))...
             || ~ismember(y, varListInFile))...
             && contains(process,{'all';x});
 
-        if ~(contains('none', recompute) && strcmp(expInfo.alignBlkFrontSideEyeMicEphys,'1,1,1,1,1,1')) % If good already
+        if ~(contains('none', recompute) && ~any(structfun(@(x)all(x==1), notAlignedYet))) % If good already
             %% If all isn't good...
                         
             % Monitors if anything has changed

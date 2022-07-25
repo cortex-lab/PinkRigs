@@ -188,6 +188,9 @@ nDat.issortedPyKS = zeros(1, potentialProbes);
 
 % Get the path of the alignment file. If so, check the alignment status
 alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
+
+%%%%%
+
 % Populate alignBlock, alignEphys, and alignMic
 if any(alignFile)
     % Load the alignment file
@@ -243,7 +246,11 @@ if any(alignFile)
 else
     nDat.alignBlock = '0';
     nDat.alignMic = '0';
-    nDat.alignEphys = zeros(1, potentialProbes);    
+    if potentialProbes == 0
+        nDat.alignEphys = nan;
+    else
+        nDat.alignEphys = zeros(1, potentialProbes);
+    end
 end
 
 %Populate alignCamera entries

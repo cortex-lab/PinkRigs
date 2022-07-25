@@ -154,7 +154,7 @@ function main(varargin)
                     
                     %% Extract sync if not done already
                     syncPath = fullfile(ephysPath,'sync.mat');
-                    if ~exist(syncPath)
+                    if ~exist(syncPath,'file')
                         metaS = readMetaData_spikeGLX(ephysBinFileName,ephysPath);
                         
                         apPath = fullfile(KSOutFolderLoc, ephysBinFileName);
@@ -172,12 +172,13 @@ function main(varargin)
                     %% Running quality metrics
                     % Have to do in while the raw data is decompressed
                     fprintf('Running quality metrics...\n')
+                    metaFile = regexprep(ephysBinFileName,'.bin','.meta');
                     try
                         % copy meta file
-                        metaFile = regexprep(ephysBinFileName,'.bin','.meta');
                         copyfile(regexprep(recName,'.cbin','.meta'),fullfile(KSOutFolderLoc,metaFile));
                         
                         kilo.getQualityMetrics(KSOutFolderLoc, KSOutFolderLoc)
+                        
                         delete(fullfile(KSOutFolderLoc,metaFile))
                         if exist(fullfile(ephysPath, 'QMerror.json'),'file')
                             delete(fullfile(ephysPath, 'QMerror.json'))
@@ -185,16 +186,18 @@ function main(varargin)
                         successQM = 1;
                         fprintf('Quality metrics done.\n')
                     catch me
+                        msgText = getReport(me);
                         successQM = 0;
-                        warning('Error when computing quality metrics.\n')
+                        warning('Error when computing quality metrics: %s.\n', msgText)
                         
                         % Save error message locally
-                        saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
+                        saveErrMess(msgText,fullfile(ephysPath, 'QMerror.json'))
                     end
                     
                     %% Copying file to distant server
                     fprintf('Copying to server (and deleting local copy)...\n')
                     delete(fullfile(KSOutFolderLoc, ephysBinFileName)); % delete .bin file from KS output
+                    delete(fullfile(KSOutFolderLoc, metaFile)); % delete .meta
                     successKS = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
                     
                     if ~successKS
@@ -210,10 +213,11 @@ function main(varargin)
                 end
                 
             catch me
+                msgText = getReport(me);
                 successKS = 0;
                 
                 % Save error message locally
-                saveErrMess(me.message,fullfile(ephysPath, 'KSerror.json'))
+                saveErrMess(msgText,fullfile(ephysPath, 'KSerror.json'))
             end
                     
             if exist(KSOutFolderLoc,'dir')
@@ -223,7 +227,8 @@ function main(varargin)
                     % Delete data otherwise will crowd up
                     rmdir(KSOutFolderLoc, 's'); % delete whole folder whatever happens
                 catch
-                    warning('Can''t delete KSout local folder.. Will crowd up.')
+                    % warning('Can''t delete KSout local folder.. Will crowd up.')
+                    error('Can''t delete KSout local folder.. Will crowd up.') % sometimes doesn't work, crash it to troubleshoot
                 end
             end
         end

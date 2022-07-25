@@ -23,6 +23,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     
     % Load spike amplitudes
     tempScalingAmps = readNPY(fullfile(KSFolder, 'amplitudes.npy'));
+    tempScalingAmps = single(tempScalingAmps);
     
     % Load pc features
     pcFeat = readNPY(fullfile(KSFolder,'pc_features.npy')); % nSpikes x nFeatures x nLocalChannels
@@ -51,7 +52,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
 
     [~,spikeShankIDs] = min(abs(spikeXPos - repmat([0 200 400 600], [numel(spikeXPos),1])),[],2);
-    spikeShankIDs = spikeShankIDs-1;
+    spikeShankIDs = uint8(spikeShankIDs-1);
 
     
     %% Get template info
@@ -59,18 +60,19 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     % don't have template amplitude here?
     temps = readNPY(fullfile(KSFolder, 'templates.npy'));
     temps_ind = readNPY(fullfile(KSFolder, 'templates_ind.npy'));
-
-    temp_KSLabels = nan(1,numel(cids_KS));
-    temp_xpos = nan(1,numel(cids_KS));
-    temp_depths = nan(1,numel(cids_KS));
-    temp_shankIDs = nan(1,numel(cids_KS));
+    temps_ind = single(temps_ind);
+    
+    temp_KSLabels = zeros(1,numel(cids_KS),'uint8');
+    temp_xpos = zeros(1,numel(cids_KS),'single');
+    temp_depths = zeros(1,numel(cids_KS),'single');
+    temp_shankIDs = zeros(1,numel(cids_KS),'uint8');
     for ii = 1:numel(cids_KS)
         temp = cids_KS(ii);
         spkIdx = spikeTemplates == temp;
         temp_KSLabels(ii) = cgs_KS(cids_KS == temp);
         temp_xpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
         temp_depths(ii) = nanmedian(spikeDepths(spkIdx)); 
-        temp_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx)); 
+        temp_shankIDs(ii) = nanmedian(spikeShankIDs(spkIdx));
     end
     
     %% Get cluster info after manual curation too (phy)
@@ -89,11 +91,11 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     
     if manuallyCurated
         clu = readNPY(fullfile(KSFolder, 'spike_clusters.npy')); 
-
-        clus_KSLabels = nan(1,numel(cids));
-        clus_xpos = nan(1,numel(cids));
-        clus_depths = nan(1,numel(cids));
-        clus_shankIDs = nan(1,numel(cids));
+        
+        clus_KSLabels = zeros(1,numel(cids),'uint8');
+        clus_xpos = zeros(1,numel(cids),'single');
+        clus_depths = zeros(1,numel(cids),'single');
+        clus_shankIDs = zeros(1,numel(cids),'uint8');
         for ii = 1:numel(cids)
             temp = cids(ii);
             spkIdx = clu == temp;
@@ -116,7 +118,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.spikes.av_shankIDs = spikeShankIDs; 
     
     % templates
-    spk.templates.av_IDs = templatesList;
+    spk.templates.av_IDs = cids_KS;
     spk.templates.av_KSLabels = temp_KSLabels;
     spk.templates.waveforms = temps; % maybe to remove/redundant with qMetrics?
     spk.templates.waveformsChannels = temps_ind; % maybe to remove/redundant with qMetrics?
@@ -136,4 +138,5 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
         spk.clusters.av_Labels = clus_KSLabels;
     end
     
+end
     
