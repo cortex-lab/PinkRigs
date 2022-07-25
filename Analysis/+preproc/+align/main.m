@@ -34,14 +34,6 @@ function main(varargin)
            delete(savePath) 
         end
         
-        if exist(savePath,'file')
-            % To check if anything's missing (and that the csv hasn't seen
-            % for some reason)
-            varListInFile = who('-file', savePath);
-        else
-            varListInFile = {};
-        end
-        
         % Get align status
         alignFields = contains(expInfo.Properties.VariableNames, 'align');
         notAlignedYet = struct();
@@ -65,10 +57,9 @@ function main(varargin)
         notAlignedYet.video = 0;
 
         % Anonymous function to decide whether something should be processed
-        shouldProcess = @(x,y) (...
+        shouldProcess = @(x) (...
             any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
-            || notAlignedYet.(lower(x))...
-            || ~ismember(y, varListInFile))...
+            || notAlignedYet.(lower(x)))...
             && contains(process,{'all';x});
 
         if ~(contains('none', recompute) && ~any(structfun(@(x)all(x==1), notAlignedYet))) % If good already
@@ -91,7 +82,7 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if shouldProcess('ephys', 'ephys')
+            if shouldProcess('ephys')
                 try
                     % Align it
                     fprintf(1, '* Aligning ephys... *\n');
@@ -137,7 +128,7 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if shouldProcess('block', 'block')
+            if shouldProcess('block')
                 % Note that block file should always exist.
                 try
                     block = struct;
@@ -181,13 +172,10 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if any(cellfun(@(x)shouldProcess(x, 'video'), [videoNames; 'video']))                               
+            if any(cellfun(@(x)shouldProcess(x), [videoNames; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
-                if ~any(contains({'video'; 'all'}, recompute))
-                    vids2Process = videoNames(contains(recompute, videoNames,  'IgnoreCase', 1));
-                else, vids2Process = videoNames;
-                end
+                vids2Process = videoNames(cellfun(@(x) shouldProcess(x), videoNames));
 
                 % Align each of them
                 for v = 1:numel(vids2Process)
@@ -230,7 +218,7 @@ function main(varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if shouldProcess('mic', 'mic')
+            if shouldProcess('mic')
                 
                 micONEFolder = fullfile(expFolder,'ONE_preproc','mic');
                 initONEFolder(micONEFolder)
@@ -238,7 +226,7 @@ function main(varargin)
                 % Align it
                 try
                     fprintf(1, '* Aligning mic... *\n');
-                    %%% TODO
+                    %%% TODO -- ERRORS FOR NOW
                     error('Have not found or coded a way to align file yet.') % for now
                     fprintf(1, '* Mic alignment done. *\n');
                     
