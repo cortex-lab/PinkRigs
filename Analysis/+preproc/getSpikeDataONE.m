@@ -84,9 +84,9 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     end 
     
     if (numel(cgs) == numel(cgs_KS)) && all(cgs == cgs_KS)
-        manuallyCurated = 1;
-    else
         manuallyCurated = 0;
+    else
+        manuallyCurated = 1;
     end
     
     if manuallyCurated

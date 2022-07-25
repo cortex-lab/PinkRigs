@@ -163,12 +163,11 @@ function extractExpData(varargin)
                                     delete(fullfile(probeONEFolder, 'GetSpkError.json'))
                                 end
                                 
-                                fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spk{1}.spikes.time))
+                                fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spkONE.spikes.times))
                             catch me
                                 msgText = getReport(me);
                                 warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,msgText)
-                                spk = 'error';
-                                
+                                                                
                                 % Save error message locally
                                 saveErrMess(msgText,fullfile(probeONEFolder, 'GetSpkError.json'))
                             end

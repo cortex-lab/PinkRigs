@@ -179,13 +179,15 @@ function main(varargin)
 
                 % Align each of them
                 for v = 1:numel(vids2Process)
+
                     vidName = vids2Process{v};
                     expInfo.vidName = vidName;
                     expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     
                     videoONEFolder = fullfile(expFolder,'ONE_preproc',vidName);
                     initONEFolder(videoONEFolder)
-                    
+
+                    fprintf(1, 'Aligning video %s... \n',vidName);
                     try
                         [frameTimes, missedFrames] = preproc.align.video(expInfo);
                         
