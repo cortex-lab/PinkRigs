@@ -12,7 +12,7 @@ varargin = ['onlyPlt', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
 
 extracted = plt.behaviour.getTrainingData(varargin{:});
-params = csv.inputValidation(varargin{:});
+params = csv.inputValidation(varargin{:}, extracted);
 
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];
