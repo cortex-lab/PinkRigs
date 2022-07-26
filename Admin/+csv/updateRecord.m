@@ -231,7 +231,7 @@ if any(alignFile)
     elseif isstruct(alignment.ephys)
         % Issue a "1" if a strcture is detected
         if size(alignment.ephys,2) ~= potentialProbes
-            fprintf('WARNING: mismatch between recorded and expected probe number')
+            fprintf('***WARNING: mismatch between recorded and expected probe number\n')
             nDat.alignEphys = 2*ones(1, potentialProbes);
         else
             nDat.alignEphys = double(arrayfun(@(x) ~any(isnan(x.ephysPath)), alignment.ephys));

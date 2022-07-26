@@ -112,7 +112,7 @@ for mm = 1:numel(params.subject)
         combSort = [combSort{:}];
         combSort = arrayfun(@(x) cell2mat(combSort(x,:)), 1:size(combSort,1), 'uni', 0)';
         if strcmpi(chkVal(1), '~')
-            mouseExps = mouseExps(~contains(combSort, chkVal(2:end)),:);
+            mouseExps = mouseExps(~contains(combSort, chkVal(2:end), 'ignorecase', 1),:);
         else
             mouseExps = mouseExps(contains(combSort, chkVal),:);
         end
