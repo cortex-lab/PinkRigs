@@ -1,35 +1,26 @@
-function plotRecordingLocations2(mouseName, varargin)
+function recLocation(varargin)
     %%% This function will plot the location of the recordings (behavior)
     %%% performed across the whole probe(s).
     %%% Should do it with guidata but meh for now
     
     %% Get parameters
-    pltClusters = 1; % Will plot clusters from spontaneous
-    clustersDays = []; % Will get specific dates for these spont recordings
-    
-    params.subject = mouseName;
-    params.expDate = inf;
-    params.expDef = 'multiSpaceWorld_checker_training';
-    params.preproc2Check = '1,1';
-    
-    % Ugly
-    if ~isempty(varargin)
-        pltClusters = varargin{1};
-        
-        if nargin > 2
-            clustersDays = varargin{2};
-            
-            if nargin > 3
-                paramsIn = varargin{3};
-                params = parseInputParams(params,paramsIn);
-            end
-        end
-    end
-    
+    varargin = ['expDate', {inf}, varargin];
+    varargin = [varargin, 'expDef', {'t'}]; % forced
+    varargin = ['checkEvents', {1}, varargin];
+    varargin = ['checkSpikes', {1}, varargin];
+    varargin = ['pltClusters', {1}, varargin];
+    varargin = ['clustersDays', {[]}, varargin];
+    params = csv.inputValidation(varargin{:});
+
     %% Get exp list
     
     exp2checkList = csv.queryExp(params);
-    
+
+    % Check it's only one subject
+    if numel(unique(exp2checkList.subject))>1
+        error('Please provide only one subject.')
+    end
+
     %% Get the probes layout
     
     % Get probes layout
@@ -93,18 +84,15 @@ function plotRecordingLocations2(mouseName, varargin)
         expPath = expInfo.expFolder{1};
         
         % Get which channels were recorded from
-        % temporarily dead
-        % ephysPaths = regexp(expInfo.ephysRecordingPath,',','split');
-        % ephysPaths = ephysPaths{1};
         alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
         load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
         ephysPaths = {ephys.ephysPath}; clear ephys
         
         for pp = 1:numel(ephysPaths)
-            binFile = dir(fullfile(ephysPaths{pp},'*ap.*bin'));
-            if isempty(binFile)
-                fprintf('No bin file in %s. Skipping.\n',ephysPaths{pp})
+            if ~strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
+                fprintf('Ephys not processed %s. Skipping.\n',ephysPaths{pp})
             else
+                binFile = dir(fullfile(ephysPaths{pp},'*ap.*bin'));
                 metaData = readMetaData_spikeGLX(binFile(1).name,binFile(1).folder);
                 
                 %% Extract info from metadata
@@ -146,7 +134,7 @@ function plotRecordingLocations2(mouseName, varargin)
         end
         
         % Get behavior
-        plotBehData(ee) = plt.behaviour.boxPlots('subject',{params.subject}, ...
+        plotBehData(ee) = plt.behaviour.boxPlots('subject',params.subject, ...
             'expDate',expInfo.expDate,...
             'expDef', expInfo.expDef, ...
             'expNum', expInfo.expNum, ...
@@ -174,7 +162,7 @@ function plotRecordingLocations2(mouseName, varargin)
     
     %% Plot the basic layout
     
-    fig = figure('Position', [1 31 1920 973],'Name', params.subject,'color','w');
+    fig = figure('Position', [1 31 1920 973],'Name', params.subject{1},'color','w');
 
     clear probeAxes behaviorAxes
     
@@ -200,65 +188,75 @@ function plotRecordingLocations2(mouseName, varargin)
     eleSecScat = scatter(elecSelectCoord(1), elecSelectCoord(2), 35, 'r', 'square','LineWidth',3);
     
     % Add a reference recording to visualize clusters density
-    if pltClusters
+    if params.pltClusters{1}
+        clustersDays = params.clustersDays{1};
+        
         % Get spontaneous recordings to plot cluster density
         paramsClu.subject = params.subject;
-        paramsClu.expDef = 'spontaneousActivity';
+        paramsClu.expDef = {'spontaneousActivity'};
         if ~isempty(clustersDays)
-            paramsClu.expDate = clustersDays; % find a better way
+            paramsClu.expDate = {clustersDays}; % find a better way
         end
-        paramsClu.preproc2Check = '1,*';
+        paramsClu.checkSpikes = {'1'};
         exp2checkListClu = csv.queryExp(paramsClu);
         if isempty(clustersDays)
+            fullProbeScan = {'0-0', '1-0', '2-0', '3-0', ...
+                '0-2880', '1-2880', '2-2880', '3-2880'};
+
             % Take the last recordings, to span everything
             %%% NEED TO WRITE IT, NOT EASY TO CODE
-%             idx2Keep = [];
-%             spannedAll = 0;
-%             ee = 0;
-%             while ee <= size(exp2checkListClu,1) && spannedAll
-%                 ee = ee+1;
-%                 expInfo = exp2checkListClu(size(exp2checkListClu,1)-ee+1,:);
-%                 expPath = expInfo.expFolder{1};
-%                 
-%                 alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
-%                 load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
-%                 ephysPaths = {ephys.ephysPath}; clear ephys
-% 
-%             end
-            idx2Keep = size(exp2checkListClu,1)-8+1:size(exp2checkListClu,1);
-            exp2checkListClu = exp2checkListClu(idx2Keep,:);
-        end
-        
-        qMetricFilter = 2;
-        if qMetricFilter == 1
-            % get good units
-            paramBC = bc_qualityParamValues;
-            paramBC.somatic = [0 1];
-            paramBC.minAmplitude = 10;
-        end
-        
-        for ee = 1:size(exp2checkListClu,1)
-            preprocFile = dir(fullfile(exp2checkListClu(ee,:).expFolder{1},'*preprocData.mat'));
-            preprocDat = load(fullfile(preprocFile.folder,preprocFile.name),'spk');
-            
-            for pp = 1:numel(preprocDat.spk)
-                if iscell(preprocDat.spk)
-                    if qMetricFilter == 1                        
-                        unitType = nan(1,numel(preprocDat.spk{pp}.clusters));
-                        for c = 1:numel(preprocDat.spk{pp}.clusters)
-                            unitType(c) = bc_getQualityUnitType(preprocDat.spk{pp}.clusters(c),paramBC);
-                        end
-                        goodUnits = unitType == 1;
-                    elseif qMetricFilter == 2
-                        goodUnits = [preprocDat.spk{pp}.clusters.KSLab] == 2;
-                    else
-                        goodUnits = true(1,numel(preprocDat.spk{pp}.clusters.KSLab));
+            spannedAll = zeros(1,probeNum);
+            fullProbeMatch = zeros(size(fullProbeScan,2),probeNum);
+            ee = size(exp2checkListClu,1);
+            while ee > 0 & ~spannedAll
+                
+                expInfo = exp2checkListClu(ee,:);
+                expPath = expInfo.expFolder{1};
+                
+                alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
+                alignment = load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
+                ephysPaths = {alignment.ephys.ephysPath}; 
+
+                for pp = 1:numel(ephysPaths)
+                    if strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
+                        binFile = dir(fullfile(alignment.ephys(pp).ephysPath,'*ap.*bin'));
+                        [chanPos,~,shanks] = getRecordingSites(binFile(1).name,binFile(1).folder);
+                        shankIDs = unique(shanks);
+                        botRow = min(chanPos(:,2));
+                        recID = [num2str(shankIDs) '-' num2str(botRow)];
+                        fullProbeMatch(strcmp(fullProbeScan,recID),pp) = ee;
                     end
-                    
-                    scatter([preprocDat.spk{pp}.clusters(goodUnits).XPos] + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
-                        [preprocDat.spk{pp}.clusters(goodUnits).Depth],...
-                        30,'k','filled')
                 end
+
+                spannedAll = all(fullProbeMatch(:)>0);
+                ee = ee-1;    
+            end
+        end
+        
+        for pp = 1:probeNum
+            for ee = 1:size(fullProbeScan,2)
+                exp = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
+                templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
+                    object={'templates'}, ...
+                    attribute={'_av_KSLabels'});
+                KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
+
+                %%% temp--load all at the same time
+                templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
+                    object={'templates'}, ...
+                    attribute={'_av_xpos'});
+                xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
+
+                templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
+                    object={'templates'}, ...
+                    attribute={'depths'});
+                depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
+
+                goodUnits = KSLabels == 1;
+
+                scatter(xpos(goodUnits) + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
+                    depths(goodUnits),...
+                    30,'k','filled')
             end
         end
     end
