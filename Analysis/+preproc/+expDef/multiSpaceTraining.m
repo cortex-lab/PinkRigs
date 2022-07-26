@@ -261,6 +261,8 @@ timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'om
 
 missedOnset = isnan(timelineStimOnset);
 stimOnsetIdx = round(timelineStimOnset(responseMadeIdx & ~missedOnset)*sR);
+stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(responseMadeIdx & ~missedOnset,2)*sR],[],2);
+stimEndIdx = stimEndIdx-stimOnsetIdx;
 if any(missedOnset)
     if sum(missedOnset) >0.25*length(missedOnset)
         error('Over 25% of stimulus onsets are missing???');
@@ -290,7 +292,7 @@ negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1
 movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
 falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
 
-choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+(sR*1.5)))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx);
+choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
 choiceCrsIdx(falseIdx) = nan;
 gdIdx = ~isnan(choiceCrsIdx);
 
@@ -367,7 +369,7 @@ for i = 1:length(rawFields)
     if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
         nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
         if nColumns == 0; nColumns = size(currData,2); end
-        tExt.(currField)(emptyIdx) = {nan*ones(1, nColumns)};
+        tExt.(currField)(emptyIdx) = deal({nan*ones(1, nColumns)});
         tExt.(currField) = single(cell2mat(tExt.(currField)));
     end
 end
