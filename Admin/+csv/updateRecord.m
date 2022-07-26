@@ -317,7 +317,7 @@ nDat.issortedKS2 = zeros(1, potentialProbes);
 for pIdx = find(nDat.alignEphys == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
-    ephysPath = alignment.ephys(potentialProbes).ephysPath;
+    ephysPath = alignment.ephys(pIdx).ephysPath;
     if ~isempty(dir([ephysPath '\**\*rez.mat']))
         % Issue a "1" if "results" file for KS2 exists
         nDat.issortedKS2(pIdx) = 1;
