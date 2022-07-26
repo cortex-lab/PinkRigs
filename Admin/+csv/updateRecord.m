@@ -231,7 +231,7 @@ if any(alignFile)
     elseif isstruct(alignment.ephys)
         % Issue a "1" if a strcture is detected
         if size(alignment.ephys,2) ~= potentialProbes
-            fprintf('WARNING: mismatch between recorded and expected probe number')
+            fprintf('***WARNING: mismatch between recorded and expected probe number\n')
             nDat.alignEphys = 2*ones(1, potentialProbes);
         else
             nDat.alignEphys = double(arrayfun(@(x) ~any(isnan(x.ephysPath)), alignment.ephys));
@@ -348,7 +348,7 @@ for pIdx = find(nDat.alignEphys == 1)
         nDat.issortedPyKS(pIdx) = 2;
     else
         % Issue a "0" if no error, but sorting doesn't exist yet
-        nDat.issortedPyKS(pIdx) = 1;
+        nDat.issortedPyKS(pIdx) = 0;
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
