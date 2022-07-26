@@ -65,10 +65,12 @@ stimTimes = stimTimes{1};
 stimPositions = stimPositions{1}; % stim positions in yx 
 stimArrayTimes = timelineRefTimes;
 
+stimArrayatOn = stimArray(:,:,stimTimeInds{1}); 
 %% write event structure 
-ev.stimOnTimes = stimTimes;
-ev.stimPositions = stimPositions; 
-ev.stimArray = stimArray(:,:,stimTimeInds{1});
+ev.squareOnTimes = stimTimes;
+ev.squareElevation = stimPositions(:,1); 
+ev.squareAzimuth = stimPositions(:,2); 
+ev.stimulus = permute(stimArrayatOn,[3 1 2]);
 %ev.stimArrayTimes = stimArrayTimes; 
 
 end
