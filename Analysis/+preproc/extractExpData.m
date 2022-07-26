@@ -80,7 +80,11 @@ function extractExpData(varargin)
                             events = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                             
                             stub = [expDate '_' expNum '_' subject];
-                            saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            if expDef=='sparseNoise'
+                                saveONEFormat(events,eventsONEFolder,'_av_trials','table','npy',stub);
+                            else
+                                saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            end
                             
                             % Remove any error file
                             if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
