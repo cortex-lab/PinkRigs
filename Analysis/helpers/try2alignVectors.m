@@ -72,6 +72,9 @@ while ~isempty(find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)) && ~errReac
     t2(max([errPoint-1,1]):min([errPoint+1 numel(t2)])) = [];
     t1(max([errPoint-1,1]):min([errPoint+1 numel(t1)])) = [];
    
+    minL = min([length(t1) length(t2)]);
+    compareVect = [t1(1:minL)-(t1(1)) t2(1:minL)-t2(1)];
+
     loopNumber = loopNumber+1;
     if loopNumber > maxLoops
         if ~revTime
@@ -82,9 +85,6 @@ while ~isempty(find(abs(diff(diff(compareVect,[],2)))>diffThresh,1)) && ~errReac
             error('Critical alignment error.')
         end
     end
-
-    minL = min([length(t1) length(t2)]);
-    compareVect = [t1(1:minL)-(t1(1)) t2(1:minL)-t2(1)];
 end
 t1Corrected = t1(1:minL);
 t2Corrected = t2(1:minL);

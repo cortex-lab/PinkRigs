@@ -41,7 +41,7 @@ saveData = params.saveData{1};
 % good coding practice... but it works here
 if queryExp
     expList = csv.queryExp(params);
-    csvData = arrayfun(@(x) csv.updateRecord(expList, 'queryExp', 0, ...
+    csvData = arrayfun(@(x) csv.updateRecord(expList(x,:), 'queryExp', 0, ...
         'saveData', saveData), 1:height(expList), 'uni', 0);
     csvData = vertcat(csvData{:});
     % Once complete, return to the original function
@@ -366,7 +366,7 @@ if strcmpi(nDat.alignBlock, '1')
     if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
         nDat.extractEvents = '1';
-    elseif contains({ONEContents.name}', 'Error.json', 'ignorecase', 1)
+    elseif any(contains({ONEContents.name}', 'Error.json', 'ignorecase', 1))
         % Issue a "2" if error file is in folder
         nDat.extractEvents = '2';
     else
