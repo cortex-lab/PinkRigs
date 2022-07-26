@@ -345,7 +345,7 @@ for pIdx = find(nDat.alignEphys == 1)
         nDat.issortedPyKS(pIdx) = 1;
     elseif ~isempty(dir([ephysPath '\KSerror.json']))
         % Issue a "2" if error file is in folder
-        nDat.issortedPyKS(pIdx) = 0;
+        nDat.issortedPyKS(pIdx) = 2;
     else
         % Issue a "0" if no error, but sorting doesn't exist yet
         nDat.issortedPyKS(pIdx) = 1;

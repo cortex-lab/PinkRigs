@@ -68,8 +68,8 @@ stimArrayTimes = timelineRefTimes;
 %% write event structure 
 ev.stimTimes = stimTimes;
 ev.stimPositions = stimPositions; 
-ev.stimArray = stimArray;
-ev.stimArrayTimes = stimArrayTimes; 
+ev.stimArray = stimArray(:,:,stimTimeInds{1});
+%ev.stimArrayTimes = stimArrayTimes; 
 
 end
 

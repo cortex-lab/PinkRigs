@@ -80,7 +80,13 @@ function extractExpData(varargin)
                             events = preproc.expDef.(expDefRef)(timeline,block,alignment.block);
                             
                             stub = [expDate '_' expNum '_' subject];
-                            saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            if strcmpi(expDefRef, 'sparseNoise')
+                                saveFields = fields(events);
+                                cellfun(@(x) saveONEFormat(events.(x),eventsONEFolder, ...
+                                    '_av_trials', x, 'npy', stub), saveFields, 'uni',0);
+                            else
+                                saveONEFormat(events,eventsONEFolder,'_av_trials','table','pqt',stub);
+                            end
                             
                             % Remove any error file
                             if exist(fullfile(eventsONEFolder, 'GetEvError.json'),'file')
