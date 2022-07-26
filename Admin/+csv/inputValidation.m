@@ -185,7 +185,7 @@ switch expDefInput{i}
     case {'s', 'spont', 'spontaneous'}
         fullExpDef{i} = {'spontaneousActivity'};
     case {'i', 'image', 'nat', 'naturalimages'}
-        fullExpDef{i} = {'imageWorld_AllInOne'};
+        fullExpDef{i} = {'imageWorld_AllInOne','imageWorld_lefthemifield','imageWorld2'};
     case {'n', 'sparse', 'sparsenoise'}
         fullExpDef{i} = {'sparseNoise'; 'AP_sparseNoise'};
     otherwise 

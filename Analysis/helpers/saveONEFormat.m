@@ -46,7 +46,9 @@ function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensio
 
 
             parquetwrite(filePath, var);
-            parquetwrite(filePathLarge, largeVar);
+            if ~isempty(largeVar)
+                parquetwrite(filePathLarge, largeVar);
+            end
         otherwise
             error('Sorry, can''t find this extension: %s.',subfilename)
     end
