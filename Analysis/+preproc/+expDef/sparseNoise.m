@@ -23,9 +23,9 @@ stimPositions = {[], []};
 for x = 1:size(stimArray,1)
     for y = 1:size(stimArray,2)
         stimEventTimes{x,y,1} = find(stimArrayZeroPad(x,y,1:end-1)==0 & ...
-            stimArrayZeroPad(x,y,2:end)==1); % going from grey to white
-        stimEventTimes{x,y,2} = find(stimArrayZeroPad(x,y,1:end-1)==0 & ...
-            stimArrayZeroPad(x,y,2:end)==-1); % going from grey to black
+            stimArrayZeroPad(x,y,2:end)==1); % going from black to white
+        stimEventTimes{x,y,2} = find(stimArrayZeroPad(x,y,1:end-1)==1 & ...
+            stimArrayZeroPad(x,y,2:end)==0); % going from white to black
         stimTimeInds{1} = [stimTimeInds{1}; stimEventTimes{x,y,1}];
         stimTimeInds{2} = [stimTimeInds{2}; stimEventTimes{x,y,2}];
         
@@ -66,7 +66,7 @@ stimPositions = stimPositions{1}; % stim positions in yx
 stimArrayTimes = timelineRefTimes;
 
 %% write event structure 
-ev.stimTimes = stimTimes;
+ev.stimOnTimes = stimTimes;
 ev.stimPositions = stimPositions; 
 ev.stimArray = stimArray(:,:,stimTimeInds{1});
 %ev.stimArrayTimes = stimArrayTimes; 
