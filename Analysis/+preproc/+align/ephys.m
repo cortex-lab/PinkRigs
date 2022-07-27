@@ -143,43 +143,46 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
     timelineRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
   
     %% Reorder according to the probes
+
+    probeInfo = csv.checkProbeUse(subject);
+    expectedSerial = probeInfo.serialNumbers{1};
+    if strcmp(probeInfo.probeType{1},'Acute')
+        % No check in acute recordings
+        expectedSerial = serialsFromMeta;
+    end
+    serialNumberReord = expectedSerial;
+
     if ~isempty(ephysPath)
         % Get actual serial numbers
         ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
         metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
         serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
-        
-        % Get expected serial numbers
-        if ~strcmp(csvData.P0_type,'Acute')
-            % Check if it matches the correct probe when chronic recording
-            probeInfo = csv.checkProbeUse(subject);
-            expectedSerial = probeInfo.serialNumbers{1};
 
+        % Check for unexpected serial numbers
+        if ~isempty(expectedSerial)
             % Throw error if unexpected SN was found
             unexpectedSerial = ~ismember(serialsFromMeta,expectedSerial);
             if any(unexpectedSerial)
                 error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
             end
+        end
+    else
+        serialsFromMeta = nan*ones(1,numel(expectedSerial));
+    end
+
+    % Reorder them
+    ephysPathReord = cell(numel(expectedSerial),1);
+    ephysRefTimesReord = cell(numel(expectedSerial),1);
+    timelineRefTimesReord = cell(numel(expectedSerial),1);
+    for pp = 1:numel(expectedSerial)
+        corresProbe = serialsFromMeta == expectedSerial(pp);
+        if any(corresProbe)
+            ephysPathReord(pp) = ephysPath(corresProbe);
+            ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);
+            timelineRefTimesReord(pp) = timelineRefTimes(corresProbe);
         else
-            % No check in acute recordings
-            expectedSerial = serialsFromMeta;
+            ephysPathReord(pp) = {'error'};
+            ephysRefTimesReord(pp) = {'error'};
+            timelineRefTimesReord(pp) = {'error'};
         end
-        
-        % Reorder them
-        ephysPathReord = cell(numel(expectedSerial),1);
-        ephysRefTimesReord = cell(numel(expectedSerial),1);
-        timelineRefTimesReord = cell(numel(expectedSerial),1);
-        for pp = 1:numel(expectedSerial)
-            corresProbe = serialsFromMeta == expectedSerial(pp);
-            if any(corresProbe)
-                ephysPathReord(pp) = ephysPath(corresProbe);
-                ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);
-                timelineRefTimesReord(pp) = timelineRefTimes(corresProbe);
-            else
-                ephysPathReord(pp) = {nan};
-                ephysRefTimesReord(pp) = {nan};
-                timelineRefTimesReord(pp) = {nan};
-            end
-        end
-        serialNumberReord = expectedSerial;
     end

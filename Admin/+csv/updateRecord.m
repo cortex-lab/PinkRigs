@@ -234,10 +234,8 @@ if any(alignFile)
             fprintf('***WARNING: mismatch between recorded and expected probe number\n')
             nDat.alignEphys = 2*ones(1, potentialProbes);
         else
-            nDat.alignEphys = double(arrayfun(@(x) ~any(isnan(x.ephysPath)), alignment.ephys));
-            if round(now-blk.endDateTime)>7
-                nDat.alignEphys(nDat.alignEphys == 0) = nan;
-            end
+            nDat.alignEphys = double(arrayfun(@(x) ~any(strcmp(x.ephysPath,'error')), alignment.ephys));
+            nDat.alignEphys(nDat.alignEphys == 0) = 2;
         end
     elseif strcmpi(alignment.ephys, 'error')
         % Issue a "2" if the field is labeled with "error"
