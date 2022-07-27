@@ -150,23 +150,16 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
         serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
         
         % Get expected serial numbers
-        csvData = csv.readTable(csv.getLocation('main'));
-        csvData = csvData(strcmp(csvData.Subject,subject),:);
-        
         if ~strcmp(csvData.P0_type,'Acute')
             % Check if it matches the correct probe when chronic recording
-            
-            csvFields = fields(csvData);
-            serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
-            serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
+            probeInfo = csv.checkProbeUse(subject);
+            expectedSerial = probeInfo.serialNumbers{1};
 
             % Throw error if unexpected SN was found
-            unexpectedSerial = ~ismember(serialsFromMeta,serialsFromCSV);
+            unexpectedSerial = ~ismember(serialsFromMeta,expectedSerial);
             if any(unexpectedSerial)
                 error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
             end
-            
-            expectedSerial = serialsFromCSV;
         else
             % No check in acute recordings
             expectedSerial = serialsFromMeta;
