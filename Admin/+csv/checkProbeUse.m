@@ -61,16 +61,20 @@ else
     implantDate(~validImplants) = deal({'none'});
 
     explantDate = cellfun(@(x) csvData.P0_explantDate{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
-    validExplants= cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), explantDate);
+    validExplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), explantDate);
     explantDate(~validExplants) = deal({'none'});
 
     serialNumbers = cellfun(@(x) serialsFromCSV(strcmp(csvData.Subject, x),:), queryData, 'uni', 0);
     serialNumbers = cellfun(@(x) x(~isnan(x)), serialNumbers, 'uni', 0);
+
+    probeType = cellfun(@(x) csvData.P0_type{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+
     % resort it
     probeInfo.subject = queryData;
     probeInfo.implantDate = implantDate;
     probeInfo.explantDate = explantDate;
     probeInfo.serialNumbers = serialNumbers;
+    probeInfo.probeType = probeType;
 end
 
 %% Plot figure
