@@ -10,6 +10,7 @@ function recLocation(varargin)
     varargin = ['checkSpikes', {1}, varargin];
     varargin = ['pltClusters', {1}, varargin];
     varargin = ['clustersDays', {[]}, varargin];
+    varargin = ['clustersExpDef', {'spontaneousActivity'}, varargin];
     params = csv.inputValidation(varargin{:});
 
     %% Get exp list
@@ -193,7 +194,7 @@ function recLocation(varargin)
         
         % Get spontaneous recordings to plot cluster density
         paramsClu.subject = params.subject;
-        paramsClu.expDef = {'spontaneousActivity'};
+        paramsClu.expDef = {params.clustersExpDef};
         if ~isempty(clustersDays)
             paramsClu.expDate = {clustersDays}; % find a better way
         end
@@ -205,10 +206,10 @@ function recLocation(varargin)
 
             % Take the last recordings, to span everything
             %%% NEED TO WRITE IT, NOT EASY TO CODE
-            spannedAll = zeros(1,probeNum);
+            spannedAll = 0;
             fullProbeMatch = zeros(size(fullProbeScan,2),probeNum);
             ee = size(exp2checkListClu,1);
-            while ee > 0 & ~spannedAll
+            while ee > 0 && ~spannedAll
                 
                 expInfo = exp2checkListClu(ee,:);
                 expPath = expInfo.expFolder{1};
@@ -224,7 +225,9 @@ function recLocation(varargin)
                         shankIDs = unique(shanks);
                         botRow = min(chanPos(:,2));
                         recID = [num2str(shankIDs) '-' num2str(botRow)];
-                        fullProbeMatch(strcmp(fullProbeScan,recID),pp) = ee;
+                        if fullProbeMatch(strcmp(fullProbeScan,recID),pp) == 0
+                            fullProbeMatch(strcmp(fullProbeScan,recID),pp) = ee;
+                        end
                     end
                 end
 
@@ -237,20 +240,13 @@ function recLocation(varargin)
             for ee = 1:size(fullProbeScan,2)
                 if ~(fullProbeMatch(ee,probeNum)==0)
                     exp = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
+                    
+
                     templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
                         object={'templates'}, ...
-                        attribute={'_av_KSLabels'});
+                        attribute={{{'_av_KSLabels','_av_xpos','depths'}}});
                     KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
-
-                    %%% temp--load all at the same time
-                    templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
-                        object={'templates'}, ...
-                        attribute={'_av_xpos'});
                     xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
-
-                    templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
-                        object={'templates'}, ...
-                        attribute={'depths'});
                     depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
 
                     goodUnits = KSLabels == 1;
