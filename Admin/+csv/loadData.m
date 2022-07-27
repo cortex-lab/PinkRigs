@@ -74,7 +74,7 @@ for i=1:height(expList)
         error('If object is not "all" it must be provided for each ONEFolder');
     end
 
-    if size(currAttr, 1) == 1 && strcmp(currAttr, 'all')
+    if size(currAttr(:), 1) == 1 && strcmp(currAttr, 'all')
         currAttr = repmat(currAttr, size(currDataType, 1), 1);
     elseif size(currAttr, 1) ~= size(currDataType, 1)
         error('If attribute is not "all" it must be provided for each ONEFolder');
@@ -91,6 +91,10 @@ for i=1:height(expList)
                 continue
             end
             %If requested object "probe" load all objects in probe folder
+            spikeStatus = cell2mat(cellfun(@str2num, split(currExp.extractSpikes{1}, ','), 'uni', 0));
+            if all(isnan(spikeStatus)) || ~(spikeStatus(str2double(ONENames{j}(end))+1) == 1)
+                continue;
+            end
             objPath = fullfile(ONEPath, ONENames{j});
             loadObj = currObj(contains(currDataType, {'probe', 'all'}));
             loadAttr = currAttr(contains(currDataType, {'probe', 'all'}));
@@ -161,8 +165,8 @@ if ~contains(objects, 'all')
     matchedObj = contains(splitNames(:,1), objects);
 end
 
-if ~contains(attributes, 'all')
-    matchedAttr = contains(splitNames(:,2), attributes);
+if ~contains(attributes{:}, 'all')
+    matchedAttr = contains(splitNames(:,2), attributes{:});
 end
 
 loadPaths = fullfile(objPath, allFiles(matchedObj & matchedAttr));
