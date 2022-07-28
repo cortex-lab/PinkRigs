@@ -15,7 +15,7 @@ if ~exist('queryData','var') || isempty(queryData)
 end
 if ~exist('mkPlt','var');  mkPlt = 0; end
 if ~exist('implantSelect','var');  implantSelect = 'all'; end
-if ~iscell(queryData); queryData = num2cell(queryData,2); end
+if ~iscell(queryData); queryData = num2cell(reshape(queryData,[1, numel(queryData)]),1); end
 
 
 subjects = cell(1,numel(queryData));
