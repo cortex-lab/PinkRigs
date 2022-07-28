@@ -167,7 +167,11 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
             end
         end
     else
-        serialsFromMeta = nan*ones(1,numel(expectedSerial));
+        serialsFromMeta = nan*ones(1,max(1,numel(expectedSerial)));
+        if strcmp(probeInfo.probeType{1},'Acute')
+            % No check in acute recordings
+            expectedSerial = serialsFromMeta;
+        end
     end
 
     % Reorder them
