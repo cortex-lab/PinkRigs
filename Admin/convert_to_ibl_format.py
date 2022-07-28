@@ -214,6 +214,8 @@ def run_batch_ibl_formatting(run_for=2):
 
 
 if __name__ == "__main__":
-   stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last10')
-   run_batch_ibl_formatting(run_for=2)
+   #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
+   stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last1000')
+   run_batch_ibl_formatting(run_for=40)
+   stage_queue(mouse_selection='all',ks_folder = 'kilosort2', date_selection='last1000')
+   run_batch_ibl_formatting(run_for=100)
