@@ -145,18 +145,18 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
     %% Reorder according to the probes
 
     probeInfo = csv.checkProbeUse(subject);
-    expectedSerial = probeInfo.serialNumbers{1};
-    if strcmp(probeInfo.probeType{1},'Acute')
-        % No check in acute recordings
-        expectedSerial = serialsFromMeta;
-    end
-    serialNumberReord = expectedSerial;
+    expectedSerial = probeInfo.serialNumbers{1};    
 
     if ~isempty(ephysPath)
         % Get actual serial numbers
         ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
         metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
         serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
+
+        if strcmp(probeInfo.probeType{1},'Acute')
+            % No check in acute recordings
+            expectedSerial = serialsFromMeta;
+        end
 
         % Check for unexpected serial numbers
         if ~isempty(expectedSerial)
@@ -186,3 +186,4 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
             timelineRefTimesReord(pp) = {'error'};
         end
     end
+    serialNumberReord = expectedSerial;
