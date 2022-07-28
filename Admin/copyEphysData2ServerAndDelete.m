@@ -31,7 +31,7 @@ fprintf('Checking subject in file name against probe serials in CSV... \n')
 serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
 
 [uniqueProbes, ~, uniIdx] = unique(serialsFromMeta);
-probeInfo = csv.getCurrentSubjectFromProbeSerial(uniqueProbes,'last');
+probeInfo = csv.checkProbeUse(uniqueProbes,'last');
 matchedSubjects = probeInfo.implantedSubjects;
 
 expectedSubject = matchedSubjects(uniIdx);
@@ -63,7 +63,7 @@ if ignoreSubjectMismatch && any(subjectMismatch)
     subjectMismatch = subjectMismatch*0;
     expectedSubject = subjectFromBinName;
 end
-validIdx = ~subjectMismatch %& ~dateMismatch;
+validIdx = ~subjectMismatch & ~dateMismatch;
 validEphysFiles = localEphysFiles(validIdx);
 validSubjects = expectedSubject(validIdx);
 validDates = dateFromBinName(validIdx);
