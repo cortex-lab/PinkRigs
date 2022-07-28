@@ -1,7 +1,7 @@
 function recLocation(varargin)
     %%% This function will plot the location of the recordings (behavior)
     %%% performed across the whole probe(s).
-    %%% Should do it with guidata but meh for now
+    %%% I think I should do it with "guidata" but meh for now.
     
     %% Get parameters
     varargin = ['expDate', {inf}, varargin];
