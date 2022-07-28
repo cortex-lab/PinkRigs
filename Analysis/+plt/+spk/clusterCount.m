@@ -84,8 +84,8 @@ function clusterCount(varargin)
     % Find those that match location
     % Do it by subject and probe so that it's easier to do the whole probe
     % thing...?
-    recLocSlope = struct;
-    b = struct;
+    recLocSlope = cell(1,1);
+    b = cell(1,1);
     for ss = 1:numel(subjects)
         subjectIdx = contains(subjectsAll,subjects(ss));
         probes = unique(probeSNAll(subjectIdx));
