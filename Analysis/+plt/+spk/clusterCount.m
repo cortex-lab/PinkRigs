@@ -18,7 +18,10 @@ function clusterCount(varargin)
     %% Get the cluster count
 
     nn = 1;
-    clear recPath recID recLocAll clusterNum nSpikesPerSec days
+    clusterNum = struct;
+    recLocAll = struct;
+    recPath = struct;
+    days = struct;
     for ee = 1:size(exp2checkList,1)
         fprintf('Processing experiment #%d.\n',ee)
         expInfo = exp2checkList(ee,:);
@@ -38,7 +41,7 @@ function clusterCount(varargin)
                 % Build tags etc
                 days{nn} = datenum(expInfo.expDate);
                 days{nn} = days{nn}-datenum(datetime(mice(strcmp(mice.Subject,subject),:).P0_implantDate{1}(1:end),'InputFormat','yyyy-MM-dd'));
-                [~,fileName] = fileparts(alignment.ephys(pp).ephysPath);
+
                 recPath{nn} = alignment.ephys(pp).ephysPath;
                 recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
@@ -59,7 +62,6 @@ function clusterCount(varargin)
     checkIfEmpty = @(C) cellfun(@(x) isempty(x), C);
     goodIdx = ~checkIfEmpty(days);
     days = cell2mat(days(goodIdx));
-    recPath = recPath(goodIdx);
     recLocAll = recLocAll(goodIdx);
     clusterNum = cell2mat(clusterNum(goodIdx));
 
@@ -74,7 +76,6 @@ function clusterCount(varargin)
     fullProbeScan = {{'0__0'}, {'1__0'}, {'2__0'}, {'3__0'}, ...
         {'0__2880'}, {'1__2880'}, {'2__2880'}, {'3__2880'}};
 
-    clear b
     slopeMean = nan(numel(subjects),2);
     figure
     % figure('Position',[680   728   450   250]);
@@ -83,6 +84,8 @@ function clusterCount(varargin)
     % Find those that match location
     % Do it by subject and probe so that it's easier to do the whole probe
     % thing...?
+    recLocSlope = struct;
+    b = struct;
     for ss = 1:numel(subjects)
         subjectIdx = contains(subjectsAll,subjects(ss));
         probes = unique(probeSNAll(subjectIdx));
@@ -150,7 +153,6 @@ function clusterCount(varargin)
     xticklabels([1 5 10 25 50 100])
     ylim([10,2000])
     xlim([3,100])
-    % offsetAxes
 
     % slope
     figure('Position',[680   728   200   250]);
@@ -160,6 +162,5 @@ function clusterCount(varargin)
     scatter(1:numel(tmp),10.^(tmp(idx))-1,40,colAnitmp(idx,:),'filled');
     ylabel({'Rate of change of cluster';  ' count (%/day)'})
     xlabel('Experiment')
-    offsetAxes
 
 end
