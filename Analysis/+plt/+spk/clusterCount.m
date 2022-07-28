@@ -18,10 +18,10 @@ function clusterCount(varargin)
     %% Get the cluster count
 
     nn = 1;
-    clusterNum = struct;
-    recLocAll = struct;
-    recPath = struct;
-    days = struct;
+    clusterNum = cell(1,1);
+    recLocAll = cell(1,1);
+    recPath = cell(1,1);
+    days = cell(1,1);
     for ee = 1:size(exp2checkList,1)
         fprintf('Processing experiment #%d.\n',ee)
         expInfo = exp2checkList(ee,:);
