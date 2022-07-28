@@ -239,10 +239,10 @@ function recLocation(varargin)
         for pp = 1:probeNum
             for ee = 1:size(fullProbeScan,2)
                 if ~(fullProbeMatch(ee,probeNum)==0)
-                    exp = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
+                    expInfo = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
                     
 
-                    templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
+                    templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                         object={'templates'}, ...
                         attribute={{{'_av_KSLabels','_av_xpos','depths'}}});
                     KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
