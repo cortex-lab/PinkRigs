@@ -143,6 +143,19 @@ switch lower(computerType)
             if statuspyKS > 0
                 fprintf('Running pyKS failed... "%s".\n', resultpyKS)
             end
+
+            fprintf('creating the ibl format... \n')
+            checkQueuePath = which('convert_to_ibl_format.py');
+            checkWhichMice = 'all';
+            whichKS = 'pyKS'; 
+            checkWhichDates = 'last7';
+            [statusQueue,resultQueue] = system(['activate iblenv && ' ...
+                'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+                'conda deactivate']);
+            if statusQueue > 0
+                fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+            end
+
         end
         fprintf('Stopping now %s. \n',datestr(now))
 
