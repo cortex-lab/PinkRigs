@@ -8,9 +8,19 @@ from datetime import datetime as time # to sort only for a fixed amount of time
 
 pd.options.mode.chained_assignment = None # disable warning, we will overwrite some rows when sortedTag changes 
 
-# ibl ephys files
+# ibl ephys tools 
 import spikeglx
 from atlaselectrophysiology.extract_files import ks2_to_alf,extract_rmsmap,_sample2v
+from ibllib.atlas import AllenAtlas
+atlas = AllenAtlas(25) # always register to the 25 um atlas 
+
+# PinkRig processing tools 
+# import PinkRig ephys processng tools 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path / r'Analysis\+kilo\python_').__str__() )
+
+from ReadSGLXData.readSGLX import readMeta
 
 def check_date_selection(date_selection,date):
     import datetime 
@@ -211,6 +221,63 @@ def run_batch_ibl_formatting(run_for=2):
                     queue_csv.doneTag.iloc[idx]= -1
                     queue_csv.to_csv(queue_csv_file,index = False)  
 
+
+def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
+    # Path to KS output
+    if 'pyKS' in ks_folder: 
+        ks_folder = r'pyKS\output'
+        
+    ks_path = ephys_path / ks_folder
+    # Save path
+    out_path = ks_path / 'ibl_format'
+    out_path.mkdir(parents=False, exist_ok=True) # make directory if it does not exist
+
+    # extract the data to ibl_format if it has not been done already.
+    if not (out_path / 'cluster_matrics.tsv').is_file() or recompute:
+        print('converting data to IBL format ...')
+        extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=True) 
+
+    # get the probe tracks if they exist.
+    subject_path = ephys_path.parents[3]
+    brainreg_path = subject_path / r'histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
+    if brainreg_path.is_dir():
+        # get some information from meta file 
+        meta = readMeta(list(ephys_path.glob('*.ap.cbin'))[0])
+
+        # serial number
+        probe_sn = meta['imDatPrb_sn']
+
+        # shanks that have been recorded. 
+        imro = meta['snsShankMap']
+        channel_data = re.findall(r"\d+:\d+:\d+:\d+",imro)
+        shank_idx = np.array([np.array(re.split(':',chandat)).astype('int')[0] for chandat in channel_data])
+        recorded_shanks = np.unique(shank_idx).astype('str')
+            # get the xyz_picks if the histology exist.
+
+        for shank in recorded_shanks:
+            shank_file_name = 'SN%s_shank%s.npy' % (probe_sn,shank)
+            shank_anat_path = brainreg_path / shank_file_name
+
+            if shank_anat_path.is_file():
+                # Load in coordinates of track in CCF space (order - apdvml, origin - top, left, front voxel
+                xyz_apdvml = np.load(shank_anat_path)
+                # Convert to IBL space (order - mlapdv, origin - bregma)
+                xyz_mlapdv = atlas.ccf2xyz(xyz_apdvml, ccf_order='apdvml') * 1e6
+                xyz_picks = {'xyz_picks': xyz_mlapdv.tolist()}
+
+                # save file the ibl_format output path - the format is following the curernt requirements of the GUI, i.e. 
+                # xyz_picks.json if single shank recording
+                # else xyz_picks_shank0.json 
+                if recorded_shanks.size==1:
+                    with open(Path(out_path, 'xyz_picks.json'), "w") as f:
+                        json.dump(xyz_picks, f, indent=2)
+                else:
+                    with open(Path(out_path, 'xyz_picks_shank%s.json' % shank), "w") as f:
+                        json.dump(xyz_picks, f, indent=2)
+            else: 
+                print('the probe/shank IDs do not match.')                
+    else: 
+        print('the histology does not seem to have been done. ')
 
 
 if __name__ == "__main__":
