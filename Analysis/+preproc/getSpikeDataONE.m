@@ -81,6 +81,9 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     if exist(fullfile(KSFolder, 'cluster_group.tsv'),'file') 
        cgsFile = fullfile(KSFolder, 'cluster_group.tsv');
        [cids, cgs] = readClusterGroupsCSV(cgsFile);
+    elseif exist(fullfile(KSFolder, 'cluster_KSLabel.tsv'),'file') 
+       cgsFile = fullfile(KSFolder, 'cluster_KSLabel.tsv');
+       [cids, cgs] = readClusterGroupsCSV(cgsFile);
     end 
     
     if (numel(cgs) == numel(cgs_KS)) && all(cgs == cgs_KS)
