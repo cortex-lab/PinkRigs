@@ -253,7 +253,7 @@ function recLocation(varargin)
                     xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
                     depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
 
-                    goodUnits = KSLabels == 1;
+                    goodUnits = KSLabels == 2;
 
                     scatter(xpos(goodUnits) + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
                         depths(goodUnits),...
