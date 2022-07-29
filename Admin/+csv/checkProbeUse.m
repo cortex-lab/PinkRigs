@@ -9,6 +9,9 @@ csvFields = fields(csvData);
 serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
 serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
 
+probeTypeFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'type')), 'uni', 0)';
+probeTypeFromCSV = cat(2,probeTypeFromCSV{:});
+
 if ~exist('queryData','var') || isempty(queryData)
     queryData = unique(serialsFromCSV);
     queryData(isnan(queryData)) = [];
@@ -68,14 +71,15 @@ else
     serialNumbers = cellfun(@(x) serialsFromCSV(strcmp(csvData.Subject, x),:), queryData, 'uni', 0);
     serialNumbers = cellfun(@(x) x(~isnan(x)), serialNumbers, 'uni', 0);
 
-    probeType = cellfun(@(x) csvData.P0_type{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    probeTypes = cellfun(@(x) probeTypeFromCSV(strcmp(csvData.Subject, x),:), queryData, 'uni', 0);
+    probeTypes = cellfun(@(y) y(cell2mat(cellfun(@(x) ~isempty(x), y, 'uni', 0))), probeTypes, 'uni', 0);
 
     % resort it
     probeInfo.subject = queryData;
     probeInfo.implantDate = implantDate;
     probeInfo.explantDate = explantDate;
     probeInfo.serialNumbers = serialNumbers;
-    probeInfo.probeType = probeType;
+    probeInfo.probeType = probeTypes;
 end
 
 %% Plot figure

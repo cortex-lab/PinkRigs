@@ -25,9 +25,8 @@ function recLocation(varargin)
     %% Get the probes layout
     
     % Get probes layout
-    mainCSV = csv.readTable(csv.getLocation('main'));
-    mouseIdx = strcmpi(mainCSV.Subject,params.subject);
-    probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type) + ~isempty(mainCSV(mouseIdx,:).P1_type);
+    probeInfo = csv.checkProbeUse(params.subject);
+    probeNum = numel(probeInfo.serialNumbers);
     
     % Get the basic layout
     chanPosAll = [];
@@ -37,8 +36,8 @@ function recLocation(varargin)
     probeType = cell(probeNum,1);
     probeSerialNo = nan(probeNum,1);
     for pp = 1:probeNum
-        probeType{pp} = mainCSV(mouseIdx,:).(sprintf('P%d_type',pp-1)){1};
-        probeSerialNo(pp) = str2double(mainCSV(mouseIdx,:).(sprintf('P%d_serialNo',pp-1)){1});
+        probeType{pp} = probeInfo.probeType{1}{probeNum};
+        probeSerialNo(pp) = probeInfo.serialNumbers{1}(probeNum);
         switch probeType{pp}
             case '2.0 - 4shank'
                 % Taken from the IMRO plotting file
@@ -244,7 +243,7 @@ function recLocation(varargin)
 
                     templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                         object={'templates'}, ...
-                        attribute={{{'_av_KSLabels','_av_xpos','depths'}}});
+                        attribute={{'_av_KSLabels';'_av_xpos';'depths'}});
                     KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
                     xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
                     depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
