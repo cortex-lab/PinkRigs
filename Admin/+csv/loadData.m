@@ -50,18 +50,22 @@ objects = cellfun(@(x) unnestCell(x), unnestCell(params.object{1},0), 'uni', 0);
 attributes = cellfun(@(x) unnestCell(x), unnestCell(params.attribute{1},0), 'uni', 0);
 if length(objects) == 1
     objects = repmat(objects, length(dataTypes),1);
-elseif  length(objects) ~= length(dataTypes)
-    error('Length of objects must be equal to "1" or length of dataTypes');
+elseif length(objects) ~= 1 && length(dataTypes) == 1
+    objects = {unnestCell(objects)};
+elseif length(objects) ~= length(dataTypes)
+    error('length(objects) must equal length(datatypes) if neither of them is "1"');
 end
-objects = cellfun(@(x) strjoin(x, ','), objects, 'uni', 0);
+objects = cellfun(@(x) strjoin(x, ','), objects(:), 'uni', 0);
 
 
 if length(attributes) == 1
     attributes = repmat(attributes, length(objects),1);
+elseif length(attributes) ~= 1 && length(objects) == 1
+    attributes = {unnestCell(attributes)};
 elseif  length(attributes) ~= length(objects)
-    error('Length of attributes must be equal to "1" or length of objects');
+    error('length(objects) must equal length(attributes) if neither of them is "1"');
 end
-attributes = cellfun(@(x) strjoin(x, ','), attributes, 'uni', 0);
+attributes = cellfun(@(x) strjoin(x, ','), attributes(:), 'uni', 0);
 params = rmfield(params, {'dataType'; 'object'; 'attribute';'verbose'});
 
 %% 
