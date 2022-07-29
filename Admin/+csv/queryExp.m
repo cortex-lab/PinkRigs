@@ -25,6 +25,7 @@ extractedExperiments = table();
 for mm = 1:numel(params.subject)
     
     % Loop through subjects
+    if ~exist(csv.getLocation(params.subject{mm}), 'file'); continue; end
     mouseExps = csv.readTable(csv.getLocation(params.subject{mm}));
     csvHeaders = mouseExps.Properties.VariableNames';
 

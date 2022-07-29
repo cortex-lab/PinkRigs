@@ -62,8 +62,13 @@ outP = p.Results;
 outP = orderfields(outP, {'subject'; 'expDate'; 'expNum'; 'expDef'});
 unmatchedFields = fields(p.Unmatched);
 for i = 1:length(unmatchedFields)
+    if strcmpi(unmatchedFields{i}, 'invariantParams')
+        invariantParams = unnestCell(p.Unmatched.(unmatchedFields{i}));
+    else
     outP.(unmatchedFields{i}) = p.Unmatched.(unmatchedFields{i});
+    end
 end
+if ~exist('invariantParams', 'var'); invariantParams = {'svloiubsverilvub'}; end
 
 % This runs the "mkCell" function on all fields of "outP" to convert to
 % cells if they aren't already cells.
@@ -110,7 +115,8 @@ paramLengths = structfun(@length, outP);
 % (or every) subject, e.g. {'t'; 's'} has been input as multiple cells
 % instead of a single cell. In this example, {{'t';'s}} might be the
 % correct input.
-if ~all(paramLengths == nSubjects | paramLengths == 1)
+invariantParamsIdx = contains(fields(outP), invariantParams);
+if ~all(paramLengths == nSubjects | paramLengths == 1 | invariantParamsIdx)
     error('All inputs should have length=1 or length=nSubjects')
 end
 
@@ -118,7 +124,10 @@ end
 % where a field has length=1 and subjects has length>1.
 fieldNames = fields(outP);
 for i = 1:length(fieldNames)
-    if paramLengths(i) == nSubjects
+    if invariantParamsIdx(i)
+        outP.(fieldNames{i}) = repmat({unnestCell(outP.(fieldNames{i}),0)},nSubjects,1);
+        continue;
+    elseif paramLengths(i) == nSubjects
         outP.(fieldNames{i}) = outP.(fieldNames{i})(:);
         continue; 
     end

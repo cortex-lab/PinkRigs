@@ -31,7 +31,35 @@ function expList = loadData(varargin)
 varargin = ['dataType', {'events'}, varargin];
 varargin = ['object', {'all'}, varargin];
 varargin = ['attribute', {'all'}, varargin];
+varargin = [varargin, 'invariantParams', {{'dataType'; 'object'; 'attribute'}}];
 params = csv.inputValidation(varargin{:});
+
+%% This section deals with the requested inputs to make sure they are valid
+dataTypes = unnestCell(params.dataType{1});
+if any(contains(dataTypes, 'all'))&& length(dataTypes)~=1
+    error('If requesting "all" dataTypes, then length of dataTypes should be "1"')
+end
+
+objects = cellfun(@(x) unnestCell(x), unnestCell(params.object{1},0), 'uni', 0);
+attributes = cellfun(@(x) unnestCell(x), unnestCell(params.attribute{1},0), 'uni', 0);
+if length(objects) == 1
+    objects = repmat(objects, length(dataTypes),1);
+elseif  length(objects) ~= length(dataTypes)
+    error('Length of objects must be equal to "1" or length of dataTypes');
+end
+objects = cellfun(@(x) strjoin(x, ','), objects, 'uni', 0);
+
+
+if length(attributes) == 1
+    attributes = repmat(attributes, length(objects),1);
+elseif  length(attributes) ~= length(objects)
+    error('Length of attributes must be equal to "1" or length of objects');
+end
+attributes = cellfun(@(x) strjoin(x, ','), attributes, 'uni', 0);
+params = rmfield(params, {'dataType'; 'object'; 'attribute'});
+
+
+%% 
 expList = csv.queryExp(params);
 
 % Add new fields for loaded data to the expList
@@ -47,6 +75,10 @@ if isempty(expList)
     return
 end
 
+% Indicate which data will be loaded
+cellfun(@(x,y,z) fprintf('***Will load "%s" with objects=(%s) and attributes=(%s)\n', x, y, z), ...
+        dataTypes, objects, attributes);
+
 % Loop over each line of the expList and load the requested data
 for i=1:height(expList)
     % Clear any existing data and get current exp details
@@ -58,36 +90,15 @@ for i=1:height(expList)
     ONENames = ONENames(cellfun(@(x) ~strcmp(x(1),'.'),{ONENames.name}'));
     ONENames = {ONENames.name}';
     expPathStub = strcat(currExp.expDate, {'_'}, currExp.expNum, {'_'}, currExp.subject);
-
-    %% Check that the number of objects and attributes match ONEFolders
-    currDataType = currExp.dataType{1};
-    currObj = currExp.object{1};
-    currAttr = currExp.attribute{1};
-    if ~iscell(currDataType); currDataType = {currDataType}; end
-    if ~iscell(currObj); currObj = {currObj}; end
-    if ~iscell(currAttr); currAttr = {currAttr}; end
-
-
-    if size(currObj, 1) == 1 && strcmp(currObj, 'all')
-        currObj = repmat(currObj, size(currDataType, 1), 1);
-    elseif size(currObj, 1) ~= size(currDataType, 1)
-        error('If object is not "all" it must be provided for each ONEFolder');
-    end
-
-    if size(currAttr(:), 1) == 1 && strcmp(currAttr, 'all')
-        currAttr = repmat(currAttr, size(currDataType, 1), 1);
-    elseif size(currAttr, 1) ~= size(currDataType, 1)
-        error('If attribute is not "all" it must be provided for each ONEFolder');
-    end
     
     %% Load dataSpikes if requested
-    if any(contains(currDataType, {'probe', 'all'}, 'IgnoreCase',1))
+    if any(contains(dataTypes, {'probe', 'all'}, 'IgnoreCase',1))
         dataIdx = contains(ONENames, 'probe');
         for j = find(dataIdx)'
             if isempty(j); continue; end
 
             %If requested ONEFolder "probe1", skip other probes
-            if ~contains({ONENames{j}, 'all'}, currDataType)
+            if ~contains({ONENames{j}, 'all'}, dataTypes)
                 continue
             end
             %If requested object "probe" load all objects in probe folder
@@ -95,29 +106,30 @@ for i=1:height(expList)
             if all(isnan(spikeStatus)) || ~(spikeStatus(str2double(ONENames{j}(end))+1) == 1)
                 continue;
             end
+
             objPath = fullfile(ONEPath, ONENames{j});
-            loadObj = currObj(contains(currDataType, {'probe', 'all'}));
-            loadAttr = currAttr(contains(currDataType, {'probe', 'all'}));
-            expList.dataSpikes{i}.(ONENames{j}) = loadAttributes(loadObj, loadAttr, objPath);
+            idx = contains(dataTypes, {'probe', 'all'});
+            expList.dataSpikes{i}.(ONENames{j}) = ...
+                loadAttributes(objects(idx), attributes(idx), objPath);
         end
     end
     
     %% Load dataEvents if requested
     evCheck =  {'ev'; 'events'; 'eventsFull'; 'all';};
-    if any(contains(currDataType, evCheck, 'IgnoreCase',1))
+    if any(contains(dataTypes, evCheck, 'IgnoreCase',1))
         evPQTPath = cell2mat([ONEPath 'events\_av_trials.table.' expPathStub '.pqt' ]);
         if exist(evPQTPath, 'file')
             expList.dataEvents{i} = table2struct(parquetread(evPQTPath),"ToScalar",1);
         end
         evPQTPath = strrep(evPQTPath, '.table', '.table_largeData');
-        if any(contains(currDataType, 'eventsFull', 'IgnoreCase',1)) && exist(evPQTPath, 'file')
+        if any(contains(dataTypes, 'eventsFull', 'IgnoreCase',1)) && exist(evPQTPath, 'file')
             largeEvents = table2struct(parquetread(evPQTPath),"ToScalar",1);
             expList.dataEvents{i} = catStructs(expList.dataEvents{i},largeEvents);
         end
     end
 
     %% Load dataBlock if requested
-    if any(contains(currDataType, {'blk', 'block'}))
+    if any(contains(dataTypes, {'blk', 'block'}))
         blockPath = cell2mat([currExp.expFolder '\' expPathStub '_block.mat']);
         if exist(blockPath, 'file')
             blk = load(blockPath, 'block');
@@ -128,7 +140,7 @@ for i=1:height(expList)
     end
 
     %% Load timeline data if requested
-    if any(contains(currDataType, {'tim'; 'timeline'}))
+    if any(contains(dataTypes, {'tim'; 'timeline'}))
         timelinePath = cell2mat([currExp.expFolder '\' expPathStub '_timeline.mat']);
         if exist(timelinePath, 'file')
             tim = load(timelinePath, 'Timeline');
@@ -148,12 +160,15 @@ for i = 1:length(newFields)
         expList.(newFields{i})(emptyCells) = {nan};
     end
 end
-
-expList = removevars(expList, {'object'; 'dataType'; 'attribute'});
 end
 
 
 function outData = loadAttributes(objects, attributes, objPath)
+if ~iscell(objects); objects = {objects}; end
+if ~iscell(attributes); attributes = {attributes}; end
+objects = strsplit(objects{1}, ',');
+attributes = strsplit(attributes{1}, ',');
+
 allFiles = dir(objPath);
 allFiles = allFiles(cellfun(@(x) ~strcmp(x(1),'.'),{allFiles.name}'));
 allFiles = {allFiles.name}';
