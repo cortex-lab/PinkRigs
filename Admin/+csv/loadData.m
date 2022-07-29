@@ -31,8 +31,10 @@ function expList = loadData(varargin)
 varargin = ['dataType', {'events'}, varargin];
 varargin = ['object', {'all'}, varargin];
 varargin = ['attribute', {'all'}, varargin];
+varargin = ['verbose', {1}, varargin];
 varargin = [varargin, 'invariantParams', {{'dataType'; 'object'; 'attribute'}}];
 params = csv.inputValidation(varargin{:});
+verbose = params.verbose{1};
 
 %% This section deals with the requested inputs to make sure they are valid
 dataTypes = unnestCell(params.dataType{1});
@@ -56,8 +58,7 @@ elseif  length(attributes) ~= length(objects)
     error('Length of attributes must be equal to "1" or length of objects');
 end
 attributes = cellfun(@(x) strjoin(x, ','), attributes, 'uni', 0);
-params = rmfield(params, {'dataType'; 'object'; 'attribute'});
-
+params = rmfield(params, {'dataType'; 'object'; 'attribute';'verbose'});
 
 %% 
 expList = csv.queryExp(params);
@@ -76,8 +77,10 @@ if isempty(expList)
 end
 
 % Indicate which data will be loaded
+if verbose
 cellfun(@(x,y,z) fprintf('***Will load "%s" with objects=(%s) and attributes=(%s)\n', x, y, z), ...
         dataTypes, objects, attributes);
+end
 
 % Loop over each line of the expList and load the requested data
 for i=1:height(expList)
