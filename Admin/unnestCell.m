@@ -8,7 +8,7 @@ while (all(cellLengths) || complete) && any(cellfun(@iscell, nestedCell))
     newCell = {};
     for i = 1:length(nestedCell)
         if iscell(nestedCell{i})
-            newCell = [newCell; nestedCell{i}];
+            newCell = [newCell; nestedCell{i}(:)];
         else
             newCell = [newCell; nestedCell(i)];
         end

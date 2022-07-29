@@ -2,11 +2,16 @@ function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
 % NOTE: This function uses csv.inputValidate to parse inputs
 
+% NOTE: That the same dataTypes, objects, and attributes will be loaded for
+% all mice. You will have to separate mice before calling the function if
+% you want these to be different for each mouse. ALSO, the length of
+% objects should equal the length of dataTypes OR "1" and the same is true
+% for attributes. If you want to suppress the written confirmation of
+% loading, then set "verbose" to 0.
+
 % Add default values for extra inputs:
 % dataType (default='events'): string or cell of strings to indicate which
 % data types to load. 
-% REMEMBER: use double cells for each input if you want more than one dataType.
-% For example: (subject='AV015', dataType = {{'probe1'; 'events'}})
 %   'blk' or 'block to load raw block files (output = dataBlock)
 %   'tim' or 'timeline' to load timeline files (output = dataTimeline)
 %   'ev' or 'events' to load trial events (output = dataEvents)
@@ -27,7 +32,6 @@ function expList = loadData(varargin)
 %   'spikes' to load only spike data
 %   'templates' to load only template data
 
-% NOTE: loadtag continuous. i.e. 'timblk' loads timeline and block
 varargin = ['dataType', {'events'}, varargin];
 varargin = ['object', {'all'}, varargin];
 varargin = ['attribute', {'all'}, varargin];

@@ -137,7 +137,6 @@ end
 % Use the funtion "string2expDef" to convert optional input strings (e.g.
 % 't' or 's') into their corresponding exp definitions
 outP.expDef = cellfun(@string2expDef, outP.expDef, 'uni', 0);
-outP.expDef = cellfun(@(x) vertcat(x{:}), outP.expDef, 'uni', 0);
 
 % Use "convertCellNum2String" to make sure that expNum is a string or
 % vertically concatenated cell of strings
@@ -201,6 +200,7 @@ switch expDefInput{i}
         fullExpDef{i} = expDefInput(i);
 end
 end
+fullExpDef = unnestCell(fullExpDef);
 end
 
 %% Function to convert a numeric input into a string or cell of strings
