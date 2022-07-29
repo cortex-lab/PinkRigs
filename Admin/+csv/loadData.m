@@ -191,8 +191,8 @@ if ~contains(objects, 'all')
     matchedObj = contains(splitNames(:,1), objects);
 end
 
-if ~contains(attributes{:}, 'all')
-    matchedAttr = contains(splitNames(:,2), attributes{:});
+if ~contains(attributes, 'all')
+    matchedAttr = contains(splitNames(:,2), attributes);
 end
 
 loadPaths = fullfile(objPath, allFiles(matchedObj & matchedAttr));
