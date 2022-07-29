@@ -115,7 +115,7 @@ function extractExpData(varargin)
                 %% Extract spikes and clusters info (depth, etc.)
                 
                 if shouldProcess('spikes')
-                    if contains(expInfo.alignEphys, '1')
+                    if contains(expInfo.alignEphys, '1') && contains(expInfo.issortedKS2, '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
@@ -184,7 +184,7 @@ function extractExpData(varargin)
                         fprintf(1, '* Spikes extraction done. *\n');
                     else
                         % Do nothing
-                        fprintf('No successful alignment for ephys, skipping. \n')
+                        fprintf('No successful alignment or spikesorting for ephys, skipping. \n')
                     end
                               
                     change = 1;
