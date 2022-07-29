@@ -1,0 +1,139 @@
+function [data, proc] = loadData(varargin)
+    %%% This function will get the natural images data (PSTHs).
+    
+    %% Get parameters
+    mice = csv.readTable(csv.getLocation('main'));
+
+    % Get processing parameters
+    proc.window = [-0.3 1.0 ... % around onset
+        0.0 0.5]; % around offset
+    proc.binSize = 0.01; % in ms
+    nBins = int64((proc.window(2) - proc.window(1) + proc.window(4) - proc.window(3))/proc.binSize);
+    proc.smoothSize = 5; % PSTH smoothing filter
+    gw = gausswin(proc.smoothSize,3);
+    proc.smWin = gw./sum(gw); 
+
+    varargin = ['subject', {mice(contains(mice.P0_type, '2.0 - 4shank'),:).Subject}, varargin];
+    varargin = ['expDate', {inf}, varargin];
+    varargin = ['expDef', {{{'i'}}}, varargin]; 
+    varargin = [varargin, 'checkEvents', {1}]; % forced, otherwise can't process
+    varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
+    varargin = ['proc', {proc}, varargin];
+    params = csv.inputValidation(varargin{:});
+
+    %% Get exp list
+
+    exp2checkList = csv.queryExp(params);
+
+    %% Load data
+
+    proc = params.proc{1}; % should all be the same
+
+    baSm = cell(1,1);
+    C = cell(1,1);
+    recLocAll = cell(1,1);
+    recPath = cell(1,1);
+    days = cell(1,1);
+    nn = 1;
+    for ee = 1:size(exp2checkList,1)
+        fprintf('Processing experiment #%d...\n',ee)
+        expInfo = exp2checkList(ee,:);
+        subject = expInfo.subject{1};
+
+        % Get events
+        events = csv.loadData(expInfo,dataType = 'eventsFull');
+        imageOnsetTimes = events.dataEvents{1}.imageOnsetTimes;
+        imageOffsetTimes = events.dataEvents{1}.imageOffsetTimes;
+        imageIDs = events.dataEvents{1}.imageIDs;
+
+        % Get alignment file
+        alignmentFile = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
+        alignment = load(fullfile(alignmentFile.folder,alignmentFile.name),'ephys');
+
+        for pp = 1:numel(alignment.ephys)
+            if strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
+                % Get recording location
+                binFile = dir(fullfile(alignment.ephys(pp).ephysPath,'*ap.*bin'));
+                [chanPos,~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
+                shankIDs = unique(shanks);
+                botRow = min(chanPos(:,2));
+
+                % Get responses
+                spikes = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                        object={'spikes'}, ...
+                        attribute={{'times','templates'}});
+                spikes = spikes.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
+                templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                        object={'templates'}, ...
+                        attribute={{'_av_IDs','_av_KSLabels','depths','_av_xpos'}});
+                templates = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates;
+                
+                nClusters = numel(templates.IDs);
+                nTrials = numel(imageOnsetTimes);
+                baSmtmp = zeros(nTrials, nBins, nClusters);
+
+                % get all onset-centered psths
+                for c = 1:nClusters
+                    temp = templates.IDs(c);
+                    st = spikes.times(spikes.templates == temp);
+
+                    % get psth
+                    [~, ~, ~, ~, ~, baOn] = psthAndBA(st, imageOnsetTimes, proc.window(1:2), proc.binSize);
+                    [~, ~, ~, ~, ~, baOff] = psthAndBA(st, imageOffsetTimes, proc.window(3:4), proc.binSize);
+
+                    % smooth ba
+                    ba = cat(2,baOn,baOff);
+                    baSmtmp(:,:,c) = conv2(proc.smWin,1,ba', 'same')'./proc.binSize;
+                end
+
+                % not optimal here?
+                trials = imageIDs(1:nTrials);
+                trialid = unique(trials);
+                baSm{nn} = nan(numel(trialid), nBins, nClusters, ceil(nTrials/numel(trialid)));
+                for tt = 1:numel(trialid)
+                    idxrep = trials == trialid(tt);
+                    baSm{nn}(tt,:,:,1:sum(idxrep)) = permute(baSmtmp(idxrep,:,:),[2 3 1]);
+                end
+
+                C{nn} = templates;
+
+                % tags
+                days{nn} = datenum(expInfo.expDate);
+                days{nn} = days{nn}-datenum(datetime(mice(strcmp(mice.Subject,subject),:).P0_implantDate{1}(1:end),'InputFormat','yyyy-MM-dd'));
+                recPath{nn} = alignment.ephys(pp).ephysPath;
+                recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
+
+                nn = nn+1;
+            end
+        end
+    end
+
+    % Merge recordings on the same day / same probe / same region
+    % concatenate when played each repeat separately
+    recPathUni = unique(recPath);
+    nn = 1;
+    data = struct;
+    for rr = 1:numel(recPathUni)
+        % Find corresponding exp
+        expIdx2Keep = find(strcmp(recPath, recPathUni(rr)));
+
+        data(nn).spikeData = cat(4,baSm{expIdx2Keep});
+
+        ee = expIdx2Keep(1);
+        units2keep = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
+        data(nn).spikeData = data(nn).spikeData(:,:,ismember([C{ee}.IDs],units2keep),:);
+        data(nn).C.XPos = C{ee}.xpos(ismember([C{ee}.IDs],units2keep));
+        data(nn).C.Depth = C{ee}.depths(ismember([C{ee}.IDs],units2keep));
+        data(nn).C.CluID = C{ee}.IDs(ismember([C{ee}.IDs],units2keep));
+        data(nn).C.CluLab = C{ee}.KSLabels(ismember([C{ee}.IDs],units2keep));
+        data(nn).goodUnits = units2keep;
+
+        if any(sum(data(nn).spikeData,[1 2 4])==0)
+            error('Neurons with no spikes?? Shouldn''t happen.')
+        end
+
+        data(nn).days = days{ee};
+        data(nn).recLoc = recLocAll{ee};
+
+        nn = nn + 1;
+    end
