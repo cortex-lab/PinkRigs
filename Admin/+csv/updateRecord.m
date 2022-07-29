@@ -133,7 +133,7 @@ end
 
 % Populated nDat with some basic infro from the block file
 [~, nDat.expDef] = fileparts(blk.expDef);
-nDat.expDuration = blk.duration;
+nDat.expDuration = num2str(round(blk.duration));
 nDat.rigName = blk.rigName;
 
 % Get experiment folder contents and ONE folder contents
@@ -163,7 +163,7 @@ nDat.existEyeCam = num2str(any(contains({expFoldContents.name}','eyeCam.mj2')));
 nDat.existMic = num2str(any(contains({expFoldContents.name}','mic.mat')));
 
 % Check if there is an ephys folder
-nDat.existEphys = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
+nDat.existEphys = num2str(exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0);
 
 % Record the experiment folder
 nDat.expFolder = {fileparts(blockPath)};
@@ -219,10 +219,10 @@ if any(alignFile)
     if potentialProbes == 0
         % Issue a "NaN" if no implantations in main CSV
         nDat.alignEphys = nan;
-    elseif ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    elseif strcmpi(nDat.existEphys, '0') && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no ephys, but less than 7 days since recording
         nDat.alignEphys = zeros(1, potentialProbes);
-    elseif ~nDat.existEphys || ~strcmpi(nDat.existTimeline, '1')
+    elseif strcmpi(nDat.existEphys, '0') || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if correspoding file or timeline doesn't exist
         nDat.alignEphys = nan*ones(1, potentialProbes);
     elseif ~isfield(alignment, 'ephys')
