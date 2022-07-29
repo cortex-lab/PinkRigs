@@ -7,7 +7,7 @@ function clusterCount(varargin)
 
     varargin = ['subject', {mice(contains(mice.P0_type, '2.0 - 4shank'),:).Subject}, varargin];
     varargin = ['expDate', {inf}, varargin];
-    varargin = ['expDef', {{{'spontaneousActivity';'imageWorld_AllInOne';'imageWorld_lefthemifield';'imageWorld2'}}}, varargin]; 
+    varargin = ['expDef', {{{'s','i','n'}}}, varargin]; 
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
     params = csv.inputValidation(varargin{:});
 

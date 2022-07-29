@@ -26,7 +26,7 @@ function recLocation(varargin)
     
     % Get probes layout
     probeInfo = csv.checkProbeUse(params.subject);
-    probeNum = numel(probeInfo.serialNumbers);
+    probeNum = numel(probeInfo.serialNumbers{1});
     
     % Get the basic layout
     chanPosAll = [];
@@ -36,8 +36,8 @@ function recLocation(varargin)
     probeType = cell(probeNum,1);
     probeSerialNo = nan(probeNum,1);
     for pp = 1:probeNum
-        probeType{pp} = probeInfo.probeType{1}{probeNum};
-        probeSerialNo(pp) = probeInfo.serialNumbers{1}(probeNum);
+        probeType{pp} = probeInfo.probeType{1}{pp};
+        probeSerialNo(pp) = probeInfo.serialNumbers{1}(pp);
         switch probeType{pp}
             case '2.0 - 4shank'
                 % Taken from the IMRO plotting file
