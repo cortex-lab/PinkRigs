@@ -23,7 +23,8 @@ function main(varargin)
     %% Match neurons across days for all animals
 
     recLocUni = unique({dball.recLoc});
-
+    recLocUni = recLocUni(cell2mat(cellfun(@(x) sum(strcmp({dball.recLoc},x))>1, recLocUni, 'uni', 0)));
+    
     % Get the data across animals
     subjectsAll = cell(numel(recLocUni),1);
     Nstable = cell(numel(recLocUni),1);

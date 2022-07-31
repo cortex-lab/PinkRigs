@@ -10,7 +10,8 @@ function [BestDist,distPair] = getBestDist(BestMatch, XPos, Depth)
             
             % get BestDist -- not optimal
             for i = 1:nCd1
-                BestDist{d1,d2}(i,:) = distPair{d1,d2}(i,BestMatch{d1,d2}(i,:));
+                isNotNan = ~isnan(BestMatch{d1,d2}(i,:));
+                BestDist{d1,d2}(i,isNotNan) = distPair{d1,d2}(i,BestMatch{d1,d2}(i,isNotNan));
             end
         end
     end

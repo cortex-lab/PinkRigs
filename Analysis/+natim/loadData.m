@@ -5,7 +5,7 @@ function [data, proc] = loadData(varargin)
     mice = csv.readTable(csv.getLocation('main'));
 
     % Get processing parameters
-    proc.window = [-0.3 1.0 ... % around onset
+    proc.window = [-0.3 0.5 ... % around onset
         0.0 0.5]; % around offset
     proc.binSize = 0.01; % in ms
     nBins = int64((proc.window(2) - proc.window(1) + proc.window(4) - proc.window(3))/proc.binSize);

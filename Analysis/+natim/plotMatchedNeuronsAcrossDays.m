@@ -59,7 +59,7 @@ function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,Bes
 
     %% plot a cluster conserved across days
     
-    neuronIdx = 11;
+    neuronIdx = 1;
     % raster
     figure;
     for d = 1:numel(dn)
