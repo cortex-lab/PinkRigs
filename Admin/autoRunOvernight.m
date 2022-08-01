@@ -120,10 +120,10 @@ switch lower(computerType)
             fprintf('Running preprocessing...\n')
             
             % Alignment
-            preproc.align.main('expDate', 7, 'align2Check', '(0,0,0,0,0,0)')
+            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
             
             % Extracting data
-            preproc.extractExpData('expDate', 7, 'preproc2Check', '(0,0)')
+            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
         end
         
 
