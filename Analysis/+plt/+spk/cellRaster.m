@@ -136,7 +136,7 @@ guiData.axes.modPos = @(x,y) set(x, 'position', get(x, 'position').*[0 1 0 1]+[y
 
 guiData.axes.rasterLabel = annotation('textbox', 'EdgeColor', 'none', 'BackgroundColor', 'none',...
     'string', 'Time from event (s)', 'FontSize', defFontSize, 'position', mean(dualPosition).*[1 0.93 1 0], ...
-    'HorizontalAlignment', 'center', 'FontWeight', 'bold');
+    'HorizontalAlignment', 'center');
 
 guiData.axes.amplitdueLabel = annotation('textbox', 'EdgeColor', 'none', 'BackgroundColor', 'none',...
     'string', 'Time (s)', 'FontSize', defFontSize, 'position', mean(dualPosition).*[1 0.25 1 0], ...
@@ -148,6 +148,7 @@ guiData.titleSub{2} = annotation('textbox', [dualPosition(2,1), 0.95, dualPositi
     'HorizontalAlignment', 'center', 'FontSize', 10);
 %%
 guiData.allData = dat;
+guiData.nSessions = length(dat);
 guiData.curr.dIdx = 1;
 guiData.curr.probe = 1;
 guiData.curr.evTimeRef = 1;
@@ -164,6 +165,7 @@ function guiData = assignGUIFields(cellrasterGui, guiData)
 if ~exist('guiData', 'var'); guiData = guidata(cellrasterGui); end
 dat = guiData.allData;
 dIdx = guiData.curr.dIdx;
+
 
 evTimesLength = cellfun(@(x)length(x), dat{dIdx}.evTimes);
 if all(evTimesLength<guiData.curr.evTimeRef); guiData.curr.evTimeRef = 1;
@@ -286,7 +288,7 @@ clusterDots = plot(clusterXPos, clusterDepths,'.k','MarkerSize',10,'ButtonDownFc
 currClusterDot = plot(0,0,'.r','MarkerSize',20);
 
 [psthLines, rasterDots, rasterOnset, addRasterTicks, amplitudePlot, psthOnset] = deal(cell(2,1));
-for i = 1:guiData.curr.nExps
+for i = 1:2
     % (smoothed psth)
     maxNumGroups = 10; %HARDCODED for now... unlikely to be more than 10 trial labels...
     cla(guiData.axes.psth(i));
@@ -474,9 +476,19 @@ guiData = guidata(cellrasterGui);
 
 switch eventdata.Key
     case 'p' %Switch probe
-        guiData.curr.probe = guiData.curr.probe + 1;
-        if guiData.curr.probe > guiData.curr.nProbes
-            guiData.curr.probe = 1;
+        if contains(eventdata.Modifier, 'shift')
+            guiData.curr.probe = max([1 guiData.curr.probe - 1]);
+        else
+            guiData.curr.probe = min([guiData.curr.probe + 1, guiData.curr.nProbes]);
+        end
+        assignGUIFields(cellrasterGui, guiData);
+        cycleProbe(cellrasterGui);
+
+    case 'd' %Switch date
+        if contains(eventdata.Modifier, 'shift')
+            guiData.curr.dIdx = max([1 guiData.curr.dIdx - 1]);
+        else
+            guiData.curr.dIdx = min([guiData.curr.dIdx + 1, guiData.nSessions]);
         end
         assignGUIFields(cellrasterGui, guiData);
         cycleProbe(cellrasterGui);
@@ -521,7 +533,7 @@ switch eventdata.Key
 end
 
 % Upload gui data and draw
-if contains(eventdata.Key, {'p'; 'c'; 'arrow'})
+if contains(eventdata.Key, {'p'; 'c'; 'arrow';'d'})
     updatePlot(cellrasterGui);
 end
 end
