@@ -249,7 +249,7 @@ function cycleProbe(cellrasterGui)
 guiData = guidata(cellrasterGui);
 
 % Find responsive cells
-guiData.sigRes = cellfun(@(x,y)neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
+guiData.sigRes = cellfun(@(x,y) neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
 
 %Sort clusters (order of cycling with arrow keys) according to optional inputs
 % Remove the zero idx (if present) from clusters;

@@ -27,10 +27,17 @@ for i = 1:length(uniDates)
         continue
     elseif length(unique(expDefsUsed)) < height(currData)
         fprintf('WARNING: redundant expdefs for %s. Skipping smallest... \n', currDate);
-        %%%%% Need to actually do this %%%%%
+        keepIdx = ones(height(currData),1)>0;
+        for expName = unique(expDefsUsed)'
+            expIdx = strcmpi(expName, expDefsUsed);
+            if sum(expIdx) == 1; continue; end
+            durations = str2double(currData.expDuration);
+            keepIdx(expIdx) = durations(expIdx)~=max(durations(expIdx));
+        end
+        currData = currData(keepIdx,:);
     end
     if height(currData) > 2
-        error('Should not be more thaeventTimesn 2 experiments by this stage...')
+        error('Should not be more than 2 experiments by this stage...')
     end
 
     funcStub = 'plt.spk.rasterParams.';
