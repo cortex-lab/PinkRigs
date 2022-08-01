@@ -10,8 +10,7 @@ from datetime import datetime as time # to sort only for a fixed amount of time
 
 
 # error handlers 
-import sys
-import json
+import sys,shutil,json
 
 # pykilosort 
 from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
@@ -54,6 +53,13 @@ for idx,rec in queue_csv.iterrows():
                 run(input_dir, probe=channel_map, low_memory=True, dir_path=output_dir)
                 queue_csv.sortedTag.iloc[idx]= 1
                 queue_csv.to_csv(queue_csv_file,index = False)
+
+                # if there was a previous error message, remove it
+                err_message_file = rec.parent / r'pyKS\pyKS_error.json'
+                
+                if err_message_file.is_file(): 
+                    err_message_file.unlink()
+
             except: 
                 # save error message 
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -71,6 +77,9 @@ for idx,rec in queue_csv.iterrows():
                 errfile.close()
 
                 # delete temp folders before Michael kicks me out
+                is_tried = (rec.parent / r'pyKS\output\.kilosort').is_dir()
+                if is_tried:
+                    shutil.rmtree(rec.parent / r'pyKS\output\.kilosort') 
 
                 # update csv                
                 queue_csv.sortedTag.iloc[idx]= -1
