@@ -107,7 +107,6 @@ for i=1:height(expList)
         dataIdx = contains(ONENames, 'probe');
         for j = find(dataIdx)'
             if isempty(j); continue; end
-
             %If requested ONEFolder "probe1", skip other probes
             if ~contains({ONENames{j}, 'all'}, dataTypes)
                 continue
@@ -177,30 +176,32 @@ end
 function outData = loadAttributes(objects, attributes, objPath)
 if ~iscell(objects); objects = {objects}; end
 if ~iscell(attributes); attributes = {attributes}; end
-objects = strsplit(objects{1}, ',');
-attributes = strsplit(attributes{1}, ',');
+for j = 1:length(objects)
+    object = strsplit(objects{j}, ',');
+    attribute = strsplit(attributes{j}, ',');
 
-allFiles = dir(objPath);
-allFiles = allFiles(cellfun(@(x) ~strcmp(x(1),'.'),{allFiles.name}'));
-allFiles = {allFiles.name}';
+    allFiles = dir(objPath);
+    allFiles = allFiles(cellfun(@(x) ~strcmp(x(1),'.'),{allFiles.name}'));
+    allFiles = {allFiles.name}';
 
 
-splitNames = split(allFiles, '.');
-[matchedObj, matchedAttr] = deal(ones(size(splitNames,1), 1));
-if ~contains(objects, 'all')
-    matchedObj = contains(splitNames(:,1), objects);
-end
+    splitNames = split(allFiles, '.');
+    [matchedObj, matchedAttr] = deal(ones(size(splitNames,1), 1));
+    if ~contains(object, 'all')
+        matchedObj = contains(splitNames(:,1), object);
+    end
 
-if ~contains(attributes, 'all')
-    matchedAttr = contains(splitNames(:,2), attributes);
-end
+    if ~contains(attribute, 'all')
+        matchedAttr = contains(splitNames(:,2), attribute);
+    end
 
-loadPaths = fullfile(objPath, allFiles(matchedObj & matchedAttr));
-loadObj = splitNames(matchedObj & matchedAttr,1);
-loadAttr = splitNames(matchedObj & matchedAttr,2);
-for i = 1:size(loadPaths,1)
-    loadAttr{i} = strrep(loadAttr{i}, '_av_', '');
-    outData.(loadObj{i}).(loadAttr{i}) = readNPY(loadPaths{i});
+    loadPaths = fullfile(objPath, allFiles(matchedObj & matchedAttr));
+    loadObj = splitNames(matchedObj & matchedAttr,1);
+    loadAttr = splitNames(matchedObj & matchedAttr,2);
+    for i = 1:size(loadPaths,1)
+        loadAttr{i} = strrep(loadAttr{i}, '_av_', '');
+        outData.(loadObj{i}).(loadAttr{i}) = readNPY(loadPaths{i});
+    end
 end
 end
 

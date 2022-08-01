@@ -12,21 +12,21 @@ end
 % Note: this looping is faster because it means smaller subsets are indexed when searching.
 sigResults = struct;
 for i = 1:length(spk)
-    spkTimes = spk{i}.spikes.time;
-    spkCluster = spk{i}.spikes.cluster;
-    clusterIDs = [spk{i}.clusters.ID]';
+    spkTimes = spk{i}.spikes.times;
+    spkCluster = spk{i}.spikes.clusters;
+    templateIDs = [spk{i}.clusters.IDs]';
 
     matlabMod = 0;
-    if min(clusterIDs) == 0
+    if min(templateIDs) == 0
         matlabMod = 1;
         spkCluster = spkCluster+1;
-        clusterIDs = clusterIDs+1;
+        templateIDs = templateIDs+1;
     end
 
     eventWindows = eventTimes+tWin;
-    spikeCounts = histcounts2(spkTimes, spkCluster, sort(eventWindows(:)), 1:(max(clusterIDs)+1));
-    spikeCountsPre = spikeCounts(1:4:end,clusterIDs)./range(tWin(1:2));
-    spikeCountsPost = spikeCounts(3:4:end,clusterIDs)./range(tWin(3:4));
+    spikeCounts = histcounts2(spkTimes, spkCluster, sort(eventWindows(:)), 1:(max(templateIDs)+1));
+    spikeCountsPre = spikeCounts(1:4:end,templateIDs)./range(tWin(1:2));
+    spikeCountsPost = spikeCounts(3:4:end,templateIDs)./range(tWin(3:4));
     ttestPrePost = spikeCountsPost - spikeCountsPre;
 
     pVal = zeros(size(ttestPrePost,2),1);
@@ -34,7 +34,7 @@ for i = 1:length(spk)
         pVal(k) = signrank(ttestPrePost(:,k));
     end
 
-    sigResults(i).clusterID = clusterIDs - matlabMod;
+    sigResults(i).clusterID = templateIDs - matlabMod;
     sigResults(i).pVal = pVal;
     sigResults(i).spikeCountsPre = spikeCountsPre';
     sigResults(i).spikeCountsPost = spikeCountsPost';
