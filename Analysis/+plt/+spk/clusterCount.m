@@ -48,7 +48,7 @@ function clusterCount(varargin)
                 clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                     object='clusters', ...
                     attribute='_av_KSLabels');
-                KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
+                KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
                 goodUnits = KSLabels == 2;
 
                 % Get cluster count

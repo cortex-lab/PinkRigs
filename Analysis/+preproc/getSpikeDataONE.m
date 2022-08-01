@@ -106,7 +106,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     
     % clusters (that can be manually curated)
     spk.clusters.av_IDs = cids;
-    spk.clusters.av_Labels = clusKSLabels;
+    spk.clusters.av_KSLabels = clusKSLabels;
     spk.clusters.amps = clusAmps;
     spk.clusters.waveforms = clusWav; % maybe to remove/redundant with qMetrics?
     spk.clusters.waveformsChannels = clusWavChan; % maybe to remove/redundant with qMetrics?
