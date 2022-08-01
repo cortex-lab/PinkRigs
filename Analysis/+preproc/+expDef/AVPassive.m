@@ -130,8 +130,8 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     ev.timeline_visOff = cellfun(@(x) single(x(:,2)), visOnOffByTrial, 'uni', 0);
 
     audPeriodOnOff = cell2mat(audPeriodOnOff);
-    ev.timeline_audPeriodOff = single(audPeriodOnOff(:,1));
-    ev.timeline_audPeriodOn = single(audPeriodOnOff(:,2));
+    ev.timeline_audPeriodOn = single(audPeriodOnOff(:,1));
+    ev.timeline_audPeriodOff = single(audPeriodOnOff(:,2));
 
     visPeriodOnOff = cell2mat(visPeriodOnOff);
     ev.timeline_visPeriodOn = single(visPeriodOnOff(:,1));

@@ -97,7 +97,7 @@ elseif strcmp(outP.subject{1},'all')
 end
 
 % Check that all "subjects" exist in the main csv. If not, error
-if ~all(ismember(outP.subject, mainCSV.Subject))
+if ~all(ismember(outP.subject, [mainCSV.Subject]))
     error('Unrecognized mouse names!')
 end
 implantDates = cellfun(@(x) mainCSV.P0_implantDate{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);

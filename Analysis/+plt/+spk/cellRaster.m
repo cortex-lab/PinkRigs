@@ -1,12 +1,12 @@
-function cellRaster(spk, eventTimes, trialGroups, opt)
+function cellRaster(dat)
 %% Cell raster "browser"
 % NOTE: Designed to operate on the output of the PinkAV Rigs pipeline.
 % Letters below are used as follows:
 %    "p": number of probes
 %    "s": number of spikes
 %    "c": number of clusters
-%    "n": number of sets of eventTimes
-%    "m": number of eventTimes within a set
+%    "n": number of sets of evTimes
+%    "m": number of evTimes within a set
 %    "q": number of distinct trial groupings for each set of event times
 
 
@@ -19,14 +19,14 @@ function cellRaster(spk, eventTimes, trialGroups, opt)
 %   spk{1}.clusters.Depth----------[cx1] matrix: Distance form probe tip for each cluster
 %   spk{1}.clusters.XPos-----------[cx1] matrix: x position for each cluster (0 = shank 0)
 
-% eventTimes(Required)-------[nx1] cell array of [mx1] matrices: "n" sets event times
-%   ALTERNATIVELY can be "ev" from the preproc file. See "opt.customPipe" below
+% evTimes(Required)-------[nx1] cell array of [mx1] matrices: "n" sets event times
+%   ALTERNATIVELY can be "ev" from the preproc file. See "plotOpt.customPipe" below
 %   NOTE: "nans" will be automatically removed
 
-% trialGroups(ones(m,1))-----[nx1] cell array of [mxq] matrices: "q" sets of trial labels for events
+% triGrps(ones(m,1))-----[nx1] cell array of [mxq] matrices: "q" sets of trial labels for events
 %   NOTE: A uniform label (ones(p,1)) will be added to the first column if absent
 
-% opt-------Struct with optional inputs. Each of these will have default values
+% plotOpt-------Struct with optional inputs. Each of these will have default values
 %
 %    .paramTag('default')-----string: identifier for param set in combination with "ev" input
 %       NOTE: custom paramSets can be stored in +rasterParams folder. paramTag is function name
@@ -34,10 +34,10 @@ function cellRaster(spk, eventTimes, trialGroups, opt)
 %    .groupNames('Unsorted')------[nx1] cell array of [1xq] cell arrays: names for each trial group
 %       NOTE: each cell array should contain a name for each unique value within that trial group
 %
-%    .sortClusters('sig')------string OR [nx1] cell array of [cx1] matrices: how to sort clusters
+%    .sortTemplates('sig')------string OR [nx1] cell array of [cx1] matrices: how to sort clusters
 %       NOTE: This only affects the order of cycling through clusters (with up/down arrow)
 %
-%    .sortTrials(eventTimes)------[nx1] cell array of [mx1] matrices: indicates how to sort trials
+%    .sortTrials(evTimes)------[nx1] cell array of [mx1] matrices: indicates how to sort trials
 %       NOTE: Will sort trials within each trial group according to increasing values in .sortTrials
 %
 %    .trialTickTimes([])--[nx1] cell array of [mx1] matrices: additional raster ticks (e.g. movements)
@@ -51,230 +51,264 @@ function cellRaster(spk, eventTimes, trialGroups, opt)
 % Shift+Left/Right arrow keys:    switch between different sets of event times
 % "c" key:                        manually select a cluster
 
-%% Input validation and contruction
-% Validate eventTimes input
-if isstruct(spk); spk  = {spk}; end
-if ~exist('eventTimes','var'); error('No event times'); end
-if ~exist('opt','var'); opt = struct; end
-if ~iscell(eventTimes) && ~isstruct(eventTimes); eventTimes = {eventTimes}; end
-
-% If "ev" has been input instead of event times, load a parameter set with corresponding function
-if ~isfield(opt,'paramTag'); opt.paramTag = 'default'; end
-if isstruct(eventTimes)
-    ev = eventTimes;
-    fprintf('eventTimes appears to be "ev" so will load preset parameters \n');
-    paramFunc = str2func(['plt.spk.rasterParams.' opt.paramTag]);
-    [eventTimes, trialGroups, opt] = paramFunc(ev);
-end
-
-% Validate trialGroups input and assign default (uniform grouping)
-if ~exist('trialGroups','var') || isempty(trialGroups)
-    trialGroups = cellfun(@(x) x*0+1, eventTimes, 'uni' ,0); 
-    opt.groupNames = repmat({'Unsorted'}, length(trialGroups),1);
-end
-trialGroups = inputLengthCheck(eventTimes, trialGroups);
-noDefault = cellfun(@(x) ~all(x(:,1)==1 | isnan(x(:,1))), trialGroups);
-trialGroups(noDefault) = cellfun(@(x) [x(:,1)*0+1, x],trialGroups(noDefault),'uni',0);
-
-% Validate "opt" fields
-tEvts = cellfun(@(x) x*0+1, eventTimes, 'uni', 0);
-tClust = cellfun(@(x) [x.clusters.ID]'*0>0, spk, 'uni', 0);
-
-if ~isfield(opt, 'highlight'); opt.highlight = tClust; 
-else, opt.highlight = inputLengthCheck(tClust, opt.highlight, 'opt.highlight');
-end
-
-if ~isfield(opt, 'sortClusters'); opt.sortClusters = 'sig';
-elseif ischar(opt.sortClusters) && ~contains(lower(opt.sortClusters(1:3)), {'dep';'sig'})
-    error('Unrecognized tag for opt.sortClusters');
-elseif ~ischar(opt.sortClusters)
-    opt.sortClusters = inputLengthCheck(tClust, opt.sortClusters, 'opt.sortClusters');
-end
-
-if ~isfield(opt, 'sortTrials'); opt.sortTrials = tEvts; 
-else, opt.sortTrials = inputLengthCheck(tEvts, opt.sortTrials, 'opt.sortTrials');
-end
-
-if ~isfield(opt, 'trialTickTimes'); opt.trialTickTimes = tEvts; 
-else, opt.trialTickTimes = inputLengthCheck(tEvts, opt.trialTickTimes, 'opt.trialTickTimes');
-end
-
-if isfield(opt, 'groupNames')
-    if all(cellfun(@(x) size(x,2), trialGroups(:))==(cellfun(@length, opt.groupNames(:)))+1)
-        opt.groupNames = cellfun(@(x) ['Unsorted'; x(:)]', opt.groupNames, 'uni', 0);
-    elseif all(cellfun(@(x) size(x,2), trialGroups(:))==(cellfun(@length, opt.groupNames(:))))
-        error('opt.groupNames does not match column numbers in trialGroups')
-    end
-end
-
-if isfield(opt, 'eventNames')
-    if ~iscell(opt.eventNames) || length(opt.eventNames)~=length(eventTimes)
-        error('opt.eventNames does not match length of eventTimes input')
-    end
-else, opt.eventNames = repmat({'Not Provided'}, length(eventTimes), 1);
-end
-
-% Create anon function to remove any NaN values from the eventTimes and corresponding cells
-nanIdx = cellfun(@(x) ~isnan(x(:,1)), eventTimes, 'uni', 0);
-remNans = @(x) cellfun(@(y,z) y(z,:), x, nanIdx, 'uni', 0);
-
 %% Package gui data
 cellrasterGui = figure('color','w');
 guiData = struct;
-guiData.title = annotation('textbox', [0.25, 0.98, 0.5, 0], 'string', 'My Text', 'EdgeColor', 'none',...
-    'HorizontalAlignment', 'center', 'FontSize', 14, 'FontWeight', 'bold');
+guiData.titleMain = annotation('textbox', [0, 1, 1, 0], 'string', 'My Text', 'EdgeColor', 'none',...
+    'HorizontalAlignment', 'center', 'FontSize', 10, 'FontWeight', 'bold');
+defFontSize = 8;
 
-% Generate axes (with dummy data) and figure
-nCol = 4;
-nRow = 5;
-nAxes = nCol*nRow;
 
-guiData.axes.clusters = subplot(nRow,nCol,1:nCol:(nAxes-nRow),'YDir','normal'); hold on;
+%% Set up the cluster dots axes
+nCol = 15;
+nRow = 15;
+
+axWidth = 1:2;
+axHeight = 1:nRow;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.clusters = subplot(nRow,nCol,tRef(:)','YDir','normal'); hold on; axis tight
 xlim([-0.1,1]);
-ylabel('Distance from tip (\mum)')
-xlabel('xPosition (\mum)')
+ylabel('Distance from tip (\mum)', 'FontSize',defFontSize)
+xlabel('xPosition (\mum)', 'FontSize',defFontSize)
 disableDefaultInteractivity(gca)
 
-tRef = nCol-2:nCol;
-guiData.axes.psth = subplot(nRow,nCol,tRef,'YAxisLocation','right'); hold on;
-xlabel('Time from event (s)');
-ylabel('spks/s/trial');
+%% Set up the psth axes
+axWidth = 4:9;
+axHeight = 1:3;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.psth(1) = subplot(nRow,nCol,tRef(:)','YAxisLocation','left'); hold on; axis tight
+set(guiData.axes.psth(1), 'XColor', 'none', 'position', get(guiData.axes.psth(1), 'position').*[1 0.95 1 0.95])
+ylabel('Spks/s', 'FontSize',defFontSize);
 disableDefaultInteractivity(gca)
 
-guiData.axes.raster = subplot(nRow,nCol,[tRef+nCol,tRef+nCol*2,tRef+nCol*3], ...
-    'YDir','reverse','YAxisLocation','right'); hold on;
-xlabel('Time from event (s)');
-ylabel('Trial');
+axWidth = 10:nCol;
+axHeight = 1:3;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.psth(2) = subplot(nRow,nCol,tRef(:)','YAxisLocation','right'); hold on; axis tight
+set(guiData.axes.psth(2), 'XColor', 'none', 'position', get(guiData.axes.psth(2), 'position').*[1 0.95 1 0.95])
+ylabel('Spks/s', 'FontSize',defFontSize);
 disableDefaultInteractivity(gca)
 
-guiData.axes.amplitude = subplot(nRow,nCol,nAxes-nCol+1:nAxes); hold on;
-xlabel('Time (s)');
-ylabel('Amplitude');
-axis tight
+guiData.axes.yLimListener(1) = addlistener(guiData.axes.psth(1), 'YLim', 'PostSet', ...
+    @(cellrasterGui,eventdata) matchYLim(guiData.axes.psth(1), guiData.axes.psth(2)));
+guiData.axes.yLimListener(2) = addlistener(guiData.axes.psth(2), 'YLim', 'PostSet', ...
+    @(cellrasterGui,eventdata) matchYLim(guiData.axes.psth(2), guiData.axes.psth(1)));
+%% Set up the raster axes
+axWidth = 4:9;
+axHeight = round(nRow*0.3):round(nRow*0.7);
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.raster(1) = subplot(nRow,nCol,tRef(:)', ...
+    'YDir','reverse','YAxisLocation','left');
+hold on; axis tight
+ylabel('Trial', 'FontSize',defFontSize);
 disableDefaultInteractivity(gca)
 
-guiData.plot.clusterDots = [];
+axWidth = 10:nCol;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.raster(2) = subplot(nRow,nCol,tRef(:)', ...
+    'YDir','reverse','YAxisLocation','right');
+hold on; axis tight
+ylabel('Trial', 'FontSize',defFontSize);
+disableDefaultInteractivity(gca)
+linkaxes([guiData.axes.psth(:);guiData.axes.raster(:)], 'x');
 
-guiData.spk = spk;
+%% Set up the amplitude axes
+axHeight = nRow-1:nRow;
+axWidth = 4:9;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.amplitude(1) = subplot(nRow,nCol,tRef(:)');
+hold on; axis tight
+ylabel('Amplitude', 'FontSize',defFontSize);
+disableDefaultInteractivity(gca)
+
+axWidth = 10:nCol;
+tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
+guiData.axes.amplitude(2) = subplot(nRow,nCol,tRef(:)','YAxisLocation','right');
+hold on; axis tight
+ylabel('Amplitude', 'FontSize',defFontSize);
+disableDefaultInteractivity(gca)
+%%
+
+dualPosition = cell2mat(get(guiData.axes.raster(:), 'position'));
+guiData.axes.fullWidth = [dualPosition(1,1) dualPosition(2,1)-dualPosition(1,1)+dualPosition(2,3)];
+guiData.axes.halfWidth = dualPosition(2,[1,3]);
+guiData.axes.modPos = @(x,y) set(x, 'position', get(x, 'position').*[0 1 0 1]+[y(1) 0 y(2) 0]);
+
+guiData.axes.rasterLabel = annotation('textbox', 'EdgeColor', 'none', 'BackgroundColor', 'none',...
+    'string', 'Time from event (s)', 'FontSize', defFontSize, 'position', mean(dualPosition).*[1 0.93 1 0], ...
+    'HorizontalAlignment', 'center', 'FontWeight', 'bold');
+
+guiData.axes.amplitdueLabel = annotation('textbox', 'EdgeColor', 'none', 'BackgroundColor', 'none',...
+    'string', 'Time (s)', 'FontSize', defFontSize, 'position', mean(dualPosition).*[1 0.25 1 0], ...
+    'HorizontalAlignment', 'center');
+
+guiData.titleSub{1} = annotation('textbox', [dualPosition(1,1), 0.95, dualPosition(1,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
+    'HorizontalAlignment', 'center', 'FontSize', 10);
+guiData.titleSub{2} = annotation('textbox', [dualPosition(2,1), 0.95, dualPosition(2,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
+    'HorizontalAlignment', 'center', 'FontSize', 10);
+%%
+guiData.allData = dat;
+guiData.curr.dIdx = 1;
 guiData.curr.probe = 1;
-guiData.curr.eventTimeRef = 1;
-guiData.curr.trialGroupRef = 1;
-
-guiData.eventTimes = remNans(eventTimes);
-guiData.eventNames = opt.eventNames;
-guiData.trialGroups = remNans(trialGroups);
-guiData.groupNames = opt.groupNames;
-guiData.sortClusters = opt.sortClusters;
-guiData.sortTrials = remNans(opt.sortTrials);
-guiData.trialTickTimes = remNans(opt.trialTickTimes);
-guiData.highlight = opt.highlight;
-
+guiData.curr.evTimeRef = 1;
+guiData.curr.triGrpRef = 1;
 guidata(cellrasterGui, guiData);
+
+assignGUIFields(cellrasterGui);
 cycleProbe(cellrasterGui);
 updatePlot(cellrasterGui);
 end
 
-%% Little function to validate length of inputs that should match eventTimes
-function input2Check = inputLengthCheck(eventTimes, input2Check, inputTag)
-if ~exist('inputTag', 'var'); inputTag = inputname(2); end
+%%
+function guiData = assignGUIFields(cellrasterGui, guiData)
+if ~exist('guiData', 'var'); guiData = guidata(cellrasterGui); end
+dat = guiData.allData;
+dIdx = guiData.curr.dIdx;
 
-nEventSets = length(eventTimes);
-if ~iscell(input2Check); input2Check = {input2Check}; end
-if length(input2Check) ~= nEventSets
-    if length(input2Check) == 1
-        fprintf('Replicating %s to match number of event sets... \n', inputTag)
-        input2Check = repmat(input2Check, nEventSets, 1);
-    else
-        error('Mismatching number of cells for eventTimes/highlights');
-    end
+evTimesLength = cellfun(@(x)length(x), dat{dIdx}.evTimes);
+if all(evTimesLength<guiData.curr.evTimeRef); guiData.curr.evTimeRef = 1;
+elseif guiData.curr.evTimeRef < 1; guiData.curr.evTimeRef = max(evTimesLength);
+end
+evTimeRef = guiData.curr.evTimeRef;
+
+triGrpIdx = cellfun(@length, dat{dIdx}.triGrps) >=evTimeRef;
+triGrpLength = zeros(length(triGrpIdx),1);
+triGrpLength(triGrpIdx) = cellfun(@(x) size(x{evTimeRef},2),  dat{dIdx}.triGrps(triGrpIdx));
+if all(triGrpLength<guiData.curr.triGrpRef); guiData.curr.triGrpRef = 1;
+elseif guiData.curr.triGrpRef < 1; guiData.curr.triGrpRef = max(triGrpLength);
+end
+triGrpRef = guiData.curr.triGrpRef;
+
+nExps = all([evTimeRef <= evTimesLength,  guiData.curr.triGrpRef <= triGrpLength],2);
+nanIdx = cellfun(@(x) isnan(x{evTimeRef}), dat{dIdx}.evTimes(nExps), 'uni', 0);
+
+guiData.curr.nExps = sum(nExps);
+guiData.curr.subject = unique(dat{dIdx}.subject(nExps), 'stable');
+guiData.curr.expDate = unique(dat{dIdx}.expDate(nExps), 'stable');
+guiData.curr.expDef = unique(dat{dIdx}.plotName(nExps), 'stable');
+guiData.curr.evTimes = cellfun(@(x,y) x{evTimeRef}(~y), dat{dIdx}.evTimes(nExps), nanIdx, 'uni', 0);
+guiData.curr.evNames = cellfun(@(x) x{evTimeRef}, dat{dIdx}.evNames(nExps), 'uni', 0);
+
+guiData.curr.triGrps = cellfun(@(x,y) x{evTimeRef}(~y, triGrpRef), dat{dIdx}.triGrps(nExps), nanIdx, 'uni', 0);
+guiData.curr.grpNames = cellfun(@(x) x{evTimeRef}{triGrpRef}, dat{dIdx}.grpNames(nExps), 'uni', 0);
+
+probeFields = fields([dat{dIdx}.spks{nExps}]);
+selProbe = probeFields{guiData.curr.probe};
+guiData.curr.spks = [dat{dIdx}.spks{nExps}]';
+guiData.curr.nProbes = length(probeFields);
+guiData.curr.spks = {guiData.curr.spks.(selProbe)}';
+
+guiData.curr.spkTimes = cellfun(@(x) x.spikes.times, guiData.curr.spks, 'uni', 0);
+guiData.curr.spkTemplate = cellfun(@(x) x.spikes.clusters, guiData.curr.spks, 'uni', 0);
+guiData.curr.spkAmps = cellfun(@(x) x.spikes.amps, guiData.curr.spks, 'uni', 0);
+guiData.curr.clusterDepths = cellfun(@(x) x.clusters.depths', guiData.curr.spks, 'uni', 0);
+guiData.curr.clusterXPos = cellfun(@(x) x.clusters.xpos', guiData.curr.spks, 'uni', 0);
+guiData.curr.clusterIDs = cellfun(@(x) x.clusters.IDs', guiData.curr.spks, 'uni', 0);
+
+guiData.curr.sortTemplates = dat{dIdx}.sortTemplates(find(nExps,1));
+
+sortExists = cellfun(@(x) ~isempty(x), dat{dIdx}.sortTrials);
+guiData.curr.sortTrials = cell(sum(nExps),1);
+guiData.curr.trialTickTimes = cell(sum(nExps),1);
+guiData.curr.sortTrials(sortExists) = cellfun(@(x,y) x{evTimeRef}(~y), dat{dIdx}.sortTrials(nExps&sortExists), nanIdx(sortExists), 'uni', 0);
+guiData.curr.trialTickTimes(sortExists) = cellfun(@(x,y) x{evTimeRef}(~y), dat{dIdx}.trialTickTimes(nExps&sortExists), nanIdx(sortExists), 'uni', 0);
+guiData.curr.highlight = cell(sum(nExps), 1);
+
+guiData.pythonModIdx = 0;
+if any(cell2mat(guiData.curr.spkTemplate) == 0)
+    guiData.pythonModIdx = 1;
+    guiData.curr.spkTemplate = cellfun(@(x) x+1, guiData.curr.spkTemplate, 'uni', 0);
+    guiData.curr.clusterIDs = cellfun(@(x) x+1, guiData.curr.clusterIDs, 'uni', 0);
 end
 
-% Check corresponding eventTimes and trialGroup cells have same number of rows
-sizeCheck = cellfun(@(x,y) size(x,1) == size(y,1), eventTimes, input2Check, 'uni', 0);
-if ~all(cell2mat(sizeCheck))
-    error(['each cell for eventTimes & ' inputTag ' should have same number of rows'])
+if length(unique(cellfun(@length, guiData.curr.clusterXPos))) ~= 1
+    error('Multiple sessions must be from single sorting, but temaplates are different ?! \n')
+else
+    guiData.curr.clusterXPos = guiData.curr.clusterXPos{1};
+    guiData.curr.clusterDepths = guiData.curr.clusterDepths{1};
+    guiData.curr.clusterIDs = guiData.curr.clusterIDs{1};
 end
+
+axHand1 = [guiData.axes.psth(1); guiData.axes.raster(1); guiData.axes.amplitude(1)];
+axHand2 = [guiData.axes.psth(2); guiData.axes.raster(2); guiData.axes.amplitude(2)];
+if guiData.curr.nExps == 1
+    arrayfun(@(x) set(x, 'visible', 0), axHand1, 'uni', 0);
+    arrayfun(@(x) guiData.axes.modPos(x, guiData.axes.fullWidth), axHand2, 'uni', 0);
+elseif guiData.curr.nExps == 2
+    arrayfun(@(x) set(x, 'visible', 1), axHand1, 'uni', 0);
+    arrayfun(@(x) guiData.axes.modPos(x, guiData.axes.halfWidth), axHand2, 'uni', 0);
+end
+
+guidata(cellrasterGui, guiData);
 end
 
 %%
 function cycleProbe(cellrasterGui)
 guiData = guidata(cellrasterGui);
 
-% Populate guiData with current spike/cluster info from current probe
-spk = guiData.spk{guiData.curr.probe};
-
-guiData.curr.spkTimes = spk.spikes.time;
-guiData.curr.spkCluster = spk.spikes.cluster;
-guiData.curr.spkAmps = spk.spikes.tempScalingAmp;
-
-guiData.curr.clustDepths = [spk.clusters.Depth]';
-guiData.curr.clustXPos = [spk.clusters.XPos]';
-guiData.curr.clustIDs = [spk.clusters.ID]';
-
-% Remove the zero idx (if present) from clusters;
-guiData.pythonModIdx = 0;
-if min(guiData.curr.spkCluster) == 0
-    guiData.pythonModIdx = 1;
-    guiData.curr.spkCluster = guiData.curr.spkCluster+1; 
-    guiData.curr.clustIDs = guiData.curr.clustIDs+1; 
-end
-
-%Populate current eventTimes and trialGroups
-guiData.curr.eventTimes = guiData.eventTimes{guiData.curr.eventTimeRef};
-guiData.curr.trialGroups = guiData.trialGroups{guiData.curr.eventTimeRef};
+% Find responsive cells
+guiData.sigRes = cellfun(@(x,y)neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
 
 %Sort clusters (order of cycling with arrow keys) according to optional inputs
-if ischar(guiData.sortClusters)
-    switch guiData.sortClusters(1:3)
+% Remove the zero idx (if present) from clusters;
+if ischar(guiData.curr.sortTemplates{1})
+    switch guiData.curr.sortTemplates{1}(1:3)
         case 'dep'
-            [~, clusterSortIdx] = sort(guiData.curr.clustDepths);
+            [~, clusterSortIdx] = sort(guiData.curr.clusterDepths{1});
         case 'sig'
-            guiData.sigRes = neural.findResponsiveCells(spk,guiData.curr.eventTimes);
-            [~, clusterSortIdx] = sort(guiData.sigRes.pVal);
-            if isempty(guiData.highlight{guiData.curr.probe}) || ~any(guiData.highlight{guiData.curr.probe})
-                guiData.highlight{guiData.curr.probe} = guiData.sigRes.pVal<0.01;
-            end
+            [~, chooseSort] = max(cellfun(@(x) sum(x.pVal<0.05), guiData.sigRes));
+            [~, clusterSortIdx] = sort(guiData.sigRes{chooseSort}.pVal);
+            guiData.curr.highlight = cellfun(@(x) x.pVal<0.01, guiData.sigRes, 'uni', 0);
     end
 else
-    [~, clusterSortIdx] = sort(guiData.sortClusters{guiData.curr.eventTimeRef});
+    [~, clusterSortIdx] = sort(guiData.sortTemplates{guiData.curr.evTimeRef});
 end
-guiData.curr.sortedClustIDs = guiData.curr.clustIDs(clusterSortIdx);
-guiData.curr.clust = guiData.curr.sortedClustIDs(1);
-guiData.curr.clustIdx = find(guiData.curr.clust == guiData.curr.clustIDs);
+guiData.curr.sortedTemplateIDs = guiData.curr.clusterIDs(clusterSortIdx);
+guiData.curr.cluster = guiData.curr.sortedTemplateIDs(1);
+guiData.curr.clusterIdx = find(guiData.curr.cluster == guiData.curr.clusterIDs,1);
 
 % Initialize figure and axes
 axes(guiData.axes.clusters); cla;
-ylim([min(guiData.curr.clustDepths)-50 max(guiData.curr.clustDepths)+50]);
-xlim([min(guiData.curr.clustXPos)-25 max(guiData.curr.clustXPos)+25]);
+clusterXPos = guiData.curr.clusterXPos;
+clusterDepths = guiData.curr.clusterDepths;
+
+ylim([min(clusterDepths)-50 max(clusterDepths)+50]);
+xlim([min(clusterXPos)-5 max(clusterXPos)+5]);
 
 % (plot cluster depths by depth and xPos)
-highlight = guiData.highlight{guiData.curr.probe};
-plot(guiData.curr.clustXPos(highlight),guiData.curr.clustDepths(highlight),'.b','MarkerSize',25);
-clusterDots = plot(guiData.curr.clustXPos,guiData.curr.clustDepths,'.k','MarkerSize',15,'ButtonDownFcn',@clusterClick);
-
+cCol = [0,0,1;1,0,0];
+highlight = guiData.curr.highlight;
+for i = 1:guiData.curr.nExps
+    scatter(clusterXPos(highlight{i}), clusterDepths(highlight{i}), 50, 'filled', ...
+        'MarkerFaceColor', cCol(i,:), 'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', 1/guiData.curr.nExps);
+end
+clusterDots = plot(clusterXPos, clusterDepths,'.k','MarkerSize',10,'ButtonDownFcn',@clusterClick);
 currClusterDot = plot(0,0,'.r','MarkerSize',20);
 
-% (smoothed psth)
-axes(guiData.axes.psth); cla;
-maxNumGroups = 10; %HARDCODED for now... unlikely to be more than 10 trial labels...
-psthLines = arrayfun(@(x) plot(NaN,NaN,'linewidth',2,'color','k'),1:maxNumGroups);
-psthOnset = xline(0, ':c', 'linewidth', 3);
+[psthLines, rasterDots, rasterOnset, addRasterTicks, amplitudePlot, psthOnset] = deal(cell(2,1));
+for i = 1:guiData.curr.nExps
+    % (smoothed psth)
+    maxNumGroups = 10; %HARDCODED for now... unlikely to be more than 10 trial labels...
+    cla(guiData.axes.psth(i));
+    psthLines{i} = arrayfun(@(x) plot(guiData.axes.psth(i), NaN,NaN,'linewidth',2,'color','k'),1:maxNumGroups);
+    psthOnset{i} = xline(guiData.axes.psth(i), 0, ':c', 'linewidth', 3);
 
-% (raster)
-axes(guiData.axes.raster); cla;
-rasterDots = scatter(NaN,NaN,5,'k','filled');
-rasterOnset = xline(0, ':c', 'linewidth', 3);
-addRasterTicks = scatter(NaN,NaN,5,'c','filled');
+    % (raster)
+    cla(guiData.axes.raster(i));
+    rasterDots{i} = scatter(guiData.axes.raster(i), NaN,NaN,5,'k','filled');
+    rasterOnset{i} = xline(guiData.axes.raster(i), 0, ':c', 'linewidth', 3);
+    addRasterTicks{i} = scatter(guiData.axes.raster(i), NaN,NaN,10,'c','filled');
 
-% (spk amplitude across the recording)
-axes(guiData.axes.amplitude); cla;
-amplitudePlot = plot(NaN,NaN,'.k');
+    % (spk amplitude across the recording)
+    cla(guiData.axes.amplitude(i));
+    amplitudePlot{i} = plot(guiData.axes.amplitude(i), NaN,NaN,'.k');
 
-% Set default raster times
-rasterWindow = [-0.5,1];
-psthBinSize = 0.001;
-tBins = rasterWindow(1):psthBinSize:rasterWindow(2);
-t = tBins(1:end-1) + diff(tBins)./2;
+    % Set default raster times
+    rasterWindow = [-0.5,1]./guiData.curr.nExps;
+    psthBinSize = 0.001;
+    tBins = rasterWindow(1):psthBinSize:rasterWindow(2);
+    t = tBins(1:end-1) + diff(tBins)./2;
+end
 
 % Set functions for key presses
 set(cellrasterGui,'WindowKeyPressFcn',@keyPress);
@@ -300,125 +334,137 @@ end
 function updatePlot(cellrasterGui)
 % Get guidata
 guiData = guidata(cellrasterGui);
-guiData.curr.eventTimes = guiData.eventTimes{guiData.curr.eventTimeRef};
-guiData.curr.trialGroups = guiData.trialGroups{guiData.curr.eventTimeRef};
-if guiData.curr.trialGroupRef > size(guiData.curr.trialGroups,2)
-    guiData.curr.trialGroupRef = size(guiData.curr.trialGroups,2);
-end
-guiData.curr.clustIdx = find(guiData.curr.clust == guiData.curr.clustIDs);
-
-% Turn on/off the appropriate graphics
-set(guiData.plot.rasterDots,'visible','on');
+guiData.curr.clusterIdx = find(guiData.curr.cluster == guiData.curr.clusterIDs);
 
 % Plot depth location on probe
 clusterX = get(guiData.plot.clusterDots,'XData');
 clusterY = get(guiData.plot.clusterDots,'YData');
-set(guiData.plot.currClusterDot,'XData',clusterX(guiData.curr.clustIdx), 'YData',clusterY(guiData.curr.clustIdx));
+set(guiData.plot.currClusterDot,'XData',clusterX(guiData.curr.clusterIdx), 'YData',clusterY(guiData.curr.clusterIdx));
 
 % Bin spks (use only spks within time range, big speed-up)
-currSpkIdx = ismember(guiData.curr.spkCluster,guiData.curr.clust);
-currRasterSpkTimes = guiData.curr.spkTimes(currSpkIdx);
+for i = 1:guiData.curr.nExps
+    if guiData.curr.nExps == 2; pltIdx = i; else, pltIdx = 2; end
 
-tPeriEvent = guiData.curr.eventTimes + guiData.plot.rasterBins;
-% (handle NaNs by setting rows with NaN times to 0)
-tPeriEvent(any(isnan(tPeriEvent),2),:) = 0;
+    currSpkIdx = ismember(guiData.curr.spkTemplate{i},guiData.curr.cluster);
+    currRasterSpkTimes = guiData.curr.spkTimes{i}(currSpkIdx);
 
-currRasterSpkTimes(currRasterSpkTimes < min(tPeriEvent(:)) | ...
-    currRasterSpkTimes > max(tPeriEvent(:))) = [];
+    tPeriEvent = guiData.curr.evTimes{i} + guiData.plot.rasterBins;
+    % (handle NaNs by setting rows with NaN times to 0)
+    tPeriEvent(any(isnan(tPeriEvent),2),:) = 0;
 
-tDat = tPeriEvent';
-if ~any(diff(tDat(:))<0)
-    currRaster = [histcounts(currRasterSpkTimes,tDat(:)),0];
-    currRaster = reshape(currRaster, size(tPeriEvent'))';
-    currRaster(:,end) = [];
-else
-    currRaster = cell2mat(arrayfun(@(x) ...
-        histcounts(currRasterSpkTimes,tPeriEvent(x,:)), ...
-        [1:size(tPeriEvent,1)]','uni',false));
-end
+    currRasterSpkTimes(currRasterSpkTimes < min(tPeriEvent(:)) | ...
+        currRasterSpkTimes > max(tPeriEvent(:))) = [];
 
-% Set color scheme
-currGroup = guiData.curr.trialGroups(:,guiData.curr.trialGroupRef);
-currAddTicks = guiData.trialTickTimes{guiData.curr.eventTimeRef};
-if any(currAddTicks)
-    if max(currAddTicks) > 100
-        currAddTicks = currAddTicks - guiData.eventTimes{guiData.curr.eventTimeRef};
+    tDat = tPeriEvent';
+    if ~any(diff(tDat(:))<0)
+        currRaster = [histcounts(currRasterSpkTimes,tDat(:)),0];
+        currRaster = reshape(currRaster, size(tPeriEvent'))';
+        currRaster(:,end) = [];
+    else
+        currRaster = cell2mat(arrayfun(@(x) ...
+            histcounts(currRasterSpkTimes,tPeriEvent(x,:)), ...
+            [1:size(tPeriEvent,1)]','uni',false));
     end
+
+    % Set color scheme
+    currGroup = guiData.curr.triGrps{i};
+    currAddTicks = guiData.curr.trialTickTimes{i};
+    if ~isempty(currAddTicks) && any(currAddTicks)
+        if max(currAddTicks) > 100
+            currAddTicks = currAddTicks - guiData.curr.evTimes{i};
+        end
+    end
+    if length(unique(currGroup)) == 1
+        % Black if one group
+        groupColors = [0,0,0];
+    elseif length(unique(sign(currGroup(currGroup ~= 0)))) == 1
+        % Black-to-red single-signed groups
+        nGroups = length(unique(currGroup));
+        groupColors = [linspace(0,0.8,nGroups)',zeros(nGroups,1),zeros(nGroups,1)];
+    elseif length(unique(sign(currGroup(currGroup ~= 0)))) == 2
+        % Symmetrical blue-black-red if negative and positive groups
+        nGroupsPos = length(unique(currGroup(currGroup > 0)));
+        groupColorsPos = [linspace(0.3,1,nGroupsPos)',zeros(nGroupsPos,1),zeros(nGroupsPos,1)];
+
+        nGroupsNeg = length(unique(currGroup(currGroup < 0)));
+        groupColorsNeg = [zeros(nGroupsNeg,1),zeros(nGroupsNeg,1),linspace(0.3,1,nGroupsNeg)'];
+
+        nGroupsZero = length(unique(currGroup(currGroup == 0)));
+        groupColorsZero = [zeros(nGroupsZero,1),zeros(nGroupsZero,1),zeros(nGroupsZero,1)];
+
+        groupColors = [flipud(groupColorsNeg);groupColorsZero;groupColorsPos];
+    end
+
+    % Plot smoothed PSTH
+    gw = gausswin(31,3)';
+    smWin = gw./sum(gw);
+    currPsth = grpstats(currRaster,currGroup,@(x) mean(x,1));
+    padStart = repmat(mean(currPsth(:,1:10),2), 1, floor(length(smWin)/2));
+    padEnd = repmat(mean(currPsth(:,end-9:end),2), 1, floor(length(smWin)/2));
+    currSmoothedPsth = conv2([padStart,currPsth,padEnd], smWin,'valid')./mean(diff(guiData.plot.rasterTime));
+
+    % (set the first n lines by group, set all others to NaN)
+    arrayfun(@(x) set(guiData.plot.psthLines{pltIdx}(x), ...
+        'XData',guiData.plot.rasterTime,'YData',currSmoothedPsth(x,:), ...
+        'Color',groupColors(x,:)),1:size(currPsth,1));
+    arrayfun(@(align_group) set(guiData.plot.psthLines{pltIdx}(align_group), ...
+        'XData',NaN,'YData',NaN), ...
+        size(currPsth,1)+1:length(guiData.plot.psthLines{pltIdx}));
+
+
+    newYLim = cell2mat(cellfun(@(x) [min([x.YData]) max([x.YData])], guiData.plot.psthLines, 'uni', 0));
+    ylim(get(guiData.plot.psthLines{pltIdx}(1),'Parent'),[min(newYLim(:,1)), max(newYLim(:,2))]);
+
+    newXLim = cell2mat(cellfun(@(x) [min([x.XData]) max([x.XData])], guiData.plot.psthLines, 'uni', 0));
+    xlim(get(guiData.plot.psthLines{pltIdx}(1),'Parent'),[min(newXLim(:,1)), max(newXLim(:,2))]);
+
+    % Plot raster
+    % (single cluster mode)
+    [~,~,rowGroup] = unique(currGroup,'sorted');
+    if ~isempty(currAddTicks) && any(currAddTicks)
+        [~, rasterSortIdx] = sortrows([currGroup, currAddTicks], [1,2]);
+        currAddTicks = currAddTicks(rasterSortIdx);
+    else
+        [~, rasterSortIdx] = sortrows(currGroup);
+    end
+    currRaster = currRaster(rasterSortIdx,:);
+    rowGroup = rowGroup(rasterSortIdx);
+
+    [rasterY,rasterX] = find(currRaster);
+    set(guiData.plot.rasterDots{pltIdx},'XData',guiData.plot.rasterTime(rasterX),'YData',rasterY);
+    ylim(get(guiData.plot.rasterDots{pltIdx},'Parent'),[0,size(tPeriEvent,1)]);
+    if ~isempty(currAddTicks) && any(currAddTicks)
+        set(guiData.plot.addRasterTicks{pltIdx},'XData',currAddTicks,'YData',1:length(currAddTicks));
+    else
+        set(guiData.plot.addRasterTicks{pltIdx},'XData',[nan nan],'YData',[nan nan]);
+    end
+
+    % (set dot color by group)
+    psthColors = get(guiData.plot.psthLines{pltIdx},'color');
+    if iscell(psthColors); psthColors = cell2mat(psthColors); end
+    rasterDotColor = psthColors(rowGroup(rasterY),:);
+    set(guiData.plot.rasterDots{pltIdx},'CData',rasterDotColor);
+
+
+    % Plot cluster amplitude over whole experiment
+    set(guiData.plot.amplitudes{pltIdx},'XData', ...
+        guiData.curr.spkTimes{i}(currSpkIdx), ...
+        'YData',guiData.curr.spkAmps{i}(currSpkIdx),'linestyle','none');
+    
+    assignin('base','guiData',guiData)
+    set(guiData.titleSub{i}, 'visible', 1);
+    set(guiData.titleSub{i}, 'String', sprintf('Alignment--%s   Grouping--%s', ...
+        guiData.curr.evNames{i}, guiData.curr.grpNames{i}));
+    addString = get(guiData.titleSub{i}, 'string');
 end
-if length(unique(currGroup)) == 1
-    % Black if one group
-    groupColors = [0,0,0];
-elseif length(unique(sign(currGroup(currGroup ~= 0)))) == 1
-    % Black-to-red single-signed groups
-    nGroups = length(unique(currGroup));
-    groupColors = [linspace(0,0.8,nGroups)',zeros(nGroups,1),zeros(nGroups,1)];
-elseif length(unique(sign(currGroup(currGroup ~= 0)))) == 2
-    % Symmetrical blue-black-red if negative and positive groups
-    nGroupsPos = length(unique(currGroup(currGroup > 0)));
-    groupColorsPos = [linspace(0.3,1,nGroupsPos)',zeros(nGroupsPos,1),zeros(nGroupsPos,1)];
-    
-    nGroupsNeg = length(unique(currGroup(currGroup < 0)));
-    groupColorsNeg = [zeros(nGroupsNeg,1),zeros(nGroupsNeg,1),linspace(0.3,1,nGroupsNeg)'];
-    
-    nGroupsZero = length(unique(currGroup(currGroup == 0)));
-    groupColorsZero = [zeros(nGroupsZero,1),zeros(nGroupsZero,1),zeros(nGroupsZero,1)];
-    
-    groupColors = [flipud(groupColorsNeg);groupColorsZero;groupColorsPos];    
-end
-
-% Plot smoothed PSTH
-gw = gausswin(31,3)';
-smWin = gw./sum(gw);
-currPsth = grpstats(currRaster,currGroup,@(x) mean(x,1));
-padStart = repmat(mean(currPsth(:,1:10),2), 1, floor(length(smWin)/2));
-padEnd = repmat(mean(currPsth(:,end-9:end),2), 1, floor(length(smWin)/2));
-currSmoothedPsth = conv2([padStart,currPsth,padEnd], smWin,'valid')./mean(diff(guiData.plot.rasterTime));
-
-% (set the first n lines by group, set all others to NaN)
-arrayfun(@(x) set(guiData.plot.psthLines(x), ...
-    'XData',guiData.plot.rasterTime,'YData',currSmoothedPsth(x,:), ...
-    'Color',groupColors(x,:)),1:size(currPsth,1));
-arrayfun(@(align_group) set(guiData.plot.psthLines(align_group), ...
-    'XData',NaN,'YData',NaN), ...
-    size(currPsth,1)+1:length(guiData.plot.psthLines));
-
-ylim(get(guiData.plot.psthLines(1),'Parent'),[min(currSmoothedPsth(:)), ...
-    max(max(currSmoothedPsth(:),min(currSmoothedPsth(:))+1))]);
-
-% Plot raster
-% (single cluster mode)
-[~,~,rowGroup] = unique(currGroup,'sorted');
-[~, rasterSortIdx] = sortrows([currGroup, currAddTicks], [1,2]);
-currRaster = currRaster(rasterSortIdx,:);
-rowGroup = rowGroup(rasterSortIdx);
-currAddTicks = currAddTicks(rasterSortIdx);
-
-[rasterY,rasterX] = find(currRaster);
-set(guiData.plot.rasterDots,'XData',guiData.plot.rasterTime(rasterX),'YData',rasterY);
-xlim(get(guiData.plot.rasterDots,'Parent'),[guiData.plot.rasterBins(1),guiData.plot.rasterBins(end)]);
-ylim(get(guiData.plot.rasterDots,'Parent'),[0,size(tPeriEvent,1)]);
-if any(currAddTicks)
-    set(guiData.plot.addRasterTicks,'XData',currAddTicks,'YData',1:length(currAddTicks));
+if guiData.curr.nExps ~= 1
+    addString = '';
 else
-    set(guiData.plot.addRasterTicks,'XData',[nan nan],'YData',[nan nan]);
+    cellfun(@(x) set(x, 'visible', 0), guiData.titleSub, 'uni', 0);
 end
-
-% (set dot color by group)
-psthColors = get(guiData.plot.psthLines,'color');
-if iscell(psthColors); psthColors = cell2mat(psthColors); end
-rasterDotColor = psthColors(rowGroup(rasterY),:);
-set(guiData.plot.rasterDots,'CData',rasterDotColor);
-
-
-% Plot cluster amplitude over whole experiment
-set(guiData.plot.amplitudes,'XData', ...
-    guiData.curr.spkTimes(currSpkIdx), ...
-    'YData',guiData.curr.spkAmps(currSpkIdx),'linestyle','none');
-
-assignin('base','guiData',guiData)
-set(guiData.title, 'String', sprintf('ClusterID--%d   Alignment--%s   Grouping--%s', ...
-    guiData.curr.clust-guiData.pythonModIdx, guiData.eventNames{guiData.curr.eventTimeRef}, ...
-    guiData.groupNames{guiData.curr.eventTimeRef}{guiData.curr.trialGroupRef}));
+set(guiData.titleMain, 'String', sprintf('%s--%s   %s    Cluster--%d   Probe--%d of %d \n %s', ...
+    strjoin(guiData.curr.subject, '&'), strjoin(guiData.curr.expDate, '&'), strjoin(guiData.curr.expDef, '&'), ...
+    guiData.curr.cluster-guiData.pythonModIdx, guiData.curr.probe, guiData.curr.nProbes, addString));
 end
 
 
@@ -429,65 +475,53 @@ guiData = guidata(cellrasterGui);
 switch eventdata.Key
     case 'p' %Switch probe
         guiData.curr.probe = guiData.curr.probe + 1;
-        if guiData.curr.probe > length(guiData.spk)
+        if guiData.curr.probe > guiData.curr.nProbes
             guiData.curr.probe = 1;
         end
-        guidata(cellrasterGui,guiData);
+        assignGUIFields(cellrasterGui, guiData);
         cycleProbe(cellrasterGui);
-        guiData = guidata(cellrasterGui);
-        
+
     case 'downarrow' % Next cluster
-        currClusterPosition = guiData.curr.clust == guiData.curr.sortedClustIDs;
-        newCluster = guiData.curr.sortedClustIDs(circshift(currClusterPosition,1));
-        guiData.curr.clust = newCluster;
-        
+        currClusterPosition = guiData.curr.cluster == guiData.curr.sortedTemplateIDs;
+        newCluster = guiData.curr.sortedTemplateIDs(circshift(currClusterPosition,1));
+        guiData.curr.cluster = newCluster;
+        assignGUIFields(cellrasterGui, guiData);
+
     case 'uparrow' % Previous cluster
-        currClusterPosition = guiData.curr.clust(end) == guiData.curr.sortedClustIDs;
-        newCluster = guiData.curr.sortedClustIDs(circshift(currClusterPosition,-1));
-        guiData.curr.clust = newCluster;
+        currClusterPosition = guiData.curr.cluster(end) == guiData.curr.sortedTemplateIDs;
+        newCluster = guiData.curr.sortedTemplateIDs(circshift(currClusterPosition,-1));
+        guiData.curr.cluster = newCluster;
+        assignGUIFields(cellrasterGui, guiData);
 
     case 'rightarrow' % Next trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
-            newEventTimes = guiData.curr.eventTimeRef + 1;
-            if newEventTimes > length(guiData.eventTimes)
-                newEventTimes = 1;
-            end
-            guiData.curr.eventTimeRef = newEventTimes;
+            guiData.curr.evTimeRef = guiData.curr.evTimeRef + 1;
+            guiData = assignGUIFields(cellrasterGui, guiData);
         else
-            newTrialGroup = guiData.curr.trialGroupRef + 1;
-            if newTrialGroup > size(guiData.trialGroups{guiData.curr.eventTimeRef},2)
-                newTrialGroup = 1;
-            end
-            guiData.curr.trialGroupRef = newTrialGroup;
+            guiData.curr.triGrpRef = guiData.curr.triGrpRef + 1;
+            guiData = assignGUIFields(cellrasterGui, guiData);
         end
 
     case 'leftarrow' % Previous trial group or event times (if shift pressed)
-         if contains(eventdata.Modifier, 'shift')
-             newEventTimes = guiData.curr.eventTimeRef - 1;
-             if newEventTimes <= 0 
-                 newEventTimes = length(guiData.eventTimes);
-             end
-             guiData.curr.eventTimeRef = newEventTimes;
-         else
-             newTrialGroup = guiData.curr.trialGroupRef - 1;
-             if newTrialGroup < 1
-                 newTrialGroup = size(guiData.trialGroups{guiData.curr.eventTimeRef},2);
-             end
-             guiData.curr.trialGroupRef = newTrialGroup;
-         end
+        if contains(eventdata.Modifier, 'shift')
+            guiData.curr.evTimeRef = guiData.curr.evTimeRef - 1;
+            guiData = assignGUIFields(cellrasterGui, guiData);
+        else
+            guiData.curr.triGrpRef = guiData.curr.triGrpRef - 1;
+            guiData = assignGUIFields(cellrasterGui, guiData);
+        end
 
     case 'c'
         % Enter and go to cluster
         newCluster = str2double(cell2mat(inputdlg('Go to cluster:')));
-        if ~ismember(newCluster,unique(guiData.curr.sortedClustIDs))
+        if ~ismember(newCluster,unique(guiData.curr.sortedTemplateIDs))
             error(['Cluster ' num2str(newCluster) ' not present'])
         end
-        guiData.curr.clust = newCluster;
+        guiData.curr.cluster = newCluster;
 end
 
 % Upload gui data and draw
 if contains(eventdata.Key, {'p'; 'c'; 'arrow'})
-    guidata(cellrasterGui,guiData);
     updatePlot(cellrasterGui);
 end
 end
@@ -502,9 +536,14 @@ clusterY = get(guiData.plot.clusterDots,'YData');
 
 [~,clickedCluster] = min(sqrt(sum(([clusterX;clusterY] - ...
     eventdata.IntersectionPoint(1:2)').^2,1)));
-guiData.curr.clust = guiData.curr.clustIDs(clickedCluster);
+guiData.curr.cluster = guiData.curr.clusterIDs(clickedCluster);
 
 % Upload gui data and draw
 guidata(cellrasterGui,guiData);
 updatePlot(cellrasterGui);
+end
+
+function matchYLim(ax1, ax2)
+yLim1 = get(ax1, 'YLim');
+set(ax2, 'YLim', yLim1);
 end
