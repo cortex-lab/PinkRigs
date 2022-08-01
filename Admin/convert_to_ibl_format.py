@@ -1,5 +1,5 @@
 # general packages for managing paths of data
-import os,glob,sys,json
+import os,glob,sys,json,re
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -285,6 +285,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 if __name__ == "__main__":
    stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last1000')
+   #stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last7')
    run_batch_ibl_formatting(run_for=2)
+
 
