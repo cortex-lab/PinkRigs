@@ -242,8 +242,8 @@ function recLocation(varargin)
         
         for pp = 1:probeNum
             for ee = 1:size(fullProbeScan,2)
-                if ~(fullProbeMatch(ee,probeNum)==0)
-                    expInfo = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
+                if ~(fullProbeMatch(ee,pp)==0)
+                    expInfo = exp2checkListClu(fullProbeMatch(ee,pp),:);
                     
 
                     templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...

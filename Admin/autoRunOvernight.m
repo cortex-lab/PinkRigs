@@ -99,17 +99,17 @@ switch lower(computerType)
         end
         kilo.main(paramsKilo)
 
-%         fprintf('creating the ibl format... \n')
-%         checkQueuePath = which('convert_to_ibl_format.py');
-%         checkWhichMice = 'all';
-%         whichKS = 'kilosort2'; 
-%         checkWhichDates = 'last7';
-%         [statusQueue,resultQueue] = system(['activate iblenv && ' ...
-%             'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
-%             'conda deactivate']);
-%         if statusQueue > 0
-%             fprintf('Updating the queue failed with error "%s".\n', resultQueue)
-%         end
+        fprintf('creating the ibl format... \n')
+        checkQueuePath = which('convert_to_ibl_format.py');
+        checkWhichMice = 'all';
+        whichKS = 'kilosort2'; 
+        checkWhichDates = 'last7';
+        [statusQueue,resultQueue] = system(['activate iblenv && ' ...
+            'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+            'conda deactivate']);
+        if statusQueue > 0
+            fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+        end
         
         if c(4) < 20 && c(4) > 2
             %%% Bypassing preproc.main for now to go through experiments
@@ -156,17 +156,17 @@ switch lower(computerType)
                 fprintf('Running pyKS failed... "%s".\n', resultpyKS)
             end
 
-%             fprintf('creating the ibl format... \n')
-%             checkQueuePath = which('convert_to_ibl_format.py');
-%             checkWhichMice = 'all';
-%             whichKS = 'pyKS'; 
-%             checkWhichDates = 'last7';
-%             [statusQueue,resultQueue] = system(['activate iblenv && ' ...
-%                 'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
-%                 'conda deactivate']);
-%             if statusQueue > 0
-%                 fprintf('Updating the queue failed with error "%s".\n', resultQueue)
-%             end
+            fprintf('creating the ibl format... \n')
+            checkQueuePath = which('convert_to_ibl_format.py');
+            checkWhichMice = 'all';
+            whichKS = 'pyKS'; 
+            checkWhichDates = 'last7';
+            [statusQueue,resultQueue] = system(['activate iblenv && ' ...
+                'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+                'conda deactivate']);
+            if statusQueue > 0
+                fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+            end
 
         end
         fprintf('Stopping now %s. \n',datestr(now))
