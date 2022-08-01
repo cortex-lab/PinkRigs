@@ -60,19 +60,19 @@ function [data, proc] = loadData(varargin)
 
                 % Get responses
                 dataExp = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
-                        object={{'spikes'},{'templates'}}, ...
-                        attribute={{'times','templates'}, ...
+                        object={{'spikes'},{'clusters'}}, ...
+                        attribute={{'times','clusters'}, ...
                         {'_av_IDs','_av_KSLabels','depths','_av_xpos'}});
                 spikes = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
-                templates = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates;
+                clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates;
                 
-                nClusters = numel(templates.IDs);
+                nClusters = numel(clusters.IDs);
                 nTrials = numel(imageOnsetTimes);
                 baSmtmp = zeros(nTrials, nBins, nClusters);
 
                 % get all onset-centered psths
                 for c = 1:nClusters
-                    temp = templates.IDs(c);
+                    temp = clusters.IDs(c);
                     st = spikes.times(spikes.templates == temp);
 
                     % get psth
@@ -93,7 +93,7 @@ function [data, proc] = loadData(varargin)
                     baSm{nn}(tt,:,:,1:sum(idxrep)) = permute(baSmtmp(idxrep,:,:),[2 3 1]);
                 end
 
-                C{nn} = templates;
+                C{nn} = clusters;
 
                 % tags
                 days{nn} = datenum(expInfo.expDate);

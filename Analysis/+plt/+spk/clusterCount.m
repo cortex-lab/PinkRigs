@@ -45,10 +45,10 @@ function clusterCount(varargin)
                 recPath{nn} = alignment.ephys(pp).ephysPath;
                 recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
-                templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
-                    object='templates', ...
+                clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                    object='clusters', ...
                     attribute='_av_KSLabels');
-                KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
+                KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
                 goodUnits = KSLabels == 2;
 
                 % Get cluster count

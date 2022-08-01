@@ -144,14 +144,12 @@ function extractExpData(varargin)
                                 spk2keep = (spkONE.spikes.times>0) & (spkONE.spikes.times<expLength);
                                 spkONE.spikes.times = spkONE.spikes.times(spk2keep);
                                 spkONE.spikes.templates = spkONE.spikes.templates(spk2keep);
+                                spkONE.spikes.clusters = spkONE.spikes.clusters(spk2keep);
                                 spkONE.spikes.amps = spkONE.spikes.amps(spk2keep);
                                 spkONE.spikes.depths = spkONE.spikes.depths(spk2keep);
                                 spkONE.spikes.av_xpos = spkONE.spikes.av_xpos(spk2keep);
                                 spkONE.spikes.av_shankIDs = spkONE.spikes.av_shankIDs(spk2keep);
-                                
-                                % go get qmetrics??
-                                % TODO
-                                
+
                                 stub = [expDate '_' expNum '_' subject '_' ...
                                     sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
                                 fieldsSpk = fieldnames(spkONE);
@@ -166,6 +164,15 @@ function extractExpData(varargin)
                                     end
                                 end
                                 
+                                % go get qmetrics??
+                                KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
+                                IBLFormatQMetricsFile = fullfile(KSFolder,'ibl_format');    
+                                if exist(IBLFormatQMetricsFile,"file")
+                                    qMetrics = preproc.getQMetrics(KSFolder);
+                                    saveONEFormat(qMetrics, ...
+                                        probeONEFolder,'clusters','_av_qualityMetrics','pqt',stub);
+                                end
+
                                 % Remove any error file
                                 if exist(fullfile(probeONEFolder, 'GetSpkError.json'),'file')
                                     delete(fullfile(probeONEFolder, 'GetSpkError.json'))

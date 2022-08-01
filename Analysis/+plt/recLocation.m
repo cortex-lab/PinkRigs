@@ -246,12 +246,12 @@ function recLocation(varargin)
                     expInfo = exp2checkListClu(fullProbeMatch(ee,pp),:);
                     
 
-                    templates = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
-                        object={'templates'}, ...
+                    clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                        object={'clusters'}, ...
                         attribute={{'_av_KSLabels';'_av_xpos';'depths'}});
-                    KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
-                    xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
-                    depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
+                    KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
+                    xpos = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
+                    depths = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
 
                     goodUnits = KSLabels == 2;
 
