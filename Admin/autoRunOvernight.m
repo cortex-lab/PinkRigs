@@ -101,7 +101,7 @@ switch lower(computerType)
 
         fprintf('creating the ibl format... \n')
         checkQueuePath = which('convert_to_ibl_format.py');
-        checkWhichMice = 'all';
+        checkWhichMice = 'allActive';
         whichKS = 'kilosort2'; 
         checkWhichDates = 'last7';
         [statusQueue,resultQueue] = system(['activate iblenv && ' ...
@@ -136,7 +136,7 @@ switch lower(computerType)
 
             fprintf('Getting pyKS queue... \n')
             checkQueuePath = which('check_pyKS_queue.py');
-            checkWhichMice = 'all';
+            checkWhichMice = 'allActive';
             checkWhichDates = 'last7';
             [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
                 'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
@@ -158,7 +158,7 @@ switch lower(computerType)
 
             fprintf('creating the ibl format... \n')
             checkQueuePath = which('convert_to_ibl_format.py');
-            checkWhichMice = 'all';
+            checkWhichMice = 'allActive';
             whichKS = 'pyKS'; 
             checkWhichDates = 'last7';
             [statusQueue,resultQueue] = system(['activate iblenv && ' ...
