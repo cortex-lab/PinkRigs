@@ -58,7 +58,12 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     # check which mice are active on Master csv
     root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
     master_csv = pd.read_csv(root / '!MouseList.csv')
-    mice_to_check=master_csv[master_csv['IsActive']==1].Subject
+    if mouse_selection=='allActive': 
+        mice_to_check=master_csv[master_csv['IsActive']==1].Subject
+    elif mouse_selection=='all': 
+        mice_to_check=master_csv.Subject
+    else: 
+        mice_to_check = mouse_selection   
 
     new_recs_to_convert = []
 
@@ -78,50 +83,47 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
                 date = mp.parts[2]
 
                 # only add the mice that need to be sorted if all criteria is fulfilled
-                # that is: 
-                # if the mouse names are subselected 
-                if (mouse_selection in subject) or (mouse_selection in "all"): 
-                    #if some dates have been subselected
-                    if check_date_selection(date_selection,date):
-                        ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
-                        ephys_files = glob.glob(ephys_files,recursive=True)
+                #if some dates have been subselected
+                if check_date_selection(date_selection,date):
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
+                    ephys_files = glob.glob(ephys_files,recursive=True)
 
-                        for ephys_file in ephys_files:
-                            # look for pyKS folder with spike times in the same folder as ap.bin
-                            KS_rez = r'%s\**\%s\**\spike_times.npy' % (os.path.dirname(ephys_file),ks_folder)
-                            KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
+                    for ephys_file in ephys_files:
+                        # look for pyKS folder with spike times in the same folder as ap.bin
+                        KS_rez = r'%s\**\%s\**\spike_times.npy' % (os.path.dirname(ephys_file),ks_folder)
+                        KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
 
-                            # check if is there, and not empty
-                            if not KS_rez:
-                                # couldn't find the kilosort folder/rez file
-                                KS_done = False
+                        # check if is there, and not empty
+                        if not KS_rez:
+                            # couldn't find the kilosort folder/rez file
+                            KS_done = False
+                        else:
+                            if Path(KS_rez[0]).stat().st_size>0:
+                                KS_done = True
                             else:
-                                if Path(KS_rez[0]).stat().st_size>0:
-                                    KS_done = True
-                                else:
-                                    # file was 0kb
-                                    KS_done = False 
+                                # file was 0kb
+                                KS_done = False 
 
-                            # also check for whether the ibl_format extraction is done
-                            ibl_format = r'%s\**\%s\**\ibl_format\clusters.waveforms.npy' % (os.path.dirname(ephys_file),ks_folder)
-                            ibl_format = glob.glob(ibl_format,recursive=True) # should not be longer than 1?
+                        # also check for whether the ibl_format extraction is done
+                        ibl_format = r'%s\**\%s\**\ibl_format\clusters.waveforms.npy' % (os.path.dirname(ephys_file),ks_folder)
+                        ibl_format = glob.glob(ibl_format,recursive=True) # should not be longer than 1?
 
-                            # check if is there, and not empty
-                            if not ibl_format:
-                                # couldn't find the kilosort folder/rez file
-                                ibl_formatting_done = False
+                        # check if is there, and not empty
+                        if not ibl_format:
+                            # couldn't find the kilosort folder/rez file
+                            ibl_formatting_done = False
+                        else:
+                            if Path(ibl_format[0]).stat().st_size>0:
+                                ibl_formatting_done = True
                             else:
-                                if Path(ibl_format[0]).stat().st_size>0:
-                                    ibl_formatting_done = True
-                                else:
-                                    # file was 0kb
-                                    ibl_formatting_done = False 
+                                # file was 0kb
+                                ibl_formatting_done = False 
 
 
-                            if  KS_done and not ibl_formatting_done:
-                                ks_path = Path(ephys_file).parent / ks_folder
+                        if  KS_done and not ibl_formatting_done:
+                            ks_path = Path(ephys_file).parent / ks_folder
 
-                                new_recs_to_convert.append([ks_path.__str__()])
+                            new_recs_to_convert.append([ks_path.__str__()])
 
     new_recs_to_convert = sum(new_recs_to_convert,[]) 
     print(new_recs_to_convert)
@@ -285,7 +287,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 if __name__ == "__main__":
    stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last7')
+   #stage_queue(mouse_selection='allActive',ks_folder = 'pyKS', date_selection='last7')
    run_batch_ibl_formatting(run_for=2)
 
 
