@@ -23,7 +23,7 @@ function clusterCount(varargin)
     recPath = cell(1,1);
     days = cell(1,1);
     for ee = 1:size(exp2checkList,1)
-        fprintf('Processing experiment #%d.\n',ee)
+        fprintf('Processing experiment #%d/%d.\n',ee,size(exp2checkList,1))
         expInfo = exp2checkList(ee,:);
         subject = expInfo.subject{1};
 
