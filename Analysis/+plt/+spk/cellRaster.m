@@ -363,7 +363,7 @@ set(guiData.plot.currClusterDot,'XData',clusterX(guiData.curr.clusterIdx), 'YDat
 for i = 1:guiData.curr.nExps
     if guiData.curr.nExps == 2; pltIdx = i; else, pltIdx = 2; end
 
-    currSpkIdx = ismember(guiData.curr.spkTemplate{i},guiData.curr.cluster);
+    currSpkIdx = ismember(typecast(guiData.curr.spkTemplate{i},'uint32'),guiData.curr.cluster);
     currRasterSpkTimes = guiData.curr.spkTimes{i}(currSpkIdx);
 
     tPeriEvent = guiData.curr.evTimes{i} + guiData.plot.rasterBins;
