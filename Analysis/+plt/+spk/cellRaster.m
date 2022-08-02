@@ -143,9 +143,9 @@ guiData.axes.amplitdueLabel = annotation('textbox', 'EdgeColor', 'none', 'Backgr
     'HorizontalAlignment', 'center');
 
 guiData.titleSub{1} = annotation('textbox', [dualPosition(1,1), 0.95, dualPosition(1,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
-    'HorizontalAlignment', 'center', 'FontSize', 10);
+    'HorizontalAlignment', 'center', 'FontSize', 10, 'FontWeight', 'bold', 'Color', [0.8500 0.3250 0.0980]);
 guiData.titleSub{2} = annotation('textbox', [dualPosition(2,1), 0.95, dualPosition(2,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
-    'HorizontalAlignment', 'center', 'FontSize', 10);
+    'HorizontalAlignment', 'center', 'FontSize', 10, 'FontWeight', 'bold', 'Color', [0.4940 0.1840 0.5560]);
 %% Remove sessions where clusters do not match
 % keepIdx = ones(length(dat),1)>0;
 % for i = 1:length(dat)
@@ -294,14 +294,17 @@ ylim([min(clusterDepths)-50 max(clusterDepths)+50]);
 xlim([min(clusterXPos)-5 max(clusterXPos)+5]);
 
 % (plot cluster depths by depth and xPos)
-cCol = [0,0,1;1,0,0];
+cCol = [[0.8500 0.3250 0.0980];[0.4940 0.1840 0.5560]];
 highlight = guiData.curr.highlight;
+dualSig = sum(cell2mat(highlight'),2);
 for i = 1:guiData.curr.nExps
-    scatter(clusterXPos(highlight{i}), clusterDepths(highlight{i}), 50, 'filled', ...
-        'MarkerFaceColor', cCol(i,:), 'MarkerEdgeColor', 'none', 'MarkerFaceAlpha', 1/guiData.curr.nExps);
+    faceCol = repmat(cCol(i,:), length(dualSig),1);
+    faceCol(dualSig==2,:) = repmat([1,0,1], sum(dualSig==2),1);
+    scatter(clusterXPos(highlight{i}), clusterDepths(highlight{i}), 50, faceCol(highlight{i},:),...
+        'filled', 'MarkerEdgeColor', 'none');
 end
 clusterDots = plot(clusterXPos, clusterDepths,'.k','MarkerSize',10,'ButtonDownFcn',@clusterClick);
-currClusterDot = plot(0,0,'.r','MarkerSize',20);
+currClusterDot = plot(0,0,'.r','MarkerSize',30);
 
 [psthLines, rasterDots, rasterOnset, addRasterTicks, amplitudePlot, psthOnset] = deal(cell(2,1));
 for i = 1:2
@@ -471,19 +474,21 @@ for i = 1:guiData.curr.nExps
         'YData',guiData.curr.spkAmps{i}(currSpkIdx),'linestyle','none');
     
     assignin('base','guiData',guiData)
-    set(guiData.titleSub{i}, 'visible', 1);
     set(guiData.titleSub{i}, 'String', sprintf('Alignment--%s   Grouping--%s', ...
-        guiData.curr.evNames{i}, guiData.curr.grpNames{i}));
+        guiData.curr.evNames{i}, guiData.curr.grpNames{i}), 'visible', 1);
     addString = get(guiData.titleSub{i}, 'string');
 end
 if guiData.curr.nExps ~= 1
     addString = '';
+    set(guiData.titleMain, 'Color', [0,0,0]);
 else
     cellfun(@(x) set(x, 'visible', 0), guiData.titleSub, 'uni', 0);
+    set(guiData.titleMain, 'Color', [0.8500 0.3250 0.0980]);
 end
 set(guiData.titleMain, 'String', sprintf('%s--%s   %s    Cluster--%d   Probe--%d of %d \n %s', ...
     strjoin(guiData.curr.subject, '&'), strjoin(guiData.curr.expDate, '&'), strjoin(guiData.curr.expDef, '&'), ...
     guiData.curr.cluster-guiData.pythonModIdx, guiData.curr.probe, guiData.curr.nProbes, addString));
+guiData.titleMain_2 = 1;
 end
 
 
