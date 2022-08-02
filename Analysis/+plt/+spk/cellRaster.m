@@ -450,6 +450,7 @@ for i = 1:guiData.curr.nExps
 
     [rasterY,rasterX] = find(currRaster);
     set(guiData.plot.rasterDots{pltIdx},'XData',guiData.plot.rasterTime(rasterX),'YData',rasterY);
+    set(guiData.plot.rasterDots{pltIdx}, 'SizeData', 200/sqrt(size(currRaster,1)));
     ylim(get(guiData.plot.rasterDots{pltIdx},'Parent'),[0,size(tPeriEvent,1)]);
     if ~isempty(currAddTicks) && any(currAddTicks)
         set(guiData.plot.addRasterTicks{pltIdx},'XData',currAddTicks,'YData',1:length(currAddTicks));
