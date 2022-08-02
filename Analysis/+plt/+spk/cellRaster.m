@@ -146,6 +146,19 @@ guiData.titleSub{1} = annotation('textbox', [dualPosition(1,1), 0.95, dualPositi
     'HorizontalAlignment', 'center', 'FontSize', 10);
 guiData.titleSub{2} = annotation('textbox', [dualPosition(2,1), 0.95, dualPosition(2,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
     'HorizontalAlignment', 'center', 'FontSize', 10);
+%% Remove sessions where clusters do not match
+% keepIdx = ones(length(dat),1)>0;
+% for i = 1:length(dat)
+%     spks = dat{i}.spks;
+%     if length(spks)==1; continue; end
+%     clustCompare = cellfun(@(x) structfun(@(y) length(y.clusters.depths), x), spks, 'uni', 0);
+%     if ~all(clustCompare{1}(:)==clustCompare{2}(:))
+%         keepIdx(i) = 0;
+%         fprintf('WARNING: Data idx %d of %d had sessions sorted separately. Removeing... \n', i, length(dat))
+%     end
+% end
+% length(unique(cellfun(@length, guiData.curr.clusterXPos))) ~= 1
+
 %%
 guiData.allData = dat;
 guiData.nSessions = length(dat);

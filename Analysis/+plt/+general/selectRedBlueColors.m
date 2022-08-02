@@ -5,7 +5,7 @@ function colorChoices = selectRedBlueColors(values, zeroTag)
 % zeroTag([0.5 0.5 0.5])-------The color of "zero" values
 
 if ~exist('zeroTag', 'var'); zeroTag = 0.5*ones(1,3); end
-allColors = plt.redBlueMap(255);
+allColors = plt.general.redBlueMap(255);
 maxLength = max(abs(values));
 colorChoices = zeros(length(values),3);
 fractionalPosition = values./maxLength;
