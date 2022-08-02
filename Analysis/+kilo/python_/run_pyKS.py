@@ -101,7 +101,6 @@ def run_pyKS_on_queue(run_for=5.5):
 
     print('there are %.0d files not sorted yet' % queue_csv_at_start.size)
 
-
     for _,init_rec in queue_csv_at_start.iterrows():
 
         # recheck queue
@@ -129,4 +128,4 @@ def run_pyKS_on_queue(run_for=5.5):
                     queue_csv.to_csv(queue_csv_file,index = False) 
 
 if __name__ == "__main__":
-   run_pyKS_on_queue(run_for=5.5)
+   run_pyKS_on_queue(run_for=4.5)
