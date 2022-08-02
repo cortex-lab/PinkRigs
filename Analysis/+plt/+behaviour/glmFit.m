@@ -68,8 +68,8 @@ for i = find(extracted.validSubjects)'
     contrastPower = params.contrastPower{i};
 
     visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
-    lineColors = plt.selectRedBlueColors(grids.audValues(:,1));
-    plt.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
+    lineColors = plt.general.selectRedBlueColors(grids.audValues(:,1));
+    plt.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
     plotOpt.lineStyle = 'none';
     plotOpt.Marker = '.';
@@ -85,7 +85,7 @@ for i = find(extracted.validSubjects)'
     if strcmp(params.plotType{i}, 'log')
         fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
     end
-    plt.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
+    plt.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
     
     xlim([-1 1])
     midPoint = 0.5;

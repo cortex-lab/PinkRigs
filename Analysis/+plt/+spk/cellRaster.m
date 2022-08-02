@@ -146,6 +146,19 @@ guiData.titleSub{1} = annotation('textbox', [dualPosition(1,1), 0.95, dualPositi
     'HorizontalAlignment', 'center', 'FontSize', 10);
 guiData.titleSub{2} = annotation('textbox', [dualPosition(2,1), 0.95, dualPosition(2,3), 0], 'string', 'My Text', 'EdgeColor', 'none',...
     'HorizontalAlignment', 'center', 'FontSize', 10);
+%% Remove sessions where clusters do not match
+% keepIdx = ones(length(dat),1)>0;
+% for i = 1:length(dat)
+%     spks = dat{i}.spks;
+%     if length(spks)==1; continue; end
+%     clustCompare = cellfun(@(x) structfun(@(y) length(y.clusters.depths), x), spks, 'uni', 0);
+%     if ~all(clustCompare{1}(:)==clustCompare{2}(:))
+%         keepIdx(i) = 0;
+%         fprintf('WARNING: Data idx %d of %d had sessions sorted separately. Removeing... \n', i, length(dat))
+%     end
+% end
+% length(unique(cellfun(@length, guiData.curr.clusterXPos))) ~= 1
+
 %%
 guiData.allData = dat;
 guiData.nSessions = length(dat);
@@ -245,7 +258,8 @@ guidata(cellrasterGui, guiData);
 end
 
 %%
-function cycleProbe(cellrasterGui)
+function cycleProbe(cellrasterGui, changeCluster)
+if ~exist('changeCluster', 'var'); changeCluster = 1; end
 guiData = guidata(cellrasterGui);
 
 % Find responsive cells
@@ -260,14 +274,16 @@ if ischar(guiData.curr.sortTemplates{1})
         case 'sig'
             [~, chooseSort] = max(cellfun(@(x) sum(x.pVal<0.05), guiData.sigRes));
             [~, clusterSortIdx] = sort(guiData.sigRes{chooseSort}.pVal);
-            guiData.curr.highlight = cellfun(@(x) x.pVal<0.01, guiData.sigRes, 'uni', 0);
+            guiData.curr.highlight = cellfun(@(x) x.pVal<0.0001, guiData.sigRes, 'uni', 0);
     end
 else
     [~, clusterSortIdx] = sort(guiData.sortTemplates{guiData.curr.evTimeRef});
 end
-guiData.curr.sortedTemplateIDs = guiData.curr.clusterIDs(clusterSortIdx);
-guiData.curr.cluster = guiData.curr.sortedTemplateIDs(1);
-guiData.curr.clusterIdx = find(guiData.curr.cluster == guiData.curr.clusterIDs,1);
+if changeCluster
+    guiData.curr.sortedTemplateIDs = guiData.curr.clusterIDs(clusterSortIdx);
+    guiData.curr.cluster = guiData.curr.sortedTemplateIDs(1);
+    guiData.curr.clusterIdx = find(guiData.curr.cluster == guiData.curr.clusterIDs,1);
+end
 
 % Initialize figure and axes
 axes(guiData.axes.clusters); cla;
@@ -508,19 +524,21 @@ switch eventdata.Key
     case 'rightarrow' % Next trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
             guiData.curr.evTimeRef = guiData.curr.evTimeRef + 1;
-            guiData = assignGUIFields(cellrasterGui, guiData);
+            assignGUIFields(cellrasterGui, guiData);
+            cycleProbe(cellrasterGui, 0);
         else
             guiData.curr.triGrpRef = guiData.curr.triGrpRef + 1;
-            guiData = assignGUIFields(cellrasterGui, guiData);
+            assignGUIFields(cellrasterGui, guiData);
         end
 
     case 'leftarrow' % Previous trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
             guiData.curr.evTimeRef = guiData.curr.evTimeRef - 1;
-            guiData = assignGUIFields(cellrasterGui, guiData);
+            assignGUIFields(cellrasterGui, guiData);
+            guiData.sigRes = cellfun(@(x,y) neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
         else
             guiData.curr.triGrpRef = guiData.curr.triGrpRef - 1;
-            guiData = assignGUIFields(cellrasterGui, guiData);
+            assignGUIFields(cellrasterGui, guiData);
         end
 
     case 'c'
