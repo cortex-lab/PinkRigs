@@ -68,7 +68,7 @@ for i = find(extracted.validSubjects)'
     contrastPower = params.contrastPower{i};
 
     visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
-    lineColors = plt.selectRedBlueColors(grids.audValues(:,1));
+    lineColors = plt.general.selectRedBlueColors(grids.audValues(:,1));
     plt.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
     plotOpt.lineStyle = 'none';
