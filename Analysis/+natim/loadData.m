@@ -64,7 +64,7 @@ function [data, proc] = loadData(varargin)
                         attribute={{'times','clusters'}, ...
                         {'_av_IDs','_av_KSLabels','depths','_av_xpos'}});
                 spikes = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
-                clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates;
+                clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters;
                 
                 nClusters = numel(clusters.IDs);
                 nTrials = numel(imageOnsetTimes);
@@ -73,7 +73,7 @@ function [data, proc] = loadData(varargin)
                 % get all onset-centered psths
                 for c = 1:nClusters
                     temp = clusters.IDs(c);
-                    st = spikes.times(spikes.templates == temp);
+                    st = spikes.times(spikes.clusters == temp);
 
                     % get psth
                     [~, ~, ~, ~, ~, baOn] = psthAndBA(st, imageOnsetTimes, proc.window(1:2), proc.binSize);
