@@ -144,6 +144,7 @@ switch lower(computerType)
             if statusQueue > 0
                 fprintf('Updating the queue failed with error "%s".\n', resultQueue)
             end
+            disp(resultQueue)
 
             dbstop if error % temporarily, to debug
             fprintf('Running pykilosort on the queue... \n')
