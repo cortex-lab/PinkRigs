@@ -144,7 +144,7 @@ switch lower(computerType)
             if statusQueue > 0
                 fprintf('Updating the queue failed with error "%s".\n', resultQueue)
             end
-            disp(resultQueue)
+            disp(resultQueue);
 
             dbstop if error % temporarily, to debug
             fprintf('Running pykilosort on the queue... \n')
@@ -156,18 +156,21 @@ switch lower(computerType)
             if statuspyKS > 0
                 fprintf('Running pyKS failed... "%s".\n', resultpyKS)
             end
+            
+            disp(resultpyKS);
 
             fprintf('creating the ibl format... \n')
             checkQueuePath = which('convert_to_ibl_format.py');
             checkWhichMice = 'allActive';
             whichKS = 'pyKS'; 
             checkWhichDates = 'last7';
-            [statusQueue,resultQueue] = system(['activate iblenv && ' ...
+            [statusIBL,resultIBL] = system(['activate iblenv && ' ...
                 'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
-            if statusQueue > 0
-                fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+            if statusIBL > 0
+                fprintf('Updating the queue failed with error "%s".\n', resultIBL)
             end
+            disp(resultIBL);
 
         end
         fprintf('Stopping now %s. \n',datestr(now))
