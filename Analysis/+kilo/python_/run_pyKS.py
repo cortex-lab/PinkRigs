@@ -118,8 +118,7 @@ def run_pyKS_on_queue(run_for=5.5):
                 input_dir = Path(rec.ephysName.item())
                 queue_csv.sortedTag.iloc[idx]= .5
                 queue_csv.to_csv(queue_csv_file,index = False)
-                success=True
-                #success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
+                success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
                 if success:
                     queue_csv.sortedTag.iloc[idx]= 1
                     queue_csv.to_csv(queue_csv_file,index = False) 
