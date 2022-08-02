@@ -30,7 +30,7 @@ for i = find(extracted.validSubjects)'
     if isempty(extracted.data{i}) || extracted.nExp{i} == 1 
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     else
-        boxPlot.extraInf = num2str([extracted.nExp{i} 'Sess']);
+        boxPlot.extraInf = [num2str(extracted.nExp{i}) ' Sess'];
     end
     if ~isempty(extracted.data{i})
         tDat = extracted.data{i};
