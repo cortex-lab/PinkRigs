@@ -88,26 +88,39 @@ def run_pyKS_on_queue(run_for=5.5):
     # get queue
     root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
     queue_csv_file = '%s\pykilosort_queue.csv' % root
-    queue_csv = pd.read_csv(queue_csv_file)
+
     print('checking the pyks queue...')
 
+    queue_csv_at_start = pd.read_csv(queue_csv_file)
     start_time = time.now()
     start_hour = start_time.hour+start_time.minute/60
 
     print('current hour is %.2f' % start_hour)
 
-    print('starting my work queue..')
-    for idx,rec in queue_csv.iterrows():
+    queue_csv_at_start = queue_csv_at_start[queue_csv_at_start.sortedTag==0]
+
+    print('there are %.0d files not sorted yet' % queue_csv_at_start.size)
+
+
+    for _,init_rec in queue_csv_at_start.iterrows():
+
+        # recheck queue
+        queue_csv = pd.read_csv(queue_csv_file)
+        rec = queue_csv[queue_csv.ephysName==init_rec.ephysName]
+        idx = rec.index.tolist()[0]
+
         #check if recording is not being sorted already 
-        if rec.sortedTag==0: 
+        if rec.sortedTag.item()==0: 
             check_time = time.now()
             check_hour = check_time.hour+check_time.minute/60
+
             if check_hour<(start_hour+run_for): 
                 print('still within my time limit... Keep sorting.')                
-                input_dir = Path(rec.ephysName)
+                input_dir = Path(rec.ephysName.item())
                 queue_csv.sortedTag.iloc[idx]= .5
                 queue_csv.to_csv(queue_csv_file,index = False)
-                success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
+                success=True
+                #success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
                 if success:
                     queue_csv.sortedTag.iloc[idx]= 1
                     queue_csv.to_csv(queue_csv_file,index = False) 
