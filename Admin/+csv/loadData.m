@@ -198,9 +198,14 @@ for j = 1:length(objects)
     loadPaths = fullfile(objPath, allFiles(matchedObj & matchedAttr));
     loadObj = splitNames(matchedObj & matchedAttr,1);
     loadAttr = splitNames(matchedObj & matchedAttr,2);
+    loadExt = splitNames(matchedObj & matchedAttr,4);
     for i = 1:size(loadPaths,1)
         loadAttr{i} = strrep(loadAttr{i}, '_av_', '');
-        outData.(loadObj{i}).(loadAttr{i}) = readNPY(loadPaths{i});
+        if contains(loadExt{i},{'npy'})
+            outData.(loadObj{i}).(loadAttr{i}) = readNPY(loadPaths{i});
+        elseif contains(loadExt{i},{'pqt','parquet'})
+            outData.(loadObj{i}).(loadAttr{i}) = table2struct(parquetread(loadPaths{i}),"ToScalar",1);
+        end
     end
 end
 end

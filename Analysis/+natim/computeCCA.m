@@ -19,6 +19,8 @@ function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
     end
     [Uall,Sall,Vall] = svd(Xwall-mean(Xwall), 'econ');
 
+    cc2keep = cc2keep(cc2keep<=size(Uall,2));
+    
     % get weight of each neuron on each day, for each component
     pUall = pinv(Uall(:,cc2keep));
     for k = 1:numel(spikeData)
@@ -35,7 +37,11 @@ function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
         nCd1 = size(spikeData{d1},3);
         for d2 = 1:numel(spikeData)
             nCd2 = size(spikeData{d2},3);
-            corrWCCA{d1,d2} = corr(W{d1}(:,cc2keep)',W{d2}(:,cc2keep)');
+            if ~isempty(W{d1}) && ~isempty(W{d2})
+                corrWCCA{d1,d2} = corr(W{d1}(:,cc2keep)',W{d2}(:,cc2keep)');
+            else
+                corrWCCA{d1,d2} = nan;
+            end
         end
     end
     

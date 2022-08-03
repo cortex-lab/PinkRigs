@@ -8,6 +8,7 @@ function extractExpData(varargin)
     %% Get parameters
     varargin = ['recompute', 'none', varargin];
     varargin = ['process', 'all', varargin];
+    varargin = ['KSversion', 'pyKS', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);
     
@@ -25,6 +26,7 @@ function extractExpData(varargin)
         expFolder = exp2checkList.expFolder{ee,1};
         recompute = exp2checkList.recompute{ee,1};
         process = exp2checkList.process{ee,1};
+        KSversion = exp2checkList.KSversion{ee,1};
         
         % Get the alignment file
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
@@ -115,7 +117,7 @@ function extractExpData(varargin)
                 %% Extract spikes and clusters info (depth, etc.)
                 
                 if shouldProcess('spikes')
-                    if contains(expInfo.alignEphys, '1') && contains(expInfo.issortedKS2, '1')
+                    if contains(expInfo.alignEphys, '1') && contains(expInfo.issortedPyKS, '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
@@ -131,9 +133,16 @@ function extractExpData(varargin)
                             probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
                             initONEFolder(probeONEFolder) %%% will have to see what to do when recomputing the qMetrics only
                             
+                            switch KSversion
+                                case 'matKS'
+                                    KSfolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
+                                case 'pyKS'
+                                    KSfolder = fullfile(alignment.ephys(probeNum).ephysPath,'pyKS','output');
+                            end
+
                             try
                                 % Get the spike and cluster info
-                                spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath);
+                                spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSfolder);
                                 
                                 % Align them
                                 spkONE.spikes.times = preproc.align.event2Timeline(spkONE.spikes.times, ...

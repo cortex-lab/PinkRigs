@@ -245,13 +245,13 @@ function recLocation(varargin)
                 if ~(fullProbeMatch(ee,pp)==0)
                     expInfo = exp2checkListClu(fullProbeMatch(ee,pp),:);
                     
-
+                    disp(expInfo.expDate);
                     clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                         object={'clusters'}, ...
                         attribute={{'_av_KSLabels';'_av_xpos';'depths'}});
-                    KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
-                    xpos = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
-                    depths = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
+                    KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
+                    xpos = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.xpos;
+                    depths = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.depths;
 
                     goodUnits = KSLabels == 2;
 

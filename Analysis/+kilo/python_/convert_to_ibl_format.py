@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime as time # to sort only for a fixed amount of time
-
+from pyhelpers import save_error_message
 
 pd.options.mode.chained_assignment = None # disable warning, we will overwrite some rows when sortedTag changes 
 
@@ -207,20 +207,7 @@ def run_batch_ibl_formatting(run_for=2):
                 except: 
                     # save error message 
                     exc_type, exc_obj, exc_tb = sys.exc_info()
-            
-                    errdict = {
-                        'err_type:': str(exc_type), 
-                        'err_message': str(exc_obj),
-                        'traceback': str(exc_tb)
-                        }
-
-                    errmessage = json.dumps(errdict)
-                    
-                    errfile = open(output_dir / 'ibl_formatting_error.json',"w")
-                    errfile.write(errmessage)
-                    errfile.close()
-
-                    # delete temp folders before Michael kicks me out
+                    save_error_message(output_dir / 'ibl_formatting_error.json',err_type=exc_type,err_message=exc_obj,err_traceback=exc_tb)
 
                     # update csv                
                     queue_csv.doneTag.iloc[idx]= -1

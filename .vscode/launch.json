@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "pythonPath": "C:\\Users\\Experiment\\anaconda3\\envs\\pyks2\\python.exe"
+            "python": "C:\\Users\\Experiment\\anaconda3\\envs\\pyks2\\python.exe"
         }
     ]
 }
