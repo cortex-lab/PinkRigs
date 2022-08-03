@@ -51,10 +51,10 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False):
             add_default_handler(level='INFO') # print output as the algorithm runs
             # find the compressed file of the same name 
             input_dir = list((path_to_file.parent).glob('*.cbin'))[0] 
-            run(input_dir, probe=channel_map, low_memory=True, dir_path = KS_workfolder, output_path=output_dir)
+            run(input_dir, probe=channel_map, low_memory=True, dir_path = KS_workfolder, output_dir=output_dir)
             # if there was a previous error message, remove it
 
-            err_message_file = path_to_file.parent / r'pyKS\pyKS_error.json'
+            err_message_file = output_dir / 'pyKS_error.json'
             
             if err_message_file.is_file(): 
                 err_message_file.unlink()
