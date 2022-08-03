@@ -42,12 +42,15 @@ verbose = params.verbose{1};
 
 %% This section deals with the requested inputs to make sure they are valid
 dataTypes = unnestCell(params.dataType{1});
+dataTypes = dataTypes(:);
 if any(contains(dataTypes, 'all'))&& length(dataTypes)~=1
     error('If requesting "all" dataTypes, then length of dataTypes should be "1"')
 end
 
 objects = cellfun(@(x) unnestCell(x), unnestCell(params.object{1},0), 'uni', 0);
+objects = objects(:);
 attributes = cellfun(@(x) unnestCell(x), unnestCell(params.attribute{1},0), 'uni', 0);
+attributes = attributes(:);
 if length(objects) == 1
     objects = repmat(objects, length(dataTypes),1);
 elseif length(objects) ~= 1 && length(dataTypes) == 1
