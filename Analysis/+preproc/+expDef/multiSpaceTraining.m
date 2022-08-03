@@ -260,8 +260,9 @@ timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
 timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
 missedOnset = isnan(timelineStimOnset);
-stimOnsetIdx = round(timelineStimOnset(responseMadeIdx & ~missedOnset)*sR);
-stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(responseMadeIdx & ~missedOnset,2)*sR],[],2);
+validIdx = responseMadeIdx & ~missedOnset;
+stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
+stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
 stimEndIdx = stimEndIdx-stimOnsetIdx;
 if any(missedOnset)
     if sum(missedOnset) >0.25*length(missedOnset)
@@ -312,19 +313,19 @@ moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
 onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
 onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-onsetTimDirByChoiceTrial = onsetTimDirByTrial(responseMadeIdx & ~missedOnset);
+onsetTimDirByChoiceTrial = onsetTimDirByTrial(validIdx);
 onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-%"firstMoveTimes" are the first onsets occuring after stimOnsetIdx. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
+%"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
 %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
 %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
-firstMoveTimeDir = cell2mat(cellfun(@(x) x(1,:), onsetTimDirByChoiceTrial, 'uni', 0));
+firstMoveTimeDir = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByChoiceTrial, num2cell(stimOnsetIdx/sR), 'uni', 0));
 choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByChoiceTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
 choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
 choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
 %SANITY CHECK
-blockTstValues = responseRecorded(responseMadeIdx & ~missedOnset);
+blockTstValues = responseRecorded(validIdx);
 if ~isempty(choiceInitTimeDir)
     tstIdx = ~isnan(choiceInitTimeDir(:,2));
     if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
