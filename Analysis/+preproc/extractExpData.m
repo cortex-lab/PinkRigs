@@ -8,7 +8,7 @@ function extractExpData(varargin)
     %% Get parameters
     varargin = ['recompute', 'none', varargin];
     varargin = ['process', 'all', varargin];
-    varargin = ['KSversion', 'pyKS', varargin];
+    varargin = ['KSversion', 'PyKS', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);
     
@@ -133,10 +133,10 @@ function extractExpData(varargin)
                             probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
 
                             switch KSversion
-                                case 'matKS'
+                                case 'KS2'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
-                                case 'pyKS'
-                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'pyKS','output');
+                                case 'PyKS'
+                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
                             end
 
                             stub = [expDate '_' expNum '_' subject '_' ...
