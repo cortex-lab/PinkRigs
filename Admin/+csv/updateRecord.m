@@ -384,7 +384,7 @@ end
 
 % Assign status for spike extraction.
 nDat.extractSpikes = zeros(1, potentialProbes);
-for pIdx = find(nDat.issortedKS2 == 1)
+for pIdx = find(nDat.issortedPyKS == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
     probeStr = ['probe' num2str(pIdx-1)];
@@ -401,9 +401,9 @@ for pIdx = find(nDat.issortedKS2 == 1)
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.extractSpikes(isnan(nDat.issortedKS2)) = nan;
-nDat.extractSpikes(nDat.issortedKS2 == 0) = 0;
-nDat.extractSpikes(nDat.issortedKS2 == 2) = 0;
+nDat.extractSpikes(isnan(nDat.issortedPyKS)) = nan;
+nDat.extractSpikes(nDat.issortedPyKS == 0) = 0;
+nDat.extractSpikes(nDat.issortedPyKS == 2) = 0;
 
 
 %% This section is a final cleanup and dealing with some edge cases

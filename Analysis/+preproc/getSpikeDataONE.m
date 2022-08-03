@@ -6,7 +6,7 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
 
     % so that one can give this a custom folder
     if ~exist('KSFolder','var')
-        KSFolder = fullfile(ephysPath,'kilosort2');    
+        KSFolder = fullfile(ephysPath,'pyKS','output');
     end
     IBLFormatFolder = fullfile(KSFolder,'ibl_format');
 
