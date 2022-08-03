@@ -137,7 +137,9 @@ for i=1:height(expList)
         evPQTPath = strrep(evPQTPath, '.table', '.table_largeData');
         if any(contains(dataTypes, 'eventsFull', 'IgnoreCase',1)) && exist(evPQTPath, 'file')
             largeEvents = table2struct(parquetread(evPQTPath),"ToScalar",1);
-            expList.dataEvents{i} = catStructs(expList.dataEvents{i},largeEvents);
+            for j = fields(largeEvents)'
+                expList.dataEvents{i}.(j{1}) = largeEvents.(j{1});
+            end
         end
     end
 
