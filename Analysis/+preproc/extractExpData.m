@@ -116,8 +116,8 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if shouldProcess('spikes')
-                    if contains(expInfo.alignEphys, '1') && contains(expInfo.issortedPyKS, '1')
+                if shouldProcess('spikes') || contains(recompute,'QM')
+                    if contains(expInfo.alignEphys, '1') && contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
@@ -131,50 +131,57 @@ function extractExpData(varargin)
                             
                             % Get the probe's ONE folder
                             probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
-                            initONEFolder(probeONEFolder) %%% will have to see what to do when recomputing the qMetrics only
-                            
+
                             switch KSversion
                                 case 'matKS'
-                                    KSfolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
+                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
                                 case 'pyKS'
-                                    KSfolder = fullfile(alignment.ephys(probeNum).ephysPath,'pyKS','output');
+                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'pyKS','output');
                             end
 
-                            try
-                                % Get the spike and cluster info
-                                spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSfolder);
-                                
-                                % Align them
-                                spkONE.spikes.times = preproc.align.event2Timeline(spkONE.spikes.times, ...
-                                    alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
-                                
-                                % Subselect the ones that are within this experiment
-                                expLength = block.duration;
-                                spk2keep = (spkONE.spikes.times>0) & (spkONE.spikes.times<expLength);
-                                spkONE.spikes.times = spkONE.spikes.times(spk2keep);
-                                spkONE.spikes.templates = spkONE.spikes.templates(spk2keep);
-                                spkONE.spikes.clusters = spkONE.spikes.clusters(spk2keep);
-                                spkONE.spikes.amps = spkONE.spikes.amps(spk2keep);
-                                spkONE.spikes.depths = spkONE.spikes.depths(spk2keep);
-                                spkONE.spikes.av_xpos = spkONE.spikes.av_xpos(spk2keep);
-                                spkONE.spikes.av_shankIDs = spkONE.spikes.av_shankIDs(spk2keep);
+                            stub = [expDate '_' expNum '_' subject '_' ...
+                                sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
 
-                                stub = [expDate '_' expNum '_' subject '_' ...
-                                    sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
-                                fieldsSpk = fieldnames(spkONE);
-                                for ff = 1:numel(fieldsSpk)
-                                    obj = fieldsSpk{ff};
-                                    fieldsObj = fieldnames(spkONE.(obj));
-                                    for fff = 1:numel(fieldsObj)
-                                        attr = fieldsObj{fff};
-                                        % note that the regexprep is because a field cannot start with '_'...
-                                        saveONEFormat(spkONE.(obj).(attr), ...
-                                            probeONEFolder,obj,regexprep(attr,'av_','_av_'),'npy',stub);
+                            try
+                                if shouldProcess('spikes')
+                                    % Initialize the folder (do it here
+                                    % because want to delete it only when
+                                    % processing the spikes)
+                                    initONEFolder(probeONEFolder) %%% will have to see what to do when recomputing the qMetrics only
+
+                                    % Get the spike and cluster info
+                                    spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSFolder);
+
+                                    % Align them
+                                    spkONE.spikes.times = preproc.align.event2Timeline(spkONE.spikes.times, ...
+                                        alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
+
+                                    % Subselect the ones that are within this experiment
+                                    expLength = block.duration;
+                                    spk2keep = (spkONE.spikes.times>0) & (spkONE.spikes.times<expLength);
+                                    spkONE.spikes.times = spkONE.spikes.times(spk2keep);
+                                    spkONE.spikes.templates = spkONE.spikes.templates(spk2keep);
+                                    spkONE.spikes.clusters = spkONE.spikes.clusters(spk2keep);
+                                    spkONE.spikes.amps = spkONE.spikes.amps(spk2keep);
+                                    spkONE.spikes.depths = spkONE.spikes.depths(spk2keep);
+                                    spkONE.spikes.av_xpos = spkONE.spikes.av_xpos(spk2keep);
+                                    spkONE.spikes.av_shankIDs = spkONE.spikes.av_shankIDs(spk2keep);
+
+                                    fieldsSpk = fieldnames(spkONE);
+                                    for ff = 1:numel(fieldsSpk)
+                                        obj = fieldsSpk{ff};
+                                        fieldsObj = fieldnames(spkONE.(obj));
+                                        for fff = 1:numel(fieldsObj)
+                                            attr = fieldsObj{fff};
+                                            % note that the regexprep is because a field cannot start with '_'...
+                                            saveONEFormat(spkONE.(obj).(attr), ...
+                                                probeONEFolder,obj,regexprep(attr,'av_','_av_'),'npy',stub);
+                                        end
                                     end
+                                    fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spkONE.spikes.times))
                                 end
                                 
                                 % go get qmetrics??
-                                KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
                                 IBLFormatQMetricsFile = fullfile(KSFolder,'ibl_format');    
                                 if exist(IBLFormatQMetricsFile,"file")
                                     qMetrics = preproc.getQMetrics(KSFolder);
@@ -187,7 +194,6 @@ function extractExpData(varargin)
                                     delete(fullfile(probeONEFolder, 'GetSpkError.json'))
                                 end
                                 
-                                fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spkONE.spikes.times))
                             catch me
                                 msgText = getReport(me);
                                 warning(me.identifier,'Couldn''t get spikes (spk) for probe %d: threw an error (%s)',probeNum,msgText)
