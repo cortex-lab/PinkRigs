@@ -130,25 +130,22 @@ switch lower(computerType)
     case {'kilo2'}
         fprintf('Detected kilo2 computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
-
-        fprintf('Getting pyKS queue... \n')
-        checkQueuePath = which('check_pyKS_queue.py');
-        checkWhichMice = 'allActive';
-        checkWhichDates = 'last7';
-        [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
-            'python ' checkQueuePath ' ' checkWhichMice ' ' checkWhichDates ' && ' ...
-            'conda deactivate']);
-        if statusQueue > 0
-            fprintf('Updating the queue failed with error "%s".\n', resultQueue)
+        
+        
+        c = clock;
+        if c(4) > 20 || c(4) < 2
+            Kilo_runFor = 2; 
+        else
+            Kilo_runFor = num2str(1);
         end
-        disp(resultQueue);
 
+        
         dbstop if error % temporarily, to debug
         fprintf('Running pykilosort on the queue... \n')
-        githubPath = fileparts(fileparts(checkQueuePath));
+        githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
         runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
         [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
-        'python ' runpyKS ' && ' ...
+        'python ' runpyKS ' ' Kilo_runFor ' && ' ...
         'conda deactivate']);
         if statuspyKS > 0
             fprintf('Running pyKS failed... "%s".\n', resultpyKS)
@@ -157,7 +154,7 @@ switch lower(computerType)
         disp(resultpyKS);
 
         fprintf('creating the ibl format... \n')
-        checkQueuePath = which('convert_to_ibl_format.py');
+        checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
         checkWhichMice = 'allActive';
         whichKS = 'pyKS'; 
         checkWhichDates = 'last7';
