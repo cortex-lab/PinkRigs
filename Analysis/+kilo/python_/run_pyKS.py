@@ -101,7 +101,6 @@ def run_pyKS_on_queue(run_for=5.5):
 
     print('there are %.0d files not sorted yet' % queue_csv_at_start.size)
 
-
     for _,init_rec in queue_csv_at_start.iterrows():
 
         # recheck queue
@@ -119,8 +118,7 @@ def run_pyKS_on_queue(run_for=5.5):
                 input_dir = Path(rec.ephysName.item())
                 queue_csv.sortedTag.iloc[idx]= .5
                 queue_csv.to_csv(queue_csv_file,index = False)
-                success=True
-                #success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
+                success = run_pyKS_single_file(input_dir,recompute_errored_sorting = True)
                 if success:
                     queue_csv.sortedTag.iloc[idx]= 1
                     queue_csv.to_csv(queue_csv_file,index = False) 
@@ -129,4 +127,4 @@ def run_pyKS_on_queue(run_for=5.5):
                     queue_csv.to_csv(queue_csv_file,index = False) 
 
 if __name__ == "__main__":
-   run_pyKS_on_queue(run_for=5.5)
+   run_pyKS_on_queue(run_for=4.5)
