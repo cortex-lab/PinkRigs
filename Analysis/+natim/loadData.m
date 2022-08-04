@@ -66,6 +66,10 @@ function [data, proc] = loadData(varargin)
                 spikes = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
                 clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters;
                 
+                if ~isfield(clusters,'qualityMetrics')
+                    error('no qm')
+                end
+
                 nClusters = numel(clusters.IDs);
                 nTrials = numel(imageOnsetTimes);
                 baSmtmp = zeros(nTrials, nBins, nClusters);
@@ -118,18 +122,17 @@ function [data, proc] = loadData(varargin)
         data(nn).spikeData = cat(4,baSm{expIdx2Keep});
 
         ee = expIdx2Keep(1);
-        units2keep = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
-        data(nn).spikeData = data(nn).spikeData(:,:,ismember([C{ee}.IDs],units2keep),:);
-        data(nn).C.XPos = C{ee}.xpos(ismember([C{ee}.IDs],units2keep));
-        data(nn).C.Depth = C{ee}.depths(ismember([C{ee}.IDs],units2keep));
-        data(nn).C.CluID = C{ee}.IDs(ismember([C{ee}.IDs],units2keep));
-        data(nn).C.CluLab = C{ee}.KSLabels(ismember([C{ee}.IDs],units2keep));
+        data(nn).spikeData = data(nn).spikeData;
+        data(nn).C.XPos = C{ee}.xpos;
+        data(nn).C.Depth = C{ee}.depths;
+        data(nn).C.CluID = C{ee}.IDs;
+        data(nn).C.CluLab = C{ee}.KSLabels;
         data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
-        data(nn).goodUnits = units2keep;
+        data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
 
-        if any(sum(data(nn).spikeData,[1 2 4])==0)
-            error('Neurons with no spikes?? Shouldn''t happen.')
-        end
+%         if any(sum(data(nn).spikeData,[1 2 4])==0)
+%             error('Neurons with no spikes?? Shouldn''t happen.')
+%         end
 
         data(nn).days = days{ee};
         data(nn).recLoc = recLocAll{ee};
