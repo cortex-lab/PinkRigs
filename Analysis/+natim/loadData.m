@@ -62,7 +62,7 @@ function [data, proc] = loadData(varargin)
                 dataExp = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                         object={{'spikes'},{'clusters'}}, ...
                         attribute={{'times','clusters'}, ...
-                        {'_av_IDs','_av_KSLabels','depths','_av_xpos'}});
+                        {'_av_IDs','_av_KSLabels','depths','_av_xpos','_av_xpos','qualityMetrics'}});
                 spikes = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
                 clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters;
                 
@@ -124,6 +124,7 @@ function [data, proc] = loadData(varargin)
         data(nn).C.Depth = C{ee}.depths(ismember([C{ee}.IDs],units2keep));
         data(nn).C.CluID = C{ee}.IDs(ismember([C{ee}.IDs],units2keep));
         data(nn).C.CluLab = C{ee}.KSLabels(ismember([C{ee}.IDs],units2keep));
+        data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
         data(nn).goodUnits = units2keep;
 
         if any(sum(data(nn).spikeData,[1 2 4])==0)
