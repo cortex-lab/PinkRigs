@@ -66,7 +66,7 @@ nRow = 15;
 axWidth = 1:2;
 axHeight = 1:nRow;
 tRef = (repmat(nRow*(axHeight-1)', 1, length(axWidth)) + repmat(axWidth,length(axHeight), 1))';
-guiData.axes.clusters = subplot(nRow,nCol,tRef(:)','YDir','normal'); hold on; axis tight
+guiData.axes.clusters = subplot(nRow,nCol,tRef(:)','YDir','normal','ButtonDownFcn',@clusterClick); hold on; axis tight
 xlim([-0.1,1]);
 ylabel('Distance from tip (\mum)', 'FontSize',defFontSize)
 xlabel('xPosition (\mum)', 'FontSize',defFontSize)
@@ -214,7 +214,7 @@ guiData.curr.nProbes = length(probeFields);
 guiData.curr.spks = {guiData.curr.spks.(selProbe)}';
 
 guiData.curr.spkTimes = cellfun(@(x) x.spikes.times, guiData.curr.spks, 'uni', 0);
-guiData.curr.spkTemplate = cellfun(@(x) x.spikes.clusters, guiData.curr.spks, 'uni', 0);
+guiData.curr.spkCluster = cellfun(@(x) x.spikes.clusters, guiData.curr.spks, 'uni', 0);
 guiData.curr.spkAmps = cellfun(@(x) x.spikes.amps, guiData.curr.spks, 'uni', 0);
 guiData.curr.clusterDepths = cellfun(@(x) x.clusters.depths', guiData.curr.spks, 'uni', 0);
 guiData.curr.clusterXPos = cellfun(@(x) x.clusters.xpos', guiData.curr.spks, 'uni', 0);
@@ -229,12 +229,6 @@ guiData.curr.sortTrials(sortExists) = cellfun(@(x,y) x{evTimeRef}(~y), dat{dIdx}
 guiData.curr.trialTickTimes(sortExists) = cellfun(@(x,y) x{evTimeRef}(~y), dat{dIdx}.trialTickTimes(nExps&sortExists), nanIdx(sortExists), 'uni', 0);
 guiData.curr.highlight = cell(sum(nExps), 1);
 
-guiData.pythonModIdx = 0;
-if any(cell2mat(guiData.curr.spkTemplate) == 0)
-    guiData.pythonModIdx = 1;
-    guiData.curr.spkTemplate = cellfun(@(x) x+1, guiData.curr.spkTemplate, 'uni', 0);
-    guiData.curr.clusterIDs = cellfun(@(x) x+1, guiData.curr.clusterIDs, 'uni', 0);
-end
 
 if length(unique(cellfun(@length, guiData.curr.clusterXPos))) ~= 1
     error('Multiple sessions must be from single sorting, but temaplates are different ?! \n')
@@ -366,7 +360,7 @@ set(guiData.plot.currClusterDot,'XData',clusterX(guiData.curr.clusterIdx), 'YDat
 for i = 1:guiData.curr.nExps
     if guiData.curr.nExps == 2; pltIdx = i; else, pltIdx = 2; end
 
-    currSpkIdx = ismember(typecast(guiData.curr.spkTemplate{i},'uint32'),guiData.curr.cluster);
+    currSpkIdx = ismember(typecast(guiData.curr.spkCluster{i},'uint32'),guiData.curr.cluster);
     currRasterSpkTimes = guiData.curr.spkTimes{i}(currSpkIdx);
 
     tPeriEvent = guiData.curr.evTimes{i} + guiData.plot.rasterBins;
@@ -487,7 +481,7 @@ else
 end
 set(guiData.titleMain, 'String', sprintf('%s--%s   %s    Cluster--%d   Probe--%d of %d \n %s', ...
     strjoin(guiData.curr.subject, '&'), strjoin(guiData.curr.expDate, '&'), strjoin(guiData.curr.expDef, '&'), ...
-    guiData.curr.cluster-guiData.pythonModIdx, guiData.curr.probe, guiData.curr.nProbes, addString));
+    guiData.curr.cluster, guiData.curr.probe, guiData.curr.nProbes, addString));
 guiData.titleMain_2 = 1;
 end
 
@@ -503,8 +497,6 @@ switch eventdata.Key
         else
             guiData.curr.probe = min([guiData.curr.probe + 1, guiData.curr.nProbes]);
         end
-        assignGUIFields(cellrasterGui, guiData);
-        cycleProbe(cellrasterGui);
 
     case 'd' %Switch date
         if contains(eventdata.Modifier, 'shift')
@@ -512,39 +504,30 @@ switch eventdata.Key
         else
             guiData.curr.dIdx = min([guiData.curr.dIdx + 1, guiData.nSessions]);
         end
-        assignGUIFields(cellrasterGui, guiData);
-        cycleProbe(cellrasterGui);
 
     case 'downarrow' % Next cluster
         currClusterPosition = guiData.curr.cluster == guiData.curr.sortedTemplateIDs;
         newCluster = guiData.curr.sortedTemplateIDs(circshift(currClusterPosition,1));
         guiData.curr.cluster = newCluster;
-        assignGUIFields(cellrasterGui, guiData);
 
     case 'uparrow' % Previous cluster
         currClusterPosition = guiData.curr.cluster(end) == guiData.curr.sortedTemplateIDs;
         newCluster = guiData.curr.sortedTemplateIDs(circshift(currClusterPosition,-1));
         guiData.curr.cluster = newCluster;
-        assignGUIFields(cellrasterGui, guiData);
 
     case 'rightarrow' % Next trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
             guiData.curr.evTimeRef = guiData.curr.evTimeRef + 1;
-            assignGUIFields(cellrasterGui, guiData);
-            cycleProbe(cellrasterGui, 0);
         else
             guiData.curr.triGrpRef = guiData.curr.triGrpRef + 1;
-            assignGUIFields(cellrasterGui, guiData);
         end
 
     case 'leftarrow' % Previous trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
             guiData.curr.evTimeRef = guiData.curr.evTimeRef - 1;
-            assignGUIFields(cellrasterGui, guiData);
             guiData.sigRes = cellfun(@(x,y) neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
         else
             guiData.curr.triGrpRef = guiData.curr.triGrpRef - 1;
-            assignGUIFields(cellrasterGui, guiData);
         end
 
     case 'c'
@@ -558,6 +541,10 @@ end
 
 % Upload gui data and draw
 if contains(eventdata.Key, {'p'; 'c'; 'arrow';'d'})
+    assignGUIFields(cellrasterGui, guiData);
+    if any(strcmpi(eventdata.Key, {'p';'d'})) || contains(eventdata.Modifier, 'shift')
+        cycleProbe(cellrasterGui);
+    end
     updatePlot(cellrasterGui);
 end
 end
@@ -570,12 +557,16 @@ guiData = guidata(cellrasterGui);
 clusterX = get(guiData.plot.clusterDots,'XData');
 clusterY = get(guiData.plot.clusterDots,'YData');
 
-[~,clickedCluster] = min(sqrt(sum(([clusterX;clusterY] - ...
-    eventdata.IntersectionPoint(1:2)').^2,1)));
+%because yRange is much larger
+ratio = (range(ylim)/range(xlim))/4;
+ratioDivide = repmat([1; ratio], 1, length(clusterX)); 
+
+clustDistance = [[clusterX;clusterY] - eventdata.IntersectionPoint(1:2)']./ratioDivide;
+[~,clickedCluster] = min(sqrt(sum((clustDistance).^2,1)));
 guiData.curr.cluster = guiData.curr.clusterIDs(clickedCluster);
 
 % Upload gui data and draw
-guidata(cellrasterGui,guiData);
+assignGUIFields(cellrasterGui, guiData);
 updatePlot(cellrasterGui);
 end
 
