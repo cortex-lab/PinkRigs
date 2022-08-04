@@ -403,7 +403,7 @@ for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
 nDat.extractSpikes(isnan(nDat.issortedPyKS) & isnan(nDat.issortedKS2)) = nan;
-nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedPyKS,[0 2])) = 0; % shouldn't be needed?
+nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedKS2,[0 2])) = 0; % shouldn't be needed?
 
 %% This section is a final cleanup and dealing with some edge cases
 
