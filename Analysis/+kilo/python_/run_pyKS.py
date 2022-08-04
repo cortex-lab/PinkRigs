@@ -42,16 +42,16 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False):
             output_dir = path_to_file.parent / 'pyKS'
             output_dir.mkdir(parents=False, exist_ok=True) 
 
-            #if there is a remainder .kilosort temp file, delete 
+            #if there is a remainder .kilosort temp processing folder, delete 
             KS_workfolder = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
-            temp_file = KS_workfolder / r'.kilosort'
-            if temp_file.is_dir():
-                shutil.rmtree(temp_file)        
+            if KS_workfolder.is_dir():
+                shutil.rmtree(KS_workfolder)    
+            KS_workfolder.mkdir(parents=False, exist_ok=True)     
 
             add_default_handler(level='INFO') # print output as the algorithm runs
             # find the compressed file of the same name 
             input_dir = list((path_to_file.parent).glob('*.cbin'))[0] 
-            run(input_dir, probe=channel_map, low_memory=True, dir_path = KS_workfolder, output_dir=output_dir)
+            run(input_dir, probe=channel_map, low_memory=True, dir_path = KS_workfolder, output_dir=output_dir / 'output')
             # if there was a previous error message, remove it
 
             err_message_file = output_dir / 'pyKS_error.json'
@@ -62,9 +62,8 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False):
 
         except:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-
-            save_error_message(output_dir / 'pyKS_error.json',err_type= exc_type,err_message=exc_obj)   
-
+            shutil.rmtree(KS_workfolder)
+            save_error_message(output_dir / 'pyKS_error.json',err_type= exc_type,err_message=exc_obj,err_traceback=exc_tb)   
             success=False
 
     return success
@@ -104,7 +103,9 @@ def run_pyKS_on_queue(run_for=5.5):
     """
     # update the queue
 
+    
     run_for = float(run_for)
+    print(run_for,type(run_for))
     stage_KS_queue(mouse_selection='allActive',date_selection='last7')    
 
     root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
@@ -141,5 +142,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-    run_pyKS_on_queue() 
-   #run_pyKS_on_queue(run_for=sys.argv[1])
+   #run_pyKS_on_queue() 
+   run_pyKS_on_queue(run_for=sys.argv[1])

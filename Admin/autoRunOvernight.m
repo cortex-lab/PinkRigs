@@ -82,9 +82,9 @@ switch lower(computerType)
         
         c = clock;
         if c(4) > 20 || c(4) < 2
-            Kilo_runFor = 2; 
+            Kilo_runFor = num2str(2); 
         else
-            Kilo_runFor = 12;
+            Kilo_runFor = num2str(12);
         end
 
         dbstop if error % temporarily, to debug
@@ -137,9 +137,9 @@ switch lower(computerType)
         
         c = clock;
         if c(4) > 20 || c(4) < 2
-            Kilo_runFor = 2; 
+            Kilo_runFor = num2str(2); 
         else
-            Kilo_runFor = 12;
+            Kilo_runFor = num2str(12);
         end
 
         
