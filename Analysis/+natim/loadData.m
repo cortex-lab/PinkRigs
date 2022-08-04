@@ -120,20 +120,16 @@ function [data, proc] = loadData(varargin)
         expIdx2Keep = find(strcmp(recPath, recPathUni(rr)));
 
         data(nn).spikeData = cat(4,baSm{expIdx2Keep});
+        % clean up to free memory usage
+        baSm(expIdx2Keep) = {[]};
 
         ee = expIdx2Keep(1);
-        data(nn).spikeData = data(nn).spikeData;
         data(nn).C.XPos = C{ee}.xpos;
         data(nn).C.Depth = C{ee}.depths;
         data(nn).C.CluID = C{ee}.IDs;
         data(nn).C.CluLab = C{ee}.KSLabels;
         data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
         data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
-
-%         if any(sum(data(nn).spikeData,[1 2 4])==0)
-%             error('Neurons with no spikes?? Shouldn''t happen.')
-%         end
-
         data(nn).days = days{ee};
         data(nn).recLoc = recLocAll{ee};
 
