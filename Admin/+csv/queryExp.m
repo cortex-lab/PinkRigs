@@ -80,7 +80,7 @@ for mm = 1:numel(params.subject)
     chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
     chkVals{5} = num2str(params.checkAlignMic{mm});
     chkVals{6} = num2str(params.checkAlignEphys{mm});
-    for i = find(~contains(chkVals, 'ignore'))
+    for i = find(~contains(chkVals, 'ignore'))'
         if isempty(i); continue; end
         if strcmpi(chkVals{i}(1), '~')
             mouseExps = mouseExps(~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end)),:);
