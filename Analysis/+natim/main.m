@@ -44,6 +44,7 @@ function main(varargin)
         subjectsAll{rr} = recInfo{1};
 
         % Select only the reliable neurons?
+        %%% could have other metrics here
         for dd = 1:numel(db)
             s = size(db(dd).spikeData);
             resp1 = reshape(nanmean(db(dd).spikeData(:,:,:,1:2:end),[1 4]), [s(2),s(3)]);

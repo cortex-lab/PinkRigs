@@ -542,7 +542,7 @@ end
 % Upload gui data and draw
 if contains(eventdata.Key, {'p'; 'c'; 'arrow';'d'})
     assignGUIFields(cellrasterGui, guiData);
-    if any(strcmpi(eventdata.Key, {'p';'d'})) || contains(eventdata.Modifier, 'shift')
+    if any(strcmpi(eventdata.Key, {'p';'d'})) || any(contains(eventdata.Modifier, 'shift'))
         cycleProbe(cellrasterGui);
     end
     updatePlot(cellrasterGui);
