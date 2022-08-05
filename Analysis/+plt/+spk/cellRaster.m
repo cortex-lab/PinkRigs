@@ -127,6 +127,8 @@ guiData.axes.amplitude(2) = subplot(nRow,nCol,tRef(:)','YAxisLocation','right');
 hold on; axis tight
 ylabel('Amplitude', 'FontSize',defFontSize);
 disableDefaultInteractivity(gca)
+linkaxes([guiData.axes.amplitude(:)], 'y');
+
 %%
 
 dualPosition = cell2mat(get(guiData.axes.raster(:), 'position'));
@@ -471,6 +473,9 @@ for i = 1:guiData.curr.nExps
     set(guiData.titleSub{i}, 'String', sprintf('Alignment--%s   Grouping--%s', ...
         guiData.curr.evNames{i}, guiData.curr.grpNames{i}), 'visible', 1);
     addString = get(guiData.titleSub{i}, 'string');
+
+    newYLim = cell2mat(cellfun(@(x) [min([x.YData]) max([x.YData])], guiData.plot.amplitudes, 'uni', 0));
+    ylim(get(guiData.plot.amplitudes{pltIdx}(1),'Parent'),[min(newYLim(:,1)), max(newYLim(:,2))]);
 end
 if guiData.curr.nExps ~= 1
     addString = '';
