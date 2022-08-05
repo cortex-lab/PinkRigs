@@ -50,7 +50,7 @@ for i = 1:length(params.subject)
     evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.extractEvents);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'events');
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'recompute', 'events', 'process', 'events');
         currData = csv.queryExp(currData);
     end
     
