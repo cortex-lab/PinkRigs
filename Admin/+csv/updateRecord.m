@@ -368,7 +368,7 @@ if strcmpi(nDat.alignBlock, '1')
     elseif any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.npy')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
         nDat.extractEvents = '1';
-    elseif any(contains({ONEContents.name}', 'Error.json', 'ignorecase', 1))
+    elseif any(contains({ONEContents.name}', 'GetEvError.json', 'ignorecase', 1))
         % Issue a "2" if error file is in folder
         nDat.extractEvents = '2';
     else
