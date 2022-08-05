@@ -6,6 +6,10 @@ varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
 extracted = plt.behaviour.getTrainingData(varargin{:});
+if ~any(extracted.validSubjects)
+    fprintf('WARNING: No data found for requested subjects... Returning \n');
+    return
+end
 params = csv.inputValidation(varargin{:});
 
 blkDates = extracted.blkDates;
