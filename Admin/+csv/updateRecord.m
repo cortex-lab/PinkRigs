@@ -253,10 +253,10 @@ end
 
 %Populate alignCamera entries
 for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
-    if ~nDat.(['exist' vidName{1}]) && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no video, but less than 7 days since recording
         nDat.(['align' vidName{1}]) = '0';
-    elseif ~nDat.(['exist' vidName{1}]) || ~strcmpi(nDat.existTimeline, '1')
+    elseif ~strcmpi(nDat.(['exist' vidName{1}]), '1') || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if corresponding file or timeline doesn't exist
         nDat.(['align' vidName{1}]) = NaN;
     elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
@@ -293,10 +293,10 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
 end
 
 % Populate alignMic entry
-if ~nDat.existMic && round(now-blk.endDateTime)<7 && nDat.existTimeline
+if ~strcmpi(nDat.existMic, '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
     % Issue a "0" if no video, but less than 7 days since recording
     nDat.alignMic = '0';
-elseif ~nDat.existMic || ~strcmpi(nDat.existTimeline, '1')
+elseif ~strcmpi(nDat.existMic, '1') || ~strcmpi(nDat.existTimeline, '1')
     % Issue a "NaN" if corresponding file or timeline doesn't exist
     nDat.alignMic = NaN;
 elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
