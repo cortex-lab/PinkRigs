@@ -2,6 +2,7 @@ import pdb
 
 import numpy as np
 import os
+import socket
 import glob
 import pandas as pd
 import facemap
@@ -19,7 +20,7 @@ import re
 # For accessing files on server (if running this code on a unix-based machine)
 # The dependencies are not obvious,
 # see: https://askubuntu.com/questions/80448/what-would-cause-the-gi-module-to-be-missing-from-python
-# from gi.repository import Gio
+from gi.repository import Gio
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -851,7 +852,7 @@ def compress_video(video_fpath, ffmpeg_path='/usr/bin/ffmpeg', crf=1, output_vid
     return output_path
 
 
-def update_file_list(all_mouse_info, file_list_csv_path, load_from_server=False):
+def update_file_list(all_mouse_info, file_list_csv_path=None, load_from_server=False):
     """
     Write a shared file to server to list which facemap files are
     (1) processed
@@ -859,13 +860,16 @@ def update_file_list(all_mouse_info, file_list_csv_path, load_from_server=False)
     (3) processing
     Parameters
     ----------
-    all_mouse_info
-    file_list_csv_path
-    load_from_server
-
+    all_mouse_info : pandas dataframe
+        dataframe contained information of each mouse
+        this can be obtained using the function get_all_mouse_info()
+    file_list_csv_path : str
+        path to the csv containing the files to run (?)
+    load_from_server : bool
+        whether you are loading the data from server
     Returns
     -------
-
+    all_file_info :
     """
 
     if not os.path.exists(file_list_csv_path):
@@ -908,11 +912,237 @@ def update_file_list(all_mouse_info, file_list_csv_path, load_from_server=False)
     return all_file_info
 
 
-def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
+def get_mouse_info_csv_paths(subset_mice_to_use=None, subset_date_range=None):
+
+    if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
+        main_info_folder_in_server = True
+        mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+        default_server_path = 'smb://128.40.224.65/subjects/'
+    else:  # Zelda rigs
+        main_info_folder_in_server = False
+        mouse_info_folder = '//zserver/Code/AVrig'
+        default_server_path = '//128.40.224.65/subjects/'
+
+    if main_info_folder_in_server:
+        gvfs = Gio.Vfs.get_default()
+        mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
+
+    if subset_mice_to_use is not None:
+        mouse_info_csv_paths = []
+        for mouse_name in subset_mice_to_use:
+            mouse_info_csv_paths.append(
+                glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
+            )
+    else:
+        mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
+
+    files_to_exclude = []
+
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+    for path in mouse_info_csv_paths:
+        if os.path.basename(path) in files_to_exclude:
+            mouse_info_csv_paths.remove(path)
+        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+        if not pattern_to_match.match(fname_without_ext):
+            mouse_info_csv_paths.remove(path)
+
+    return mouse_info_csv_paths
+
+
+def update_mouse_csv_record():
+
+    if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
+        main_info_folder_in_server = True
+        mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+        default_server_path = 'smb://128.40.224.65/subjects/'
+    else: # Zelda rigs
+        main_info_folder_in_server = False
+        mouse_info_folder = '//zserver/Code/AVrig'
+        default_server_path = '//128.40.224.65/subjects/'
+
+    if main_info_folder_in_server:
+        gvfs = Gio.Vfs.get_default()
+        mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
+
+    subset_mice_to_use = None  # ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range = None  # ['2021-12-01', '2021-12-20']
+
+    if subset_mice_to_use is not None:
+        mouse_info_csv_paths = []
+        for mouse_name in subset_mice_to_use:
+            mouse_info_csv_paths.append(
+                glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
+            )
+    else:
+        mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
+
+    files_to_exclude = []
+
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+    for path in mouse_info_csv_paths:
+        if os.path.basename(path) in files_to_exclude:
+            mouse_info_csv_paths.remove(path)
+        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+        if not pattern_to_match.match(fname_without_ext):
+            mouse_info_csv_paths.remove(path)
+
+    all_mouse_info = []
+
+    for csv_path in mouse_info_csv_paths:
+        mouse_info = pd.read_csv(csv_path)
+        mouse_name = os.path.basename(csv_path).split('.')[0]
+
+        modifiable_mouse_info = mouse_info.copy()
+
+
+        # Convert facemap processing column to a single number to see if all cameras are processed
+        facemapStatusCode = mouse_info['faceMapFrontSideEye']
+        facemapStatusCodeSum = np.zeros(len(facemapStatusCodeSum), ) + np.nan
+
+        for codeStr in facemapStatusCode.values:
+            codeInt = [float(x) for x in codeStr.split(',')]
+            facemapStatusCodeSum[nCodeStr] = int(np.sum(codeInt))
+
+        modifiable_mouse_info['facemapStatusCodeSum'] = facemapStatusCodeSum
+
+        # Subset columns with facemap not processed
+        subset_modifiable_mouse_info = modifiable_mouse_info.loc[
+            modifiable_mouse_info['facemapStatusCodeSum'] < 3
+        ]
+
+        pdb.set_trace()
+
+
+        # TODO: for subset, check if facemap processed yet or not
+
+
+        # mouse_info['subject'] = mouse_name
+
+
+    return 0
+
+
+def plot_facemap_results():
+
+    # TODO: first locate the csv with all the information
+    mouse_info_csv_paths = get_mouse_info_csv_paths()
+
+
+
+
+    # Loop through each folder, check if there is a plot already made, if not, load results and make plot
+    for csv_path in mouse_info_csv_paths:
+        mouse_info = pd.read_csv(csv_path)
+        mouse_name = os.path.basename(csv_path).split('.')[0]
+
+        for row_idx, exp_info in mouse_info.iterrows():
+
+            exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
+                                      exp_info['expDate'], str(exp_info['expNum']))
+            # look for video files
+            video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+
+            # remove the *lastFrames.mj2 videos
+            video_files = [x for x in video_files if 'lastFrames' not in x]
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+            pdb.set_trace()
+
+            # load facemap results
+            facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+            facemap_output = np.load(facemap_output_path, allow_pickle=True).item()
+
+
+
+            # Plot average frame
+            avgframe_reshape = facemap_output['avgframe_reshape']
+            fig, ax = plt.subplots()
+            ax.imshow(avgframe_reshape, aspect='auto', cmap='gray')
+            ax.set_xlabel('x axis pixel', size=12)
+            ax.set_ylabel('y axis pixel', size=12)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            fig_name = 'facemap_avgframe_reshaped.png'
+            fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
+
+
+    return 0
+
+
+def convert_facemap_output_to_ONE_format(facemap_output_file):
     """
-    
+    Convert facemap output to ONE format
+    """
+
+
+    # Make folder for the camera
+    eye_proc_basename = os.path.basename(facemap_output_file)
+
+    exp_date = eye_proc_basename.split('_')[0]
+    exp_num = eye_proc_basename.split('_')[1]
+    subject = eye_proc_basename.split('_')[2]
+    fov_name = eye_proc_basename.split('_')[3]
+
+    exp_folder = os.path.dirname(facemap_output_file)
+    fov_folder = os.path.join(exp_folder, 'ONE_preproc', fov_name)
+
+    if not os.path.isdir(fov_folder):
+        os.makedirs(fov_folder)
+
+    # Load facemap output
+    facemap_output = np.load(facemap_output_file, allow_pickle=True).item()
+
+    # Save motion SVD
+    motion_svd = facemap_output['motSVD'][1]  # the first is empty, frame x numSVD
+    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs.SVD.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_svd_save_path, motion_svd)
+
+    # Save motion SVD masks
+    motMask_reshape = facemap_output['motMask_reshape'][1]  # x pixel X y pixel X nPC
+    motion_svdmasks_save_path = os.path.join(fov_folder,
+                                        '_av_motionPCs.weights.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_svdmasks_save_path, motMask_reshape)
+
+    # Save ROI position
+    roi_w_h_x_y = np.array([
+        facemap_output['Lx'][0],
+        facemap_output['Ly'][0],
+        facemap_output['rois'][0]['xrange'][0],
+        facemap_output['rois'][0]['yrange'][0]
+    ])
+    roi_w_h_x_y_save_path = os.path.join(fov_folder,
+                                             'ROIMotionEnergy.position.%s_%s_%s_%s.npy' % (
+                                             exp_date, exp_num, subject, fov_name))
+    np.save(roi_w_h_x_y_save_path, roi_w_h_x_y)
+
+    # Save motion Energy
+    motion_energy = facemap_output['motion'][1]
+    motion_energy_save_path = os.path.join(fov_folder,
+                                        'camera.ROIMotionEnergy.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(motion_energy_save_path, motion_energy)
+
+    # Save average frame
+    frame_average = facemap_output['avgframe_reshape']
+    frame_average_save_path = os.path.join(fov_folder,
+                                           'camera.ROIAverageFrame.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    np.save(frame_average_save_path, frame_average)
+
+    return 0
+
+def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_date_range=None):
+    """
+      
     Parameters
     ----------
+    
+    output_format : str
+        'flat' : save original facemap output in the main folder
+        'ONE' : save facemap output in ONE format; extract outputs into numpy arrays and save as separate .npy,
+                with one folder per camera
     subset_mice_to_use : list, optional
         DESCRIPTION. The default is None.
         example: 
@@ -921,19 +1151,20 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
         DESCRIPTION. The default is None.
         example:
             subset_date_range = ['2021-12-01', '2021-12-20']
-
+            
     Returns
     -------
     None.
 
     """
+    
     num_videos_to_run_per_call = 1
     num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
     align_to_timeline = False
     plot_results = False
     run_video_compression = False
-    load_from_server = False
+    load_from_server = True
     video_ext = '.mj2'
 
     # spreadsheet to keep track of which files are done and which are not
@@ -946,14 +1177,15 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
     # main_csv_df = pd.read_csv(main_csv_path)
 
     # TODO: think about video compression as well
-
-    main_info_folder_in_server = False
-    # mouse_info_folder = 'smb://zserver.local/code/AVrig/'
-    # default_server_path = 'smb://128.40.224.65/subjects/'
-
     # On Zelda-4 timeline machine
-    mouse_info_folder = '//zserver/Code/AVrig'
-    default_server_path = '//128.40.224.65/subjects/'
+    if socket.gethostname() == 'timothysit-cortexlab':
+        main_info_folder_in_server = True
+        mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+        default_server_path = 'smb://128.40.224.65/subjects/'
+    else:
+        main_info_folder_in_server = False
+        mouse_info_folder = '//zserver/Code/AVrig'
+        default_server_path = '//128.40.224.65/subjects/'
 
     if main_info_folder_in_server:
         gvfs = Gio.Vfs.get_default()
@@ -969,10 +1201,11 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
         mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
     # TODO: test the re.compile().match() code
-    files_to_exclude = ['aMasterMouseList.csv',
-                        'kilosort_queue.csv',
-                        'video_corruption_check.csv',
-                        '!MouseList.csv']
+    #files_to_exclude = ['aMasterMouseList.csv',
+    #                    'kilosort_queue.csv',
+    #                    'video_corruption_check.csv',
+    #                    '!MouseList.csv']
+    files_to_exclude = []
 
     pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
 
@@ -981,7 +1214,10 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
     for n_path, path in enumerate(mouse_info_csv_paths):
         print(path)
         if os.path.basename(path) in files_to_exclude:
-            # mouse_info_csv_paths.remove(path)
+            mouse_info_csv_paths.remove(path)
+        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+        if not pattern_to_match.match(fname_without_ext):
+            mouse_info_csv_paths.remove(path)
             print('File : %s excluded' % path)
             # del mouse_info_csv_paths[n_path]
         else:
@@ -996,7 +1232,6 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
             else:
                 status_str = 'accept'
                 subset_mouse_info_csv_paths.append(path)
-
 
             print('File : %s, status: %s' % (fname, status_str))
     
@@ -1246,6 +1481,13 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
                 processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
                 os.rename(processing_facemap_txt_file, processed_txt_file_name)
 
+                # Convert things to ONE format
+                if output_format == 'ONE':
+                    print('Converting files to ONE format')
+                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+                    convert_facemap_output_to_ONE_format(facemap_output_path)
+
+
                 if plot_results:
                     # load facemap results
                     facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
@@ -1285,9 +1527,166 @@ def batch_process_facemap(subset_mice_to_use=None, subset_date_range=None):
         time.sleep(1800)
 
 
-def summarize_progress():
+def get_all_mouse_info():
 
-    progress_df = None
+    # On Zelda-4 timeline machine
+    if socket.gethostname() == 'timothysit-cortexlab':
+        main_info_folder_in_server = True
+        mouse_info_folder = 'smb://zserver.local/code/AVrig/'
+        default_server_path = 'smb://128.40.224.65/subjects/'
+    else:
+        main_info_folder_in_server = False
+        mouse_info_folder = '//zserver/Code/AVrig'
+        default_server_path = '//128.40.224.65/subjects/'
+
+    if main_info_folder_in_server:
+        gvfs = Gio.Vfs.get_default()
+        mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
+
+    subset_mice_to_use = None  # ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range = None  # ['2021-12-01', '2021-12-20']
+
+    if subset_mice_to_use is not None:
+        mouse_info_csv_paths = []
+        for mouse_name in subset_mice_to_use:
+            mouse_info_csv_paths.append(
+                glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
+            )
+    else:
+        mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
+
+    # TODO: test the re.compile().match() code
+    #files_to_exclude = ['aMasterMouseList.csv',
+    #                    'kilosort_queue.csv',
+    #                    'video_corruption_check.csv',
+    #                    '!MouseList.csv']
+    files_to_exclude = []
+
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+    for path in mouse_info_csv_paths:
+        if os.path.basename(path) in files_to_exclude:
+            mouse_info_csv_paths.remove(path)
+        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+        if not pattern_to_match.match(fname_without_ext):
+            mouse_info_csv_paths.remove(path)
+
+    all_mouse_info = []
+    for csv_path in mouse_info_csv_paths:
+        mouse_info = pd.read_csv(csv_path)
+        mouse_name = os.path.basename(csv_path).split('.')[0]
+        mouse_info['subject'] = mouse_name
+
+        if 'path' not in mouse_info.columns:
+            mouse_info['server_path'] = default_server_path
+        if 'expFolder' in mouse_info.columns:
+            if socket.gethostname() == 'timothysit-cortexlab':
+                server_paths= []
+                for eFolder in mouse_info['expFolder']:
+                    if 'zinu' in eFolder:
+                        spath =  'smb://zinu.local/subjects/'
+                        server_paths.append(spath)
+                    elif 'znas' in eFolder:
+                        spath = 'smb://znas.local/subjects/'
+                        server_paths.append(spath)
+                    else:
+                        print(eFolder)
+                mouse_info['server_path'] = server_paths
+            else:
+                server_paths = ['//%s/%s' % (x.split(os.sep)[2], x.split(os.sep)[3]) for x in mouse_info['expFolder'].values]
+                mouse_info['server_path'] = server_paths
+        if 'path' in mouse_info.columns:
+            mouse_info['server_path'] = \
+                ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
+
+        all_mouse_info.append(mouse_info)
+
+    all_mouse_info = pd.concat(all_mouse_info)
+
+    return all_mouse_info
+
+
+def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
+
+    all_mouse_info= get_all_mouse_info()
+
+    vid_path_list = []
+    vid_processed_list = []
+    vid_corrupted_list = []
+    vid_processed_date_list = []
+
+    for row_idx, exp_info in all_mouse_info.iterrows():
+        # get list of files from the exp folder
+        if load_from_server:
+            gvfs = Gio.Vfs.get_default()
+            main_folder = exp_info['server_path']
+            exp_info['main_folder'] = gvfs.get_file_for_uri(main_folder).get_path()
+
+            if exp_info['main_folder'] is None:
+                print('WARNING: main folder not file for server path: %s' % exp_info['server_path'])
+        else:
+            main_folder = exp_info['server_path']
+            exp_info['main_folder'] = main_folder
+
+        if type(exp_info['expNum']) is not int:
+            exp_info['expNum'] = int(exp_info['expNum'])
+
+        exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
+                                  exp_info['expDate'], str(exp_info['expNum']))
+        # look for video files
+        video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+
+        # remove the *lastFrames.mj2 videos
+        video_files = [x for x in video_files if 'lastFrames' not in x]
+        video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+        for video_fpath, video_fov in zip(video_files, video_file_fov_names):
+            # look for facemap processed file
+            processed_facemap_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy' % video_fov))
+
+            # look for text file that says that the video is being processed
+            processing_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processing.txt' % video_fov))
+
+            # look for text file that says that the video is processed
+            processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
+
+            # check whether file was already marked as corrupted
+            vid_corrupted = check_file_corrupted(vid_path=video_fpath)
+            corrupted_txt_file = os.path.join(exp_folder, '%s_corrupted.txt' % video_fov)
+            corrupted_txt_file_not_found = len(glob.glob(corrupted_txt_file)) == 0
+            if (not corrupted_txt_file_not_found) & (not vid_corrupted):
+                # false alarm, delete the corruption files
+                os.remove(corrupted_txt_file)
+
+            if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0) & (
+            corrupted_txt_file_not_found):
+                vid_processed = 0
+                vid_processed_date= np.nan
+            else:
+                vid_processed = 1
+
+                if len(processed_facemap_txt_path) == 1:
+                    processed_txt_path = processed_facemap_txt_path[0]
+                    fname = processed_txt_path.split(os.sep)[-1]
+                    vid_processed_date = fname[0:10]
+                else:
+                    vid_processed_date= np.nan
+
+            vid_path_list.append(video_fpath)
+            vid_processed_list.append(vid_processed)
+            vid_corrupted_list.append(vid_corrupted)
+            vid_processed_date_list.append(vid_processed_date)
+
+
+
+    progress_df = pd.DataFrame.from_dict({
+        'vid_path': vid_path_list,
+        'vid_processed_list': vid_processed_list,
+        'vid_corrupted_list': vid_corrupted_list,
+        'vid_procesed_date_list': vid_processed_date_list
+    })
+
+    pdb.set_trace()
 
     return progress_df
 
@@ -1300,6 +1699,23 @@ def main():
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
+    update_mouse_csvs = False
+    run_plot_facemap_results = True
+    output_format = 'ONE'
+
+    # Temp for testing
+    # test_path = '/Users/timothysit/FT038/2021-11-04/1/2021-11-04_1_FT038_eyeCam_proc.npy'
+    # convert_facemap_output_to_ONE_format(test_path)
+
+    if update_mouse_csvs:
+        update_mouse_csv_record()
+
+    if summarize_progress:
+        run_summarize_progress()
+
+    if run_plot_facemap_results:
+        plot_facemap_results()
+        
     subset_mice_to_use = None
 
     while continue_running:
@@ -1315,21 +1731,23 @@ def main():
 
         if (hour_int < 8) | (hour_int >= 20) | override_time_check:
             print('It is prime time to run some facemap!')
-            
+
             if subset_mice_to_use is not None:
                 print('Running facemap on specified subset of mice: %s' % subset_mice_to_use)
             
-            batch_process_facemap(subset_mice_to_use=subset_mice_to_use)
+            batch_process_facemap(output_format=output_format, subset_mice_to_use=subset_mice_to_use)
+
 
             if override_time_check:
                 override_counter += 1
+
+
 
         else:
             print('It is after 8am, will stop running facemap')
             continue_running = False
 
-            if summarize_progress:
-                summarize_progress()
+
 
 
 if __name__ == '__main__':
