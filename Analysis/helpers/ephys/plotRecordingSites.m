@@ -7,6 +7,9 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
     if ~exist('recompute','var')
         recompute = 0;
     end
+    if ~iscell(recFolderList)
+        recFolderList = {recFolderList};
+    end
     
     probeColor = [0.4 0.6 0.2; ...
         0.9 0.3 0.0];
@@ -32,45 +35,8 @@ function plotRecordingSites(recFolderList,savePlt,recompute)
                     f = figure('Position', [992   566   248   412]); hold all
                 end
                 for probeNum = 1:numel(probeFolders)
-                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.bin'));
-                    metaData = readMetaData_spikeGLX(binFile.name,binFile.folder);
-                    
-                    %% Extract info from metadata
-                    %%% Same as in plotIMROProtocol
-                    out = regexp(metaData.imroTbl,'\(|\)(|\)','split');
-                    out(1:2) = []; % empty + extra channel or something?
-                    out(end) = []; % empty
-                    
-                    chans = nan(1,numel(out));
-                    shank = nan(1,numel(out));
-                    bank = nan(1,numel(out));
-                    elecInd = nan(1,numel(out));
-                    for c = 1:numel(out)
-                        chanProp = regexp(out{c},' ','split');
-                        chans(c) = str2double(chanProp{1});
-                        shank(c) = str2double(chanProp{2});
-                        bank(c) = str2double(chanProp{3});
-                        % 4 is refElec
-                        elecInd(c) = str2double(chanProp{5});
-                    end
-                    
-                    %% plot data -- taken from IMRO generation script
-                    % NP 2.0 MS (4 shank), probe type 24 electrode positions
-                    nElec = 1280;   %per shank; pattern repeats for the four shanks
-                    vSep = 15;      % in um
-                    hSep = 32;
-                    
-                    elecPos = zeros(nElec, 2);
-                    
-                    elecPos(1:2:end,1) = 0;                %sites 0,2,4...
-                    elecPos(2:2:end,1) =  hSep;            %sites 1,3,5...
-                    
-                    % fill in y values
-                    viHalf = (0:(nElec/2-1))';                %row numbers
-                    elecPos(1:2:end,2) = viHalf * vSep;       %sites 0,2,4...
-                    elecPos(2:2:end,2) = elecPos(1:2:end,2);  %sites 1,3,5...
-                    
-                    chanPos = elecPos(elecInd+1,:);
+                    binFile = dir(fullfile(probeFolders(probeNum).folder,probeFolders(probeNum).name,'*ap.*bin'));
+                    [chanPos, elecPos, shank] = getRecordingSites(binFile(1).name,binFile(1).folder);
                     
                     % make a plot of all the electrode positions
                     shankSep = 250;

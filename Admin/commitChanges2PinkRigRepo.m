@@ -1,5 +1,7 @@
 function commitChanges2PinkRigRepo(updateMessage)
 %% Function to updated PinkRig repo AND commit changes 
+startFolder = cd;
+cd(fileparts(which('zeldaStartup')));
 checkAndUpdatePinkRigRepo;
 
 if ~exist('updateMessage', 'var')
@@ -34,3 +36,4 @@ if status == 1
 end
 
 checkAndUpdatePinkRigRepo;
+cd(startFolder);

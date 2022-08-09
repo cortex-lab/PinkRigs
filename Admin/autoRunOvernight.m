@@ -24,6 +24,18 @@ switch lower(computerType)
         fprintf('Running "copyLocalData2ServerAndDelete"... \n')
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
+        fprintf('Running "extractLocalSync"... \n')
+        extractLocalSync('D:\ephysData');
+        
+        fprintf('Compressing local data... \n')     
+        compressPath = which('compress_data.py');
+        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+            'python ' compressPath ' && ' ...
+            'conda deactivate']);
+        if statusComp > 0
+            error('Compressing local data failed.')
+        end
+        
         fprintf('Running "copyEphysData2ServerAndDelete"... \n')
         copyEphysData2ServerAndDelete('D:\ephysData');
         
@@ -36,26 +48,24 @@ switch lower(computerType)
             fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
         
-    case 'kilo1'
-        fprintf('Detected kilo1 computer... \n')
-        fprintf('Starting now %s...',datestr(now))
+    case {'kilo1'}
+      
+        %%
+        fprintf('Detected kilo computer... \n')
+        fprintf('Starting now %s... \n',datestr(now))
         
         dbstop if error % temporarily, to debug
         
         fprintf('Running "csv.checkForNewPinkRigRecordings"... \n')
-        csv.checkForNewPinkRigRecordings(1);
+        csv.checkForNewPinkRigRecordings('expDate', 1);
         
         c = clock;
         if c(4) > 20
             fprintf('Update on training... \n')
             % Get plot of the mice trained today.
-            paramsQuery.days2Check = 0;
-            paramsQuery.expDef2Check = 'multiSpaceWorld_checker_training';
-            expList = csv.queryExp(paramsQuery);
-            [mouseNames, dates, expNums] = cellfun(@(x) parseExpPath(x), expList.expFolder, 'UniformOutput', false);
-            opt.expNum = expNums;
-            if ~isempty(mouseNames)
-                plt.behaviour.boxPlots(mouseNames,dates, 'res',expList.expDef, opt)
+            expList = csv.queryExp('expDate', 0, 'expDef', 'training');
+            if ~isempty(expList)
+                plt.behaviour.boxPlots(expList, 'sepPlots', 1)
                 saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                 close(gcf)
             end
@@ -70,23 +80,40 @@ switch lower(computerType)
             end
         end
         
-        fprintf('Getting kilosort queue... \n')
-        stageKSPath = which('stageKS.py');
-        [statusQueue,resultQueue] = system(['activate PinkRigs && ' ...
-            'python ' stageKSPath ' && ' ...
-            'conda deactivate']);
-        if statusQueue > 0
-            fprintf('Updating the queue failed with error "%s".\n', resultQueue)
-        end
-        
-        fprintf('Running kilosort on the queue... \n')
+        c = clock;
         if c(4) > 20 || c(4) < 2
-            paramsKilo.runFor = 2; 
+            Kilo_runFor = num2str(2); 
         else
-            paramsKilo.runFor = 12;
+            Kilo_runFor = num2str(12);
         end
-        kilo.main(paramsKilo)
+
+        dbstop if error % temporarily, to debug
+        fprintf('Running pykilosort on the queue... \n')
+        githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
+        runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+        [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
+        'python ' runpyKS ' ' Kilo_runFor ' && ' ...
+        'conda deactivate']);
+        if statuspyKS > 0
+            fprintf('Running pyKS failed... "%s".\n', resultpyKS)
+        end
         
+        disp(resultpyKS);
+
+        fprintf('creating the ibl format... \n')
+        checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+        checkWhichMice = 'allActive';
+        whichKS = 'pyKS'; 
+        checkWhichDates = 'last7';
+        [statusIBL,resultIBL] = system(['activate iblenv && ' ...
+            'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+            'conda deactivate']);
+        if statusIBL > 0
+            fprintf('Updating the queue failed with error "%s".\n', resultIBL)
+        end
+        disp(resultIBL);
+        fprintf('Stopping now %s. \n',datestr(now))
+
         if c(4) < 20 && c(4) > 2
             %%% Bypassing preproc.main for now to go through experiments
             %%% that have been aligned but not preprocessed... Have to fix
@@ -94,21 +121,56 @@ switch lower(computerType)
             %%% hasn't been aligned...
             
             fprintf('Running preprocessing...\n')
-            paramsPreproc.days2Check = 7; % anything older than a week will be considered as "normal", will have to be manually rechecked
-            % paramsPreproc.mice2Check = 'active';
-            paramsPreproc.mice2Check = {'AV006','AV007','AV008','AV009'}; % for now to avoid crashes
             
             % Alignment
-            paramsPreproc.align2Check = '(0,0,0,0,0,0)'; % "any 0"
-            paramsPreproc.preproc2Check = '(*,*)';
-            exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.align.main([], exp2checkList)
+            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
             
             % Extracting data
-            paramsPreproc.align2Check = '(*,*,*,*,*,*)'; % "any 0"
-            paramsPreproc.preproc2Check = '(0,0)';
-            exp2checkList = csv.queryExp(paramsPreproc);
-            preproc.extractExpData([], exp2checkList)
+            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
         end
-        fprintf('Stopping now %s.',datestr(now))
+        
+
+    case {'kilo2'}
+        fprintf('Detected kilo2 computer... \n')
+        fprintf('Starting now %s... \n',datestr(now))
+        
+        
+        c = clock;
+        if c(4) > 20 || c(4) < 2
+            Kilo_runFor = num2str(2); 
+        else
+            Kilo_runFor = num2str(12);
+        end
+
+        
+        dbstop if error % temporarily, to debug
+        fprintf('Running pykilosort on the queue... \n')
+        githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
+        runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+        [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
+        'python ' runpyKS ' ' Kilo_runFor ' && ' ...
+        'conda deactivate']);
+        if statuspyKS > 0
+            fprintf('Running pyKS failed... "%s".\n', resultpyKS)
+        end
+        
+        disp(resultpyKS);
+
+%         fprintf('creating the ibl format... \n')
+%         checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+%         checkWhichMice = 'allActive';
+%         whichKS = 'pyKS'; 
+%         checkWhichDates = 'last7';
+%         [statusIBL,resultIBL] = system(['activate iblenv && ' ...
+%             'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+%             'conda deactivate']);
+%         if statusIBL > 0
+%             fprintf('Updating the queue failed with error "%s".\n', resultIBL)
+%         end
+%         disp(resultIBL);
+%         fprintf('Stopping now %s. \n',datestr(now))
+
+
+        end
+
 end

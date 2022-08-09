@@ -1,66 +1,77 @@
 function main(varargin)
     %%% This function will run the main alignment code, and save the
-    %%% results in the expPath folder.
+    %%% results in the expFolder.
     %%% Inputs can be a set of parameters (input 1) and/or a list of
     %%% experiments (input 2), given by their paths.
     
     %% Get parameters and list of mice to check
-    % Parameters for processing (can be inputs in varargin{1})
-    params.recompute = {'none'};
-    params.paramsVid.videoNames = {'frontCam','sideCam','eyeCam'}; % will take default for the rest
-
-    % This is not ideal
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            if istable(varargin{2})
-                % Already in the right format, with all the info
-                exp2checkList = varargin{2};
-            else
-                % Format is just a cell with paths, go fetch info
-                expPath2checkList = varargin{2};
-                exp2checkList = getExpInfoFromPath(expPath2checkList);
-            end
-        end
-    end
-    
-    if ~exist('exp2checkList', 'var')
-        % Will get all the exp for the active mice.
-        exp2checkList = csv.queryExp();
-    end
-    
+    % Parameters for processing (can be inputs in varargin)
+    varargin = ['recompute', 'none', varargin];
+    varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
+    varargin = ['process', 'all', varargin];
+    params = csv.inputValidation(varargin{:});
+    exp2checkList = csv.queryExp(params);    
     %% --------------------------------------------------------
+
     %% Will compute the 'alignment' file for each experiment.
-    
     for ee = 1:size(exp2checkList,1)
-        
-        % Get exp info
+        % Get expInfo for current experiment (passed to sub functions)
         expInfo = exp2checkList(ee,:);
-        expPath = expInfo.expFolder{1};
+
+        % Assign variables from exp2checkList to ease of use later
+        expDate = exp2checkList.expDate{ee, 1};
+        expNum = exp2checkList.expNum{ee, 1};
+        subject = exp2checkList.subject{ee, 1};
+        expFolder = exp2checkList.expFolder{ee, 1};
+        recompute = exp2checkList.recompute{ee, 1};
+        process = exp2checkList.process{ee, 1};
+        videoNames = exp2checkList.videoNames{ee, 1};
         
         % Define savepath for the alignment results
-        [subject, expDate, expNum] = parseExpPath(expPath);
-        savePath = fullfile(expPath,[expDate '_' expNum '_' subject '_alignment.mat']);
-        if exist(savePath,'file')
-            % To check if anything's missing (and that the csv hasn't seen
-            % for some reason)
-            varListInFile = who('-file', savePath);
-        else
-            varListInFile = {};
+        pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
+        savePath = [pathStub '_alignment.mat'];
+        if strcmp(recompute, 'all') && exist(savePath,'file')
+           delete(savePath) 
         end
         
-        % Get preproc status
-        alignStatus = parseStatusCode(expInfo.alignBlkFrontSideEyeMicEphys{1});
-        
-        if ~(strcmp(params.recompute,'none') && strcmp(expInfo.alignBlkFrontSideEyeMicEphys{1},'1,1,1,1,1,1')) % If good already
+        % Get align status
+        alignFields = contains(expInfo.Properties.VariableNames, 'align');
+        notAlignedYet = struct();
+        for i = expInfo.Properties.VariableNames(alignFields)
+            notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
+        end
+
+        %If there is no timeline. All alignment is NaN
+        if strcmp(expInfo.existTimeline, '0')
+            if ~all(structfun(@(x) strcmpi(x,'nan'), notAlignedYet))
+                [block, ephys] = deal(nan);
+                save(savePath,'block', 'ephys');
+                csv.updateRecord('subject', subject, ...
+                    'expDate', expDate,...
+                    'expNum', expNum);
+            end
+            fprintf(1, '*** WARNING: Skipping alignment as no timeline: %s... ***\n', expFolder);
+            continue;
+        end
+        notAlignedYet = structfun(@(x) contains(x,'0'), notAlignedYet,'uni',0);
+        notAlignedYet.video = 0;
+
+        % Anonymous function to decide whether something should be processed
+        shouldProcess = @(x) (...
+            any(contains(recompute,{'all';x}, 'IgnoreCase',true))...
+            || notAlignedYet.(lower(x)))...
+            && contains(process,{'all';x});
+
+        if ~(contains('none', recompute) && ~any(structfun(@(x)all(x==1), notAlignedYet))) % If good already
             %% If all isn't good...
                         
-            % monitors if anything has changed
+            % Monitors if anything has changed
             change = 0;
             
-            fprintf(1, '*** Aligning experiment %s... ***\n', expPath);
+            % Loads timeline once
+            expInfo = csv.loadData(expInfo, 'dataType','timeline');
+            
+            fprintf(1, '*** Aligning experiment %s... ***\n', expFolder);
             
             %% Align spike times to timeline and save results in experiment folder
             %  This function will load the timeline flipper from the experiment and
@@ -71,51 +82,38 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(params.recompute,'all') || contains(params.recompute,'ephys') || ...
-                    strcmp(alignStatus.ephys,'0') || ~ismember('ephys',varListInFile)
-                
-                ephysFolder = fullfile(fileparts(expPath),'ephys');
-                if exist(ephysFolder,'dir')
-                    try
-                        % Align it
-                        fprintf(1, '* Aligning ephys... *\n');
-                        [ephysFlipperTimes, timelineFlipperTimes, ephysPath] = preproc.align.ephys(expPath);
-                        fprintf(1, '* Ephys alignment done. *\n');
-                        
-                        % Save it
-                        if isempty(ephysPath)
-                            % Couldn't find matching ephys for that experiment.
-                            ephys = nan;
-                        else
-                            % Found a (set of) matching ephys for that exp.
-                            ephys = struct();
-                            for p = 1:numel(ephysPath)
-                                ephys(p).originTimes = ephysFlipperTimes{p};
-                                ephys(p).timelineTimes = timelineFlipperTimes{p};
-                                ephys(p).ephysPath = ephysPath{p}; % can have several probes
-                            end
-                        end
-                        
-                        % Remove any error file
-                        if exist(fullfile(expPath, 'AlignEphysError.json'),'file')
-                            delete(fullfile(expPath, 'AlignEphysError.json'))
-                        end
-                    catch me
-                        warning('Couldn''t align ephys: threw an error (%s)',me.message)
-                        ephys = 'error';
-                        
-                        % Save error message locally
-                        saveErrMess(me.message,fullfile(expPath, 'AlignEphysError.json'))
+            if shouldProcess('ephys')
+                try
+                    % Align it
+                    fprintf(1, '* Aligning ephys... *\n');
+                    [ephysFlipperTimes, timelineFlipperTimes, ephysPath, serialNumber] = preproc.align.ephys(expInfo);
+                    fprintf(1, '* Ephys alignment done. *\n');
+                    
+                    % Save it
+                    ephys = struct();
+                    for p = 1:numel(ephysPath) % can have several probes
+                        ephys(p).originTimes = ephysFlipperTimes{p};
+                        ephys(p).timelineTimes = timelineFlipperTimes{p};
+                        ephys(p).ephysPath = ephysPath{p};
+                        ephys(p).serialNumber = serialNumber(p);
                     end
-                else
-                    % Case where the ephys fodler did not exist. It's either
-                    % because it's not supposed to exist, or wasn't copied.
-                    ephys = nan;
+                    
+                    % Remove any error file
+                    if exist(fullfile(expFolder, 'AlignEphysError.json'),'file')
+                        delete(fullfile(expFolder, 'AlignEphysError.json'))
+                    end
+                catch me
+                    msgText = getReport(me);
+                    warning('Couldn''t align ephys: threw an error (%s)',msgText)
+                    ephys = 'error';
+                    
+                    % Save error message locally
+                    saveErrMess(msgText,fullfile(expFolder, 'AlignEphysError.json'))
                 end
                                 
                 change = 1;
                 
-                % Save it
+                % Save it 
                 if exist(savePath,'file')
                     save(savePath,'ephys','-append')
                 else
@@ -130,30 +128,32 @@ function main(varargin)
             %  compute the events times in timeline time from times in block time using
             %  "event2timeline".
             
-            if contains(params.recompute,'all') || contains(params.recompute,'block') || ...
-                    strcmp(alignStatus.block,'0') || ~ismember('block',varListInFile)
-                
+            if shouldProcess('block')
                 % Note that block file should always exist.
                 try
                     block = struct;
                     fprintf(1, '* Aligning block... *\n');
-                    [blockRefTimes, timelineRefTimes] = preproc.align.block(expPath);
+                    if contains(expInfo.expDef, 'spontaneousActivity')
+                        % expDefs that aren't expected to have alignement
+                        block = nan;
+                    else
+                        [blockRefTimes, timelineRefTimes] = preproc.align.block(expInfo);
+                        block.originTimes = blockRefTimes;
+                        block.timelineTimes = timelineRefTimes;
+                    end
                     fprintf(1, '* Block alignment done. *\n');
                     
-                    % Save it
-                    block.originTimes = blockRefTimes;
-                    block.timelineTimes = timelineRefTimes;
-                    
                     % Remove any error file
-                    if exist(fullfile(expPath, 'AlignBlockError.json'),'file')
-                        delete(fullfile(expPath, 'AlignBlockError.json'))
+                    if exist(fullfile(expFolder, 'AlignBlockError.json'),'file')
+                        delete(fullfile(expFolder, 'AlignBlockError.json'))
                     end
                 catch me
-                    warning('Couldn''t align block: threw an error (%s)',me.message)
+                    msgText = getReport(me);
+                    warning('Couldn''t align block: threw an error (%s)', msgText)
                     block = 'error';
                     
                     % Save error message locally
-                    saveErrMess(me.message,fullfile(expPath, 'AlignBlockError.json'))
+                    saveErrMess(msgText,fullfile(expFolder, 'AlignBlockError.json'))
                 end
                                 
                 change = 1;
@@ -172,59 +172,47 @@ function main(varargin)
             %  The resulting times for these alignments will be saved in a structure
             %  'vids' that contains all cameras.
             
-            if contains(params.recompute,'all') || contains(params.recompute,'video') || ...
-                    strcmp(alignStatus.frontCam,'0') || strcmp(alignStatus.eyeCam,'0') || strcmp(alignStatus.sideCam,'0') || ...
-                    ~ismember('video',varListInFile) %  Won't check for every cam here
-                
+            if any(cellfun(@(x)shouldProcess(x), [videoNames; 'video']))                               
                 fprintf(1, '* Aligning videos... *\n');
                 
+                vids2Process = videoNames(cellfun(@(x) shouldProcess(x), videoNames));
+
                 % Align each of them
-                video = struct();
-                for v = 1:numel(params.paramsVid.videoNames)
-                    vidName = params.paramsVid.videoNames{v};
-                    d = dir(fullfile(expPath,['*' vidName '.mj2']));
-                    video(v).name = vidName;
-                    if ~isempty(d)
-                        try
-                            [video(v).frameTimes, video(v).missedFrames] = preproc.align.video(expPath, d.name(1:end-4), params.paramsVid);
-                            
-                            % Remove any error file
-                            if exist(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)),'file')
-                                delete(fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
-                            end
-                        catch me
-                            warning('Couldn''t align video %s: threw an error (%s)',vidName,me.message)
-                            
-                            if strcmp(me.message,'Failed to initialize internal resources.')
-                                % Very likely that video is corrupted. Make it a
-                                % nan because there's not much we can do for now.
-                                video(v).frameTimes = nan;
-                                video(v).missedFrames = nan;
-                            else
-                                % Another error occured. Save it.
-                                video(v).frameTimes = 'error';
-                                video(v).missedFrames = 'error';
-                            end
-                            
-                            % Save error message locally
-                            saveErrMess(me.message,fullfile(expPath, sprintf('AlignVideoError_%s.json',vidName)))
+                for v = 1:numel(vids2Process)
+
+                    vidName = vids2Process{v};
+                    expInfo.vidName = vidName;
+                    expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
+                    
+                    videoONEFolder = fullfile(expFolder,'ONE_preproc',vidName);
+                    initONEFolder(videoONEFolder)
+
+                    fprintf(1, 'Aligning video %s... \n',vidName);
+                    try
+                        [frameTimes, missedFrames] = preproc.align.video(expInfo);
+                        
+                        if missedFrames > 0
+                           error('Missed frames: %d. Recheck.', missedFrames) 
                         end
-                    else
-                        % Couldn't find the file.
-                        video(v).frameTimes = nan;
-                        video(v).missedFrames = nan;
+                        
+                        stub = [expDate '_' expNum '_' subject '_' vidName];
+                        saveONEFormat(frameTimes,videoONEFolder,'camera','times','npy',stub);
+                        
+                        % Remove any error file
+                        if exist(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)),'file')
+                            delete(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
+                        end
+                    catch me
+                        msgText = getReport(me);
+                        warning('Could not align video %s: threw an error (%s)',vidName,msgText)
+                        
+                        % Save error message locally
+                        saveErrMess(msgText,fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)))
                     end
                 end
                 fprintf(1, '* Video alignment done. *\n');
                                 
                 change = 1;
-                
-                % Save it
-                if exist(savePath,'file')
-                    save(savePath,'video','-append')
-                else
-                    save(savePath,'video')
-                end
             end
             
             %% Align microphone to timeline
@@ -232,47 +220,37 @@ function main(varargin)
             %  to the low frequency microphone that records directly into the timeline
             %  channel. Saved as a 1Hz version of the envelope of both.
             
-            if contains(params.recompute,'all') || contains(params.recompute,'mic') || ...
-                    strcmp(alignStatus.mic,'0') || ~ismember('mic',varListInFile)
+            if shouldProcess('mic')
+                
+                micONEFolder = fullfile(expFolder,'ONE_preproc','mic');
+                initONEFolder(micONEFolder)
                 
                 % Align it
-                if str2double(expInfo.micDat{1}) > 0
-                    try
-                        fprintf(1, '* Aligning mic... *\n');
-                        %%% TODO
-                        error('Haven''t found or coded a way to align file yet.') % for now
-                        fprintf(1, '* Mic alignment done. *\n');
-                        
-                        % Remove any error file
-                        if exist(fullfile(expPath, 'AlignMicError.json'),'file')
-                            delete(fullfile(expPath, 'AlignMicError.json'))
-                        end
-                    catch me
-                        warning('Couldn''t align mic: threw an error (%s)',me.message)
-                        mic = 'error';
-                        
-                        % Save error message locally
-                        saveErrMess(me.message,fullfile(expPath, 'AlignMicError.json'))
+                try
+                    fprintf(1, '* Aligning mic... *\n');
+                    %%% TODO -- ERRORS FOR NOW
+                    error('Have not found or coded a way to align file yet.') % for now
+                    fprintf(1, '* Mic alignment done. *\n');
+                    
+                    % Remove any error file
+                    if exist(fullfile(micONEFolder, 'AlignMicError.json'),'file')
+                        delete(fullfile(micONEFolder, 'AlignMicError.json'))
                     end
-                else
-                    % Mic data wasn't there.
-                    mic = nan;
+                catch me
+                    msgText = getReport(me);
+                    warning('Could not align mic: threw an error (%s)',msgText)
+                    
+                    % Save error message locally
+                    saveErrMess(msgText,fullfile(micONEFolder, 'AlignMicError.json'))
                 end
                 
                 change = 1;
-                
-                % Save it
-                if exist(savePath,'file')
-                    save(savePath,'mic','-append')
-                else
-                    save(savePath,'mic')
-                end
             end
             
             %% Update the csv
             
             if change
-                csv.updateRecord(subject, expDate, expNum);
+                csv.updateRecord('subject', subject, 'expDate', expDate, 'expNum', expNum);
             end
         end
     end

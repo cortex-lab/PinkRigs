@@ -1133,13 +1133,31 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
 
     return 0
 
-def batch_process_facemap(output_format='flat'):
+def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_date_range=None):
     """
+      
+    Parameters
+    ----------
+    
     output_format : str
         'flat' : save original facemap output in the main folder
         'ONE' : save facemap output in ONE format; extract outputs into numpy arrays and save as separate .npy,
                 with one folder per camera
+    subset_mice_to_use : list, optional
+        DESCRIPTION. The default is None.
+        example: 
+            subset_mice_to_use = ['FT030', 'FT031', 'FT032', 'FT035']
+    subset_date_range : list, optional
+        DESCRIPTION. The default is None.
+        example:
+            subset_date_range = ['2021-12-01', '2021-12-20']
+            
+    Returns
+    -------
+    None.
+
     """
+    
     num_videos_to_run_per_call = 1
     num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
@@ -1173,9 +1191,6 @@ def batch_process_facemap(output_format='flat'):
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    subset_mice_to_use = None  # ['FT030', 'FT031', 'FT032', 'FT035']
-    subset_date_range = None  # ['2021-12-01', '2021-12-20']
-
     if subset_mice_to_use is not None:
         mouse_info_csv_paths = []
         for mouse_name in subset_mice_to_use:
@@ -1194,14 +1209,34 @@ def batch_process_facemap(output_format='flat'):
 
     pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
 
-    for path in mouse_info_csv_paths:
+    subset_mouse_info_csv_paths = []
+
+    for n_path, path in enumerate(mouse_info_csv_paths):
+        print(path)
         if os.path.basename(path) in files_to_exclude:
             mouse_info_csv_paths.remove(path)
         fname_without_ext = path.split(os.sep)[-1].split('.')[0]
         if not pattern_to_match.match(fname_without_ext):
             mouse_info_csv_paths.remove(path)
+            print('File : %s excluded' % path)
+            # del mouse_info_csv_paths[n_path]
+        else:
+            fname = os.path.basename(path)
+            fname_without_ext = fname.split('.')[0]
+            str_match = re.match(pattern_to_match, fname_without_ext) is not None
 
+            if not str_match:
+                # mouse_info_csv_paths.remove(path)
+                # del mouse_info_csv_paths[n_path]
+                status_str = 'reject'
+            else:
+                status_str = 'accept'
+                subset_mouse_info_csv_paths.append(path)
+
+            print('File : %s, status: %s' % (fname, status_str))
+    
     all_mouse_info = []
+    mouse_info_csv_paths = subset_mouse_info_csv_paths
 
     for csv_path in mouse_info_csv_paths:
         mouse_info = pd.read_csv(csv_path)
@@ -1218,7 +1253,7 @@ def batch_process_facemap(output_format='flat'):
                 ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
 
         all_mouse_info.append(mouse_info)
-
+    
     all_mouse_info = pd.concat(all_mouse_info)
 
     if subset_date_range is not None:
@@ -1227,6 +1262,7 @@ def batch_process_facemap(output_format='flat'):
             (all_mouse_info['expDate'] <= subset_date_range[1])
             ]
 
+    # pdb.set_trace()
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
 
@@ -1354,9 +1390,19 @@ def batch_process_facemap(output_format='flat'):
         # look for video files
         video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
 
+        if len(video_files) == 0:
+            print('WARNING: no video files found in %s' % exp_folder)
+            continue
+
         # remove the *lastFrames.mj2 videos
         video_files = [x for x in video_files if 'lastFrames' not in x]
-        video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+
+        # TODO: use .count('_') instead
+        try:
+            video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
+        except:
+            print('WARNING: video filename format is strange for %s, skipping' % exp_folder)
+            continue
 
         print('%.f Candidate videos to look over' % len(video_files))
         print('\n'.join(video_files))
@@ -1647,11 +1693,11 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
 
 
 def main():
-    how_often_to_check = 3600
-    override_time_check = True
+    how_often_to_check = 3600  # how often to check the time (seconds), currently not used
+    override_time_check = False
     override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
-    continue_running = True
+    continue_running = True  # fixed at True at the start
     summarize_progress = False
     update_mouse_csvs = False
     run_plot_facemap_results = True
@@ -1669,6 +1715,8 @@ def main():
 
     if run_plot_facemap_results:
         plot_facemap_results()
+        
+    subset_mice_to_use = None
 
     while continue_running:
         e = datetime.datetime.now()
@@ -1683,11 +1731,15 @@ def main():
 
         if (hour_int < 8) | (hour_int >= 20) | override_time_check:
             print('It is prime time to run some facemap!')
-            batch_process_facemap(output_format=output_format)
+
+            if subset_mice_to_use is not None:
+                print('Running facemap on specified subset of mice: %s' % subset_mice_to_use)
+            
+            batch_process_facemap(output_format=output_format, subset_mice_to_use=subset_mice_to_use)
+
 
             if override_time_check:
                 override_counter += 1
-
 
 
 

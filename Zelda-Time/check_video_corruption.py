@@ -13,6 +13,9 @@ from collections import defaultdict
 # some facemap process stuff
 from io import StringIO
 
+import re
+from datetime import date
+
 # For accessing files on server
 # The dependencies are not obvious,
 # see: https://askubuntu.com/questions/80448/what-would-cause-the-gi-module-to-be-missing-from-python
@@ -69,7 +72,7 @@ def main():
     all_video_info = defaultdict(list)
     # subset_mice_to_use = ['TS011', 'SP013']
     subset_mice_to_use = None  # ['CB018', 'CB019', 'CB020']  # None if no subsetting
-    subset_date_range = ['2022-02-07', '2022-02-07']
+    subset_date_range = None  # ['2022-02-07', '2022-02-07']
 
     if main_info_folder_in_server:
         gvfs = Gio.Vfs.get_default()
@@ -88,9 +91,17 @@ def main():
     files_to_exclude = ['aMasterMouseList.csv', 'video_corruption_check.csv',
                         'kilosort_queue.csv']
 
+    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
     for path in mouse_info_csv_paths:
         if os.path.basename(path) in files_to_exclude:
             mouse_info_csv_paths.remove(path)
+        else:
+            fname = os.path.basename(path)
+            fname_without_ext = fname.split('.')[0]
+            str_match = re.match(pattern_to_match, fname_without_ext) is not None
+
+            if not str_match:
+                mouse_info_csv_paths.remove(path)
 
     all_mouse_info = []
 
@@ -155,7 +166,8 @@ def main():
             all_video_info['expNum'].append(exp_info['expNum'])
             all_video_info['expDate'].append(exp_info['expDate'])
             all_video_info['expDuration'].append(exp_info['expDuration'])
-            all_video_info['ephys'].append(exp_info['ephys'])
+            # all_video_info['ephys'].append(exp_info['ephys'])
+            all_video_info['ephysFolderExists'].append(exp_info['ephysFolderExists'])
             all_video_info['video_fov'].append(video_fov)
             all_video_info['video_fpath'].append(
                 video_fpath
@@ -166,9 +178,22 @@ def main():
             all_video_info['lastFrameVidExist'].append(
                 lastFrameVidExist
             )
-            all_video_info['vid_corrupted'].append(
-                vid_corrupted
-            )
+
+            if lastFrameVidExist:
+                last_frame_fpath = [x for x in fov_files if 'last' in x][0]
+                last_frame_vid_size = os.path.getsize(last_frame_fpath)
+                tot_vid_size = exp_info[video_fov] + exp_info[video_fov]
+                main_vid_size_ratio = exp_info[video_fov] / tot_vid_size
+                last_frame_vid_size_ratio = exp_info[video_fov] / tot_vid_size
+            else:
+                main_vid_size_ratio = 1
+                last_frame_vid_size = np.nan
+                last_frame_vid_size_ratio = np.nan
+
+            all_video_info['last_frame_vid_size'].append(last_frame_vid_size)
+            all_video_info['last_frame_vid_size_ratio'].append(last_frame_vid_size_ratio)
+            all_video_info['main_vid_size_ratio'].append(main_vid_size_ratio)
+            all_video_info['vid_corrupted'].append(vid_corrupted)
             all_video_info['expDef'].append(exp_info['expDef'])
 
     all_video_info = pd.DataFrame.from_dict(all_video_info)
@@ -178,8 +203,12 @@ def main():
         print('Checked %.f video files in %.f mice' % (len(all_video_info), num_mice))
         print('Found %.f corrupted video files' % (np.sum(all_video_info['vid_corrupted'])))
 
+
+    # Get today's date
+    today = date.today()
+    today_str = today.strftime('%Y-%m-%d')
     save_file_path = os.path.join(
-        mouse_info_folder, 'video_corruption_check.csv'
+        mouse_info_folder, '%s_video_corruption_check.csv' % today_str
     )
     print('Saving results to %s' % save_file_path)
     all_video_info.to_csv(save_file_path)

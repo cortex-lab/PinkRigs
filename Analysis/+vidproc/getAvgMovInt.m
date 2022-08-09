@@ -1,16 +1,15 @@
-function getAvgMovInt(direc, fname, varargin)
+function getAvgMovInt(pathStub, nFramesToLoad)
     %%% This function will compute the average intensity of a movie, mainly
     %%% in order to extract the dark flashes.
     %%%
     %%% This code is inspired by the code from kilotrode
     %%% (https://github.com/cortex-lab/kilotrodeRig).
     
-    nFramesToLoad = [];
-    if ~isempty(varargin)
-        nFramesToLoad = varargin{1};
+    if ~exist('nFramesToLoad', 'var')
+        nFramesToLoad = [];
     end
     
-    vr = VideoReader(fullfile(direc, [fname '.mj2']));
+    vr = VideoReader([pathStub '.mj2']);
     
     nF = get(vr, 'NumFrames');
     avgIntensity = zeros(1, nF);
@@ -18,7 +17,7 @@ function getAvgMovInt(direc, fname, varargin)
     ROI = [1 1 vr.Width vr.Height];
     
     tic
-    if isempty(nFramesToLoad) 
+    if isempty(nFramesToLoad) || isinf(nFramesToLoad)
         % load all
         chunkSize = 5000;
         numChunks = floor(nF/chunkSize);
@@ -59,4 +58,4 @@ function getAvgMovInt(direc, fname, varargin)
     clear vr
     
     % save output
-    save(fullfile(direc, [fname '_avgIntensity.mat']), 'avgIntensity', 'isLoaded');
+    save([pathStub '_avgIntensity.mat'], 'avgIntensity', 'isLoaded');

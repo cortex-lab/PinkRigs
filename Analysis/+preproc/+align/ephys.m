@@ -1,4 +1,4 @@
-function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
+function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumberReord] = ephys(varargin)
     %%% This function will align the flipper of the ephys data to the
     %%% flipper taken from the timeline.
     %%%
@@ -8,64 +8,71 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
-    params.ephysPath = []; % for specific ephys folders (give full path)
-    params.toleranceThreshold = 0.005;
+    varargin = ['ephysPath', {[]}, varargin]; % for specific ephys folders (give full path)
+    varargin = ['toleranceThreshold', {0.005}, varargin];
+    varargin = ['timeline', {[]}, varargin]; % for timeline input
+    params = csv.inputValidation(varargin{:});
     
-    if ~isempty(varargin)
-        paramsIn = varargin{1};
-        params = parseInputParams(params,paramsIn);
-        
-        if numel(varargin) > 1
-            timeline = varargin{2};
-        end
-    end
-    
-    [subject, expDate, ~, server] = parseExpPath(expPath);
-    
+    subject = params.subject{1};
+    expDate = params.expDate{1};
+
     %% Get timeline flipper times
-    
     % Get timeline
-    if ~exist('timeline','var')
+    if ~isfield(params,'dataTimeline')
         fprintf(1, 'Loading timeline\n');
-        timeline = getTimeline(expPath);
+        loadedData = csv.loadData(params, 'dataType','timeline');
+        timeline = loadedData.dataTimeline{1};
+    else
+        timeline = params.dataTimeline{1};
     end
     % Detect sync events from timeline
     timelineFlipperTimes = timeproc.getChanEventTime(timeline,'flipper');
 
     %% Get all ephys flipper times
     
-    ephysPath = params.ephysPath;
+    ephysPath = params.ephysPath{1};
     
     % Get ephys folders
     % Will work only if the architecture is good.
     if isempty(ephysPath)
         % Just take them all, whatever the architecture..?
-        ephysFiles = dir(fullfile(server,'Subjects',subject,expDate,'ephys','**','*.ap.bin'));
+        ephysFiles = dir(fullfile(fileparts(params.expFolder{1}),'ephys','**','*.ap.*bin'));
+        ephysFiles(contains({ephysFiles.folder},'.kilosort')) = [];
         if isempty(ephysFiles)
-            error('No ephys file here: %s', fullfile(server,'Subjects',subject,expDate,'ephys'))
+            error('No ephys file here: %s', fullfile(fileparts(params.expFolder{1}),'ephys'))
         else
             ephysPath = {ephysFiles.folder};
         end
     end
+    ephysPath = unique(ephysPath); 
     
     % Get the sync for each recording
     ephysFlipperTimes = cell(1,numel(ephysPath));
     
     for ee = 1:numel(ephysPath)
-        % Get syncData
-        dataFile = dir(fullfile(ephysPath{ee},'*ap.bin'));
-        metaS = readMetaData_spikeGLX(dataFile.name,dataFile.folder);
+        % Get meta data
+        dataFile = dir(fullfile(ephysPath{ee},'*ap.*bin'));
+        dataFile(contains({dataFile.folder},'.kilosort')) = [];
+        metaS = readMetaData_spikeGLX(dataFile(1).name,dataFile(1).folder);
         
         % Load sync data
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
             fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
-            extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
+            try
+                extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
+            catch
+                fprintf('Couldn''t extract the sync! Have a look?\n')
+            end    
             ephysFlipperTimes{ee} = [];
             syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         end
-        syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
-        
+        if ~isempty(syncDataFile)
+            syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
+        else
+            syncData.sync = [];
+        end
+
         % Extract flips
         Fs = str2double(metaS.imSampRate);
         ephysFlipperTimes{ee} = (find(diff(syncData.sync)~=0)/Fs);
@@ -112,7 +119,7 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
                 % Subselect the ephys flipper flip times
                 ephysFlipperTimes_cut = ephysFlipperTimes_ee(flipperStEnIdx(currExpIdx(exp),1):flipperStEnIdx(currExpIdx(exp),2));
                 [timelineFlipperTimes_corr, ephysFlipperTimes_cut] = ...
-                    try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold,0);
+                    try2alignVectors(timelineFlipperTimes,ephysFlipperTimes_cut,params.toleranceThreshold{1},0);
                 success = 1;
                 exp = numel(currExpIdx)+1;
             catch
@@ -135,3 +142,52 @@ function [ephysRefTimes, timelineRefTimes, ephysPath] = ephys(expPath,varargin)
     ephysRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
     timelineRefTimes(cellfun(@(x) isempty(x),timelineRefTimes)) = [];
   
+    %% Reorder according to the probes
+
+    probeInfo = csv.checkProbeUse(subject);
+    expectedSerial = probeInfo.serialNumbers{1};    
+
+    if ~isempty(ephysPath)
+        % Get actual serial numbers
+        ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
+        metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
+        serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
+
+        if strcmp(probeInfo.probeType{1},'Acute')
+            % No check in acute recordings
+            expectedSerial = serialsFromMeta;
+        end
+
+        % Check for unexpected serial numbers
+        if ~isempty(expectedSerial)
+            % Throw error if unexpected SN was found
+            unexpectedSerial = ~ismember(serialsFromMeta,expectedSerial);
+            if any(unexpectedSerial)
+                error('Unrecognized probe %d.', serialsFromMeta(unexpectedSerial))
+            end
+        end
+    else
+        serialsFromMeta = nan*ones(1,max(1,numel(expectedSerial)));
+        if strcmp(probeInfo.probeType{1},'Acute')
+            % No check in acute recordings
+            expectedSerial = serialsFromMeta;
+        end
+    end
+
+    % Reorder them
+    ephysPathReord = cell(numel(expectedSerial),1);
+    ephysRefTimesReord = cell(numel(expectedSerial),1);
+    timelineRefTimesReord = cell(numel(expectedSerial),1);
+    for pp = 1:numel(expectedSerial)
+        corresProbe = serialsFromMeta == expectedSerial(pp);
+        if any(corresProbe)
+            ephysPathReord(pp) = ephysPath(corresProbe);
+            ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);
+            timelineRefTimesReord(pp) = timelineRefTimes(corresProbe);
+        else
+            ephysPathReord(pp) = {'error'};
+            ephysRefTimesReord(pp) = {'error'};
+            timelineRefTimesReord(pp) = {'error'};
+        end
+    end
+    serialNumberReord = expectedSerial;

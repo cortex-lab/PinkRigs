@@ -1,14 +1,14 @@
-subject = 'AV009';
+subject = 'AV013';
 server = '\\zinu';
-% date = '2022-02-25';
+date = '2022-06-13';
 
-d = dir(fullfile(server,'Subjects',subject,'**','ephys','**','*.ap.bin'));
+d = dir(fullfile(server,'Subjects',subject,date,'**','ephys','**','*.ap.cbin'));
 clear recList
 for idx = 1:numel(d)
     recList{idx} = fullfile(d(idx).folder,d(idx).name);
 end
 
-% params.mice2Check = 'AV009';
+% params.subject = 'AV009';
 % exp2checkList = csv.queryExp(params);
 % idx = 1;
 % for ee = 1:size(exp2checkList,1)
@@ -23,5 +23,5 @@ end
 
 %%
 params.recomputeKilo = 0;
-params.recomputeQMetrics = 1;
+params.recomputeQMetrics = 0;
 kilo.main(params,recList)

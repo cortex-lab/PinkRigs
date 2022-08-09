@@ -3,5 +3,4 @@ function ev = spontaneous(timeline, block, alignment)
     %%% spontaneousActivity.
     
     %% Nothing to extract?
-    
     ev = nan;

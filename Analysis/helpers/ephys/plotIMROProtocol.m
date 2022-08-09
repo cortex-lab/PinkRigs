@@ -91,7 +91,9 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
                 end
                 xlim([-16,(numel(IMROfiles)-1)*8*shankSep + numel(IMROfiles)*3*shankSep+64]);
                 ylim([-10,11000]);
-                text((probeNum-1)*8*shankSep + 0.5*shankSep+64,10000,sprintf('Probe %d', probeNum))
+                ProbeSN = regexp(IMROfileName,'_SN\d+_','match');
+                ProbeSN = str2num(ProbeSN{1}(4:end-1));
+                text((probeNum-1)*8*shankSep + 0.5*shankSep+64,10000,sprintf('Probe\n%d', ProbeSN))
                 title(regexprep(protocols(p).name,'_',' '));
             end
             

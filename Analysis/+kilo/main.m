@@ -26,11 +26,7 @@ function main(varargin)
         % Get all the recordings in the queue
         KSqueueCSVLoc = csv.getLocation('kilosort_queue');
         recList = readtable(KSqueueCSVLoc,'Delimiter',',');
-        if ~params.recomputeKilo
-            compIdx = find(recList.sortedTag == 0);
-        else
-            compIdx = 1:numel(recList.sortedTag);
-        end
+        compIdx = find(recList.sortedTag == 0);
         rec2sortList = recList.ephysName(compIdx);
     end
     
@@ -54,13 +50,13 @@ function main(varargin)
     end
     
     % KS2 config file
-    pathToKSConfigFile = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2';
+    pathToKSConfigFile = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\helpers\ephys\KSconfig';
     if ~exist(pathToKSConfigFile, 'dir')
         error('Can''t find the path to the KS2 config files.')
     end
     
     % Path to the defaults P3B chan map
-    defaultP3Bchanmap = 'C:\Users\Experiment\Documents\Github\AV_passive\preprocessing\configFiles_kilosort2\neuropixPhase3B2_kilosortChanMap.mat';
+    defaultP3Bchanmap = 'C:\Users\Experiment\Documents\GitHub\PinkRigs\Analysis\helpers\ephys\KSconfig\neuropixPhase3B2_kilosortChanMap.mat';
 
     %% Go through experiments to sort
     
@@ -77,16 +73,17 @@ function main(varargin)
         KSOutFolderLoc = fullfile(KSOutFolderLocGen,regexprep(ephysFileName(1:end-7),'\.','_'));
         KSOutFolderServer = fullfile(ephysPath,'kilosort2');
         
-        % To avoid running too long. Will stop after ~20h + 1 last
-        % processing.
+        % To avoid running too long. 
         nowClock = datetime('now');
         if nowClock > startClock + params.runFor/24
             return
         end
         
+        fprintf('*** Going through %s. ***\n', ephysFileName)
         if exist(KSOutFolderServer,'dir') && ~isempty(dir(fullfile(KSOutFolderServer,'rez.mat'))) && ~params.recomputeKilo
             fprintf('Ephys %s already sorted.\n', ephysFileName)
             successKS = 1;
+            successQM = nan;
         else            
             try
                 if exist('recList','var')
@@ -112,7 +109,9 @@ function main(varargin)
                 end
                 
                 %% Copy data to local folder.
-                if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file')
+                ephysBinFileName = regexprep(ephysFileName,'.cbin','.bin');
+                if ~exist(fullfile(KSOutFolderLoc, ephysFileName),'file') && ...
+                        ~exist(fullfile(KSOutFolderLoc, ephysBinFileName),'file')
                     fprintf('Copying data to local folder...')
                     
                     if ~exist(KSOutFolderLoc, 'dir')
@@ -130,14 +129,75 @@ function main(varargin)
                 if ~success
                     error('Couldn''t copy data to local folder.')
                 else
+                    %% Decompress it if needed.
+                    if strcmp(ephysFileName(end-3:end),'cbin') && ~exist(fullfile(KSOutFolderLoc, ephysBinFileName),'file')
+                        cbinFile = ephysFileName;
+                        chFile = regexprep(ephysFileName,'.cbin','.ch');
+                        
+                        % Copy locally the ch file that hasn't yet been
+                        % copied
+                        copyfile(regexprep(recName,'.cbin','.ch'),fullfile(KSOutFolderLoc,chFile));
+                        
+                        % Decompress 
+                        fprintf('Decompressing the data...\n')
+                        decompressPath = which('decompress_data.py');
+                        [statusDecomp,messageDecomp] = system(['conda activate PinkRigs && ' ...
+                            'python ' decompressPath ' ' ...
+                            fullfile(KSOutFolderLoc,cbinFile) ' ' ...
+                            fullfile(KSOutFolderLoc,chFile) ' && ' ...
+                            'conda deactivate']);
+                        if statusDecomp > 0 
+                            error(messageDecomp)
+                        end
+                        fprintf('Decompression done.\n');
+                    end
+                    
+                    %% Extract sync if not done already
+                    syncPath = fullfile(ephysPath,'sync.mat');
+                    if ~exist(syncPath,'file')
+                        metaS = readMetaData_spikeGLX(ephysBinFileName,ephysPath);
+                        
+                        apPath = fullfile(KSOutFolderLoc, ephysBinFileName);
+                        fprintf('Couldn''t find the sync file for %s. Computing it.\n', ephysBinFileName)
+                        extractSync(apPath, str2double(metaS.nSavedChans));
+                        
+                        movefile(fullfile(KSOutFolderLoc,'sync.mat'),syncPath)
+                    end
+                    
                     %% Running the main algorithm
                     fprintf('Running kilosort...\n')
                     kilo.runMatKilosort2(KSOutFolderLoc,KSWorkFolder,chanMapPath,pathToKSConfigFile)
                     fprintf('Kilosort done.\n')
                     
+                    %% Running quality metrics
+                    % Have to do in while the raw data is decompressed
+                    fprintf('Running quality metrics...\n')
+                    metaFile = regexprep(ephysBinFileName,'.bin','.meta');
+                    try
+                        % copy meta file
+                        copyfile(regexprep(recName,'.cbin','.meta'),fullfile(KSOutFolderLoc,metaFile));
+                        
+                        kilo.getQualityMetrics(KSOutFolderLoc, KSOutFolderLoc)
+                        
+                        delete(fullfile(KSOutFolderLoc,metaFile))
+                        if exist(fullfile(ephysPath, 'QMerror.json'),'file')
+                            delete(fullfile(ephysPath, 'QMerror.json'))
+                        end
+                        successQM = 1;
+                        fprintf('Quality metrics done.\n')
+                    catch me
+                        msgText = getReport(me);
+                        successQM = 0;
+                        warning('Error when computing quality metrics: %s.\n', msgText)
+                        
+                        % Save error message locally
+                        saveErrMess(msgText,fullfile(ephysPath, 'QMerror.json'))
+                    end
+                    
                     %% Copying file to distant server
                     fprintf('Copying to server (and deleting local copy)...\n')
-                    delete(fullfile(KSOutFolderLoc, ephysFileName)); % delete .bin file from KS output
+                    delete(fullfile(KSOutFolderLoc, ephysBinFileName)); % delete .bin file from KS output
+                    delete(fullfile(KSOutFolderLoc, metaFile)); % delete .meta
                     successKS = movefile(fullfile(KSOutFolderLoc,'*'),KSOutFolderServer); % copy KS output back to server
                     
                     if ~successKS
@@ -153,10 +213,11 @@ function main(varargin)
                 end
                 
             catch me
+                msgText = getReport(me);
                 successKS = 0;
                 
                 % Save error message locally
-                saveErrMess(me.message,fullfile(ephysPath, 'KSerror.json'))
+                saveErrMess(msgText,fullfile(ephysPath, 'KSerror.json'))
             end
                     
             if exist(KSOutFolderLoc,'dir')
@@ -164,18 +225,20 @@ function main(varargin)
                     %%% Have to "try" for now because sometimes issue when
                     %%% there's a KS error above...
                     % Delete data otherwise will crowd up
-                    rmdir(KSOutFolderLoc); % delete whole folder whatever happens
+                    rmdir(KSOutFolderLoc, 's'); % delete whole folder whatever happens
                 catch
-                    warning('Can''t delete KSout local folder.. Will crowd up.')
+                    % warning('Can''t delete KSout local folder.. Will crowd up.')
+                    error('Can''t delete KSout local folder.. Will crowd up.') % sometimes doesn't work, crash it to troubleshoot
                 end
             end
         end
         
-        if successKS
-            if ~exist(fullfile(KSOutFolderServer,'qMetrics.m')) || params.recomputeQMetrics
+        if successKS && isnan(successQM)
+            if ~exist(fullfile(KSOutFolderServer,'qualityMetrics.mat'),'file') || params.recomputeQMetrics
                 %% Running quality metrics (directly on the server)
-                % Independent of previous block to be able to run one or the
-                % other (it's likely we might want to recompute only the qM)
+                % Independent of previous block to be able to run this
+                % without redoing the KSing.
+                % Will crash if raw waveforms haven't been extracted.
                 fprintf('Running quality metrics...\n')
                 try
                     kilo.getQualityMetrics(KSOutFolderServer, ephysPath)
@@ -184,8 +247,10 @@ function main(varargin)
                     if exist(fullfile(ephysPath, 'QMerror.json'),'file')
                         delete(fullfile(ephysPath, 'QMerror.json'))
                     end
+                    fprintf('Quality metrics done.\n')
                 catch me
                     successFinal = -2; % fails at quality metrics stage
+                    warning('Error when computing quality metrics')
                     
                     % Save error message locally
                     saveErrMess(me.message,fullfile(ephysPath, 'QMerror.json'))
@@ -194,7 +259,15 @@ function main(varargin)
                 successFinal = 1;
             end
         else 
-            successFinal = -1;
+            if successKS
+                if successQM
+                    successFinal = 1;
+                else
+                    successFinal = -2;
+                end
+            else
+                successFinal = -1;
+            end
         end
                 
         if exist('recList','var')
@@ -212,13 +285,13 @@ function main(varargin)
         %% Update the csv for associated experiments
 
         % Get experments
-        [partmp.mice2Check, partmp.days2Check, ~] = parseExpPath(ephysPath);
+        [partmp.subject, partmp.expDate, ~] = parseExpPath(ephysPath);
         expList = csv.queryExp(partmp);
         
         % Update
         for ee = 1:numel(expList)
             [subject, expDate, expNum] = parseExpPath(expList(1,:).expFolder{1});
-            csv.updateRecord(subject, expDate, expNum);
+            csv.updateRecord('subject', subject, 'expDate', expDate, 'expNum', expNum);
         end
     end
     close all

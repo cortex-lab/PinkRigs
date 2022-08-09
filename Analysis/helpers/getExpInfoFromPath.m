@@ -29,9 +29,9 @@ function expInfoList = getExpInfoFromPath(expPathList, skipCSVUpdate)
             else
                 % Exp not in the csv. Update and recheck, or error.
                 if ~skipCSVUpdate
-                    days2Check = 3;
+                    expDate = 3;
                     recompute = 0;
-                    csv.checkForNewPinkRigRecordings(days2Check, recompute)
+                    csv.checkForNewPinkRigRecordings(expDate, recompute)
                     expList = csv.readTable(csv.getLocation(subjects{ss}));
                 end
                 

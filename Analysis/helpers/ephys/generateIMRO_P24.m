@@ -138,7 +138,7 @@ function [ chans, chanPos, chanShank ] = PlotElec24( shank, bank, chans, elecInd
     for sI = 0:3
         cc = find(shank == sI);
         scatter( shankSep*sI + elecPos(:,1), elecPos(:,2), 30, 'k', 'square' ); hold on;
-        scatter( shankSep*sI + chanPos(cc,1), chanPos(cc,2), 20, 'b', 'square', 'filled' ); hold on; 
+        scatter( shankSep*sI + chanPos(cc,1), chanPos(cc,2), 20, 'r', 'square', 'filled' ); hold on; 
     end
     xlim([-16,3*shankSep+64]);
     ylim([-10,10000]);

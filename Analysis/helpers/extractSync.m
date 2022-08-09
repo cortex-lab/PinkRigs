@@ -1,5 +1,6 @@
 function extractSync(AP_filename, nChansTotal)
     %%% This function will extract the flipper from the ephys data.
+    if ~exist('nChansTotal', 'var'); nChansTotal = 385; end
     
     d = dir(AP_filename);
     nSamps = d.bytes/2/nChansTotal;

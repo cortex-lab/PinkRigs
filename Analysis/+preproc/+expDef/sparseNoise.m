@@ -23,9 +23,9 @@ stimPositions = {[], []};
 for x = 1:size(stimArray,1)
     for y = 1:size(stimArray,2)
         stimEventTimes{x,y,1} = find(stimArrayZeroPad(x,y,1:end-1)==0 & ...
-            stimArrayZeroPad(x,y,2:end)==1); % going from grey to white
-        stimEventTimes{x,y,2} = find(stimArrayZeroPad(x,y,1:end-1)==0 & ...
-            stimArrayZeroPad(x,y,2:end)==-1); % going from grey to black
+            stimArrayZeroPad(x,y,2:end)==1); % going from black to white
+        stimEventTimes{x,y,2} = find(stimArrayZeroPad(x,y,1:end-1)==1 & ...
+            stimArrayZeroPad(x,y,2:end)==0); % going from white to black
         stimTimeInds{1} = [stimTimeInds{1}; stimEventTimes{x,y,1}];
         stimTimeInds{2} = [stimTimeInds{2}; stimEventTimes{x,y,2}];
         
@@ -36,9 +36,7 @@ for x = 1:size(stimArray,1)
     end
 end
 
-photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode');
-
-timelineRefTimes = photoDiodeFlipTimes;
+timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
 
 if length(blockRefTimes) ~= length(timelineRefTimes)
     [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,0);
@@ -62,16 +60,18 @@ if max(stimTimeInds{1})>length(timelineRefTimes)
 end 
 
 %
-stimTimes = cellfun(@(x)timelineRefTimes(x), stimTimeInds, 'uni', false); 
-stimTimes = stimTimes{1}; 
-stimPositions = stimPositions{1}; % stim positions in yx 
-stimArrayTimes=timelineRefTimes;
 
+stimTimes = timelineRefTimes(stimTimeInds{1}); 
+stimPositions = stimPositions{1}; % stim positions in yx 
+stimArrayTimes = timelineRefTimes;
+
+stimArrayatOn = stimArray(:,:,stimTimeInds{1}); 
 %% write event structure 
-ev.stimTimes = stimTimes;
-ev.stimPositions = stimPositions; 
-ev.stimArray = stimArray;
-ev.stimArrayTimes = stimArrayTimes; 
+ev.squareOnTimes = stimTimes;
+ev.squareElevation = stimPositions(:,1); 
+ev.squareAzimuth = stimPositions(:,2); 
+ev.stimulus = permute(stimArrayatOn,[3 1 2]);
+%ev.stimArrayTimes = stimArrayTimes; 
 
 end
 

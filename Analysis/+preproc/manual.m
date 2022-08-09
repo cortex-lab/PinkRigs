@@ -1,25 +1,23 @@
-clear all
 close all
 
 %% Get exp ref
 
 clear params
-params.mice2Check = 'AV008';
-%params.days2Check = 1;
- params.days2Check = {'2022-03-09'};
-params.expDef2Check = 'all';
-% params.timeline2Check = 1;
-% params.align2Check = '*,*,*,*,*,~1'; % "any 0"
-% params.preproc2Check = '*,2';
-exp2checkList = csv.queryExp(params);
+% 
 
+params.subject = {'AV015'};
+% params.expDate = 'last4';
+% params.expDate = {'2022-07-28'};
+params.expDef = 'p';
+params.checkAlignEphys = 1;
+% params.checkSpikes = 0;
+exp2checkList = csv.queryExp(params);
+ 
 %% Just run alignment
-params.recompute = {'ephys'};
-preproc.align.main(params,exp2checkList)
+preproc.align.main(exp2checkList,'recompute',{'ephys'})
 
 %% Just run preprocessing
-params.recompute = {'spk'};
-preproc.extractExpData(params, exp2checkList)
+preproc.extractExpData(exp2checkList,'recompute',{'spikes'});
 
 %% Or run all
 % params.paramsAlign.recompute = {'all'};
