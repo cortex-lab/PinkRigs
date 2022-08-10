@@ -34,7 +34,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryExp(subject='all',expDate='all',expDef='all',expNum = None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -80,7 +80,9 @@ def queryExp(subject='all',expDate='all',expDef='all',expNum = None):
                 selected_dates = check_date_selection(expDate,expList.expDate)
                 expList = expList[selected_dates]
             if expNum:
-                expList = expList[expList.expNum ]
+                expNum = (np.array(expNum)).astype('str')
+                _,idx,_ = np.intersect1d(expList.expNum.to_numpy(),expNum,return_indices=True)
+                expList = expList.iloc[idx]  
             
             # add mouse name to list
             expList['Subject'] = mm
@@ -195,7 +197,7 @@ def load_data(data_name_dict=None,**kwargs):
     Todo: implement cond loading,default params
         
     """
-    recordings = queryExp(**kwargs)
+    recordings = queryCSV(**kwargs)
 
     if data_name_dict:
 
@@ -212,11 +214,10 @@ def load_data(data_name_dict=None,**kwargs):
                 for object in data_name_dict[collection]:
                     objects[object] = load_ONE_object(ev_collection_folder,object,attributes=data_name_dict[collection][object])
                 objects = Bunch(objects)
-                recordings.iloc[idx][collection] = objects
+                recordings.loc[idx][collection] = objects
 
     return recordings
 
 
-if __name__ == "__main__":  
-    load_data(subject='AV020',expDate='2022-08-01',expNum = [1,2,3])    
+  
 

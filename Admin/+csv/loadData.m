@@ -9,28 +9,36 @@ function expList = loadData(varargin)
 % for attributes. If you want to suppress the written confirmation of
 % loading, then set "verbose" to 0.
 
-% Add default values for extra inputs:
-% dataType (default='events'): string or cell of strings to indicate which
-% data types to load. 
-%   'blk' or 'block to load raw block files (output = dataBlock)
-%   'tim' or 'timeline' to load timeline files (output = dataTimeline)
-%   'ev' or 'events' to load trial events (output = dataEvents)
-%   'eventsFull' to load all (including large) trial events (output = dataEvents)
-%   'probe' load spike information (can specify probe number) (output = dataSpikes)
-%   'all' to load all data
+% Parameters: 
+% -------------------
 
-% object (default='all'): string or cell of strings to indicate which
-% objects to load for each dataType. At the moment, this is only relevant 
-% for "probe" dataTypes but will likely be relevant for others later. 
-% Examples below:
-%   'spikes' to load only spike data
-%   'templates' to load only template data
+% dataType (default='events'): str/cell of strings 
+%   indicates which data types to load.   
+    %blk' or 'block': raw block (output = dataBlock)
+    %'tim' or 'timeline': raw timeline (output = dataTimeline)
+    %'ev' or 'events':  trial events (output = dataEvents)
+    %'eventsFull':  all (including large) trial events (output = dataEvents)
+    %'probe': load spike information (can specify probe number) (output = dataSpikes)
+    %'all': loads 'blk', 'tim', 'ev' 
 
-% attribute (default='all'): string or cell of strings to indicate which
-% attributes to load for each object. At the moment, this is only relevant 
-% for "probe" dataTypes but will likely be relevant for others later. 
-%   'spikes' to load only spike data
-%   'templates' to load only template data
+% object (default='all'): str/cell of strings 
+    % objects to load for each dataType. At the moment, this is only relevant 
+    % for "probe" dataTypes but will likely be relevant for others later. 
+    % Examples below:
+    %   'spikes' to load only spike data
+    %   'templates' to load only template data
+
+% attribute (default='all'): str/cell of strings 
+    % attributes to load for each object. At the moment, this is only relevant 
+    % for "probe" dataTypes but will likely be relevant for others later. 
+    %   'spikes' to load only spike data
+    %   'templates' to load only template data
+
+% Returns: 
+% ---------------
+% expList: table 
+
+
 
 varargin = ['dataType', {'events'}, varargin];
 varargin = ['object', {'all'}, varargin];
