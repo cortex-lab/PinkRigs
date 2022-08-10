@@ -48,7 +48,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     expDef : str
         selected expdef or portion of the string of the the expdef name
     expNum: str/list 
-        Not implemented        
+        selected expNum
     Returns
     ----
     exp2checkList : pandas DataFrame 
