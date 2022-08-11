@@ -38,7 +38,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
-    Parameters
+    Parameters: 
     ----
     subject : str/list
         selected mice. Can be all, active, or specific subject names
@@ -49,7 +49,8 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         selected expdef or portion of the string of the the expdef name
     expNum: str/list 
         selected expNum
-    Returns
+    
+    Returns: 
     ----
     exp2checkList : pandas DataFrame 
         concatenated csv of requested experiments and its params 
@@ -135,16 +136,21 @@ def load_ONE_object(collection_folder,object,attributes='all'):
     """
     function that loads any ONE object with npy extension
     ONE object = clollection_folder/object.attribute.expIDtag.extension 
-    where extension is either .npy files or partquet. 
+    where extension is either .npy files or parquet table. 
 
     Parameters
     ----------
     collection_folder: pathlib.Path
     object: str 
         object name: e.g. spikes/clusters/_av_trials
-    attributes: str,list
+    attributes: str/list
         if str: 'all': all attributes for the object 
         if list: list of strings with specified attributes 
+    
+    Returns: 
+    ---------
+    Bunch
+        of  object.attribute
 
     """
 
@@ -184,6 +190,7 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 def load_data(data_name_dict=None,**kwargs):
     """
     Paramters: 
+    -------------
     data_name_dict: str/dict
         if str: specific default dictionaries can be called, not implemented!
             'all'
@@ -192,7 +199,10 @@ def load_data(data_name_dict=None,**kwargs):
         if dict: nested dict that contains requested data
             {collection:{object:attribute}}
     
-    Returns: pd.DataFrame of reording data 
+    Returns: 
+    -------------
+    pd.DataFrame 
+        collections  requested by data_name_dict are added as columns  to the original csvs.   
 
     Todo: implement cond loading,default params
         
