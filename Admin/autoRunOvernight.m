@@ -84,7 +84,7 @@ switch lower(computerType)
         if c(4) > 20 || c(4) < 2
             Kilo_runFor = num2str(2); 
         else
-            Kilo_runFor = num2str(12);
+            Kilo_runFor = num2str(5);
         end
 
         dbstop if error % temporarily, to debug
@@ -102,9 +102,9 @@ switch lower(computerType)
 
         fprintf('creating the ibl format... \n')
         checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
-        checkWhichMice = 'allActive';
+        checkWhichMice = 'AV005';
         whichKS = 'pyKS'; 
-        checkWhichDates = 'last7';
+        checkWhichDates = 'all';
         [statusIBL,resultIBL] = system(['activate iblenv && ' ...
             'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
             'conda deactivate']);
@@ -139,7 +139,7 @@ switch lower(computerType)
         if c(4) > 20 || c(4) < 2
             Kilo_runFor = num2str(2); 
         else
-            Kilo_runFor = num2str(12);
+            Kilo_runFor = num2str(5);
         end
 
         

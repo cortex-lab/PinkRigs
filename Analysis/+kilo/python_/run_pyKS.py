@@ -130,7 +130,7 @@ def run_pyKS_on_queue(run_for=5.5):
     
     run_for = float(run_for)
     print(run_for,type(run_for))
-    stage_KS_queue(mouse_selection='allActive',date_selection='last7')    
+    stage_KS_queue(mouse_selection='AV005',date_selection='all',resort=True)    
 
     root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
     queue_csv_file = '%s\pykilosort_queue.csv' % root
