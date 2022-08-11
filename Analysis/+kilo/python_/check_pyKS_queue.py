@@ -28,7 +28,7 @@ def check_date_selection(date_selection,date):
 
     return Out
 
-def stage_KS_queue(mouse_selection='',date_selection='last3'):
+def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
     # which mice to sort -- FT or FT032
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
@@ -86,6 +86,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
                             # file was 0kb
                             KS_done = False 
 
+                    # override KS_done if resorting is requested 
+                    if resort: 
+                        KS_done = False
+
                     if not KS_done:
                         print(ephys_file)
                         new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
@@ -112,4 +116,4 @@ def stage_KS_queue(mouse_selection='',date_selection='last3'):
 
 if __name__ == "__main__":
    stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])
-   #stage_KS_queue(mouse_selection='allActive',date_selection='2022-07-29')
+   #stage_KS_queue(mouse_selection='all',date_selection='all')
