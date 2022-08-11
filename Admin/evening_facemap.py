@@ -33,6 +33,8 @@ import subprocess as sp
 import datetime
 
 # Pink rig dependencies
+from pathlib import Path
+import sys
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
@@ -1138,7 +1140,8 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
 
     return 0
 
-def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_date_range=None):
+def batch_process_facemap(output_format='flat', sessions=None,
+                          subset_mice_to_use=None, subset_date_range=None):
     """
       
     Parameters
@@ -1148,6 +1151,10 @@ def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_
         'flat' : save original facemap output in the main folder
         'ONE' : save facemap output in ONE format; extract outputs into numpy arrays and save as separate .npy,
                 with one folder per camera
+    sessions : pandas dataframe
+        dataframe obtained by calling queryCSV()
+        if this is specified, then this code skips over checking for csvs to run
+
     subset_mice_to_use : list, optional
         DESCRIPTION. The default is None.
         example: 
@@ -1156,7 +1163,7 @@ def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_
         DESCRIPTION. The default is None.
         example:
             subset_date_range = ['2021-12-01', '2021-12-20']
-            
+
     Returns
     -------
     None.
@@ -1169,7 +1176,7 @@ def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_
     align_to_timeline = False
     plot_results = False
     run_video_compression = False
-    load_from_server = True
+    load_from_server = False
     video_ext = '.mj2'
 
     # spreadsheet to keep track of which files are done and which are not
@@ -1196,76 +1203,82 @@ def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
 
-    if subset_mice_to_use is not None:
-        mouse_info_csv_paths = []
-        for mouse_name in subset_mice_to_use:
-            mouse_info_csv_paths.append(
-                glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
-            )
-    else:
-        mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
-    # TODO: test the re.compile().match() code
-    #files_to_exclude = ['aMasterMouseList.csv',
-    #                    'kilosort_queue.csv',
-    #                    'video_corruption_check.csv',
-    #                    '!MouseList.csv']
-    files_to_exclude = []
-
-    pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
-
-    subset_mouse_info_csv_paths = []
-
-    for n_path, path in enumerate(mouse_info_csv_paths):
-        print(path)
-        if os.path.basename(path) in files_to_exclude:
-            mouse_info_csv_paths.remove(path)
-        fname_without_ext = path.split(os.sep)[-1].split('.')[0]
-        if not pattern_to_match.match(fname_without_ext):
-            mouse_info_csv_paths.remove(path)
-            print('File : %s excluded' % path)
-            # del mouse_info_csv_paths[n_path]
+    if sessions is None:
+        if subset_mice_to_use is not None:
+            mouse_info_csv_paths = []
+            for mouse_name in subset_mice_to_use:
+                mouse_info_csv_paths.append(
+                    glob.glob(os.path.join(mouse_info_folder, '%s.csv' % mouse_name))[0]
+                )
         else:
-            fname = os.path.basename(path)
-            fname_without_ext = fname.split('.')[0]
-            str_match = re.match(pattern_to_match, fname_without_ext) is not None
+            mouse_info_csv_paths = glob.glob(os.path.join(mouse_info_folder, '*.csv'))
 
-            if not str_match:
-                # mouse_info_csv_paths.remove(path)
+        # TODO: test the re.compile().match() code
+        #files_to_exclude = ['aMasterMouseList.csv',
+        #                    'kilosort_queue.csv',
+        #                    'video_corruption_check.csv',
+        #                    '!MouseList.csv']
+        files_to_exclude = []
+
+        pattern_to_match = re.compile('[A-Z][A-Z][0-9][0-9][0-9]')
+
+        subset_mouse_info_csv_paths = []
+
+        for n_path, path in enumerate(mouse_info_csv_paths):
+            print(path)
+            if os.path.basename(path) in files_to_exclude:
+                mouse_info_csv_paths.remove(path)
+            fname_without_ext = path.split(os.sep)[-1].split('.')[0]
+            if not pattern_to_match.match(fname_without_ext):
+                mouse_info_csv_paths.remove(path)
+                print('File : %s excluded' % path)
                 # del mouse_info_csv_paths[n_path]
-                status_str = 'reject'
             else:
-                status_str = 'accept'
-                subset_mouse_info_csv_paths.append(path)
+                fname = os.path.basename(path)
+                fname_without_ext = fname.split('.')[0]
+                str_match = re.match(pattern_to_match, fname_without_ext) is not None
 
-            print('File : %s, status: %s' % (fname, status_str))
-    
-    all_mouse_info = []
-    mouse_info_csv_paths = subset_mouse_info_csv_paths
+                if not str_match:
+                    # mouse_info_csv_paths.remove(path)
+                    # del mouse_info_csv_paths[n_path]
+                    status_str = 'reject'
+                else:
+                    status_str = 'accept'
+                    subset_mouse_info_csv_paths.append(path)
 
-    for csv_path in mouse_info_csv_paths:
-        mouse_info = pd.read_csv(csv_path)
-        mouse_name = os.path.basename(csv_path).split('.')[0]
-        mouse_info['subject'] = mouse_name
+                print('File : %s, status: %s' % (fname, status_str))
 
-        if 'path' not in mouse_info.columns:
-            mouse_info['server_path'] = default_server_path
-        if 'expFolder' in mouse_info.columns:
-            server_paths = ['//%s/%s' % (x.split(os.sep)[2], x.split(os.sep)[3]) for x in mouse_info['expFolder'].values]
-            mouse_info['server_path'] = server_paths
-        if 'path' in mouse_info.columns:
-            mouse_info['server_path'] = \
-                ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
+        all_mouse_info = []
+        mouse_info_csv_paths = subset_mouse_info_csv_paths
 
-        all_mouse_info.append(mouse_info)
-    
-    all_mouse_info = pd.concat(all_mouse_info)
+        for csv_path in mouse_info_csv_paths:
+            mouse_info = pd.read_csv(csv_path)
+            mouse_name = os.path.basename(csv_path).split('.')[0]
+            mouse_info['subject'] = mouse_name
 
-    if subset_date_range is not None:
-        all_mouse_info = all_mouse_info.loc[
-            (all_mouse_info['expDate'] >= subset_date_range[0]) &
-            (all_mouse_info['expDate'] <= subset_date_range[1])
-            ]
+            if 'path' not in mouse_info.columns:
+                mouse_info['server_path'] = default_server_path
+            if 'expFolder' in mouse_info.columns:
+                server_paths = ['//%s/%s' % (x.split(os.sep)[2], x.split(os.sep)[3]) for x in mouse_info['expFolder'].values]
+                mouse_info['server_path'] = server_paths
+            if 'path' in mouse_info.columns:
+                mouse_info['server_path'] = \
+                    ['//' + '/'.join(x.split('\\')[2:4]) for x in mouse_info['path']]
+
+            all_mouse_info.append(mouse_info)
+
+        all_mouse_info = pd.concat(all_mouse_info)
+
+        if subset_date_range is not None:
+            all_mouse_info = all_mouse_info.loc[
+                (all_mouse_info['expDate'] >= subset_date_range[0]) &
+                (all_mouse_info['expDate'] <= subset_date_range[1])
+                ]
+    else:
+        all_mouse_info = sessions
+        all_mouse_info['server_path'] = [os.path.join('\\\\', *os.path.normpath(x).split(os.sep)[2:4]) for x in sessions['expFolder'].values]
+        all_mouse_info['subject'] = all_mouse_info['Subject']
 
     # pdb.set_trace()
     # Tim temp hack to try running this for one experiment
@@ -1374,6 +1387,7 @@ def batch_process_facemap(output_format='flat', subset_mice_to_use=None, subset_
     # loop through the experiments and see if there are videos with no corresponding facemap output
     file_skipped = 0
     tot_video_files = 0
+
     for row_idx, exp_info in all_mouse_info.iterrows():
         # get list of files from the exp folder
         if load_from_server:
@@ -1699,16 +1713,23 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
 
 def main():
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
-    override_time_check = False
-    override_limit = 1  # how many times to override time checking before stopping
+    override_time_check = True
+    override_limit = 5  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
     update_mouse_csvs = False
-    run_plot_facemap_results = True
+    run_plot_facemap_results = False
     output_format = 'ONE'
+    subject = 'all'
+    expDate = 'all'
+    expDef = 'all'
+    expNum = None
+    process_most_recent = True
 
-    pdb.set_trace()
+    sessions = queryCSV(subject, expDate, expDef, expNum)
+    if process_most_recent:
+        sessions = sessions.sort_values('expDate')[::-1]
 
     # Temp for testing
     # test_path = '/Users/timothysit/FT038/2021-11-04/1/2021-11-04_1_FT038_eyeCam_proc.npy'
@@ -1742,7 +1763,8 @@ def main():
             if subset_mice_to_use is not None:
                 print('Running facemap on specified subset of mice: %s' % subset_mice_to_use)
             
-            batch_process_facemap(output_format=output_format, subset_mice_to_use=subset_mice_to_use)
+            batch_process_facemap(output_format=output_format, sessions=sessions,
+                                  subset_mice_to_use=subset_mice_to_use)
 
 
             if override_time_check:
