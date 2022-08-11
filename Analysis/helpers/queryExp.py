@@ -143,7 +143,7 @@ def load_ONE_object(collection_folder,object,attributes='all'):
     collection_folder: pathlib.Path
     object: str 
         object name: e.g. spikes/clusters/_av_trials
-    attributes: str,list
+    attributes: str/list
         if str: 'all': all attributes for the object 
         if list: list of strings with specified attributes 
     
