@@ -156,6 +156,32 @@ switch lower(computerType)
         
         disp(resultpyKS);
 
+    case {'celians'}
+        fprintf('Detected kilo2 computer... \n')
+        fprintf('Starting now %s... \n',datestr(now))
+        
+        
+        c = clock;
+        if c(4) > 20 || c(4) < 2
+            Kilo_runFor = num2str(2); 
+        else
+            Kilo_runFor = num2str(5);
+        end
+
+        
+        dbstop if error % temporarily, to debug
+        fprintf('Running pykilosort on the queue... \n')
+        runpyKS = 'Analysis\+kilo\python_\run_pyKS.py';
+        [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
+            'cd C:\Users\Hamish\OneDrive - University College London\Documents\GitHub\PinkRigs &&' ...
+        'python ' runpyKS ' ' Kilo_runFor ' && ' ...
+        'conda deactivate']);
+        if statuspyKS > 0
+            fprintf('Running pyKS failed... "%s".\n', resultpyKS)
+        end
+        
+        disp(resultpyKS);
+
 %         fprintf('creating the ibl format... \n')
 %         checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
 %         checkWhichMice = 'allActive';
