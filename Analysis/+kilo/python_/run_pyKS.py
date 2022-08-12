@@ -18,6 +18,8 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 from check_pyKS_queue import stage_KS_queue
 from pyhelpers import save_error_message
 
+KS_workpath = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
+
 def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort = False, bin_file_extension ='cbin'):
     """
     try running pyKS on a single file 
@@ -51,29 +53,29 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort 
     # or sorted, but requested a resort
 
     if (is_errored & recompute_errored_sorting) or ((not is_sorted) & (not is_errored)) or (is_sorted & resort): 
-        try:             
-            # read the metadata and get the x- and ypos of channels                     
+        try:   
+                # read the metadata and get the x- and ypos of channels                     
 
             channel_map  = neuropixel_probe_from_metafile(list((path_to_file.parent).glob('*.meta'))[0] )
 
             output_dir = path_to_file.parent / 'pyKS'
             output_dir.mkdir(parents=False, exist_ok=True) 
 
-            #if there is a remainder .kilosort temp processing folder, delete 
-            KS_workfolder = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
+            #if there is a remainder .kilosort temp processing folder, delete           
+
+            KS_workfolder = KS_workpath / path_to_file.parent.name
             if KS_workfolder.is_dir():
                 shutil.rmtree(KS_workfolder)    
-            KS_workfolder.mkdir(parents=False, exist_ok=True)     
+            KS_workfolder.mkdir(parents=True, exist_ok=True)     
 
             add_default_handler(level='INFO') # print output as the algorithm runs
             # find the compressed file of the same name 
             get_bin_string = '*.%s' % bin_file_extension
             input_dir = list((path_to_file.parent).glob(get_bin_string))[0] 
 
-            run(input_dir, probe=channel_map, low_memory=True, dir_path = KS_workfolder, output_dir=output_dir / 'output')
+            run(input_dir, probe=channel_map, low_memory=False, dir_path = KS_workfolder, output_dir=output_dir / 'output')
             # if there was a previous error message, remove it
-            err_message_file = output_dir / 'pyKS_error.json'
-            
+            err_message_file = output_dir / 'pyKS_error.json'          
             if err_message_file.is_file(): 
                 err_message_file.unlink()
 
@@ -86,7 +88,6 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort 
 
         except:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            shutil.rmtree(KS_workfolder)
             save_error_message(output_dir / 'pyKS_error.json',err_type= exc_type,err_message=exc_obj,err_traceback=exc_tb)   
             success=False
 
@@ -139,6 +140,9 @@ def run_pyKS_on_queue(run_for=5.5):
     start_hour = start_time.hour+start_time.minute/60
     check_hour = start_hour
 
+    # delete the current workpath 
+    shutil.rmtree(KS_workpath)
+
     while check_hour<(start_hour+run_for):
         print('current hour is %.2f' % start_hour)
         
@@ -167,5 +171,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-   run_pyKS_on_queue() 
-   #run_pyKS_on_queue(run_for=sys.argv[1])
+   #run_pyKS_on_queue() 
+   run_pyKS_on_queue(run_for=sys.argv[1])
