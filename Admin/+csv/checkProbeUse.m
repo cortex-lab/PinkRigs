@@ -60,11 +60,13 @@ if isnumeric(queryData{1})
         probeInfo.explantDates = cellfun(@(x) x{end}, probeInfo.explantDates, 'uni', 0);
     end
 else
-    implantDate = cellfun(@(x) csvData.P0_implantDate{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    P0_implantDates = csvData.P0_implantDate; %(This plays better with cmd calls)
+    implantDate = cellfun(@(x) P0_implantDates{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
     validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDate);
     implantDate(~validImplants) = deal({'none'});
 
-    explantDate = cellfun(@(x) csvData.P0_explantDate{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    P0_explantDates = csvData.P0_explantDate; %(This plays better with cmd calls)
+    explantDate = cellfun(@(x) P0_explantDates{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
     validExplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), explantDate);
     explantDate(~validExplants) = deal({'none'});
 

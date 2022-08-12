@@ -100,7 +100,8 @@ end
 if ~all(ismember(outP.subject, [mainCSV.Subject]))
     error('Unrecognized mouse names!')
 end
-implantDates = cellfun(@(x) mainCSV.P0_implantDate{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);
+P0_implants = mainCSV.P0_implantDate;
+implantDates = cellfun(@(x) P0_implants{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);
 validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDates);
 implantDates(~validImplants) = deal({'none'});
 outP.implantDate = implantDates;
