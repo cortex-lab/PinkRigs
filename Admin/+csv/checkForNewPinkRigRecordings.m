@@ -25,6 +25,7 @@ csvData.IsActive = num2cell(num2str(activeMice));
 csvDataSort = sortrows(csvData, 'Subject', 'ascend');
 csvDataSort = sortrows(csvDataSort, 'IsActive', 'descend');
 if any(~strcmp(csvDataSort.Subject, csvData.Subject))
+    csvLocation = csv.getLocation('main');
     csv.createBackup(csvLocation);
     csv.writeClean(csvDataSort, csvLocation, 1)
 end
