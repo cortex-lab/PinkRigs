@@ -1543,7 +1543,6 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
     if file_skipped == tot_video_files:
         print('Looks like all files are processed or being processed! Taking a break now...')
-        time.sleep(1800)
 
 
 def get_all_mouse_info():
