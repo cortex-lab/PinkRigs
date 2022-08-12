@@ -1,6 +1,7 @@
 function autoRunOvernight
 %% Functions that will run on timeline computers
 computerType = getComputerType;
+githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
 
 switch lower(computerType)
     case 'time'
@@ -10,13 +11,18 @@ switch lower(computerType)
         copyLocalData2ServerAndDelete('D:\LocalExpData');
         
         fprintf('Running "runFacemap" ... \n')
-        eveningFacemapPath = which('evening_facemap.py');
-        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+        % update environment 
+        eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
+        [statusFacemap resultFacemap] = system(['activate facemap && ' ...
+             'cd ' githubPath ' && ' ...
+            'conda env update --file facemap_environment.yaml --prune' ' &&' ...
             'python ' eveningFacemapPath ' &&' ...
             'conda deactivate']);
         if statusFacemap > 0
             fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
+
+        disp(resultFacemap);
         
     case 'ephys'
         fprintf('Detected ephys computer... \n')
@@ -40,14 +46,19 @@ switch lower(computerType)
         copyEphysData2ServerAndDelete('D:\ephysData');
         
         fprintf('Running "runFacemap" ... \n')
-        eveningFacemapPath = which('evening_facemap.py');
-        [statusFacemap resultFacemap] = system(['conda activate facemap && ' ...
+        % update environment 
+        eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
+        [statusFacemap resultFacemap] = system(['activate facemap && ' ...
+             'cd ' githubPath ' && ' ...
+            'conda env update --file facemap_environment.yaml --prune' ' &&' ...
             'python ' eveningFacemapPath ' &&' ...
             'conda deactivate']);
         if statusFacemap > 0
             fprintf('Facemap failed with error "%s".\n', resultFacemap)
         end
-        
+
+        disp(resultFacemap);
+
     case {'kilo1'}
       
         %%
@@ -89,7 +100,6 @@ switch lower(computerType)
 
         dbstop if error % temporarily, to debug
         fprintf('Running pykilosort on the queue... \n')
-        githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
         runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
         [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
         'python ' runpyKS ' ' Kilo_runFor ' && ' ...

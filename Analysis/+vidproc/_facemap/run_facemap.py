@@ -1711,7 +1711,7 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
 
 
 
-def main():
+def main(**csv_kwargs):
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
     override_limit = 5  # how many times to override time checking before stopping
@@ -1721,13 +1721,9 @@ def main():
     update_mouse_csvs = False
     run_plot_facemap_results = False
     output_format = 'ONE'
-    subject = 'all'
-    expDate = 'all'
-    expDef = 'all'
-    expNum = None
     process_most_recent = True
 
-    sessions = queryCSV(subject, expDate, expDef, expNum)
+    sessions = queryCSV(**csv_kwargs)
     if process_most_recent:
         sessions = sessions.sort_values('expDate')[::-1]
 
@@ -1780,4 +1776,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(subject = 'allActive',expDate = 'last10')

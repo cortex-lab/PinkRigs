@@ -27,7 +27,7 @@ def check_date_selection(date_selection,dateList):
         if type(date_selection) is list: 
             IsGoodDate= True in ([exp_date==date_range[i] for i in range(len(date_range))])
         else: 
-            (exp_date >= date_range[0]) & (exp_date <= date_range[1])
+            IsGoodDate = (exp_date >= date_range[0]) & (exp_date <= date_range[1])
         if IsGoodDate:
             selected_dates.append(True)
         else:
@@ -61,7 +61,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     mainCSVLoc = root / '!MouseList.csv' 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
-    if 'active' in subject:
+    if 'allActive' in subject:
         mouse2checkList = mouseList[mouseList.IsActive==1]['Subject']
     elif 'all' in subject: 
         mouse2checkList = mouseList.Subject
