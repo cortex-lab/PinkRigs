@@ -112,9 +112,9 @@ switch lower(computerType)
 
         fprintf('creating the ibl format... \n')
         checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
-        checkWhichMice = 'AV005';
+        checkWhichMice = 'all';
         whichKS = 'pyKS'; 
-        checkWhichDates = 'all';
+        checkWhichDates = 'last300';
         [statusIBL,resultIBL] = system(['activate iblenv && ' ...
             'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
             'conda deactivate']);
