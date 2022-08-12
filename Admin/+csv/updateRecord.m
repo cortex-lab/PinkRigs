@@ -258,8 +258,8 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
         nDat.(['align' vidName{1}]) = '0';
     elseif ~strcmpi(nDat.(['exist' vidName{1}]), '1') || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if corresponding file or timeline doesn't exist
-        nDat.(['align' vidName{1}]) = NaN;
-    elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
+        nDat.(['align' vidName{1}]) = 'NaN';
+    elseif any(cellfun(@(x) ~isempty(regexpi(x, ['camera.times.*' vidName{1} '.npy'], 'once')), {ONEContents.name}'))
         % Issue a "1" if an ONE file is detected
         nDat.(['align' vidName{1}]) = '1';
     elseif any(contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1))
@@ -281,14 +281,19 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     end
 
     % Check whether facemap processing exists
-    if ~isnan(nDat.(['align' vidName{1}]))
-        if any(contains({expFoldContents.name}', [vidName{1} 'Cam_proc.npy'], 'ignorecase', 1));
-            nDat.(['fMap' vidName{1}]) = '1';
-        else
-            nDat.(['fMap' vidName{1}]) = '0';
-        end
-    else
+    if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
+        % Issue a "0" if no video, but less than 7 days since recording
+        nDat.(['fMap' vidName{1}]) = '0';
+    elseif ~strcmpi(nDat.(['exist' vidName{1}]), '1') || ~strcmpi(nDat.existTimeline, '1')
+        % Issue a "NaN" if corresponding file or timeline doesn't exist
         nDat.(['fMap' vidName{1}]) = 'NaN';
+    elseif any(cellfun(@(x) ~isempty(regexpi(x, ['camera.ROIAverageFrame.*' vidName{1} '.npy'], 'once')), {ONEContents.name}'))
+        % Issue a "1" if an ONE file is detected
+        nDat.(['fMap' vidName{1}]) = '1';
+    elseif strcmpi(nDat.(['align' vidName{1}]), 'nan')
+        nDat.(['fMap' vidName{1}]) = 'NaN';
+    else
+        nDat.(['fMap' vidName{1}]) = '0';
     end
 end
 
