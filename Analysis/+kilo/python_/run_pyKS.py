@@ -171,5 +171,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-   run_pyKS_on_queue() 
-   #run_pyKS_on_queue(run_for=sys.argv[1])
+   #run_pyKS_on_queue() 
+   run_pyKS_on_queue(run_for=sys.argv[1])
