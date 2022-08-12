@@ -1105,7 +1105,7 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
 
     # Save motion SVD
     motion_svd = facemap_output['motSVD'][1]  # the first is empty, frame x numSVD
-    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs.SVD.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
     np.save(motion_svd_save_path, motion_svd)
 
     # Save motion SVD masks
@@ -1141,7 +1141,8 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     return 0
 
 def batch_process_facemap(output_format='flat', sessions=None,
-                          subset_mice_to_use=None, subset_date_range=None):
+                          subset_mice_to_use=None, subset_date_range=None,
+                          recompute_facemap=False, recompute_ONE=False):
     """
       
     Parameters
@@ -1163,7 +1164,11 @@ def batch_process_facemap(output_format='flat', sessions=None,
         DESCRIPTION. The default is None.
         example:
             subset_date_range = ['2021-12-01', '2021-12-20']
-
+    recompute_facemap : bool
+        whether to recompute facemap even if existing file exists
+    recompute_ONE : bool
+        whether to recompute ONE format conversion even if existing files(s) existed
+        or even if facemap is already processed
     Returns
     -------
     None.
@@ -1468,7 +1473,14 @@ def batch_process_facemap(output_format='flat', sessions=None,
                 # false alarm, delete the corruption files
                 os.remove(corrupted_txt_file)
 
-            if (len(processed_facemap_path) == 0) & (len(processing_facemap_txt_path) == 0) & (
+            if recompute_facemap:
+                if len(processed_facemap_path) != 0:
+                    print('Found processed facemap path at: %s, '
+                          'but going to recompute facemap because '
+                          'recompute_facemap is set to True' % processed_facemap_path)
+
+
+            if ((len(processed_facemap_path) == 0) or recompute_facemap) & (len(processing_facemap_txt_path) == 0) & (
             corrupted_txt_file_not_found):
 
                 print('%s not processed yet, will run facemap on it now' % video_fov)
@@ -1527,6 +1539,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
                     plt.close(fig)
                     pdb.set_trace()
+
             else:
                 file_skipped += 1
                 e = datetime.datetime.now()
@@ -1540,6 +1553,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     print('Filed already processed but not noted, noting it now')
                     processed_txt_file_name = os.path.join(video_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
                     open(processed_txt_file_name, 'a').close()
+
+                if recompute_ONE:
+                    print('Facemap processed, but recomputing ONE because recompute_ONE is set to True')
+                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+                    convert_facemap_output_to_ONE_format(facemap_output_path)
+
 
     if file_skipped == tot_video_files:
         print('Looks like all files are processed or being processed! Taking a break now...')
