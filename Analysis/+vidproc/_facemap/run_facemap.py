@@ -1740,6 +1740,8 @@ def main(**csv_kwargs):
     run_plot_facemap_results = False
     output_format = 'ONE'
     process_most_recent = True
+    recompute_ONE = False
+    recompute_facemap = False
 
     sessions = queryCSV(**csv_kwargs)
     if process_most_recent:
@@ -1778,7 +1780,9 @@ def main(**csv_kwargs):
                 print('Running facemap on specified subset of mice: %s' % subset_mice_to_use)
             
             batch_process_facemap(output_format=output_format, sessions=sessions,
-                                  subset_mice_to_use=subset_mice_to_use)
+                                  subset_mice_to_use=subset_mice_to_use,
+                                  recompute_ONE=recompute_ONE,
+                                  recompute_facemap=recompute_facemap)
 
 
             if override_time_check:
