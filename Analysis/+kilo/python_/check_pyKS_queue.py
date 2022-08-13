@@ -38,9 +38,9 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     print(date_selection)
 
     # check which mice are active on Master csv
-    root = r'\\zserver.cortexlab.net\Code\AVrig'
+    root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
 
-    master_csv = pd.read_csv(os.path.join(root,'!MouseList.csv'))
+    master_csv = pd.read_csv(root / '!MouseList.csv')
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject
     elif mouse_selection=='all': 
@@ -52,47 +52,50 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
 
     for mouse in mice_to_check:
         my_dates = pd.DataFrame()
-        subject_csv = pd.read_csv(os.path.join(root,'%s.csv' % mouse))
-        my_dates = subject_csv.drop_duplicates('expDate')
+        subject_csv_name = '%s.csv' % mouse
+        subject_csv_path = root / subject_csv_name
+        if subject_csv_path.is_file():
+            subject_csv = pd.read_csv(root / subject_csv_name)
+            my_dates = subject_csv.drop_duplicates('expDate')
+            
+            for my_path in my_dates.expFolder:
+                mp = Path(my_path)
 
-        for my_path in my_dates.expFolder:
-            mp = Path(my_path)
+                server = mp.parts[0][:-1]
+                subject= mp.parts[1]
+                date = mp.parts[2]
 
-            server = mp.parts[0][:-1]
-            subject= mp.parts[1]
-            date = mp.parts[2]
+                # only add the mice that need to be sorted if all criteria is fulfilled
+                # that is: 
 
-            # only add the mice that need to be sorted if all criteria is fulfilled
-            # that is: 
+                    #if some dates have been subselected
+                if check_date_selection(date_selection,date):
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
+                    ephys_files = glob.glob(ephys_files,recursive=True)
 
-                #if some dates have been subselected
-            if check_date_selection(date_selection,date):
-                ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
-                ephys_files = glob.glob(ephys_files,recursive=True)
+                    for ephys_file in ephys_files:
+                        # look for pyKS folder with spike times in the same folder as ap.bin
+                        KS_rez = r'%s\**\pyKS\**\spike_times.npy' % (os.path.dirname(ephys_file))
+                        KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
 
-                for ephys_file in ephys_files:
-                    # look for pyKS folder with spike times in the same folder as ap.bin
-                    KS_rez = r'%s\**\pyKS\**\spike_times.npy' % (os.path.dirname(ephys_file))
-                    KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
-
-                    # check if is there, and not empty
-                    if not KS_rez:
-                        # couldn't find the kilosort folder/rez file
-                        KS_done = False
-                    else:
-                        if Path(KS_rez[0]).stat().st_size>0:
-                            KS_done = True
+                        # check if is there, and not empty
+                        if not KS_rez:
+                            # couldn't find the kilosort folder/rez file
+                            KS_done = False
                         else:
-                            # file was 0kb
-                            KS_done = False 
+                            if Path(KS_rez[0]).stat().st_size>0:
+                                KS_done = True
+                            else:
+                                # file was 0kb
+                                KS_done = False 
 
-                    # override KS_done if resorting is requested 
-                    if resort: 
-                        KS_done = False
+                        # override KS_done if resorting is requested 
+                        if resort: 
+                            KS_done = False
 
-                    if not KS_done:
-                        print(ephys_file)
-                        new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
+                        if not KS_done:
+                            print(ephys_file)
+                            new_recs_to_sort.append(glob.glob(ephys_file,recursive=True))
 
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
     print(new_recs_to_sort)

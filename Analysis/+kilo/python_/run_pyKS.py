@@ -131,7 +131,7 @@ def run_pyKS_on_queue(run_for=5.5):
     
     run_for = float(run_for)
     print(run_for,type(run_for))
-    stage_KS_queue(mouse_selection=['AV005'],date_selection='last1000',resort=False)    
+    stage_KS_queue(mouse_selection='all',date_selection='last1000',resort=False)    
 
     root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
     queue_csv_file = '%s\pykilosort_queue.csv' % root
@@ -141,7 +141,8 @@ def run_pyKS_on_queue(run_for=5.5):
     check_hour = start_hour
 
     # delete the current workpath 
-    shutil.rmtree(KS_workpath)
+    if KS_workpath.is_dir():
+        shutil.rmtree(KS_workpath)
 
     while check_hour<(start_hour+run_for):
         print('current hour is %.2f' % start_hour)
