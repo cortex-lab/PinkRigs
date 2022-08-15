@@ -287,7 +287,7 @@ else
 end 
     
 velThresh  = sR*(whlDecThr*0.01)/sumWin;
-%%
+
 posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
 negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
 movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
