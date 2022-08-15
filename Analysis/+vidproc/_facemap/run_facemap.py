@@ -1127,7 +1127,7 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     np.save(roi_w_h_x_y_save_path, roi_w_h_x_y)
 
     # Save motion Energy
-    motion_energy = facemap_output['motion'][1]
+    motion_energy = facemap_output['motion'][1].reshape(-1, 1)  # numFrames x 1
     motion_energy_save_path = os.path.join(fov_folder,
                                         'camera.ROIMotionEnergy.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
     np.save(motion_energy_save_path, motion_energy)
