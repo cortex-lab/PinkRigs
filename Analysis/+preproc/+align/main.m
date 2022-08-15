@@ -196,7 +196,7 @@ function main(varargin)
                         end
                         
                         stub = [expDate '_' expNum '_' subject '_' vidName];
-                        saveONEFormat(frameTimes,videoONEFolder,'camera','times','npy',stub);
+                        saveONEFormat(frameTimes',videoONEFolder,'camera','times','npy',stub);
                         
                         % Remove any error file
                         if exist(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)),'file')

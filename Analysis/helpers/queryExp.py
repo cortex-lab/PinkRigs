@@ -170,7 +170,13 @@ def load_ONE_object(collection_folder,object,attributes='all'):
             if 'npy' in e: 
                 if a in attributes: 
                     tempload = np.load(f)
-                    output[a] = tempload[:,0]
+                    if (tempload.ndim==2):
+                        if (tempload.shape[1]==1): #if its the stupid matlab format, ravel
+                            output[a] = tempload[:,0]
+                        else:
+                            output[a] = tempload        
+                    else: 
+                        output[a] = tempload
 
             if 'pqt' in e: 
                 if a in attributes:  # now I just not load the largeData
