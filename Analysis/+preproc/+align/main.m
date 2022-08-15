@@ -189,14 +189,14 @@ function main(varargin)
 
                     fprintf(1, 'Aligning video %s... \n',vidName);
                     try
-                        [frameTimes, missedFrames] = preproc.align.video(expInfo);
+                        [frameTimes, missedFrames,nFirstFrames] = preproc.align.video(expInfo);
                         
                         if missedFrames > 0
                            error('Missed frames: %d. Recheck.', missedFrames) 
                         end
                         
                         stub = [expDate '_' expNum '_' subject '_' vidName];
-                        saveONEFormat(frameTimes',videoONEFolder,'camera','times','npy',stub);
+                        saveONEFormat(frameTimes(1:nFirstFrames)',videoONEFolder,'camera','times','npy',stub);
                         
                         % Remove any error file
                         if exist(fullfile(videoONEFolder, sprintf('AlignVideoError_%s.json',vidName)),'file')

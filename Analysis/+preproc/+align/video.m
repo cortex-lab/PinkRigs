@@ -1,4 +1,4 @@
-function [tVid,numFramesMissed] = video(varargin)
+function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
 %%% This function will align the time frames of the input video to the
 %%% corresponding timeline. It will try to minimize the amount of time
 %%% and computing by loading first only the beginning and end of the
@@ -61,6 +61,7 @@ end
 % Load the average intensity
 fprintf(1, 'loading avg intensity\n');
 load(intensFile,'avgIntensity');
+nFirstFrames = numel(avgIntensity); 
 
 % Load the lastFrames average intensity
 if ~isempty(d) && d.bytes>100

@@ -14,6 +14,19 @@ varargin = ['useCurrentAxes', {0}, varargin];
 extracted = plt.behaviour.getTrainingData(varargin{:});
 params = csv.inputValidation(varargin{:}, extracted);
 
+
+for i = find(extracted.validSubjects)'
+    currBlock = extracted.data{i};
+    keepIdx = currBlock.response_direction & currBlock.is_validTrial;
+    usefulday(i) = sum(keepIdx)>0;
+end
+
+fn = fieldnames(extracted);
+for k=1:numel(fn)
+    extracted.(fn{k})(find(usefulday==0),:)=[];
+        % do stuff
+end
+
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];
 axesOpt.gapBetweenAxes = [100 60];
@@ -101,7 +114,7 @@ for i = find(extracted.validSubjects)'
     xTickLabel(2:2:end) = deal({[]});
     set(gca, 'xTick', xTickLoc, 'xTickLabel', xTickLabel);
 
-    title(sprintf('%s: %d Tri in %d Exp', extracted.subject{i}, length(responseDir), extracted.nExp{i}))
+    title(sprintf('%s: %d Tri in %s', extracted.subject{i}, length(responseDir), extracted.blkDates{i}{1}))
     xL = xlim; hold on; plot(xL,[midPoint midPoint], '--k', 'linewidth', 1.5);
     yL = ylim; hold on; plot([0 0], yL, '--k', 'linewidth', 1.5);
 end
