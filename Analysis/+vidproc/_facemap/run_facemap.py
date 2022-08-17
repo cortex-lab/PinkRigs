@@ -1103,15 +1103,20 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     # Load facemap output
     facemap_output = np.load(facemap_output_file, allow_pickle=True).item()
 
+    extension_tag = '.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name)
     # Save motion SVD
-    motion_svd = facemap_output['motSVD'][1]  # the first is empty, frame x numSVD
-    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+    nRois = len(facemap_output['rois'])
+    # concatenate all svds
+    motion_svd = np.concatenate([m[:,:,np.newaxis] for m in facemap_output['motSVD'][1:]],axis=2)
+    # shape nFrames x nRois x nPCs 
+    motion_svd = np.transpose(motion_svd, (0, 2, 1))
+    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs' + extension_tag)
     np.save(motion_svd_save_path, motion_svd)
 
-    # Save motion SVD masks
+    # Save motion SVD masks for the 1st ROI // pretty arbitrary
     motMask_reshape = facemap_output['motMask_reshape'][1]  # x pixel X y pixel X nPC
     motion_svdmasks_save_path = os.path.join(fov_folder,
-                                        '_av_motionPCs.weights.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+                                        '_av_motionPCs.weights' + extension_tag)
     np.save(motion_svdmasks_save_path, motMask_reshape)
 
     # Save ROI position
@@ -1122,20 +1127,19 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
         facemap_output['rois'][0]['yrange'][0]
     ])
     roi_w_h_x_y_save_path = os.path.join(fov_folder,
-                                             'ROIMotionEnergy.position.%s_%s_%s_%s.npy' % (
-                                             exp_date, exp_num, subject, fov_name))
+                                             'ROIMotionEnergy.position' + extension_tag)
     np.save(roi_w_h_x_y_save_path, roi_w_h_x_y)
 
     # Save motion Energy
-    motion_energy = facemap_output['motion'][1].reshape(-1, 1)  # numFrames x 1
+    motion_energy = np.concatenate([m[:,np.newaxis] for m in facemap_output['motion'][1:]],axis=1)
     motion_energy_save_path = os.path.join(fov_folder,
-                                        'camera.ROIMotionEnergy.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+                                        'camera.ROIMotionEnergy' + extension_tag)
     np.save(motion_energy_save_path, motion_energy)
 
     # Save average frame
     frame_average = facemap_output['avgframe_reshape']
     frame_average_save_path = os.path.join(fov_folder,
-                                           'camera.ROIAverageFrame.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name))
+                                           'camera.ROIAverageFrame' + extension_tag)
     np.save(frame_average_save_path, frame_average)
 
     return 0
