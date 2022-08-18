@@ -1107,7 +1107,9 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     # Save motion SVD
     nRois = len(facemap_output['rois'])
     # concatenate all svds
-    motion_svd = np.concatenate([m[:,:,np.newaxis] for m in facemap_output['motSVD'][1:]],axis=2)
+    motion_svd = [m[:,:,np.newaxis] for m in facemap_output['motSVD'][1:]]
+    minPCs_to_save = np.min([m.shape[1] for m in motion_svd])
+    motion_svd = np.concatenate([m[:,:minPCs_to_save,:] for m in motion_svd],axis=2)
     # shape nFrames x nRois x nPCs 
     motion_svd = np.transpose(motion_svd, (0, 2, 1))
     motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs' + extension_tag)
