@@ -1577,8 +1577,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
                 if recompute_ONE:
                     print('Facemap processed, but recomputing ONE because recompute_ONE is set to True')
-                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
-                    convert_facemap_output_to_ONE_format(facemap_output_path)
+                   
+                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
+                    if facemap_output_path:
+                        convert_facemap_output_to_ONE_format(facemap_output_path[0])
+                    else:
+                        print('not processed.')
 
 
     if file_skipped == tot_video_files:
