@@ -185,7 +185,7 @@ function main(varargin)
                     expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     
                     videoONEFolder = fullfile(expFolder,'ONE_preproc',vidName);
-                    initONEFolder(videoONEFolder)
+                    initONEFolder(videoONEFolder,'times')
 
                     fprintf(1, 'Aligning video %s... \n',vidName);
                     try
