@@ -175,11 +175,23 @@ nDat.expFolder = {fileparts(blockPath)};
 % cameras, ephys, and microphone. Note that this begins as a vector of 6
 % values and is converted to a string later
 
+% Get the path of the alignment file. If so, check the alignment status
+alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
+
+%%%%%
+
 probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
-if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
-    potentialProbes = 0;
+
+% check for acute recordings .... 
+if ~strcmpi(probeInfo.probeType{1}, 'Acute')
+    if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
+        potentialProbes = 0;
+    else
+        potentialProbes = length(probeInfo.serialNumbers{1});
+    end
 else
-    potentialProbes = length(probeInfo.serialNumbers{1});
+    alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
+    potentialProbes = 1; 
 end
 
 
@@ -187,10 +199,6 @@ end
 nDat.issortedKS2 = zeros(1, potentialProbes);
 nDat.issortedPyKS = zeros(1, potentialProbes);
 
-% Get the path of the alignment file. If so, check the alignment status
-alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
-
-%%%%%
 
 % Populate alignBlock, alignEphys, and alignMic
 if any(alignFile)
