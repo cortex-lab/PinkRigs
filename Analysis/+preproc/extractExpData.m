@@ -4,6 +4,13 @@ function extractExpData(varargin)
     %%% and save a preprocessed version of the data in the exp folder.
     %%% First argument is a set of params, second a list of experiments,
     %%% either in a table or cell with paths format.
+
+
+   % Parameters
+   % ------------------
+   % KSversion: str
+   %    'PyKS' or 'KS2'
+   
     
     %% Get parameters
     varargin = ['recompute', 'none', varargin];
