@@ -71,7 +71,7 @@ function clusterCount(varargin)
     probeSNAll = cellfun(@(x) x{2}, recInfo, 'UniformOutput', false);
 
     subjects = unique(subjectsAll);
-    colAni = colorcube(numel(subjects));
+    colAni = hsv(numel(subjects));
 
     fullProbeScan = {{'0__0'}, {'1__0'}, {'2__0'}, {'3__0'}, ...
         {'0__2880'}, {'1__2880'}, {'2__2880'}, {'3__2880'}};
@@ -151,8 +151,8 @@ function clusterCount(varargin)
     yticklabels([1 10 100 1000])
     xticks([1 5 10 25 50 100])
     xticklabels([1 5 10 25 50 100])
-    ylim([10,2000])
-    xlim([3,100])
+    ylim([1,2000])
+    xlim([1,max(days)])
 
     % slope
     figure('Position',[680   728   200   250]);
