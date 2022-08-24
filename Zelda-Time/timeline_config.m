@@ -27,7 +27,7 @@ timeline.Inputs = [...
     daq_input('flipper', 'ai10', 'Voltage', 'SingleEnded')...
     daq_input('camSync', 'ai3', 'Voltage', 'SingleEnded')...  
     daq_input('audioOut', 'ai4', 'Voltage', 'SingleEnded')...
-    daq_input('breathMonitor', 'ai5', 'Voltage', 'SingleEnded')...
+    daq_input('micSync', 'ai5', 'Voltage', 'SingleEnded')...
     daq_input('microphoneOut', 'ai13', 'Voltage', 'SingleEnded')...
     ];
     
@@ -50,12 +50,13 @@ acqLiveOutput = hw.TLOutputAcqLive;
 acqLiveOutput.Name = 'acqLive'; % rename for legacy compatability
 acqLiveOutput.DaqChannelID = 'port0/line1';
 
-% (output to synchronize face camera)
-camSyncOutput = hw.TLOutputCamSync;
-camSyncOutput.Name = 'camSync'; % rename for legacy compatability
-camSyncOutput.DaqChannelID = 'port0/line2';
-camSyncOutput.PulseDuration = 0.2;
-camSyncOutput.InitialDelay = 0.5;
+%%% NOW DONE BY ARDUINO
+% % (output to synchronize face camera)
+% camSyncOutput = hw.TLOutputCamSync;
+% camSyncOutput.Name = 'camSync'; % rename for legacy compatability
+% camSyncOutput.DaqChannelID = 'port0/line2';
+% camSyncOutput.PulseDuration = 0.2;
+% camSyncOutput.InitialDelay = 0.5;
 
 % Package the outputs (VERY IMPORTANT: acq triggers illum, so illum must be
 % set up BEFORE starting acqLive output)
