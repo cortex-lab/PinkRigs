@@ -1,6 +1,6 @@
 function initONEFolder(ONEFolderName,fileStr)
 
-    if ~exist(fileStr,'var')
+    if ~exist('fileStr','var')
         fileStr = '';
     end
 
