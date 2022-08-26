@@ -1,4 +1,17 @@
 function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
+    %%% This script will perform CCA across days and use the CCA weights of
+    %%% each neurons along the first "cc2keep" components to compute a
+    %%% similarity score (correlation) across sessions.
+    %%% Inputs:
+    %%% - spikeData is a cell of dimension the number of animals.
+    %%% Each contains a matrix of size time x stim ID x neurons x repeats
+    %%% - cc2keep is an optional argument to set the number of canonical
+    %%% components to keep in the correlation analysis.
+    %%% Outputs:
+    %%% - corrWCCA is a cell (of size num. of days x num. of days) that
+    %%% contains all the correlation values of CCA weights of the neurons 
+    %%% across days.
+    %%% - M is a cell (of size num. of days) that contains the CCA weights
 
     if ~exist('cc2keep','var')
         cc2keep = 1:75;
@@ -27,7 +40,6 @@ function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
         s = size(spikeData{k});
         X = reshape(nanmean(spikeData{k},4),[s(1)*s(2),s(3)]);
         W{k} = (pUall*X)'; % directly recompute a linear regression of Uall onto the data
-    %     W{k} = V{k}*pinv(S{k})*Vall(idxall==k,:)*pinv(Sall); % recomputing these weights give weird stuff
     end
 
     %% look at correlation of all cells with all the other cells, to see if any is stable...
@@ -45,3 +57,4 @@ function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
         end
     end
     
+end
