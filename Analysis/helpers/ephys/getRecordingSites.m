@@ -15,27 +15,76 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
     elecInd = nan(1,numel(out));
     for c = 1:numel(out)
         chanProp = regexp(out{c},' ','split');
-        chans(c) = str2double(chanProp{1});
-        shank(c) = str2double(chanProp{2});
-        bank(c) = str2double(chanProp{3});
-        % 4 is refElec
-        elecInd(c) = str2double(chanProp{5});
+        if numel(chanProp) == 5
+            if c == 1
+                %%% Have a better way to check that?
+                probeType = '2MS';
+            end
+            chans(c) = str2double(chanProp{1});
+            shank(c) = str2double(chanProp{2});
+            bank(c) = str2double(chanProp{3});
+            % 4 is refElec
+            elecInd(c) = str2double(chanProp{5});
+        elseif numel(chanProp) == 4
+            if c == 1
+                warning('WATCH OUT: IMRO seems to be a 1 shank version--watch out for staggered vs. aligned?')
+                %%% Have a bette way to check that?
+                probeType = '2SS';
+            end
+            chans(c) = str2double(chanProp{1});
+            shank(c) = 0;
+            bank(c) = str2double(chanProp{2});
+            % 3 is refElec
+            elecInd(c) = str2double(chanProp{4});
+        elseif  numel(chanProp) == 6
+            if c == 1
+                warning('WATCH OUT: IMRO seems to be a Npx 1.0. Just ouputting a gibberish hack?')
+                %%% Have a bette way to check that?
+                probeType = '1';
+            end
+            chans(c) = str2double(chanProp{1}); % ???
+            shank(c) = 0; % ???
+            bank(c) = str2double(chanProp{2}); % ???
+            elecInd(c) = c; % ???
+            % no idea what the others are
+        end
     end
 
     %% plot data -- taken from IMRO generation script
-    % NP 2.0 MS (4 shank), probe type 24 electrode positions
-    nElec = 1280;   %per shank; pattern repeats for the four shanks
-    vSep = 15;      % in um
-    hSep = 32;
+    if contains(probeType,'2')
+        % NP 2.0 MS (4 shank), probe type 24 electrode positions
+        nElec = 1280;   % per shank; pattern repeats for the four shanks
+        vSep = 15;      % in um
+        hSep = 32;
 
-    elecPos = zeros(nElec, 2);
+        elecPos = zeros(nElec, 2);
 
-    elecPos(1:2:end,1) = 0;                %sites 0,2,4...
-    elecPos(2:2:end,1) =  hSep;            %sites 1,3,5...
+        elecPos(1:2:end,1) = 0;                %sites 0,2,4...
+        elecPos(2:2:end,1) =  hSep;            %sites 1,3,5...
 
-    % fill in y values
-    viHalf = (0:(nElec/2-1))';                %row numbers
-    elecPos(1:2:end,2) = viHalf * vSep;       %sites 0,2,4...
-    elecPos(2:2:end,2) = elecPos(1:2:end,2);  %sites 1,3,5...
+        % fill in y values
+        viHalf = (0:(nElec/2-1))';                %row numbers
+        elecPos(1:2:end,2) = viHalf * vSep;       %sites 0,2,4...
+        elecPos(2:2:end,2) = elecPos(1:2:end,2);  %sites 1,3,5...
 
+    elseif contains(probeType,'1')
+        % NP 1.0
+        %%% VERY APPROXIMATE--whole thing is a hack
+        warning('Watch out, chan positions won''t be accurate.')
+        nElec = 2*384;   % hack
+        vSep = 20;      % hack
+        hSep = 16; % hack
+
+        elecPos = zeros(nElec, 2);
+
+        elecPos(1:4:end,1) = 0;                %sites 0,2,4...
+        elecPos(2:4:end,1) =  hSep;            %sites 1,3,5...
+        elecPos(3:4:end,1) =  2*hSep;            %sites 1,3,5...
+        elecPos(4:4:end,1) =  3*hSep;            %sites 1,3,5...
+
+        % fill in y values
+        viHalf = (0:(nElec/2-1))';                %row numbers
+        elecPos(1:2:end,2) = viHalf * vSep;       %sites 0,2,4...
+        elecPos(2:2:end,2) = elecPos(1:2:end,2);  %sites 1,3,5...
+    end
     chanPos = elecPos(elecInd+1,:);
