@@ -61,19 +61,13 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     %% Get cluster info after manual curation too (phy)
   
     % Load the cluster ID and labels
-    if exist(fullfile(KSFolder, 'cluster_group.tsv'),'file') 
-       cgsFile = fullfile(KSFolder, 'cluster_group.tsv');
-       [cids, cgs] = readClusterGroupsCSV(cgsFile);
+    if exist(fullfile(KSFolder, 'cluster_info.tsv'),'file') 
+       cgsFile = fullfile(KSFolder, 'cluster_info.tsv');
+       [cids, cgs] = readClusterInfo_curated(cgsFile);
     elseif exist(fullfile(KSFolder, 'cluster_KSLabel.tsv'),'file') 
        cgsFile = fullfile(KSFolder, 'cluster_KSLabel.tsv');
        [cids, cgs] = readClusterGroupsCSV(cgsFile);
     end 
-
-    clusWav = readNPY(fullfile(IBLFormatFolder,'clusters.waveforms.npy'));
-    clusWavChan = readNPY(fullfile(IBLFormatFolder,'clusters.waveformsChannels.npy'));
-    clusWavChan = single(tempWavChan);
-    clusAmps = readNPY(fullfile(IBLFormatFolder,'clusters.amps.npy'));
-    clusPeakToTrough = readNPY(fullfile(IBLFormatFolder,'clusters.peakToTrough.npy'));
 
     clusKSLabels = zeros(1,numel(cids),'uint8');
     clusXpos = zeros(1,numel(cids),'single');
@@ -86,7 +80,30 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
         clusXpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
         clusDepths(ii) = nanmedian(spikeDepths(spkIdx));
         clusShankIDs(ii) = nanmedian(spikeShankIDs(spkIdx));
+
+
     end
+
+    %%%% some metrics from the IBL format %%%%%
+    clusWav = readNPY(fullfile(IBLFormatFolder,'clusters.waveforms.npy'));
+    clusWavChan = readNPY(fullfile(IBLFormatFolder,'clusters.waveformsChannels.npy'));
+    clusWavChan = single(tempWavChan);
+    clusAmps = readNPY(fullfile(IBLFormatFolder,'clusters.amps.npy'));
+    clusPeakToTrough = readNPY(fullfile(IBLFormatFolder,'clusters.peakToTrough.npy'));
+
+    % the ibl format clusters and the curated KS clusters don't match
+    % so if they don't match we need to get rid of clusters to keep
+    % dimensions consistent
+    if numel(cids)~=numel(clusAmps)
+        disp('curated dataset? cluster dims not match with IBL...')
+        disp('matching...')
+        % cids indexing is python based so adding 1 
+        clusWav = clusWav(cids+1,:,:);
+        clusWavChan = clusWavChan(cids+1,:);
+        clusAmps = clusAmps(cids+1);
+        clusPeakToTrough = clusPeakToTrough(cids+1);        
+    end
+
 
     %% Save it in spk
     
@@ -105,14 +122,14 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
     spk.templates.waveformsChannels = tempWavChan; % maybe to remove/redundant with qMetrics?
     
     % clusters (that can be manually curated)
-    spk.clusters.av_IDs = cids;
-    spk.clusters.av_KSLabels = clusKSLabels;
+    spk.clusters.av_IDs = cids';
+    spk.clusters.av_KSLabels = clusKSLabels';
     spk.clusters.amps = clusAmps;
     spk.clusters.waveforms = clusWav; % maybe to remove/redundant with qMetrics?
     spk.clusters.waveformsChannels = clusWavChan; % maybe to remove/redundant with qMetrics?
-    spk.clusters.depths = clusDepths;
-    spk.clusters.av_xpos = clusXpos;
-    spk.clusters.av_shankID = clusShankIDs;
+    spk.clusters.depths = clusDepths';
+    spk.clusters.av_xpos = clusXpos';
+    spk.clusters.av_shankID = clusShankIDs';
     spk.clusters.peakToTrough = clusPeakToTrough;
 
 end
