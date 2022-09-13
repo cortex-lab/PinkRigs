@@ -1,0 +1,497 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_UNCAUGHT_CXX_EXCEPTION (0xe06d7363) at pc=0x00007fff478f4fd9, pid=13228, tid=0x0000000000002be8
+#
+# JRE version: Java(TM) SE Runtime Environment (8.0_202-b08) (build 1.8.0_202-b08)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (25.202-b08 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# C  [KERNELBASE.dll+0x34fd9]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000001f3a31d2000):  JavaThread "main" [_thread_in_native, id=11240, stack(0x000000134d400000,0x0000001351400000)]
+
+siginfo: ExceptionCode=0xe06d7363, ExceptionInformation=0x0000000019930520 0x00000013513e5bc8 0x00007fff090ac3a8 0x00007fff08f10000 
+
+Registers:
+RAX=0x0000000000000000, RBX=0x00000013513e3260, RCX=0x0000000000000000, RDX=0x0000000000000000
+RSP=0x00000013513e0c60, RBP=0x00000013513e1310, RSI=0x00000013513e0da0, RDI=0x00000013513e1ab0
+R8 =0xcafebabecafebabe, R9 =0xffffffffffffffc0, R10=0x000001f3a31f22a0, R11=0x0000000000000009
+R12=0x00000013513e20d8, R13=0x00007fff0943f900, R14=0x0000000000000000, R15=0x0000000000000000
+RIP=0x00007fff478f4fd9, EFLAGS=0x0000000000000202
+
+Top of Stack: (sp=0x00000013513e0c60)
+0x00000013513e0c60:   fffffffffffffffe 00000013513e3260
+0x00000013513e0c70:   00000013513e0da0 0000000000000000
+0x00000013513e0c80:   00000001e06d7363 0000000000000000
+0x00000013513e0c90:   00007fff478f4fd9 0000000000000004
+0x00000013513e0ca0:   0000000019930520 00000013513e5bc8
+0x00000013513e0cb0:   00007fff090ac3a8 00007fff08f10000
+0x00000013513e0cc0:   000046bb8b43bef4 00000013513e20d8
+0x00000013513e0cd0:   0000000000000004 00007fff1eeb4685
+0x00000013513e0ce0:   0000000000000000 000001f3962408f0
+0x00000013513e0cf0:   00000013513e0da0 00000013513e1310
+0x00000013513e0d00:   00000013513e1ab0 00007fff1eeb470d
+0x00000013513e0d10:   00000013513e3260 00000013513e0da0
+0x00000013513e0d20:   00000e263b577fcb 0000000000000003
+0x00000013513e0d30:   00000013513e3260 00007fff1eeb1f74
+0x00000013513e0d40:   00007fff0943f900 00000013513e20d8
+0x00000013513e0d50:   0000001300000100 0000000000010100 
+
+Instructions: (pc=0x00007fff478f4fd9)
+0x00007fff478f4fb9:   8b d1 44 0f 47 c0 44 89 44 24 38 49 c1 e0 03 e8
+0x00007fff478f4fc9:   da 1c 06 00 48 8d 4c 24 20 48 ff 15 57 e1 18 00
+0x00007fff478f4fd9:   0f 1f 44 00 00 48 8b 8c 24 c0 00 00 00 48 33 cc
+0x00007fff478f4fe9:   e8 52 96 05 00 48 81 c4 d8 00 00 00 c3 cc 83 64 
+
+
+Register to memory mapping:
+
+RAX=0x0000000000000000 is an unknown value
+RBX=0x00000013513e3260 is pointing into the stack for thread: 0x000001f3a31d2000
+RCX=0x0000000000000000 is an unknown value
+RDX=0x0000000000000000 is an unknown value
+RSP=0x00000013513e0c60 is pointing into the stack for thread: 0x000001f3a31d2000
+RBP=0x00000013513e1310 is pointing into the stack for thread: 0x000001f3a31d2000
+RSI=0x00000013513e0da0 is pointing into the stack for thread: 0x000001f3a31d2000
+RDI=0x00000013513e1ab0 is pointing into the stack for thread: 0x000001f3a31d2000
+R8 =0xcafebabecafebabe is an unknown value
+R9 =0xffffffffffffffc0 is an unknown value
+R10=0x000001f3a31f22a0 is an unknown value
+R11=0x0000000000000009 is an unknown value
+R12=0x00000013513e20d8 is pointing into the stack for thread: 0x000001f3a31d2000
+R13=0x00007fff0943f900 is an unknown value
+R14=0x0000000000000000 is an unknown value
+R15=0x0000000000000000 is an unknown value
+
+
+Stack: [0x000000134d400000,0x0000001351400000],  sp=0x00000013513e0c60,  free space=65411k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [KERNELBASE.dll+0x34fd9]
+C  [VCRUNTIME140.dll+0x1f74]
+C  [ntdll.dll+0xa1426]
+C  0x00007fff093d7a3f
+C  0x00007fff093a7c42
+C  0x00007fff093a7421
+C  0x00007fff093a9313
+C  [libmwservices.dll+0x29f923]
+C  [libmwservices.dll+0x2a0f10]
+C  [libmwservices.dll+0x2a1c0e]
+C  0x00007fff00623e2a
+C  0x000001f3a32c9f2e
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  com.mathworks.jmi.NativeMatlab.ProcessPendingEvents()Z+0
+j  com.mathworks.jmi.NativeMatlab.processPendingEvents()Z+8
+j  com.mathworks.jmi.Matlab$ProcessPendingEvents.callBooleanMethod(Ljava/lang/Object;)Z+0
+j  com.mathworks.util.FactoryUtils.processPendingEvents()Z+12
+j  com.mathworks.widgets.desk.Desktop.canClose()Z+38
+j  com.mathworks.mde.desk.MLDesktop.canClose()Z+296
+j  com.mathworks.mde.desk.MLDesktop$2.call()Ljava/lang/Boolean;+4
+j  com.mathworks.mde.desk.MLDesktop$2.call()Ljava/lang/Object;+1
+j  com.mathworks.jmi.Matlab.runPredicates(Ljava/util/List;Z)Z+59
+j  com.mathworks.jmi.Matlab.isOkToExit()Z+4
+v  ~StubRoutines::call_stub
+j  com.mathworks.jmi.NativeMatlab.SendMatlabMessage(Ljava/lang/Object;)Ljava/lang/Object;+0
+j  com.mathworks.jmi.NativeMatlab.sendMatlabMessage(Ljava/lang/Object;)Ljava/lang/Object;+22
+j  com.mathworks.jmi.MatlabLooper.sendMatlabMessage(Lcom/mathworks/services/message/MWMessage;)Ljava/lang/Object;+20
+j  com.mathworks.jmi.Matlab.mtFevalConsoleOutput(Ljava/lang/String;[Ljava/lang/Object;I)Ljava/lang/Object;+58
+j  com.mathworks.toolbox.instrument.events.ActionQueue.run()V+130
+v  ~StubRoutines::call_stub
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x000001f38206f000 JavaThread "Installation Observer" daemon [_thread_blocked, id=13300, stack(0x000000135d100000,0x000000135d200000)]
+  0x000001f3ca982000 JavaThread "Keep-Alive-SocketCleaner" daemon [_thread_blocked, id=4644, stack(0x000000135c600000,0x000000135c700000)]
+  0x000001f3ca980800 JavaThread "com.mathworks.addons_common.notificationframework.InstalledFolderRegistryObservers" daemon [_thread_blocked, id=14200, stack(0x000000135bd00000,0x000000135be00000)]
+  0x000001f3c72a7000 JavaThread "com.mathworks.addons_common.notificationframework.InstalledAddOnsCache" daemon [_thread_blocked, id=12752, stack(0x000000135a900000,0x000000135aa00000)]
+  0x000001f3c72a8800 JavaThread "TimerQueue" daemon [_thread_blocked, id=13944, stack(0x0000001359b00000,0x0000001359c00000)]
+  0x000001f3c72aa800 JavaThread "AWT-EventQueue-0-SharedResourceRunner" daemon [_thread_blocked, id=13252, stack(0x0000001359500000,0x0000001359600000)]
+  0x000001f3c72a7800 JavaThread "Thread-3" daemon [_thread_blocked, id=14144, stack(0x0000001358c00000,0x0000001358d00000)]
+  0x000001f3ca77a000 JavaThread "AWT-EventQueue-0" [_thread_blocked, id=14052, stack(0x0000001358a00000,0x0000001358b00000)]
+  0x000001f3ca779000 JavaThread "AWT-Shutdown" [_thread_blocked, id=14048, stack(0x0000001358600000,0x0000001358700000)]
+  0x000001f3caf6c800 JavaThread "EventMgr Dispatcher" daemon [_thread_in_native, id=13072, stack(0x0000001358900000,0x0000001358a00000)]
+  0x000001f3c9581800 JavaThread "AWT-Windows" daemon [_thread_in_native, id=13108, stack(0x0000001358700000,0x0000001358800000)]
+  0x000001f3c9580000 JavaThread "Java2D Disposer" daemon [_thread_blocked, id=12992, stack(0x0000001358500000,0x0000001358600000)]
+  0x000001f3ca19f800 JavaThread "Settings Releaser" daemon [_thread_blocked, id=13076, stack(0x0000001358400000,0x0000001358500000)]
+  0x000001f3ca817800 JavaThread "EventMgr Dispatcher" daemon [_thread_in_native, id=13008, stack(0x0000001358300000,0x0000001358400000)]
+  0x000001f3c736b800 JavaThread "Service Thread" daemon [_thread_blocked, id=11244, stack(0x0000001358000000,0x0000001358100000)]
+  0x000001f3c72aa000 JavaThread "C1 CompilerThread11" daemon [_thread_blocked, id=12680, stack(0x0000001357f00000,0x0000001358000000)]
+  0x000001f3c72a5800 JavaThread "C1 CompilerThread10" daemon [_thread_blocked, id=10400, stack(0x0000001357e00000,0x0000001357f00000)]
+  0x000001f3c72a6000 JavaThread "C1 CompilerThread9" daemon [_thread_blocked, id=2272, stack(0x0000001357d00000,0x0000001357e00000)]
+  0x000001f3c72a1800 JavaThread "C1 CompilerThread8" daemon [_thread_blocked, id=12668, stack(0x0000001357c00000,0x0000001357d00000)]
+  0x000001f3c729d000 JavaThread "C2 CompilerThread7" daemon [_thread_blocked, id=12664, stack(0x0000001357b00000,0x0000001357c00000)]
+  0x000001f3c5b0e800 JavaThread "C2 CompilerThread6" daemon [_thread_blocked, id=12660, stack(0x0000001357a00000,0x0000001357b00000)]
+  0x000001f3c5b0a800 JavaThread "C2 CompilerThread5" daemon [_thread_blocked, id=12692, stack(0x0000001357900000,0x0000001357a00000)]
+  0x000001f3c5b09800 JavaThread "C2 CompilerThread4" daemon [_thread_blocked, id=12712, stack(0x0000001357800000,0x0000001357900000)]
+  0x000001f3c5b07800 JavaThread "C2 CompilerThread3" daemon [_thread_blocked, id=12700, stack(0x0000001357700000,0x0000001357800000)]
+  0x000001f3c5b06800 JavaThread "C2 CompilerThread2" daemon [_thread_blocked, id=12684, stack(0x0000001357600000,0x0000001357700000)]
+  0x000001f3c5b05800 JavaThread "C2 CompilerThread1" daemon [_thread_blocked, id=12672, stack(0x0000001357500000,0x0000001357600000)]
+  0x000001f3c5b01800 JavaThread "C2 CompilerThread0" daemon [_thread_blocked, id=12696, stack(0x0000001357400000,0x0000001357500000)]
+  0x000001f3c5afe800 JavaThread "Attach Listener" daemon [_thread_blocked, id=12708, stack(0x0000001357300000,0x0000001357400000)]
+  0x000001f3c5af9800 JavaThread "Finalizer" daemon [_thread_blocked, id=12656, stack(0x0000001357200000,0x0000001357300000)]
+  0x000001f3c5af0800 JavaThread "Reference Handler" daemon [_thread_blocked, id=12652, stack(0x0000001357100000,0x0000001357200000)]
+=>0x000001f3a31d2000 JavaThread "main" [_thread_in_native, id=11240, stack(0x000000134d400000,0x0000001351400000)]
+
+Other Threads:
+  0x000001f3c5aca800 VMThread [stack: 0x0000001357000000,0x0000001357100000] [id=12640]
+  0x000001f3c7428800 WatcherThread [stack: 0x0000001358100000,0x0000001358200000] [id=12716]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+heap address: 0x00000005c2800000, size: 8152 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 3
+Compressed class space size: 1073741824 Address: 0x00000007c0000000
+
+Heap:
+ PSYoungGen      total 45056K, used 36756K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 44544K, 81% used [0x0000000740a00000,0x0000000742d74ff0,0x0000000743580000)
+  from space 512K, 87% used [0x0000000746400000,0x0000000746470020,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45818K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54be8f0,0x00000005c5880000)
+ Metaspace       used 49285K, capacity 49776K, committed 50176K, reserved 1093632K
+  class space    used 6442K, capacity 6591K, committed 6656K, reserved 1048576K
+
+Card table byte_map: [0x000001f3b2670000,0x000001f3b3660000] byte_map_base: 0x000001f3af85c000
+
+Marking Bits: (ParMarkBitMap*) 0x0000000059df5ce0
+ Begin Bits: [0x000001f3b4260000, 0x000001f3bc1c0000)
+ End Bits:   [0x000001f3bc1c0000, 0x000001f3c4120000)
+
+Polling page: 0x000001f392930000
+
+CodeCache: size=245760Kb used=18024Kb max_used=18846Kb free=227735Kb
+ bounds [0x000001f3a32b0000, 0x000001f3a4570000, 0x000001f3b22b0000]
+ total_blobs=5861 nmethods=4847 adapters=923
+ compilation: enabled
+
+Compilation events (10 events):
+Event: 15019.829 Thread 0x000001f3c72a5800 5998       3       java.awt.Component::dispatchEventImpl (921 bytes)
+Event: 15019.832 Thread 0x000001f3c72a5800 nmethod 5998 0x000001f3a455d190 code [0x000001f3a455dc00, 0x000001f3a4566a00]
+Event: 15019.850 Thread 0x000001f3c729d000 6000       4       java.awt.EventQueue::getPriority (78 bytes)
+Event: 15019.850 Thread 0x000001f3c72a1800 5999   !   3       java.awt.EventQueue::postEventPrivate (104 bytes)
+Event: 15019.850 Thread 0x000001f3c72a1800 nmethod 5999 0x000001f3a41c1e50 code [0x000001f3a41c2060, 0x000001f3a41c2930]
+Event: 15019.851 Thread 0x000001f3c729d000 nmethod 6000 0x000001f3a425b2d0 code [0x000001f3a425b400, 0x000001f3a425b498]
+Event: 15020.729 Thread 0x000001f3c5b05800 6001       4       java.awt.EventQueue::coalesceEvent (86 bytes)
+Event: 15020.730 Thread 0x000001f3c5b05800 nmethod 6001 0x000001f3a35f0310 code [0x000001f3a35f0480, 0x000001f3a35f0618]
+Event: 15020.750 Thread 0x000001f3c5b0a800 6002       4       java.awt.EventQueue::cacheEQItem (60 bytes)
+Event: 15020.752 Thread 0x000001f3c5b0a800 nmethod 6002 0x000001f3a35f1750 code [0x000001f3a35f18a0, 0x000001f3a35f1af8]
+
+GC Heap History (10 events):
+Event: 14378.975 GC heap before
+{Heap before GC invocations=2051 (full 2):
+ PSYoungGen      total 20992K, used 20800K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 20480K, 100% used [0x0000000740a00000,0x0000000741e00000,0x0000000741e00000)
+  from space 512K, 62% used [0x0000000746480000,0x00000007464d0010,0x0000000746500000)
+  to   space 512K, 0% used [0x0000000746400000,0x0000000746400000,0x0000000746480000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+Event: 14378.976 GC heap after
+Heap after GC invocations=2051 (full 2):
+ PSYoungGen      total 24064K, used 288K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 23552K, 0% used [0x0000000740a00000,0x0000000740a00000,0x0000000742100000)
+  from space 512K, 56% used [0x0000000746400000,0x0000000746448010,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+}
+Event: 14379.001 GC heap before
+{Heap before GC invocations=2052 (full 2):
+ PSYoungGen      total 24064K, used 23840K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 23552K, 100% used [0x0000000740a00000,0x0000000742100000,0x0000000742100000)
+  from space 512K, 56% used [0x0000000746400000,0x0000000746448010,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+Event: 14379.002 GC heap after
+Heap after GC invocations=2052 (full 2):
+ PSYoungGen      total 28160K, used 288K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 27648K, 0% used [0x0000000740a00000,0x0000000740a00000,0x0000000742500000)
+  from space 512K, 56% used [0x0000000746480000,0x00000007464c8010,0x0000000746500000)
+  to   space 512K, 0% used [0x0000000746400000,0x0000000746400000,0x0000000746480000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+}
+Event: 14379.029 GC heap before
+{Heap before GC invocations=2053 (full 2):
+ PSYoungGen      total 28160K, used 27936K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 27648K, 100% used [0x0000000740a00000,0x0000000742500000,0x0000000742500000)
+  from space 512K, 56% used [0x0000000746480000,0x00000007464c8010,0x0000000746500000)
+  to   space 512K, 0% used [0x0000000746400000,0x0000000746400000,0x0000000746480000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+Event: 14379.030 GC heap after
+Heap after GC invocations=2053 (full 2):
+ PSYoungGen      total 33280K, used 320K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 32768K, 0% used [0x0000000740a00000,0x0000000740a00000,0x0000000742a00000)
+  from space 512K, 62% used [0x0000000746400000,0x0000000746450010,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48775K, capacity 49296K, committed 49536K, reserved 1091584K
+  class space    used 6292K, capacity 6431K, committed 6528K, reserved 1048576K
+}
+Event: 14379.204 GC heap before
+{Heap before GC invocations=2054 (full 2):
+ PSYoungGen      total 33280K, used 33088K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 32768K, 100% used [0x0000000740a00000,0x0000000742a00000,0x0000000742a00000)
+  from space 512K, 62% used [0x0000000746400000,0x0000000746450010,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45786K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54b68f0,0x00000005c5880000)
+ Metaspace       used 48797K, capacity 49328K, committed 49536K, reserved 1091584K
+  class space    used 6295K, capacity 6463K, committed 6528K, reserved 1048576K
+Event: 14379.206 GC heap after
+Heap after GC invocations=2054 (full 2):
+ PSYoungGen      total 38912K, used 480K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 38400K, 0% used [0x0000000740a00000,0x0000000740a00000,0x0000000742f80000)
+  from space 512K, 93% used [0x0000000746480000,0x00000007464f8020,0x0000000746500000)
+  to   space 512K, 0% used [0x0000000746400000,0x0000000746400000,0x0000000746480000)
+ ParOldGen       total 49664K, used 45818K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54be8f0,0x00000005c5880000)
+ Metaspace       used 48797K, capacity 49328K, committed 49536K, reserved 1091584K
+  class space    used 6295K, capacity 6463K, committed 6528K, reserved 1048576K
+}
+Event: 14379.363 GC heap before
+{Heap before GC invocations=2055 (full 2):
+ PSYoungGen      total 38912K, used 38880K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 38400K, 100% used [0x0000000740a00000,0x0000000742f80000,0x0000000742f80000)
+  from space 512K, 93% used [0x0000000746480000,0x00000007464f8020,0x0000000746500000)
+  to   space 512K, 0% used [0x0000000746400000,0x0000000746400000,0x0000000746480000)
+ ParOldGen       total 49664K, used 45818K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54be8f0,0x00000005c5880000)
+ Metaspace       used 48797K, capacity 49328K, committed 49536K, reserved 1091584K
+  class space    used 6295K, capacity 6463K, committed 6528K, reserved 1048576K
+Event: 14379.364 GC heap after
+Heap after GC invocations=2055 (full 2):
+ PSYoungGen      total 45056K, used 448K [0x0000000740a00000, 0x0000000746500000, 0x00000007c0000000)
+  eden space 44544K, 0% used [0x0000000740a00000,0x0000000740a00000,0x0000000743580000)
+  from space 512K, 87% used [0x0000000746400000,0x0000000746470020,0x0000000746480000)
+  to   space 512K, 0% used [0x0000000746480000,0x0000000746480000,0x0000000746500000)
+ ParOldGen       total 49664K, used 45818K [0x00000005c2800000, 0x00000005c5880000, 0x0000000740a00000)
+  object space 49664K, 92% used [0x00000005c2800000,0x00000005c54be8f0,0x00000005c5880000)
+ Metaspace       used 48797K, capacity 49328K, committed 49536K, reserved 1091584K
+  class space    used 6295K, capacity 6463K, committed 6528K, reserved 1048576K
+}
+
+Deoptimization events (10 events):
+Event: 15017.492 Thread 0x000001f3ca77a000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a44af828 method=javax.swing.JComponent.putClientProperty(Ljava/lang/Object;Ljava/lang/Object;)V @ 57
+Event: 15017.503 Thread 0x000001f3ca76e000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a4445c08 method=sun.awt.AWTAutoShutdown.notifyThreadBusy(Ljava/lang/Thread;)V @ 37
+Event: 15018.914 Thread 0x000001f3a31d2000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a442d278 method=com.mathworks.hg.util.HGPeerQueue.add(Lcom/mathworks/hg/util/HGPeerRunnable;)V @ 301
+Event: 15018.920 Thread 0x000001f3ca77a000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a44ad0b8 method=java.awt.AWTEventMulticaster.removeInternal(Ljava/util/EventListener;Ljava/util/EventListener;)Ljava/util/EventListener; @ 2
+Event: 15018.924 Thread 0x000001f3a31d2000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a3a0d2a4 method=java.util.Hashtable.getIterator(I)Ljava/util/Iterator; @ 4
+Event: 15018.924 Thread 0x000001f3a31d2000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000001f3a44cc850 method=java.util.Hashtable.putAll(Ljava/util/Map;)V @ 13
+Event: 15018.924 Thread 0x000001f3ca77a000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a43da924 method=com.mathworks.hg.util.HGPeerQueue$HGPeerRunnablesRunner.runit(Z[I)V @ 115
+Event: 15018.924 Thread 0x000001f3ca77a000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a41b5614 method=javax.swing.SwingUtilities.getWindowAncestor(Ljava/awt/Component;)Ljava/awt/Window; @ 6
+Event: 15018.924 Thread 0x000001f3ca77a000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000001f3a4521c28 method=com.mathworks.hg.util.HGPeerQueue$HGPeerRunnablesRunner.run()V @ 79
+Event: 15018.924 Thread 0x000001f3ca77a000 Uncommon trap: reason=unstable_if action=reinterpret pc=0x000001f3a44be9fc method=com.mathworks.hg.peer.ui.UIContainerPeer.validateFigure()V @ 4
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (10 events):
+Event: 15030.957 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424d6090) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.041 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424d7a08) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.125 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424d8308) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.208 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424d8c08) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.292 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424d9508) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.376 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424da3c8) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.459 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424dacc8) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.542 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424db5c8) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.626 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424dbec8) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+Event: 15031.710 Thread 0x000001f3ca77a000 Exception <a 'java/net/SocketTimeoutException': Receive timed out> (0x00000007424dc7c8) thrown at [C:\re\workspace\8-2-build-windows-amd64-cygwin\jdk8u202\12323\hotspot\src\share\vm\prims\jni.cpp, line 736]
+
+Events (10 events):
+Event: 15031.725 loading class com/mathworks/widgets/BusyAffordance done
+Event: 15031.726 loading class com/mathworks/widgets/ComponentBuilder
+Event: 15031.726 loading class com/mathworks/widgets/ComponentBuilder done
+Event: 15031.726 loading class com/mathworks/widgets/BusyAffordance$1
+Event: 15031.726 loading class com/mathworks/widgets/BusyAffordance$1 done
+Event: 15031.726 Thread 0x000001f38206e800 Thread exited: 0x000001f38206e800
+Event: 15031.726 Executing VM operation: RevokeBias
+Event: 15031.726 Executing VM operation: RevokeBias done
+Event: 15031.726 loading class com/mathworks/util/Log$1
+Event: 15031.726 loading class com/mathworks/util/Log$1 done
+
+
+Dynamic libraries:
+0x00007ff676c80000 - 0x00007ff676cb3000 	C:\Program Files\MATLAB\R2020b\bin\win64\matlab.exe
+0x00007fff4a030000 - 0x00007fff4a225000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007fff48fd0000 - 0x00007fff4908d000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007fff478c0000 - 0x00007fff47b8d000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007fff43940000 - 0x00007fff439d0000 	C:\WINDOWS\SYSTEM32\apphelp.dll
+0x00007fff47e50000 - 0x00007fff47f50000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007fff0e1b0000 - 0x00007fff0e3d9000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwi18n.dll
+0x00007fff0c630000 - 0x00007fff0ced3000 	C:\Program Files\MATLAB\R2020b\bin\win64\mlutil.dll
+0x00007fff0daf0000 - 0x00007fff0deff000 	C:\Program Files\MATLAB\R2020b\bin\win64\mvm.dll
+0x00007fff0d630000 - 0x00007fff0daf0000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwservices.dll
+0x00007fff48da0000 - 0x00007fff48e4e000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007fff48b30000 - 0x00007fff48bce000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007fff47890000 - 0x00007fff478b7000 	C:\WINDOWS\System32\bcrypt.dll
+0x00007fff0df00000 - 0x00007fff0e1a5000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfl.dll
+0x00007fff49d20000 - 0x00007fff49ec0000 	C:\WINDOWS\System32\USER32.dll
+0x00007fff48bd0000 - 0x00007fff48c6c000 	C:\WINDOWS\System32\sechost.dll
+0x00007fff477f0000 - 0x00007fff47812000 	C:\WINDOWS\System32\win32u.dll
+0x00007fff48c70000 - 0x00007fff48cdb000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007fff49ec0000 - 0x00007fff49fe5000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007fff48b00000 - 0x00007fff48b2a000 	C:\WINDOWS\System32\GDI32.dll
+0x00007fff47b90000 - 0x00007fff47c9b000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007fff1edf0000 - 0x00007fff1ee8b000 	C:\Program Files\MATLAB\R2020b\bin\win64\MSVCP140.dll
+0x00007fff47f50000 - 0x00007fff47fed000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007fff1eeb0000 - 0x00007fff1eec6000 	C:\Program Files\MATLAB\R2020b\bin\win64\VCRUNTIME140.dll
+0x00007fff364a0000 - 0x00007fff364a9000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwresource_core.dll
+0x00007fff35110000 - 0x00007fff35124000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwcapabilities.dll
+0x00007fff480e0000 - 0x00007fff48824000 	C:\WINDOWS\System32\SHELL32.dll
+0x00007fff35ce0000 - 0x00007fff35d0a000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_filesystem.dll
+0x00007fff35a60000 - 0x00007fff35a78000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwcpp11compat.dll
+0x00007fff35830000 - 0x00007fff35842000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_date_time-vc141-mt-x64-1_70.dll
+0x00007fff0d080000 - 0x00007fff0d3cf000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwms.dll
+0x00007fff35130000 - 0x00007fff35150000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_filesystem-vc141-mt-x64-1_70.dll
+0x00007fff35150000 - 0x00007fff3516c000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_thread-vc141-mt-x64-1_70.dll
+0x00007fff0be60000 - 0x00007fff0bfef000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmx.dll
+0x00007fff35170000 - 0x00007fff35198000 	C:\Program Files\MATLAB\R2020b\bin\win64\libexpat.dll
+0x00007fff0c390000 - 0x00007fff0c466000 	C:\Program Files\MATLAB\R2020b\bin\win64\libut.dll
+0x00007fff0d3d0000 - 0x00007fff0d62d000 	C:\Program Files\MATLAB\R2020b\bin\win64\icuin64.dll
+0x00007fff0c470000 - 0x00007fff0c628000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_matlabdata.dll
+0x00007fff49330000 - 0x00007fff4945a000 	C:\WINDOWS\System32\ole32.dll
+0x00007fff0ed90000 - 0x00007fff0ef21000 	C:\Program Files\MATLAB\R2020b\bin\win64\icuuc64.dll
+0x00007fff1baa0000 - 0x00007fff1bae1000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_usm.dll
+0x00007fff499c0000 - 0x00007fff49d14000 	C:\WINDOWS\System32\combase.dll
+0x00007fff48950000 - 0x00007fff48a1d000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007fff33a50000 - 0x00007fff33a5e000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmatlabdata_boost_serialization.dll
+0x00007fff32ea0000 - 0x00007fff32ebf000 	C:\WINDOWS\SYSTEM32\MPR.dll
+0x00007fff0f600000 - 0x00007fff0f6b1000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_log-vc141-mt-x64-1_70.dll
+0x00007fff13d90000 - 0x00007fff13dfa000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwlivecode.dll
+0x00007fff32ed0000 - 0x00007fff32f11000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_serialization-vc141-mt-x64-1_70.dll
+0x00007fff0f570000 - 0x00007fff0f5fb000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwcppmicroservices.dll
+0x00007fff47820000 - 0x00007fff47888000 	C:\WINDOWS\System32\WINTRUST.dll
+0x00007fff0f370000 - 0x00007fff0f3c7000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwsearch_path_utilities.dll
+0x00007fff47cf0000 - 0x00007fff47e46000 	C:\WINDOWS\System32\CRYPT32.dll
+0x00007fff0cee0000 - 0x00007fff0d077000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmst.dll
+0x00007fff350a0000 - 0x00007fff350d4000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwthreadpool.dll
+0x00007fff1ba30000 - 0x00007fff1ba96000 	C:\Program Files\MATLAB\R2020b\bin\win64\tbb.dll
+0x00007fff0bcb0000 - 0x00007fff0be53000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflstoragevfs.dll
+0x00007fff13c70000 - 0x00007fff13ce0000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwcwf_interface.dll
+0x00007fff35a50000 - 0x00007fff35a5e000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmatlabstoragesystem.dll
+0x00007fff0bb80000 - 0x00007fff0bca3000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflstorageprovider.dll
+0x00007fff35360000 - 0x00007fff3536f000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflstorageutility.dll
+0x00007fff0f410000 - 0x00007fff0f45c000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwrelease_info.dll
+0x00007fff0b430000 - 0x00007fff0b980000 	C:\Program Files\MATLAB\R2020b\bin\win64\settingscore.dll
+0x00007fff0f310000 - 0x00007fff0f365000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwsettings_in_matlab.dll
+0x00007fff33a60000 - 0x00007fff33a7c000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwstartupplugin.dll
+0x00007fff0bff0000 - 0x00007fff0c0ec000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwstartup_plugin_initializer.dll
+0x00007fff0b980000 - 0x00007fff0ba0f000 	C:\Program Files\MATLAB\R2020b\bin\win64\opccore.dll
+0x00007fff35b20000 - 0x00007fff35b2f000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmvmtransportapi.dll
+0x00007fff0b270000 - 0x00007fff0b42e000 	C:\Program Files\MATLAB\R2020b\bin\win64\opcmodel.dll
+0x00007fff0ba10000 - 0x00007fff0bb7e000 	C:\Program Files\MATLAB\R2020b\bin\win64\matlab_toolbox_events.dll
+0x00007fff13d50000 - 0x00007fff13d8c000 	C:\Program Files\MATLAB\R2020b\bin\win64\opczippackage.dll
+0x00007fff0c0f0000 - 0x00007fff0c38a000 	C:\Program Files\MATLAB\R2020b\bin\win64\execution_events.dll
+0x00007fff0f530000 - 0x00007fff0f56f000 	C:\Program Files\MATLAB\R2020b\bin\win64\string_matrix.dll
+0x00007fff35100000 - 0x00007fff3510e000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_chrono-vc141-mt-x64-1_70.dll
+0x00007fff30670000 - 0x00007fff30688000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_iostreams-vc141-mt-x64-1_70.dll
+0x00007fff0ac50000 - 0x00007fff0ad49000 	C:\Program Files\MATLAB\R2020b\bin\win64\mwboost_regex-vc141-mt-x64-1_70.dll
+0x00007fff0b140000 - 0x00007fff0b26f000 	C:\Program Files\MATLAB\R2020b\bin\win64\CppMicroServices3.dll
+0x00007fff44e30000 - 0x00007fff45014000 	C:\WINDOWS\SYSTEM32\dbghelp.dll
+0x00007fff488f0000 - 0x00007fff48945000 	C:\WINDOWS\System32\SHLWAPI.dll
+0x00007fff475a0000 - 0x00007fff475eb000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
+0x00007fff0b060000 - 0x00007fff0b097000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmfl_permute.dll
+0x00007fff14640000 - 0x00007fff14652000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwindexingapimethods.dll
+0x00007fff0b000000 - 0x00007fff0b05f000 	C:\Program Files\MATLAB\R2020b\bin\win64\tbbmalloc.dll
+0x0000000059e80000 - 0x0000000059e9a000 	C:\Program Files\MATLAB\R2020b\bin\win64\zlib1.dll
+0x00007fff32ec0000 - 0x00007fff32ecd000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflstrings.dll
+0x00007fff1ba10000 - 0x00007fff1ba21000 	C:\Program Files\MATLAB\R2020b\bin\win64\icuio64.dll
+0x00007fff0aba0000 - 0x00007fff0ac42000 	C:\Program Files\MATLAB\R2020b\bin\win64\opcmwservices.dll
+0x00007fff0a040000 - 0x00007fff0a35a000 	C:\Program Files\MATLAB\R2020b\bin\win64\xerces-c_3_2.dll
+0x00007fff32d20000 - 0x00007fff32d2c000 	C:\WINDOWS\SYSTEM32\Secur32.dll
+0x00007fff0ed70000 - 0x00007fff0ed89000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwsearch_path_interfaces.dll
+0x00007fff0aa00000 - 0x00007fff0aaa6000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwstoragefilefolderobserver.dll
+0x00007fff0b100000 - 0x00007fff0b140000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmsr.dll
+0x00007fff46e30000 - 0x00007fff46e9a000 	C:\WINDOWS\SYSTEM32\MSWSOCK.dll
+0x00007fff0ad50000 - 0x00007fff0b000000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflnetwork.dll
+0x00007fff0f3f0000 - 0x00007fff0f40e000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflstorageevents.dll
+0x00007fff0b0a0000 - 0x00007fff0b0f5000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_json.dll
+0x00007fff0a410000 - 0x00007fff0a490000 	C:\Program Files\MATLAB\R2020b\bin\win64\xmlcore.dll
+0x00007fff0a900000 - 0x00007fff0a9f3000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_matlabdata_standalone.dll
+0x00007fff0a7e0000 - 0x00007fff0a8f5000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_matlabdata_json.dll
+0x00007fff0aab0000 - 0x00007fff0ab99000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwsearch_path_events.dll
+0x00007fff0a7b0000 - 0x00007fff0a7d9000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwnativedialogs.dll
+0x00007fff0a750000 - 0x00007fff0a7a2000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflcrypto.dll
+0x00007fff0a710000 - 0x00007fff0a750000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflcryptoutils.dll
+0x00007fff0a4f0000 - 0x00007fff0a70f000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflcryptocryptopp.dll
+0x00007fff0a490000 - 0x00007fff0a4e7000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwflcertificates.dll
+0x00007fff0ea30000 - 0x00007fff0ea41000 	C:\Program Files\MATLAB\R2020b\bin\win64\libminizip.dll
+0x00007fff0a380000 - 0x00007fff0a40b000 	C:\Program Files\MATLAB\R2020b\bin\win64\mcos.dll
+0x00007fff46b20000 - 0x00007fff46b5b000 	C:\WINDOWS\SYSTEM32\IPHLPAPI.DLL
+0x00007fff0a360000 - 0x00007fff0a376000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwdtoa.dll
+0x00007fff0a020000 - 0x00007fff0a040000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwmodule_descriptor_interfaces.dll
+0x00007fff1ba00000 - 0x00007fff1ba0e000 	C:\Program Files\MATLAB\R2020b\bin\win64\libmwfoundation_matlabjson_frontend.dll
+0x00007fff09d60000 - 0x00007fff0a01f000 	C:\Program Files\MATLAB\R2020b\bin\win64\libcrypto-1_1-x64.dll
+0x00007fff09cb0000 - 0x00007fff09d5c000 	C:\Program Files\MATLAB\R2020b\bin\win64\libssl-1_1-x64.dll
+0x00007fff47600000 - 0x00007fff47632000 	C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+0x000001f392dc0000 - 0x000001f394804000 	C:\Program Files\MATLAB\R2020b\bin\win64\icudt64.dll
+0x00007fff47580000 - 0x00007fff47592000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
+0x00007fff48830000 - 0x00007fff48860000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007fff47260000 - 0x00007fff47272000 	C:\WINDOWS\SYSTEM32\MSASN1.dll
+0x00007fff47040000 - 0x00007fff4704c000 	C:\WINDOWS\SYSTEM32\CRYPTBASE.DLL
+0x00007fff47ff0000 - 0x00007fff48072000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007fff09c00000 - 0x00007fff09ca3000 	C:\Program Files\MATLAB\R2020b\bin\win64\DeclarativeServices1.dll
+0x00007fff0f3e0000 - 0x00007fff0f3e9000 	C:\Program Files\MATLAB\R2020b\bin\win64\usLogService.dll
+0x00007fff09be0000 - 0x00007fff09bf3000 	C:\Program Files\MATLAB\R2020b\bin\win64\usServiceComponent.dll
+0x00007fff09bc0000 - 0x00007fff09bdb000 	C:\Program Files\MATLAB\R2020b\bin\win64\cppmicroservices_compendium\foundation\cppmicroservices\logserviceimpl\mwLogServiceImpl.dll
+0x00007fff09ba0000 - 0x00007fff09bbc000 	C:\Program Files\MATLAB\R2020b\bin\win64\matlab_startup_plugins\connector\openssl_initializer\libmwconnectoropensslinitializer.dll
+0x00007fff09ab0000 - 0x00007fff09b9d000 	C:\Program Files\MATLAB\R2020b\bin\win64\PocoNet64.dll
+0x00007fff09a70000 - 0x00007fff09aaa000 	C:\Program Files\MATLAB\R2020b\bin\win64\PocoNetSSL64.dll
+0x00007fff09900000 - 0x00007fff09a6a000 	C:\Program Files\MATLAB\R2020b\bin\win64\PocoFoundation64.dll
+0x00007fff098d0000 - 0x00007fff09900000 	C:\Program Files\MATLAB\R2020b\bin\win64\PocoCrypto64.dll
+
+VM Arguments:
+jvm_args: -Xms64m -XX:NewRatio=3 -Xmx8152m -XX:MaxDirectMemorySize=2147400000 -Dsun.java2d.noddraw=true -Dsun.awt.nopixfmt=true -Xshare:off -Djava.ext.dirs=C:\Program Files\MATLAB\R2020b\sys\java\jre\win64\jre\lib\ext -Djogamp.gluegen.UseTempJarCache=false -Djogl.disable.opengles=1 -Djogl.windows.cpu_affinity_mode=0 -Xrs -Djava.library.path=C:\Program Files\MATLAB\R2020b\bin\win64;C:\Program Files\MATLAB\R2020b\sys\jxbrowser\win64\lib vfprintf -XX:ErrorFile=C:\Users\EXPERI~1\AppData\Local\Temp\hs_error_pid13228.log abort -Duser.language=en -Duser.country=GB -Dfile.encoding=Cp1252 -XX:ParallelGCThreads=6 
+java_command: <unknown>
+java_class_path (initial): C:\Program Files\MATLAB\R2020b\java\patch;C:\Program Files\MATLAB\R2020b\java\jar\jmi.jar;C:\Program Files\MATLAB\R2020b\java\jar\util.jar;C:\Program Files\MATLAB\R2020b\java\jar\mvm.jar;C:\Program Files\MATLAB\R2020b\java\jar\services.jar;C:\Program Files\MATLAB\R2020b\java\jarext\commons-io.jar;C:\Program Files\MATLAB\R2020b\java\jar\cfbutils.jar;C:\Program Files\MATLAB\R2020b\java\jar\capabilities.jar;C:\Program Files\MATLAB\R2020b\java\jar\mlwidgets.jar;C:\Program Files\MATLAB\R2020b\java\jar\html.jar;C:\Program Files\MATLAB\R2020b\java\jar\net.jar;C:\Program Files\MATLAB\R2020b\java\jar\ddux_api.jar;C:\Program Files\MATLAB\R2020b\java\jarext\log4j.jar;C:\Program Files\MATLAB\R2020b\java\jar\mwswing.jar;C:\Program Files\MATLAB\R2020b\java\jar\common.jar;C:\Program Files\MATLAB\R2020b\java\jarext\google-collect.jar;C:\Program Files\MATLAB\R2020b\java\jarext\commons-lang.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-common.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-dock.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-action.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-components.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-grids.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-dialogs.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-shortcut.jar;C:\Program Files\MATLAB\R2020b\java\jarext\jide\jide-charts.jar;C:\Program Files\MATLAB\R2020b\java\jar\toolstrip.jar;C:\Program Files\MATLAB\R2020b\java\jar\mlservices.jar;C:\Program Files\MATLAB\R2020b\java\jar\widgets.jar;C:\Program Files\MATLAB\R2020b\java\jar\mde.jar;C:\Program Files\MATLAB\R2020b\java\jar\explorer.jar;C:\Program Files\MATLAB\R2020b\java\jar\explorer_api.jar;C:\Program Files\MATLAB\R2020b\java\jar\desktop.jar;C:\Program Files\MATLAB\R2020b\java\jar\addons.jar;C:\Program Files\MATLAB\R2020b\java\jar\addons_common.jar;C:\Program Files\MATLAB\R2020b\java\jarext\connector_api\msscommon\msscommon.jar;C:\P
+Launcher Type: generic
+
+Environment Variables:
+PATH=C:\Program Files\MATLAB\R2020b\toolbox\imaq\imaqextern\drivers\win64\genicam\GenICam_V3_1_0\bin\Win64_x64;C:\Program Files\MATLAB\R2020b\bin\win64;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\MATLAB\R2020b\bin;C:\Program Files\Git\cmd;C:\Program Files\Point Grey Research\FlyCap2 Viewer\bin64;%FC2PATH\vs2013;C:\Program Files\Point Grey Research\FlyCap2 Viewer\bin64\vs2015;C:\Program Files\Point Grey Research\Spinnaker\bin64\vs2015;C:\Program Files\Point Grey Research\Spinnaker\bin\vs2015;C:\Users\Experiment\AppData\Local\Microsoft\WindowsApps;C:\Users\Experiment\anaconda3\condabin;C:\Users\Experiment\anaconda3\Scripts;
+USERNAME=Experiment
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 165 Stepping 5, GenuineIntel
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 10.0 , 64 bit Build 19041 (10.0.19041.1706)
+
+CPU:total 20 (initial active 20) (10 cores per cpu, 2 threads per core) family 6 model 165 stepping 5, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, avx, avx2, aes, clmul, erms, 3dnowpref, lzcnt, ht, tsc, tscinvbit, bmi1, bmi2, adx
+
+Memory: 4k page, physical 33392416k(28289696k free), swap 38373152k(33498904k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (25.202-b08) for windows-amd64 JRE (1.8.0_202-b08), built on Dec 15 2018 19:54:30 by "java_re" with MS VC++ 10.0 (VS2010)
+
+time: Mon May 30 12:40:08 2022
+timezone: GMT Daylight Time
+elapsed time: 15031 seconds (0d 4h 10m 31s)
+
