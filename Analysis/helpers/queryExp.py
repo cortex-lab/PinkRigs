@@ -6,12 +6,16 @@ from pathlib import Path
 
 def check_date_selection(date_selection,dateList):
     date_range = []
-    if 'last' in date_selection: 
+    date_range_called = False # when a from to type of date range called. Otherwise date_selection is treated as list of dates 
+    if 'last' in date_selection:
+        date_range_called = True 
         date_selection = date_selection.split('last')[1]
         date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
         date_range.append(datetime.datetime.today())
     else:
         if type(date_selection) is not list:
+            # here the data selection becomes a list anyway
+            date_range_called = True 
             date_selection=date_selection.split(':')
         
         for d in date_selection:
@@ -24,10 +28,13 @@ def check_date_selection(date_selection,dateList):
     for date in dateList:
         exp_date = datetime.datetime.strptime(date,'%Y-%m-%d')
 
-        if type(date_selection) is list: 
-            IsGoodDate= True in ([exp_date==date_range[i] for i in range(len(date_range))])
-        else: 
+        # check for the dates
+        if date_range_called:
             IsGoodDate = (exp_date >= date_range[0]) & (exp_date <= date_range[1])
+        else: 
+            IsGoodDate= True in ([exp_date==date_range[i] for i in range(len(date_range))])           
+
+
         if IsGoodDate:
             selected_dates.append(True)
         else:
@@ -78,7 +85,23 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
             if 'all' not in expDef:
                 expList = expList[expList.expDef.str.contains(expDef)]
             if 'all' not in expDate: 
-                selected_dates = check_date_selection(expDate,expList.expDate)
+                # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
+
+                if 'postImplant' in expDate:
+                    implant_date  = mouseList[mouseList.Subject == mm].P0_implantDate
+                    # check whether mouse was implanted at all or not.
+                    if ~implant_date.isnull().values[0]: 
+                        implant_date = implant_date.values[0]
+                        implant_date = implant_date.replace('_','-').lower()
+                        implant_date_range = implant_date + ':' + expList.expDate.iloc[-1]
+                        selected_dates = check_date_selection(implant_date_range,expList.expDate)
+                    else: 
+                        print('%s was not implanted. Why would you be calling it...?' % mm)
+                        selected_dates = np.zeros(expList.expDate.size).astype('bool')
+
+                else:  
+                    selected_dates = check_date_selection(expDate,expList.expDate)
+
                 expList = expList[selected_dates]
             if expNum:
                 expNum = (np.array(expNum)).astype('str')
@@ -91,6 +114,9 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
             exp2checkList.append(expList)
 
     exp2checkList = pd.concat(exp2checkList)
+    # re-index
+    exp2checkList = exp2checkList.reset_index(drop=True)
+    
 
     return exp2checkList
 
