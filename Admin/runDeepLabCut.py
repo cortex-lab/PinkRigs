@@ -3,12 +3,14 @@ import pdb
 import deeplabcut
 import os
 import glob
-# For accessing files on server
-from gi.repository import Gio
 import pandas as pd
 import yaml
 import re
 import shutil
+import socket   # to get computer name
+# For accessing files on server
+if 'Zelda' not in socket.gethostname():
+    from gi.repository import Gio
 
 def get_pinkrig_pcs(mouse_info_folder, subset_mice_to_use=None,
                     subset_date_range=None, default_server_path=None):
@@ -94,7 +96,7 @@ def main():
                        'analyze_video', 'create_labeled_video', 'filter_predictions', 'plot_trajectories',
                        'extract_outlier_frames', 'add_video', 'upload_model_to_server', 'download_model_from_server']
 
-    steps_to_run = ['create_labeled_video']
+    steps_to_run = ['analyze_video']
 
     process_params = {
         'analyze_video': dict(
@@ -119,8 +121,14 @@ def main():
     elif projectName == 'pinkrigs':
         # working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code'
         # working_directory = os.path.join(working_directory, 'AVRigDLC')
-        working_directory = '/home/timothysit/AVRigDLC/'
-        remote_working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code/AVRigDLC'
+        if 'Zelda' in socket.gethostname():
+            # working_directory = '//zserver/code/AVRigDLC' # 'C:/Users/Experiment/Desktop'
+            # remote_working_directory = '//zserver/code/AVRigDLC'
+            working_directory = 'C:/Users/Experiment/Desktop'
+            remote_working_directory = working_directory
+        else:
+            working_directory = '/home/timothysit/AVRigDLC/'
+            remote_working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code/AVRigDLC'
 
 
     project_custom_configs = {
@@ -192,10 +200,12 @@ def main():
                     ],
         'pinkrigs': [
             # '/home/timothysit/passive-av-videos/2022-03-18_2_AV003_eyeCam.mj2'
-            os.path.join(main_folder, '2022-06-09_3_AV014_eyeCam.mj2'),
-            os.path.join(main_folder, '2022-07-25_1_AV020_eyeCam.mj2'),
-            os.path.join(main_folder, '2022-08-02_5_AV020_eyeCam.mj2'),
-            os.path.join(main_folder, '2022-08-03_4_AV015_eyeCam.mj2'),
+            # os.path.join(main_folder, '2022-06-09_3_AV014_eyeCam.mj2'),
+            # os.path.join(main_folder, '2022-07-25_1_AV020_eyeCam.mj2'),
+            # os.path.join(main_folder, '2022-08-02_5_AV020_eyeCam.mj2'),
+            # os.path.join(main_folder, '2022-08-03_4_AV015_eyeCam.mj2'),
+            # '//zaru.cortexlab.net/Subjects/AV015/2022-07-18/2/2022-07-18_2_AV015_eyeCam.mj2'
+            'C:/Users/Experiment/Desktop/pinkrigs-Tim-2022-09-12/videos/2022-07-18_2_AV015_eyeCam.mj2'
         ]
     }
 

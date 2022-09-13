@@ -63,7 +63,7 @@ acqLiveOutput.DaqChannelID = 'port0/line1';
 
 % Package the outputs (VERY IMPORTANT: acq triggers illum, so illum must be
 % set up BEFORE starting acqLive output)
-timeline.Outputs = [chronoOutput,acqLiveOutput,camSyncOutput];
+timeline.Outputs = [chronoOutput,acqLiveOutput];
 
 % Configure live "oscilliscope"
 timeline.LivePlot = true;
