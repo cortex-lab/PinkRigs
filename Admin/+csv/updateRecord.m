@@ -191,7 +191,7 @@ if ~strcmpi(probeInfo.probeType{1}, 'Acute')
     end
 else
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
-    potentialProbes = 1; 
+    potentialProbes = length(alignment.ephys);
 end
 
 
