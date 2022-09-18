@@ -18,7 +18,7 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'multiSpaceTraining';
     elseif contains(expDef,'postactive')
         expDefRef = 'AVPassive';
-    elseif contains(expDef,'extended') || contains(expDef,'spatialIntegrationFlora')
+    elseif contains(expDef,'extended') || contains(expDef,'spatialIntegrationFlora') || contains(expDef,'updatechecker')
         expDefRef = 'AVPassive_extended';
     elseif contains(expDef,'Vid')
         expDefRef = 'spontaneous';
