@@ -162,7 +162,7 @@ function extractExpData(varargin)
                                     % write a json file in target ONE that
                                     % contains the string of the IBL
                                     % format file 
-                                    IBLFormatFolder = fullfile(alignment.ephys(probeNum).ephysPath,KSFolder,'ibl_format');
+                                    IBLFormatFolder = fullfile(KSFolder,'ibl_format');
                                     saveErrMess(IBLFormatFolder,fullfile(probeONEFolder, sprintf('_av_rawephys.path.%s.json',stub)))
 
                                     % Align them
