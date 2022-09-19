@@ -158,6 +158,12 @@ function extractExpData(varargin)
 
                                     % Get the spike and cluster info
                                     spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSFolder);
+                                    
+                                    % write a json file in target ONE that
+                                    % contains the string of the IBL
+                                    % format file 
+                                    IBLFormatFolder = fullfile(alignment.ephys(probeNum).ephysPath,KSFolder,'ibl_format');
+                                    saveErrMess(IBLFormatFolder,fullfile(probeONEFolder, sprintf('_av_rawephys.path.%s.json',stub)))
 
                                     % Align them
                                     spkONE.spikes.times = preproc.align.event2Timeline(spkONE.spikes.times, ...
