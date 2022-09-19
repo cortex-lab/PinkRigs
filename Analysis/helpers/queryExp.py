@@ -1,6 +1,6 @@
 import datetime
 import pandas as pd
-import re,inspect
+import re,inspect,json
 import numpy as np
 from pathlib import Path
 
@@ -64,7 +64,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     """
 
 
-    root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
+    root = Path(r'C:\Users\Flora\Documents\AVrig')
     mainCSVLoc = root / '!MouseList.csv' 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
@@ -180,11 +180,10 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     """
 
-    file_names = list(collection_folder.glob('%s*' % object))
+    file_names = list(collection_folder.glob('%s.*' % object))
     object_names = [re.split(r"\.",file.name)[0] for file in file_names]
     attribute_names = [re.split(r"\.",file.name)[1] for file in file_names]
-    expIDtag_names = [re.split(r"\.",file.name)[2] for file in file_names]
-    extensions = [re.split(r"\.",file.name)[3] for file in file_names]
+    extensions = [re.split(r"\.",file.name)[-1] for file in file_names]
 
     if 'all' in attributes: 
         attributes=attribute_names
@@ -228,9 +227,14 @@ def load_data(data_name_dict=None,**kwargs):
             'all'
             'ev_spk'
             'ev_cam_spk'
+
         if dict: nested dict that contains requested data
             {collection:{object:attribute}}
-    
+            
+            note: 
+            the raw ibl_format folder can also be called for spiking. 
+            For this, one needs to give 'probe0_raw' or 'probe1_raw' as the collection namestring. 
+            
     Returns: 
     -------------
     pd.DataFrame 
@@ -250,7 +254,19 @@ def load_data(data_name_dict=None,**kwargs):
                 # to do -- make it dependent on whether the extraction was done correctly 
 
                 exp_folder = Path(rec.expFolder)
-                ev_collection_folder = exp_folder / 'ONE_preproc' / collection
+                if 'raw' in collection and 'probe' in collection:
+                    probe_name = re.findall('probe\d',collection)[0]
+                    probe_collection_folder = exp_folder / 'ONE_preproc' / probe_name
+                    raw_path = list((probe_collection_folder).glob('_av_rawephys.path.*.json'))
+                    if len(raw_path)==1:
+                        # then a matching ephys file is found
+                        ev_collection_folder = open(raw_path[0],)
+                        ev_collection_folder = json.load(ev_collection_folder)
+                        ev_collection_folder = Path(ev_collection_folder)
+                    else: 
+                        ev_collection_folder = probe_collection_folder                
+                else:
+                    ev_collection_folder = exp_folder / 'ONE_preproc' / collection
                 
                 objects = {}
                 for object in data_name_dict[collection]:
