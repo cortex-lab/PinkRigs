@@ -8,7 +8,7 @@ function initONEFolder(ONEFolderName,fileStr)
     if exist(ONEFolderName,'dir')
         filesName = dir(ONEFolderName);
         filesName = filesName(cellfun(@(x) ~strcmp(x(1),'.'),{filesName.name}'));
-        filesName = filesName(contains({filesName.name},''));
+        filesName = filesName(contains({filesName.name},fileStr));
         for k = 1:length(filesName)
             fullFileName = fullfile(ONEFolderName, filesName(k).name);
             delete(fullFileName);
