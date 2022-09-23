@@ -61,12 +61,18 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
 
     Return: 
     :list
-        indices of target_coordinate array that correspond to local coordinates.     
+        indices of target_coordinate array that correspond to local coordinates.
+        If there was no match, the index returned will be target_coordinate_array+1.
+        (a hack with which I will take care if giving these outputs a NaN)
+
     """
     local_x = local_coordinate_array[:,0]
     local_y = local_coordinate_array[:,1]
     target_x = target_coordinate_array[:,0]
     target_y = target_coordinate_array[:,1]
+    nan_index = target_x.size 
+
+
     chan_idx = []
     for x,y in zip(local_x,local_y): 
         idx = np.where((target_x==x) & (target_y==y))[0]
@@ -89,8 +95,8 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
                         if idx.size==1: 
                             chan_idx.append(idx[0])
                         else: 
-                            chan_idx.append(np.nan)
-                            print(x,y)
+                            chan_idx.append(nan_index)
+                            #print(x,y)
 
     return chan_idx   
 
@@ -128,6 +134,14 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         # get the channels of interest and subselect
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
         sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
+
+        if np.max(sel_idx)==chan_pos.shape[0]: 
+            check_which = (sel_idx==np.max(sel_idx))
+            print('%.0f/%.0f clusters could not be assigned.' % (check_which.sum(),check_which.size))
+            # concatenate a nan array to allen_xyz,acronyms and ID.
+            allen_xyz = np.vstack((allen_xyz,np.ones(3)*np.nan))
+            region_ID, region_acronym  = np.hstack((region_ID,np.nan)),np.hstack((region_acronym,np.nan))
+
 
         allen_xyz = allen_xyz[sel_idx]
         region_ID, region_acronym = region_ID[sel_idx], region_acronym[sel_idx]
