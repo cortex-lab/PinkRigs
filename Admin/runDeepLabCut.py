@@ -8,8 +8,11 @@ import yaml
 import re
 import shutil
 import socket   # to get computer name
+import subprocess as sp
+import numpy as np
+
 # For accessing files on server
-if 'Zelda' not in socket.gethostname():
+if ('Zelda' not in socket.gethostname()) & ('zelda' not in socket.gethostname()):
     from gi.repository import Gio
 
 def get_pinkrig_pcs(mouse_info_folder, subset_mice_to_use=None,
@@ -65,6 +68,26 @@ def get_pinkrig_pcs(mouse_info_folder, subset_mice_to_use=None,
     return all_mouse_info
 
 
+def get_crop_coordinates(subset_video_path):
+
+
+
+
+    return crop_coordinates
+def run_dlc_on_video(input_video_path):
+    """
+
+    Parameters
+    ----------
+    input_video_path
+
+    Returns
+    -------
+
+    """
+
+
+    return 1
 
 def main():
     """
@@ -94,9 +117,10 @@ def main():
     supported_steps = ['create_project', 'edit_config', 'extract_frames', 'label_frames',
                        'check_labels', 'create_training_set', 'train_network', 'evaluate_network',
                        'analyze_video', 'create_labeled_video', 'filter_predictions', 'plot_trajectories',
-                       'extract_outlier_frames', 'add_video', 'upload_model_to_server', 'download_model_from_server']
+                       'extract_outlier_frames', 'add_video', 'upload_model_to_server', 'download_model_from_server',
+                       'resize_video', 'extract_subset_of_video', 'run_dlc_pipeline']
 
-    steps_to_run = ['analyze_video']
+    steps_to_run = ['run_dlc_pipeline']
 
     process_params = {
         'analyze_video': dict(
@@ -113,6 +137,15 @@ def main():
         ),
         'extract_outlier_frames': dict(
             only_use_additional_videos=True,
+        ),
+        'resize_video': dict(
+            downsize_factor=2,
+        ),
+        'extract_subset_of_video': dict(
+
+        ),
+        'run_dlc_pipeline': dict(
+
         )
     }
 
@@ -121,11 +154,11 @@ def main():
     elif projectName == 'pinkrigs':
         # working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code'
         # working_directory = os.path.join(working_directory, 'AVRigDLC')
-        if 'Zelda' in socket.gethostname():
+        if ('Zelda' in socket.gethostname()) | ('zelda' in socket.gethostname()):
             # working_directory = '//zserver/code/AVRigDLC' # 'C:/Users/Experiment/Desktop'
-            # remote_working_directory = '//zserver/code/AVRigDLC'
+            remote_working_directory = '//zserver/Code/AVRigDLC'
             working_directory = 'C:/Users/Experiment/Desktop'
-            remote_working_directory = working_directory
+            # remote_working_directory = working_directory
         else:
             working_directory = '/home/timothysit/AVRigDLC/'
             remote_working_directory = '/run/user/1000/gvfs/smb-share:server=zserver.local,share=code/AVRigDLC'
@@ -204,8 +237,9 @@ def main():
             # os.path.join(main_folder, '2022-07-25_1_AV020_eyeCam.mj2'),
             # os.path.join(main_folder, '2022-08-02_5_AV020_eyeCam.mj2'),
             # os.path.join(main_folder, '2022-08-03_4_AV015_eyeCam.mj2'),
-            # '//zaru.cortexlab.net/Subjects/AV015/2022-07-18/2/2022-07-18_2_AV015_eyeCam.mj2'
-            'C:/Users/Experiment/Desktop/pinkrigs-Tim-2022-09-12/videos/2022-07-18_2_AV015_eyeCam.mj2'
+            '//zaru.cortexlab.net/Subjects/AV015/2022-07-18/2/2022-07-18_2_AV015_eyeCam.mj2'
+            # '//zaru.cortexlab.net/Subjects/AV015/2022-07-18/2/2022-07-18_2_AV015_eyeCam_downsampled.mp4'
+            # 'C:/Users/Experiment/Desktop/pinkrigs-Tim-2022-09-12/videos/2022-07-18_2_AV015_eyeCam.mj2'
         ]
     }
 
@@ -334,8 +368,10 @@ def main():
         if not process_params['analyze_video']['only_use_additional_videos']:
             all_video_paths.extend(project_video_paths[projectName])
 
-        deeplabcut.analyze_videos(yaml_file_path, all_video_paths,
+        deeplabcut.analyze_videos(yaml_file_path, all_video_paths, dynamic=(False, 0.5, 10),
                                   save_as_csv=True)
+        # 2022-09-26: Dynamic cropping seems to decrease stanility of ROIs
+
     if 'create_labeled_video' in steps_to_run:
         project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
         project_folder = project_folder_search[0]
@@ -400,6 +436,128 @@ def main():
         local_project_path = os.path.join(working_directory, project_folder_name)
         shutil.copytree(remote_project_folder_search[0], local_project_path)
         print('Finished copying model to local computer')
+
+    if 'resize_video' in steps_to_run:
+
+        print('Resizing video')
+        downsize_factor = process_params['resize_video']['downsize_factor']
+        ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
+
+        for input_video_path in additional_video_paths[projectName]:
+            output_video_folder = os.path.dirname(input_video_path)
+            input_video_name = os.path.basename(input_video_path)
+            input_name_components = input_video_name.split('.')
+            output_video_name = input_name_components[0] + '_downsampled' + '.' + 'mp4' # input_name_components[1]
+            output_video_path = os.path.join(output_video_folder, output_video_name)
+            ffmpeg_args = [ffmpeg_path,
+                           '-i', input_video_path,
+                           '-vf', "scale='iw/%.f:ih/%.f'" % (downsize_factor, downsize_factor),
+                           output_video_path]
+            sp.call(ffmpeg_args)
+    if 'extract_subset_of_video' in steps_to_run:
+        print('Extracting subset of video')
+        ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
+
+        for input_video_path in additional_video_paths[projectName]:
+            output_video_folder = os.path.dirname(input_video_path)
+            input_video_name = os.path.basename(input_video_path)
+            input_name_components = input_video_name.split('.')
+            output_video_name = input_name_components[0] + '_subset' + '.' + 'mp4'  # input_name_components[1]
+            output_video_path = os.path.join(output_video_folder, output_video_name)
+            ffmpeg_args = [ffmpeg_path,
+                           '-ss', '0',
+                           '-i', input_video_path,
+                           '-c', 'copy',
+                           '-t', '10',
+                           output_video_path]
+            sp.call(ffmpeg_args)
+    if 'run_dlc_pipeline' in steps_to_run:
+
+        ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
+
+        for input_video_path in additional_video_paths[projectName]:
+            output_video_folder = os.path.dirname(input_video_path)
+            input_video_name = os.path.basename(input_video_path)
+            input_name_components = input_video_name.split('.')
+
+            # subset video
+            subset_video_name_without_ext = input_name_components[0] + '_subset'
+            subset_video_name = subset_video_name_without_ext + '.' + 'mp4'
+            subset_video_path = os.path.join(output_video_folder, subset_video_name)
+            ffmpeg_args = [ffmpeg_path,
+                           '-ss', '0',
+                           '-y',  # overwrite video if existing subset video exists
+                           '-i', input_video_path,
+                           '-c', 'copy',
+                           '-t', '10',
+                           subset_video_path]
+            sp.call(ffmpeg_args)
+
+            # run deeplabcut on subset video
+            project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
+            project_folder = project_folder_search[0]
+            yaml_file_path = os.path.join(project_folder, 'config.yaml')
+
+            deeplabcut.analyze_videos(yaml_file_path, [subset_video_path], dynamic=(False, 0.5, 10),
+                                      save_as_csv=True)
+
+            # TODO: read csv file to get the coordinates to crop
+            subset_vid_h5_path = glob.glob(os.path.join(
+                output_video_folder,
+                '*%s*.h5' % (subset_video_name_without_ext)
+            ))[0]
+
+            subset_vid_output_df = pd.read_hdf(subset_vid_h5_path) # pandas multindex
+            scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+
+            pad_pixels = 20
+            eyeL_xvals = np.array([x[(scorer_name, 'eyeL', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+            eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+
+            eyeU_yvals = np.array([x[(scorer_name, 'eyeU', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+            eyeD_yvals = np.array([x[(scorer_name, 'eyeD', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+
+
+            eyeL_xvals[eyeL_xvals < 0] = np.mean(eyeL_xvals)
+            eyeR_xvals[eyeR_xvals < 0] = np.mean(eyeR_xvals)
+            eyeU_yvals[eyeU_yvals < 0] = np.mean(eyeU_yvals)
+            eyeD_yvals[eyeD_yvals < 0] = np.mean(eyeD_yvals)
+
+            crop_window = [
+                np.mean(eyeL_xvals) - pad_pixels,
+                np.mean(eyeR_xvals) + pad_pixels,
+                np.mean(eyeU_yvals) - pad_pixels,
+                np.mean(eyeD_yvals) + pad_pixels,
+            ]
+
+            # pdb.set_trace()
+
+            # update config file with parameters
+            yaml_file_path = os.path.join(project_folder, 'config.yaml')
+            with open(yaml_file_path) as f:
+                yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+                yaml_data['cropping'] = True
+                yaml_data['x1'] = int(crop_window[0])
+                yaml_data['x2'] = int(crop_window[1])
+                yaml_data['y1'] = int(crop_window[2])
+                yaml_data['y2'] = int(crop_window[3])
+
+            # save config
+            print('Saving new config file')
+            with open(yaml_file_path, 'w') as f:
+
+                yaml.dump(yaml_data, f)
+
+            #  pdb.set_trace()
+            deeplabcut.analyze_videos(yaml_file_path, [input_video_path], dynamic=(False, 0.5, 10),
+                                      save_as_csv=True) # cropping=crop_window)
+            deeplabcut.create_labeled_video(yaml_file_path, [input_video_path],
+                                            displaycropped=True)
+            # pdb.set_trace()
+
+
+
+
 
 if __name__ == '__main__':
     main()
