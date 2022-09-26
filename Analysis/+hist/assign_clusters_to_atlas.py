@@ -1,7 +1,14 @@
-import json,re
+import json,re,glob
 import numpy as np
+from pathlib import Path
 from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25)
+
+# the stupid matlab folder structure doing the +kilo. 
+kilofolder = __import__("Analysis.+kilo.python_.ReadSGLXData.readSGLX")
+kilo = getattr(kilofolder, "+kilo")
+readMeta = kilo.python_.ReadSGLXData.readSGLX.readMeta
+
 
 def get_chan_coordinates(root):
     """
@@ -165,3 +172,42 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         np.save(ibl_format_path / 'clusters.mlapdv.npy',allencoords_ccf_mlapdv)	
     else:
         print('we could not match channels with posititons.')  
+
+def read_probeSN_from_folder(folderpath):
+    """
+    read meta file from parent folder the .ap.bin file is in 
+    Parameters: 
+    -----------
+    folderpath: pathlib.Path
+
+    Returns: 
+    --------
+        : str
+
+    """
+    meta = readMeta(list((folderpath).glob('*.ap.cbin'))[0])
+    probe_sn = meta['imDatPrb_sn']
+
+    return probe_sn 
+
+def get_anatmap_path_same_day(ibl_format_path):
+    """
+    function to get ibl_format_paths that already contain the channel_locations.json files and match the probe serial number of the input puath
+    Parameters: 
+    -----------
+    ibl_format_path: pathlib.Path
+
+    Returns: 
+    --------
+        :list[pathlib.Path]
+    """
+
+    anatmap_list = glob.glob((ibl_format_path.parents[3] / '**/kilosort2/ibl_format/channel_locations.json').__str__(),recursive=True)
+    anatmap_paths = [(Path(p)).parent for p in anatmap_list]
+    # check if the serial number is matching
+    target_SN = read_probeSN_from_folder(ibl_format_path.parents[1])
+    is_SN_match = [read_probeSN_from_folder(p.parents[1])==target_SN for p in anatmap_paths]
+    anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
+
+    return anatmap_paths
+
