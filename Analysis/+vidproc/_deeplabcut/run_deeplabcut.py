@@ -11,6 +11,8 @@ import socket   # to get computer name
 import subprocess as sp
 import numpy as np
 
+
+
 # For accessing files on server
 if ('Zelda' not in socket.gethostname()) & ('zelda' not in socket.gethostname()):
     from gi.repository import Gio
@@ -68,12 +70,70 @@ def get_pinkrig_pcs(mouse_info_folder, subset_mice_to_use=None,
     return all_mouse_info
 
 
-def get_crop_coordinates(subset_video_path):
+def subset_video(ffmpeg_path, input_video_path, subset_start_point=0, subset_duration=10):
+    """
+    Parameters
+    ----------
+    ffmpeg_path : (str)
+        path to the ffmpeg executable
+    subset_start_point : (int, float)
+        time in seconds (preferably integers) to start reading the video
+    subset_duration : (int, float)
+        time in seconds to read onwards from the start point
+    """
+
+    output_video_folder = os.path.dirname(input_video_path)
+    input_video_name = os.path.basename(input_video_path)
+    input_name_components = input_video_name.split('.')
+
+    # subset video
+    subset_video_name_without_ext = input_name_components[0] + '_subset'
+    subset_video_name = subset_video_name_without_ext + '.' + 'mp4'
+    subset_video_path = os.path.join(output_video_folder, subset_video_name)
+    ffmpeg_args = [ffmpeg_path,
+                   '-ss', '%.f' % subset_start_point,
+                   '-y',  # overwrite video if existing subset video exists
+                   '-i', input_video_path,
+                   '-c', 'copy',
+                   '-t', '%.f' % subset_duration,
+                   subset_video_path]
+
+    sp.call(ffmpeg_args)
+
+    return subset_video_path, subset_video_name_without_ext
 
 
+def get_crop_coordinates(output_video_folder, subset_video_name_without_ext, pad_pixels=20):
+
+    subset_vid_h5_path = glob.glob(os.path.join(
+        output_video_folder,
+        '*%s*.h5' % (subset_video_name_without_ext)
+    ))[0]
+
+    subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+    scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+
+    eyeL_xvals = np.array([x[(scorer_name, 'eyeL', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+    eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+
+    eyeU_yvals = np.array([x[(scorer_name, 'eyeU', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+    eyeD_yvals = np.array([x[(scorer_name, 'eyeD', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+
+    eyeL_xvals[eyeL_xvals < 0] = np.mean(eyeL_xvals)
+    eyeR_xvals[eyeR_xvals < 0] = np.mean(eyeR_xvals)
+    eyeU_yvals[eyeU_yvals < 0] = np.mean(eyeU_yvals)
+    eyeD_yvals[eyeD_yvals < 0] = np.mean(eyeD_yvals)
+
+    crop_window = [
+        np.mean(eyeL_xvals) - pad_pixels,
+        np.mean(eyeR_xvals) + pad_pixels,
+        np.mean(eyeU_yvals) - pad_pixels,
+        np.mean(eyeD_yvals) + pad_pixels,
+    ]
+
+    return crop_window
 
 
-    return crop_coordinates
 def run_dlc_on_video(input_video_path):
     """
 
@@ -88,6 +148,46 @@ def run_dlc_on_video(input_video_path):
 
 
     return 1
+
+
+def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder):
+
+    output_video_folder = os.path.dirname(input_video_path)
+    input_video_name = os.path.basename(input_video_path)
+    input_name_components = input_video_name.split('.')
+
+    subset_video_path, subset_video_name_without_ext = subset_video(ffmpeg_path, input_video_path,
+                                     subset_start_point=0, subset_duration=10)
+
+    # run deeplabcut on subset video
+    deeplabcut.analyze_videos(yaml_file_path, [subset_video_path], dynamic=(False, 0.5, 10),
+                              save_as_csv=True)
+
+    # Get window to crop
+    crop_window = get_crop_coordinates(output_video_folder, subset_video_name_without_ext, pad_pixels=20)
+
+    # Update config file with parameters
+    yaml_file_path = os.path.join(project_folder, 'config.yaml')
+    with open(yaml_file_path) as f:
+        yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+        yaml_data['cropping'] = True
+        yaml_data['x1'] = int(crop_window[0])
+        yaml_data['x2'] = int(crop_window[1])
+        yaml_data['y1'] = int(crop_window[2])
+        yaml_data['y2'] = int(crop_window[3])
+
+    # save config
+    print('Saving new config file')
+    with open(yaml_file_path, 'w') as f:
+        yaml.dump(yaml_data, f)
+
+    deeplabcut.analyze_videos(yaml_file_path, [input_video_path], dynamic=(False, 0.5, 10),
+                              save_as_csv=True)  # cropping=crop_window)
+    deeplabcut.create_labeled_video(yaml_file_path, [input_video_path],
+                                    displaycropped=True)
+
+    return None
+
 
 def main():
     """
@@ -473,87 +573,23 @@ def main():
             sp.call(ffmpeg_args)
     if 'run_dlc_pipeline' in steps_to_run:
 
+        # TODO: add the time checks etc.
+        # TODO: get the "sessions" stuff here, then use that to get the video paths
+
         ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
 
+        # Get project folder and yaml
+        project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
+        project_folder = project_folder_search[0]
+        yaml_file_path = os.path.join(project_folder, 'config.yaml')
+
+
         for input_video_path in additional_video_paths[projectName]:
-            output_video_folder = os.path.dirname(input_video_path)
-            input_video_name = os.path.basename(input_video_path)
-            input_name_components = input_video_name.split('.')
 
-            # subset video
-            subset_video_name_without_ext = input_name_components[0] + '_subset'
-            subset_video_name = subset_video_name_without_ext + '.' + 'mp4'
-            subset_video_path = os.path.join(output_video_folder, subset_video_name)
-            ffmpeg_args = [ffmpeg_path,
-                           '-ss', '0',
-                           '-y',  # overwrite video if existing subset video exists
-                           '-i', input_video_path,
-                           '-c', 'copy',
-                           '-t', '10',
-                           subset_video_path]
-            sp.call(ffmpeg_args)
-
-            # run deeplabcut on subset video
-            project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
-            project_folder = project_folder_search[0]
-            yaml_file_path = os.path.join(project_folder, 'config.yaml')
-
-            deeplabcut.analyze_videos(yaml_file_path, [subset_video_path], dynamic=(False, 0.5, 10),
-                                      save_as_csv=True)
-
-            # TODO: read csv file to get the coordinates to crop
-            subset_vid_h5_path = glob.glob(os.path.join(
-                output_video_folder,
-                '*%s*.h5' % (subset_video_name_without_ext)
-            ))[0]
-
-            subset_vid_output_df = pd.read_hdf(subset_vid_h5_path) # pandas multindex
-            scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
-
-            pad_pixels = 20
-            eyeL_xvals = np.array([x[(scorer_name, 'eyeL', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
-            eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
-
-            eyeU_yvals = np.array([x[(scorer_name, 'eyeU', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
-            eyeD_yvals = np.array([x[(scorer_name, 'eyeD', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+            run_dlc_pipeline_on_video(input_video_path, yaml_file_path=yaml_file_path,
+                                      project_folder=project_folder)
 
 
-            eyeL_xvals[eyeL_xvals < 0] = np.mean(eyeL_xvals)
-            eyeR_xvals[eyeR_xvals < 0] = np.mean(eyeR_xvals)
-            eyeU_yvals[eyeU_yvals < 0] = np.mean(eyeU_yvals)
-            eyeD_yvals[eyeD_yvals < 0] = np.mean(eyeD_yvals)
-
-            crop_window = [
-                np.mean(eyeL_xvals) - pad_pixels,
-                np.mean(eyeR_xvals) + pad_pixels,
-                np.mean(eyeU_yvals) - pad_pixels,
-                np.mean(eyeD_yvals) + pad_pixels,
-            ]
-
-            # pdb.set_trace()
-
-            # update config file with parameters
-            yaml_file_path = os.path.join(project_folder, 'config.yaml')
-            with open(yaml_file_path) as f:
-                yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-                yaml_data['cropping'] = True
-                yaml_data['x1'] = int(crop_window[0])
-                yaml_data['x2'] = int(crop_window[1])
-                yaml_data['y1'] = int(crop_window[2])
-                yaml_data['y2'] = int(crop_window[3])
-
-            # save config
-            print('Saving new config file')
-            with open(yaml_file_path, 'w') as f:
-
-                yaml.dump(yaml_data, f)
-
-            #  pdb.set_trace()
-            deeplabcut.analyze_videos(yaml_file_path, [input_video_path], dynamic=(False, 0.5, 10),
-                                      save_as_csv=True) # cropping=crop_window)
-            deeplabcut.create_labeled_video(yaml_file_path, [input_video_path],
-                                            displaycropped=True)
-            # pdb.set_trace()
 
 
 

@@ -27,7 +27,7 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
             elecInd(c) = str2double(chanProp{5});
         elseif numel(chanProp) == 4
             if c == 1
-                warning('WATCH OUT: IMRO seems to be a 1 shank version--watch out for staggered vs. aligned?')
+                warning('WATCH OUT: IMRO seems to be a Npx2.0 1 shank version--watch out, not sure what the chanMap is?')
                 %%% Have a bette way to check that?
                 probeType = '2SS';
             end
@@ -45,7 +45,7 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
             chans(c) = str2double(chanProp{1}); % ???
             shank(c) = 0; % ???
             bank(c) = str2double(chanProp{2}); % ???
-            elecInd(c) = c; % ???
+            elecInd(c) = c-1; % ???
             % no idea what the others are
         end
     end
@@ -70,21 +70,8 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
     elseif contains(probeType,'1')
         % NP 1.0
         %%% VERY APPROXIMATE--whole thing is a hack
-        warning('Watch out, chan positions won''t be accurate.')
-        nElec = 2*384;   % hack
-        vSep = 20;      % hack
-        hSep = 16; % hack
+        npx1_chanMap = load('C:\Users\Hamish\OneDrive - University College London\Documents\GitHub\Kilosort2\configFiles\neuropixPhase3A_kilosortChanMap.mat');
 
-        elecPos = zeros(nElec, 2);
-
-        elecPos(1:4:end,1) = 0;                %sites 0,2,4...
-        elecPos(2:4:end,1) =  hSep;            %sites 1,3,5...
-        elecPos(3:4:end,1) =  2*hSep;            %sites 1,3,5...
-        elecPos(4:4:end,1) =  3*hSep;            %sites 1,3,5...
-
-        % fill in y values
-        viHalf = (0:(nElec/2-1))';                %row numbers
-        elecPos(1:2:end,2) = viHalf * vSep;       %sites 0,2,4...
-        elecPos(2:2:end,2) = elecPos(1:2:end,2);  %sites 1,3,5...
+        elecPos = [npx1_chanMap.xcoords npx1_chanMap.ycoords];
     end
     chanPos = elecPos(elecInd+1,:);

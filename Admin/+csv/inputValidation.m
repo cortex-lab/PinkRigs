@@ -26,9 +26,9 @@ function outP = inputValidation(varargin)
 %       The expDef input is 't' AND 's' for  'AV009', BUT 't' for 'AV007'
 
 % Set up an inputPArser object and ensures that all inputs (not just those
-% with defaults) and kept
+% with defaults) are kept
 p = inputParser;
-p.KeepUnmatched=true;
+p.KeepUnmatched = true;
 
 % Default values for subject, expDate, expNum, and expDef
 def_subject = {'active'};
@@ -39,6 +39,10 @@ def_expDef = {'all'};
 % If the input is a table (e.g. the output of csv.queryExp) then convert
 % the table to a structure where each column is a field
 tblDat = varargin(cellfun(@istable, varargin));
+if numel(tblDat)>0 && isempty(tblDat{1})
+    % Case when an empty list of exp is given.
+    def_subject = {'none'};
+end
 tblDatConverted = cellfun(@(x) table2struct(x, 'ToScalar', 1), tblDat, 'uni', 0);
 varargin(cellfun(@istable, varargin)) = tblDatConverted;
 
@@ -75,14 +79,18 @@ if ~exist('invariantParams', 'var'); invariantParams = {'svloiubsverilvub'}; end
 outP = structfun(@mkCell, outP, 'uni', 0);
 
 % Get location of the main csv and load it 
-if ~isfield(outP, 'mainCSV')
+if ~isfield(outP, 'mainCSV') || isempty(outP.mainCSV)
     mainCSVLoc = csv.getLocation('main');
     mainCSV = csv.readTable(mainCSVLoc);
 else
     mainCSV = outP.mainCSV{1};
 end
 
-%Validate subjects and interpret input optional input strings
+% Validate subjects and interpret input optional input strings
+if isempty(outP.subject)
+    % No subject. Just return.
+    return
+end
 if strcmp(outP.subject{1},'active')
     % All “active” mice in the main csv
     outP.subject = mainCSV.Subject(strcmp(mainCSV.IsActive,'1'));
@@ -94,6 +102,8 @@ elseif strcmp(outP.subject{1},'implanted')
 elseif strcmp(outP.subject{1},'all')
     % All mice in the main csv
     outP.subject = mainCSV.Subject;
+elseif strcmp(outP.subject{1},'none')
+    outP.subject = mainCSV.Subject([],:);
 end
 
 % Check that all "subjects" exist in the main csv. If not, error
@@ -106,7 +116,7 @@ validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), i
 implantDates(~validImplants) = deal({'none'});
 outP.implantDate = implantDates;
 
-% Check the lenth 
+% Check the length 
 nSubjects = length(outP.subject);
 outP.mainCSV = repmat({mainCSV}, nSubjects,1); % saves loading time later;
 paramLengths = structfun(@length, outP);
