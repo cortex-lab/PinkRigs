@@ -203,13 +203,20 @@ def load_ONE_object(collection_folder,object,attributes='all'):
                     else: 
                         output[a] = tempload
 
-            if 'pqt' in e: 
+            elif 'pqt' in e: 
                 if a in attributes:  # now I just not load the largeData
                     tempload = pd.read_parquet(f)
                     tempload = tempload.to_dict('list')
 
                     for k in tempload.keys():
                         output[k]=np.array(tempload[k])
+
+            elif 'json' in e:
+                if a in attributes:
+                    tempload = open(f,)
+                    tempload = json.load(tempload)
+                    tempload = Path(tempload)
+                    output[a] = tempload
 
     output = Bunch(output)
 

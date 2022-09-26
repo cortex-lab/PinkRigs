@@ -1,7 +1,14 @@
-import json,re
+import json,re,glob
 import numpy as np
+from pathlib import Path
 from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25)
+
+# the stupid matlab folder structure doing the +kilo. 
+kilofolder = __import__("Analysis.+kilo.python_.ReadSGLXData.readSGLX")
+kilo = getattr(kilofolder, "+kilo")
+readMeta = kilo.python_.ReadSGLXData.readSGLX.readMeta
+
 
 def get_chan_coordinates(root):
     """
@@ -61,12 +68,18 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
 
     Return: 
     :list
-        indices of target_coordinate array that correspond to local coordinates.     
+        indices of target_coordinate array that correspond to local coordinates.
+        If there was no match, the index returned will be target_coordinate_array+1.
+        (a hack with which I will take care if giving these outputs a NaN)
+
     """
     local_x = local_coordinate_array[:,0]
     local_y = local_coordinate_array[:,1]
     target_x = target_coordinate_array[:,0]
     target_y = target_coordinate_array[:,1]
+    nan_index = target_x.size 
+
+
     chan_idx = []
     for x,y in zip(local_x,local_y): 
         idx = np.where((target_x==x) & (target_y==y))[0]
@@ -89,8 +102,8 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
                         if idx.size==1: 
                             chan_idx.append(idx[0])
                         else: 
-                            chan_idx.append(np.nan)
-                            print(x,y)
+                            chan_idx.append(nan_index)
+                            #print(x,y)
 
     return chan_idx   
 
@@ -129,6 +142,14 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
         sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
 
+        if np.max(sel_idx)==chan_pos.shape[0]: 
+            check_which = (sel_idx==np.max(sel_idx))
+            print('%.0f/%.0f clusters could not be assigned.' % (check_which.sum(),check_which.size))
+            # concatenate a nan array to allen_xyz,acronyms and ID.
+            allen_xyz = np.vstack((allen_xyz,np.ones(3)*np.nan))
+            region_ID, region_acronym  = np.hstack((region_ID,np.nan)),np.hstack((region_acronym,np.nan))
+
+
         allen_xyz = allen_xyz[sel_idx]
         region_ID, region_acronym = region_ID[sel_idx], region_acronym[sel_idx]
 
@@ -151,3 +172,42 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         np.save(ibl_format_path / 'clusters.mlapdv.npy',allencoords_ccf_mlapdv)	
     else:
         print('we could not match channels with posititons.')  
+
+def read_probeSN_from_folder(folderpath):
+    """
+    read meta file from parent folder the .ap.bin file is in 
+    Parameters: 
+    -----------
+    folderpath: pathlib.Path
+
+    Returns: 
+    --------
+        : str
+
+    """
+    meta = readMeta(list((folderpath).glob('*.ap.cbin'))[0])
+    probe_sn = meta['imDatPrb_sn']
+
+    return probe_sn 
+
+def get_anatmap_path_same_day(ibl_format_path):
+    """
+    function to get ibl_format_paths that already contain the channel_locations.json files and match the probe serial number of the input puath
+    Parameters: 
+    -----------
+    ibl_format_path: pathlib.Path
+
+    Returns: 
+    --------
+        :list[pathlib.Path]
+    """
+
+    anatmap_list = glob.glob((ibl_format_path.parents[3] / '**/kilosort2/ibl_format/channel_locations.json').__str__(),recursive=True)
+    anatmap_paths = [(Path(p)).parent for p in anatmap_list]
+    # check if the serial number is matching
+    target_SN = read_probeSN_from_folder(ibl_format_path.parents[1])
+    is_SN_match = [read_probeSN_from_folder(p.parents[1])==target_SN for p in anatmap_paths]
+    anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
+
+    return anatmap_paths
+

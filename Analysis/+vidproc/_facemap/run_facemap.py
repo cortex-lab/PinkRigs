@@ -5,11 +5,11 @@ import os
 import socket
 import glob
 import pandas as pd
-import facemap
 from facemap import utils, process
 from tqdm import tqdm
 import time
 import cv2
+from pathlib import Path # I have a distinct aversion for os.path.join.
 
 # some facemap process stuff
 from io import StringIO
@@ -39,7 +39,7 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 
-from Analysis.helpers.queryExp import queryCSV
+from Analysis.helpers.queryExp import queryCSV,Bunch
 
 """
 This is a modified version of automatic_facemap.py, combined with batch_process_pinkavrig_videos.py
@@ -1085,64 +1085,70 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     Convert facemap output to ONE format
     """
 
+    facemap_output_file = Path(facemap_output_file)
 
     # Make folder for the camera
-    eye_proc_basename = os.path.basename(facemap_output_file)
+    eye_proc_basename = facemap_output_file.name
 
     exp_date = eye_proc_basename.split('_')[0]
     exp_num = eye_proc_basename.split('_')[1]
     subject = eye_proc_basename.split('_')[2]
     fov_name = eye_proc_basename.split('_')[3]
 
-    exp_folder = os.path.dirname(facemap_output_file)
-    fov_folder = os.path.join(exp_folder, 'ONE_preproc', fov_name)
+    exp_folder = facemap_output_file.parent
+    fov_folder = exp_folder / 'ONE_preproc' / fov_name
 
-    if not os.path.isdir(fov_folder):
-        os.makedirs(fov_folder)
+    if not fov_folder.is_dir():
+        fov_folder.mkdir(exist_ok=True,parents=True)
 
     # Load facemap output
     facemap_output = np.load(facemap_output_file, allow_pickle=True).item()
+    facemap_output = Bunch(facemap_output)
 
-    extension_tag = '.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name)
+    stub = '.%s_%s_%s_%s.npy' % (exp_date, exp_num, subject, fov_name)
     # Save motion SVD
-    nRois = len(facemap_output['rois'])
+    nRois = len(facemap_output.rois)
     # concatenate all svds
-    motion_svd = [m[:,:,np.newaxis] for m in facemap_output['motSVD'][1:]]
+    motion_svd = [m[:,:,np.newaxis] for m in facemap_output.motSVD[1:]]
     minPCs_to_save = np.min([m.shape[1] for m in motion_svd])
     motion_svd = np.concatenate([m[:,:minPCs_to_save,:] for m in motion_svd],axis=2)
     # shape nFrames x nRois x nPCs 
     motion_svd = np.transpose(motion_svd, (0, 2, 1))
-    motion_svd_save_path = os.path.join(fov_folder, 'camera._av_motionPCs' + extension_tag)
-    np.save(motion_svd_save_path, motion_svd)
+    #save
+    np.save(fov_folder / ('camera._av_motionPCs' + stub), motion_svd)
 
     # Save motion SVD masks for the 1st ROI // pretty arbitrary
-    motMask_reshape = facemap_output['motMask_reshape'][1]  # x pixel X y pixel X nPC
-    motion_svdmasks_save_path = os.path.join(fov_folder,
-                                        '_av_motionPCs.weights' + extension_tag)
-    np.save(motion_svdmasks_save_path, motMask_reshape)
+    motMask_reshape = facemap_output.motMask_reshape[1]  # x pixel X y pixel X nPC
+    np.save(fov_folder / ('_av_motionPCs.weights' + stub), motMask_reshape)
 
     # Save ROI position
     roi_w_h_x_y = np.array([
-        facemap_output['Lx'][0],
-        facemap_output['Ly'][0],
-        facemap_output['rois'][0]['xrange'][0],
-        facemap_output['rois'][0]['yrange'][0]
+        facemap_output.Lx[0],
+        facemap_output.Ly[0],
+        facemap_output.rois[0]['xrange'][0],
+        facemap_output.rois[0]['yrange'][0]
     ])
     roi_w_h_x_y_save_path = os.path.join(fov_folder,
-                                             'ROIMotionEnergy.position' + extension_tag)
+                                             'ROIMotionEnergy.position' + stub)
     np.save(roi_w_h_x_y_save_path, roi_w_h_x_y)
 
     # Save motion Energy
-    motion_energy = np.concatenate([m[:,np.newaxis] for m in facemap_output['motion'][1:]],axis=1)
-    motion_energy_save_path = os.path.join(fov_folder,
-                                        'camera.ROIMotionEnergy' + extension_tag)
-    np.save(motion_energy_save_path, motion_energy)
+    motion_energy = np.concatenate([m[:,np.newaxis] for m in facemap_output.motion[1:]],axis=1)
+    np.save(fov_folder / ('camera.ROIMotionEnergy' + stub), motion_energy)
 
     # Save average frame
     frame_average = facemap_output['avgframe_reshape']
-    frame_average_save_path = os.path.join(fov_folder,
-                                           'camera.ROIAverageFrame' + extension_tag)
-    np.save(frame_average_save_path, frame_average)
+    np.save(fov_folder / ('camera.ROIAverageFrame' + stub), frame_average)
+
+
+    # if the pupil analysis exists save that too 
+
+    if facemap_output.pupil:
+        pupil_dat = Bunch(facemap_output.pupil[0])            
+        [np.save(fov_folder / ('camera.pupil_%s' % k + stub), pupil_dat[k]) for k in pupil_dat.keys()]
+    if facemap_output.blink: 
+        np.save(fov_folder / ('camera.eyeblink' + stub),facemap_output.blink[0])
+
 
     return 0
 
