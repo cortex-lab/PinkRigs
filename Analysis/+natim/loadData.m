@@ -1,4 +1,4 @@
-function [data, proc] = loadData(varargin)
+function [data, proc, recPathUni] = loadData(varargin)
     %%% This function will get the natural images data (PSTHs).
     
     %% Get parameters
