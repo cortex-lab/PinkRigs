@@ -96,7 +96,7 @@ if strcmp(outP.subject{1},'active')
     outP.subject = mainCSV.Subject(strcmp(mainCSV.IsActive,'1'));
 elseif strcmp(outP.subject{1},'implanted')
     % All mice with an implant-date with a probe in the main csv
-    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mainCSV.P0_implantDate);
+    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), mainCSV.P0_implantDate);
     implanted(strcmpi(mainCSV.P0_type, 'P3B')) = 0;
     outP.subject = mainCSV.Subject(implanted);
 elseif strcmp(outP.subject{1},'all')
