@@ -1764,7 +1764,7 @@ def main(**csv_kwargs):
 
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
-    override_limit = 3  # how many times to override time checking before stopping
+    override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
