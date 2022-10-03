@@ -1754,16 +1754,17 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
         'vid_procesed_date_list': vid_processed_date_list
     })
 
-    pdb.set_trace()
-
     return progress_df
 
 
 
 def main(**csv_kwargs):
+
+    print('run_facemap called')
+
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
-    override_limit = 5  # how many times to override time checking before stopping
+    override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
@@ -1825,8 +1826,5 @@ def main(**csv_kwargs):
             print('It is after 8am, will stop running facemap')
             continue_running = False
 
-
-
-
 if __name__ == '__main__':
-    main(subject = 'allActive',expDate = 'last10')
+    main(subject = 'all',expDate = 'last100')
