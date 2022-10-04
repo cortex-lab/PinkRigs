@@ -113,9 +113,14 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
 
             exp2checkList.append(expList)
 
-    exp2checkList = pd.concat(exp2checkList)
-    # re-index
-    exp2checkList = exp2checkList.reset_index(drop=True)
+    if len(exp2checkList)>0:
+        exp2checkList = pd.concat(exp2checkList)
+        # re-index
+        exp2checkList = exp2checkList.reset_index(drop=True)
+    
+    else: 
+        print('you did not call any experiments.')
+        exp2checkList = None
     
 
     return exp2checkList
