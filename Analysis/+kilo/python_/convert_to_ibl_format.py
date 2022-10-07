@@ -56,7 +56,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     print(date_selection)
 
     # check which mice are active on Master csv
-    root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
+    root = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
     master_csv = pd.read_csv(root / '!MouseList.csv')
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject

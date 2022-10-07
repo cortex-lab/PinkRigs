@@ -12,7 +12,7 @@ from email.mime.image import MIMEImage
 
 def send_email(mname):
     # Get sender and receiver emails.    
-    with open(r'\\zserver.cortexlab.net\Code\AVrig\Helpers\AVrigEmail.txt') as f:
+    with open(r'\\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers\AVrigEmail.txt') as f:
         sender_email,pwd = f.read().splitlines()
     receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
@@ -45,7 +45,7 @@ def send_email(mname):
     server.sendmail(sender_email,receivers_email,msg.as_string())
 
 
-basepath = r'\\zserver.cortexlab.net\Code\AVrig'
+basepath = r'\\zinu.cortexlab.net\Subjects\PinkRigs'
 mouseList = pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice = mouseList['Subject'][mouseList['IsActive']==1].values
 

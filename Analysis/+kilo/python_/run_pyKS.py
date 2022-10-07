@@ -106,7 +106,7 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
     
     """
 
-    root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
+    root = r'\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers'
     queue_csv_file = '%s\pykilosort_queue.csv' % root
     queue_csv = pd.read_csv(queue_csv_file)
     if overwrite: 

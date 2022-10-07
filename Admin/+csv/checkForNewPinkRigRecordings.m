@@ -8,6 +8,7 @@ function checkForNewPinkRigRecordings(varargin)
 % NOTE "expDate" can be 'all'--faster than a bit integer
 varargin = ['expDate', {0}, varargin];
 varargin = ['recompute', {0}, varargin];
+varargin = ['subject', 'active', varargin];
 params = csv.inputValidation(varargin{:});
 
 % Take first value since these inputs cannot differ between mice
