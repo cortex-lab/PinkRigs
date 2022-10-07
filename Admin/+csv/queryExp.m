@@ -15,7 +15,6 @@ checkFields = {'checkTimeline', ...
     };
 
 defVals = cellfun(@(x) [x, {'ignore'}], checkFields, 'uni', 0);
-if istable(varargin{1}) && length(varargin) == 1; varargin = {varargin}; end
 varargin = [[defVals{:}], varargin];
 params = csv.inputValidation(varargin{:});
 
