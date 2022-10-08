@@ -30,7 +30,7 @@ end
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];
 axesOpt.gapBetweenAxes = [100 60];
-axesOpt.numOfRows = max([2 ceil(axesOpt.totalNumOfAxes/4)]);
+axesOpt.numOfRows = max([1 ceil(axesOpt.totalNumOfAxes/4)]);
 axesOpt.figureHWRatio = 1.1;
 
 glmData = cell(length(extracted.data), 1);

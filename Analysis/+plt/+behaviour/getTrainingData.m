@@ -62,7 +62,6 @@ for i = 1:length(params.subject)
         failNames = currData.expFolder(failIdx);
         cellfun(@(x) fprintf('WARNING: Files missing for %s. Skipping...\n', x), failNames);
         currData = currData(~failIdx,:);
-        extracted.validSubjects(i) = 0;
     end
     if isempty(currData)
         extracted.validSubjects(i) = 0;
