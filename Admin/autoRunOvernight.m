@@ -60,7 +60,6 @@ switch lower(computerType)
         disp(resultFacemap);
 
     case {'kilo1'}
-
         %%
         fprintf('Detected kilo computer... \n')
         fprintf('Starting now %s... \n',datestr(now))
@@ -89,6 +88,21 @@ switch lower(computerType)
             if statusTrain > 0
                 fprintf('Updating on training failed with error "%s".\n', resultTrain)
             end
+        end
+
+        if c(4) < 20 && c(4) > 2
+            %%% Bypassing preproc.main for now to go through experiments
+            %%% that have been aligned but not preprocessed... Have to fix
+            %%% it! Have to wait until it's a 0 and not a NaN when ephys
+            %%% hasn't been aligned...
+
+            fprintf('Running preprocessing...\n')
+
+            % Alignment
+            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
+
+            % Extracting data
+            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
         end
 
         c = clock;
@@ -123,21 +137,6 @@ switch lower(computerType)
         end
         disp(resultIBL);
         fprintf('Stopping now %s. \n',datestr(now))
-
-        if c(4) < 20 && c(4) > 2
-            %%% Bypassing preproc.main for now to go through experiments
-            %%% that have been aligned but not preprocessed... Have to fix
-            %%% it! Have to wait until it's a 0 and not a NaN when ephys
-            %%% hasn't been aligned...
-
-            fprintf('Running preprocessing...\n')
-
-            % Alignment
-            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
-
-            % Extracting data
-            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
-        end
 
 
     case {'kilo2'}
