@@ -10,9 +10,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
+# import PinkRig utils
+
+
 def send_email(mname):
     # Get sender and receiver emails.    
-    with open(r'\\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers\AVrigEmail.txt') as f:
+    with open(r'\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers\AVrigEmail.txt') as f:
         sender_email,pwd = f.read().splitlines()
     receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
