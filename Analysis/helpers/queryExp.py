@@ -1,8 +1,14 @@
 import datetime
 import pandas as pd
-import re,inspect,json
+import re,inspect,json,os,sys,glob
 import numpy as np
 from pathlib import Path
+
+# get PinkRig handlers 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Admin.csv_pyhandlers import get_server_location 
 
 def check_date_selection(date_selection,dateList):
     date_range = []
@@ -63,8 +69,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         concatenated csv of requested experiments and its params 
     """
 
-
-    root = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+    root = get_server_location()
     mainCSVLoc = root / '!MouseList.csv' 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
