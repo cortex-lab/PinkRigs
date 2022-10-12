@@ -11,13 +11,24 @@ varargin = ['noPlot', {0}, varargin];
 varargin = ['onlyPlt', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
 
-extracted = plt.behaviour.getTrainingData(varargin{:});
-params = csv.inputValidation(varargin{:}, extracted);
+params = csv.inputValidation(varargin{:});
+extracted = plt.behaviour.getTrainingData(params);
+for i = find(extracted.validSubjects)'
+    currBlock = extracted.data{i};
+    keepIdx = currBlock.response_direction & currBlock.is_validTrial;
+    usefulday(i) = sum(keepIdx)>0;
+end
+
+fn = fieldnames(extracted);
+for k=1:numel(fn)
+    extracted.(fn{k})(find(usefulday==0),:)=[];
+        % do stuff
+end
 
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];
 axesOpt.gapBetweenAxes = [100 60];
-axesOpt.numOfRows = max([2 ceil(axesOpt.totalNumOfAxes/4)]);
+axesOpt.numOfRows = max([1 ceil(axesOpt.totalNumOfAxes/4)]);
 axesOpt.figureHWRatio = 1.1;
 
 glmData = cell(length(extracted.data), 1);
@@ -68,8 +79,8 @@ for i = find(extracted.validSubjects)'
     contrastPower = params.contrastPower{i};
 
     visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
-    lineColors = plt.selectRedBlueColors(grids.audValues(:,1));
-    plt.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
+    lineColors = plt.general.selectRedBlueColors(grids.audValues(:,1));
+    plt.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
     plotOpt.lineStyle = 'none';
     plotOpt.Marker = '.';
@@ -85,7 +96,7 @@ for i = find(extracted.validSubjects)'
     if strcmp(params.plotType{i}, 'log')
         fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
     end
-    plt.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
+    plt.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
     
     xlim([-1 1])
     midPoint = 0.5;
@@ -101,7 +112,7 @@ for i = find(extracted.validSubjects)'
     xTickLabel(2:2:end) = deal({[]});
     set(gca, 'xTick', xTickLoc, 'xTickLabel', xTickLabel);
 
-    title(sprintf('%s: %d Tri in %d Exp', extracted.subject{i}, length(responseDir), extracted.nExp{i}))
+    title(sprintf('%s: %d Tri in %s', extracted.subject{i}, length(responseDir), extracted.blkDates{i}{1}))
     xL = xlim; hold on; plot(xL,[midPoint midPoint], '--k', 'linewidth', 1.5);
     yL = ylim; hold on; plot([0 0], yL, '--k', 'linewidth', 1.5);
 end

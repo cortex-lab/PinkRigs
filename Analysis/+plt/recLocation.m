@@ -1,7 +1,7 @@
 function recLocation(varargin)
     %%% This function will plot the location of the recordings (behavior)
     %%% performed across the whole probe(s).
-    %%% Should do it with guidata but meh for now
+    %%% I think I should do it with "guidata" but meh for now.
     
     %% Get parameters
     varargin = ['expDate', {inf}, varargin];
@@ -25,9 +25,8 @@ function recLocation(varargin)
     %% Get the probes layout
     
     % Get probes layout
-    mainCSV = csv.readTable(csv.getLocation('main'));
-    mouseIdx = strcmpi(mainCSV.Subject,params.subject);
-    probeNum = ~isempty(mainCSV(mouseIdx,:).P0_type) + ~isempty(mainCSV(mouseIdx,:).P1_type);
+    probeInfo = csv.checkProbeUse(params.subject);
+    probeNum = numel(probeInfo.serialNumbers{1});
     
     % Get the basic layout
     chanPosAll = [];
@@ -37,8 +36,8 @@ function recLocation(varargin)
     probeType = cell(probeNum,1);
     probeSerialNo = nan(probeNum,1);
     for pp = 1:probeNum
-        probeType{pp} = mainCSV(mouseIdx,:).(sprintf('P%d_type',pp-1)){1};
-        probeSerialNo(pp) = str2double(mainCSV(mouseIdx,:).(sprintf('P%d_serialNo',pp-1)){1});
+        probeType{pp} = probeInfo.probeType{1}{pp};
+        probeSerialNo(pp) = probeInfo.serialNumbers{1}(pp);
         switch probeType{pp}
             case '2.0 - 4shank'
                 % Taken from the IMRO plotting file
@@ -79,68 +78,73 @@ function recLocation(varargin)
     chanExpRef = cell(size(chanPosAll,1),1);
     plotBehData = cell(size(exp2checkList,1),1);
     for ee = 1:size(exp2checkList,1)
-        
+
         % Get exp info
         expInfo = exp2checkList(ee,:);
         expPath = expInfo.expFolder{1};
-        
-        % Get which channels were recorded from
-        alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
-        load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
-        ephysPaths = {ephys.ephysPath}; clear ephys
-        
-        for pp = 1:numel(ephysPaths)
-            if ~strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
-                fprintf('Ephys not processed %s. Skipping.\n',ephysPaths{pp})
-            else
-                binFile = dir(fullfile(ephysPaths{pp},'*ap.*bin'));
-                metaData = readMetaData_spikeGLX(binFile(1).name,binFile(1).folder);
-                
-                %% Extract info from metadata
-                
-                % Which probe
-                probeSerialNoExp = str2double(metaData.imDatPrb_sn);
-                
-                % Get recorded channel location
-                % Same as in plotIMROProtocol
-                out = regexp(metaData.imroTbl,'\(|\)(|\)','split');
-                out(1:2) = []; % empty + extra channel or something?
-                out(end) = []; % empty
-                
-                chans = nan(1,numel(out));
-                shank = nan(1,numel(out));
-                bank = nan(1,numel(out));
-                elecInd = nan(1,numel(out));
-                for c = 1:numel(out)
-                    chanProp = regexp(out{c},' ','split');
-                    chans(c) = str2double(chanProp{1});
-                    shank(c) = str2double(chanProp{2});
-                    bank(c) = str2double(chanProp{3});
-                    % 4 is refElec
-                    elecInd(c) = str2double(chanProp{5});
-                end
-                chanPosRec = elecPos{probeSerialNo == probeSerialNoExp}(elecInd+1,:);
-                
-                for sI = 0:3
-                    cc = find(shank == sI);
-                    chanPosRec(cc,1) = chanPosRec(cc,1) + shankSep*sI;
-                end
-                
-                % Assign experiment ref to channels
-                for c = 1:size(chanPosRec,1)
-                    chanIdx = all(chanPosAll == chanPosRec(c,:),2) & (chanProbeSerialNoAll == probeSerialNoExp);
-                    chanExpRef{chanIdx} = [chanExpRef{chanIdx} ee];
-                end
-            end
-        end
-        
+
         % Get behavior
-        plotBehData(ee) = plt.behaviour.boxPlots('subject',params.subject, ...
+        plotBehData_tmp = plt.behaviour.boxPlots('subject',params.subject, ...
             'expDate',expInfo.expDate,...
             'expDef', expInfo.expDef, ...
             'expNum', expInfo.expNum, ...
             'plotType', 'res', ...
             'noPlot', 1);
+
+        if plotBehData_tmp{1}.totTrials > 0 
+            % Save it
+            plotBehData(ee) = plotBehData_tmp;
+
+            % Get which channels were recorded from
+            alignmentFile = dir(fullfile(expPath,'*alignment.mat'));
+            load(fullfile(alignmentFile.folder, alignmentFile.name), 'ephys');
+            ephysPaths = {ephys.ephysPath}; clear ephys
+
+            for pp = 1:numel(ephysPaths)
+                if ~strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
+                    fprintf('Ephys not processed %s. Skipping.\n',ephysPaths{pp})
+                else
+                    binFile = dir(fullfile(ephysPaths{pp},'*ap.*bin'));
+                    metaData = readMetaData_spikeGLX(binFile(1).name,binFile(1).folder);
+
+                    %% Extract info from metadata
+
+                    % Which probe
+                    probeSerialNoExp = str2double(metaData.imDatPrb_sn);
+
+                    % Get recorded channel location
+                    % Same as in plotIMROProtocol
+                    out = regexp(metaData.imroTbl,'\(|\)(|\)','split');
+                    out(1:2) = []; % empty + extra channel or something?
+                    out(end) = []; % empty
+
+                    chans = nan(1,numel(out));
+                    shank = nan(1,numel(out));
+                    bank = nan(1,numel(out));
+                    elecInd = nan(1,numel(out));
+                    for c = 1:numel(out)
+                        chanProp = regexp(out{c},' ','split');
+                        chans(c) = str2double(chanProp{1});
+                        shank(c) = str2double(chanProp{2});
+                        bank(c) = str2double(chanProp{3});
+                        % 4 is refElec
+                        elecInd(c) = str2double(chanProp{5});
+                    end
+                    chanPosRec = elecPos{probeSerialNo == probeSerialNoExp}(elecInd+1,:);
+
+                    for sI = 0:3
+                        cc = find(shank == sI);
+                        chanPosRec(cc,1) = chanPosRec(cc,1) + shankSep*sI;
+                    end
+
+                    % Assign experiment ref to channels
+                    for c = 1:size(chanPosRec,1)
+                        chanIdx = all(chanPosAll == chanPosRec(c,:),2) & (chanProbeSerialNoAll == probeSerialNoExp);
+                        chanExpRef{chanIdx} = [chanExpRef{chanIdx} ee];
+                    end
+                end
+            end
+        end
     end
     
     %%  Build the different probe images
@@ -169,7 +173,7 @@ function recLocation(varargin)
     
     recNumPerChan = cellfun(@(x) size(x,2), chanExpRef);
     nCol = 4;
-    nRow = ceil(max(recNumPerChan)/(nCol-1));
+    nRow = max(1,ceil(max(recNumPerChan)/(nCol-1)));
     
     % Set the layout for the probes
     axesProbes = subplot(nRow,nCol,(0:nRow-1)*nCol+1); hold all
@@ -238,18 +242,18 @@ function recLocation(varargin)
         
         for pp = 1:probeNum
             for ee = 1:size(fullProbeScan,2)
-                if ~(fullProbeMatch(ee,probeNum)==0)
-                    exp = exp2checkListClu(fullProbeMatch(ee,probeNum),:);
+                if ~(fullProbeMatch(ee,pp)==0)
+                    expInfo = exp2checkListClu(fullProbeMatch(ee,pp),:);
                     
+                    disp(expInfo.expDate);
+                    clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                        object={'clusters'}, ...
+                        attribute={{'_av_KSLabels';'_av_xpos';'depths'}});
+                    KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
+                    xpos = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.xpos;
+                    depths = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.depths;
 
-                    templates = csv.loadData(exp,dataType={sprintf('probe%d',pp-1)}, ...
-                        object={'templates'}, ...
-                        attribute={{{'_av_KSLabels','_av_xpos','depths'}}});
-                    KSLabels = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.KSLabels;
-                    xpos = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.xpos;
-                    depths = templates.dataSpikes{1}.(sprintf('probe%d',pp-1)).templates.depths;
-
-                    goodUnits = KSLabels == 1;
+                    goodUnits = KSLabels == 2;
 
                     scatter(xpos(goodUnits) + (pp-1)*sum(shankNum)*shankSep + shankSep/3, ...
                         depths(goodUnits),...

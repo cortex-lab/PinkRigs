@@ -60,8 +60,8 @@ if max(stimTimeInds{1})>length(timelineRefTimes)
 end 
 
 %
-stimTimes = cellfun(@(x)timelineRefTimes(x), stimTimeInds, 'uni', false); 
-stimTimes = stimTimes{1}; 
+
+stimTimes = timelineRefTimes(stimTimeInds{1}); 
 stimPositions = stimPositions{1}; % stim positions in yx 
 stimArrayTimes = timelineRefTimes;
 

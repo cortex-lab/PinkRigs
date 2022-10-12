@@ -4,7 +4,7 @@ if ~iscell(spk); spk  = {spk}; end
 if iscell(eventTimes); eventTimes = eventTimes{1}; end
 eventTimes(isnan(eventTimes)) = [];
 
-if ~exist('tWin', 'var') || isempty(tWin); tWin = [-0.5 -0.01 0.01 0.5];
+if ~exist('tWin', 'var') || isempty(tWin); tWin = [-0.3 -0.01 0.01 0.3];
 elseif numel(tWin)~=4; error('tWin should be 1x4 vector');
 elseif ~all([(tWin(1:2)<=0) (tWin(3:4)>=0)]); error('pre/post windows should be negative/positive (or zero)');
 end
@@ -12,9 +12,9 @@ end
 % Note: this looping is faster because it means smaller subsets are indexed when searching.
 sigResults = struct;
 for i = 1:length(spk)
-    spkTimes = spk{i}.spikes.time;
-    spkCluster = spk{i}.spikes.cluster;
-    clusterIDs = [spk{i}.clusters.ID]';
+    spkTimes = spk{i}.spikes.times;
+    spkCluster = spk{i}.spikes.clusters;
+    clusterIDs = [spk{i}.clusters.IDs]';
 
     matlabMod = 0;
     if min(clusterIDs) == 0

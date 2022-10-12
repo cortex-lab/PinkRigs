@@ -51,7 +51,8 @@ end
 % Check if servers are all accessible before updating anything
 serverLocations = getServersList;
 if ~all(cellfun(@(x) exist(x, 'dir'), serverLocations))
-    error('No server access so cannot update');
+    error('No server access so cannot update (%d)', ...
+        serverLocations{~cellfun(@(x) exist(x, 'dir'), serverLocations)>1});
 end
 csvData = [];
 
@@ -133,7 +134,7 @@ end
 
 % Populated nDat with some basic infro from the block file
 [~, nDat.expDef] = fileparts(blk.expDef);
-nDat.expDuration = blk.duration;
+nDat.expDuration = num2str(round(blk.duration));
 nDat.rigName = blk.rigName;
 
 % Get experiment folder contents and ONE folder contents
@@ -163,7 +164,7 @@ nDat.existEyeCam = num2str(any(contains({expFoldContents.name}','eyeCam.mj2')));
 nDat.existMic = num2str(any(contains({expFoldContents.name}','mic.mat')));
 
 % Check if there is an ephys folder
-nDat.existEphys = exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0;
+nDat.existEphys = num2str(exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0);
 
 % Record the experiment folder
 nDat.expFolder = {fileparts(blockPath)};
@@ -174,8 +175,18 @@ nDat.expFolder = {fileparts(blockPath)};
 % cameras, ephys, and microphone. Note that this begins as a vector of 6
 % values and is converted to a string later
 
+% Get the path of the alignment file. If so, check the alignment status
+alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
+
+%%%%%
+
 probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
-if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
+
+% check for acute recordings .... 
+if strcmpi(probeInfo.probeType{1}, 'Acute')
+    alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
+    potentialProbes = length(alignment.ephys);
+elseif strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
     potentialProbes = 0;
 else
     potentialProbes = length(probeInfo.serialNumbers{1});
@@ -186,10 +197,6 @@ end
 nDat.issortedKS2 = zeros(1, potentialProbes);
 nDat.issortedPyKS = zeros(1, potentialProbes);
 
-% Get the path of the alignment file. If so, check the alignment status
-alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
-
-%%%%%
 
 % Populate alignBlock, alignEphys, and alignMic
 if any(alignFile)
@@ -219,10 +226,10 @@ if any(alignFile)
     if potentialProbes == 0
         % Issue a "NaN" if no implantations in main CSV
         nDat.alignEphys = nan;
-    elseif ~nDat.existEphys && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    elseif strcmpi(nDat.existEphys, '0') && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no ephys, but less than 7 days since recording
         nDat.alignEphys = zeros(1, potentialProbes);
-    elseif ~nDat.existEphys || ~strcmpi(nDat.existTimeline, '1')
+    elseif strcmpi(nDat.existEphys, '0') || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if correspoding file or timeline doesn't exist
         nDat.alignEphys = nan*ones(1, potentialProbes);
     elseif ~isfield(alignment, 'ephys')
@@ -252,13 +259,13 @@ end
 
 %Populate alignCamera entries
 for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
-    if ~nDat.(['exist' vidName{1}]) && round(now-blk.endDateTime)<7 && nDat.existTimeline
+    if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no video, but less than 7 days since recording
         nDat.(['align' vidName{1}]) = '0';
-    elseif ~nDat.(['exist' vidName{1}]) || ~strcmpi(nDat.existTimeline, '1')
+    elseif ~strcmpi(nDat.(['exist' vidName{1}]), '1') || ~strcmpi(nDat.existTimeline, '1')
         % Issue a "NaN" if corresponding file or timeline doesn't exist
-        nDat.(['align' vidName{1}]) = NaN;
-    elseif any(contains({ONEContents.name}', [vidName{1} '.npy'], 'ignorecase', 1))
+        nDat.(['align' vidName{1}]) = 'NaN';
+    elseif any(cellfun(@(x) ~isempty(regexpi(x, ['camera.times.*' vidName{1} '.npy'], 'once')), {ONEContents.name}'))
         % Issue a "1" if an ONE file is detected
         nDat.(['align' vidName{1}]) = '1';
     elseif any(contains({ONEContents.name}', ['Error_' vidName{1} '.json'], 'ignorecase', 1))
@@ -280,22 +287,27 @@ for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     end
 
     % Check whether facemap processing exists
-    if ~isnan(nDat.(['align' vidName{1}]))
-        if any(contains({expFoldContents.name}', [vidName{1} 'Cam_proc.npy'], 'ignorecase', 1));
-            nDat.(['fMap' vidName{1}]) = '1';
-        else
-            nDat.(['fMap' vidName{1}]) = '0';
-        end
-    else
+    if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
+        % Issue a "0" if no video, but less than 7 days since recording
+        nDat.(['fMap' vidName{1}]) = '0';
+    elseif ~strcmpi(nDat.(['exist' vidName{1}]), '1') || ~strcmpi(nDat.existTimeline, '1')
+        % Issue a "NaN" if corresponding file or timeline doesn't exist
         nDat.(['fMap' vidName{1}]) = 'NaN';
+    elseif any(cellfun(@(x) ~isempty(regexpi(x, ['camera.ROIAverageFrame.*' vidName{1} '.npy'], 'once')), {ONEContents.name}'))
+        % Issue a "1" if an ONE file is detected
+        nDat.(['fMap' vidName{1}]) = '1';
+    elseif strcmpi(nDat.(['align' vidName{1}]), 'nan')
+        nDat.(['fMap' vidName{1}]) = 'NaN';
+    else
+        nDat.(['fMap' vidName{1}]) = '0';
     end
 end
 
 % Populate alignMic entry
-if ~nDat.existMic && round(now-blk.endDateTime)<7 && nDat.existTimeline
+if ~strcmpi(nDat.existMic, '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
     % Issue a "0" if no video, but less than 7 days since recording
     nDat.alignMic = '0';
-elseif ~nDat.existMic || ~strcmpi(nDat.existTimeline, '1')
+elseif ~strcmpi(nDat.existMic, '1') || ~strcmpi(nDat.existTimeline, '1')
     % Issue a "NaN" if corresponding file or timeline doesn't exist
     nDat.alignMic = NaN;
 elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
@@ -367,7 +379,7 @@ if strcmpi(nDat.alignBlock, '1')
     elseif any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.npy')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
         nDat.extractEvents = '1';
-    elseif any(contains({ONEContents.name}', 'Error.json', 'ignorecase', 1))
+    elseif any(contains({ONEContents.name}', 'GetEvError.json', 'ignorecase', 1))
         % Issue a "2" if error file is in folder
         nDat.extractEvents = '2';
     else
@@ -384,7 +396,7 @@ end
 
 % Assign status for spike extraction.
 nDat.extractSpikes = zeros(1, potentialProbes);
-for pIdx = find(nDat.issortedKS2 == 1)
+for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
     probeStr = ['probe' num2str(pIdx-1)];
@@ -401,10 +413,8 @@ for pIdx = find(nDat.issortedKS2 == 1)
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.extractSpikes(isnan(nDat.issortedKS2)) = nan;
-nDat.extractSpikes(nDat.issortedKS2 == 0) = 0;
-nDat.extractSpikes(nDat.issortedKS2 == 2) = 0;
-
+nDat.extractSpikes(isnan(nDat.issortedPyKS) & isnan(nDat.issortedKS2)) = nan;
+nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedKS2,[0 2])) = 0; % shouldn't be needed?
 
 %% This section is a final cleanup and dealing with some edge cases
 

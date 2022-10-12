@@ -1,4 +1,4 @@
-function cellRasterNew(spk, eventTimes, trialGroups, opt)
+function cellRaster(spk, eventTimes, trialGroups, opt)
 %% Cell raster "browser"
 % NOTE: Designed to operate on the output of the PinkAV Rigs pipeline.
 % Letters below are used as follows:
@@ -114,28 +114,17 @@ if isfield(opt, 'eventNames')
 else, opt.eventNames = repmat({'Not Provided'}, length(eventTimes), 1);
 end
 
+% Create anon function to remove any NaN values from the eventTimes and corresponding cells
+nanIdx = cellfun(@(x) ~isnan(x(:,1)), eventTimes, 'uni', 0);
+remNans = @(x) cellfun(@(y,z) y(z,:), x, nanIdx, 'uni', 0);
+
 %% Package gui data
 cellrasterGui = figure('color','w');
 guiData = struct;
 guiData.title = annotation('textbox', [0.25, 0.98, 0.5, 0], 'string', 'My Text', 'EdgeColor', 'none',...
     'HorizontalAlignment', 'center', 'FontSize', 14, 'FontWeight', 'bold');
 
-%%%%%% FOT TEST %%%%%%%%
-eventTimes = [eventTimes eventTimes];
-trialGroups = [trialGroups trialGroups];
-opt.sortTrials = [opt.sortTrials opt.sortTrials];
-opt.trialTickTimes = [opt.trialTickTimes opt.trialTickTimes];
-%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Create anon function to remove any NaN values from the eventTimes and corresponding cells
-nanIdx = cellfun(@(x) ~isnan(x(:,1)), eventTimes, 'uni', 0);
-remNans = @(x) cellfun(@(y,z) y(z,:), x, nanIdx, 'uni', 0);
-
 % Generate axes (with dummy data) and figure
-guiData.nExperiments = size(trialGroups,2);
-if guiData.nExperiments > 2
-    error('Cannot cope with more than 2 experiments yes...');
-end
 nCol = 4;
 nRow = 5;
 nAxes = nCol*nRow;
@@ -145,7 +134,6 @@ xlim([-0.1,1]);
 ylabel('Distance from tip (\mum)')
 xlabel('xPosition (\mum)')
 disableDefaultInteractivity(gca)
-
 
 tRef = nCol-2:nCol;
 guiData.axes.psth = subplot(nRow,nCol,tRef,'YAxisLocation','right'); hold on;

@@ -16,6 +16,10 @@ elseif contains(lower(computerName), 'kilo2')
     computerType = 'kilo2';
 elseif contains(lower(computerName), 'zippy')
     computerType = 'pips';
+elseif contains(lower(computerName), 'zestylemon')
+    computerType = 'celians';
+elseif contains(lower(computerName), 'desktop-mt7hj3j')
+    computerType = 'floras';
 else
     warning('Computer type not recognized?!')
     computerType = 'Unrecognized';

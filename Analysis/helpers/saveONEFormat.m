@@ -42,8 +42,9 @@ function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensio
 
                 var = struct2table(var);
                 largeVar = struct2table(largeVar);
+            else 
+                largeVar = [];
             end
-
 
             parquetwrite(filePath, var);
             if ~isempty(largeVar)

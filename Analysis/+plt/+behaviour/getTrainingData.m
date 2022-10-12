@@ -21,7 +21,7 @@ else
 end
 
 [extracted.subject, extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
-    ] = deal(repmat({{'X'}},length(params.subject),1));
+    ] = deal(repmat({'X'},length(params.subject),1));
 extracted.data = cell(length(params.subject),1);
 
 extracted.validSubjects = ones(length(params.subject),1);
@@ -50,7 +50,7 @@ for i = 1:length(params.subject)
     evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.extractEvents);
     if any(~evExtracted)
         fprintf('EV extractions. Will try to extract...\n')
-        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'process', 'events');
+        preproc.extractExpData(varargin{:}, currData(~evExtracted,:), 'recompute', 'events', 'process', 'events');
         currData = csv.queryExp(currData);
     end
     
@@ -62,7 +62,6 @@ for i = 1:length(params.subject)
         failNames = currData.expFolder(failIdx);
         cellfun(@(x) fprintf('WARNING: Files missing for %s. Skipping...\n', x), failNames);
         currData = currData(~failIdx,:);
-        extracted.validSubjects(i) = 0;
     end
     if isempty(currData)
         extracted.validSubjects(i) = 0;
@@ -78,7 +77,7 @@ for i = 1:length(params.subject)
     extracted.blkDates{i} = currData.expDate;
     extracted.rigNames{i} = strrep(currData.rigName, 'zelda-stim', 'Z');
 
-    loadedEV = csv.loadData(currData, 'dataType', 'ev');
+    loadedEV = csv.loadData(currData, 'dataType', 'ev', 'verbose', 0);
     dataEvents = [loadedEV.dataEvents{:}];
 
     AVParams = cell(length(dataEvents),1);

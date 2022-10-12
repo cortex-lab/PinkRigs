@@ -3,7 +3,7 @@ function csvLocation = getLocation(subject)
     %%% the main CSV if input is 'main', or the 'kilosort_queue').
     
     if iscell(subject); subject = subject{1}; end
-    csvPath = '\\zserver.cortexlab.net\Code\AVrig\';
+    csvPath = '\\zinu.cortexlab.net\Subjects\PinkRigs\';
     
     if strcmp(subject,'main')
         subject = '!MouseList';

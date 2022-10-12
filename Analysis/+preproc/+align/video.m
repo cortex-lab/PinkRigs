@@ -1,4 +1,4 @@
-function [tVid,numFramesMissed] = video(varargin)
+function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
 %%% This function will align the time frames of the input video to the
 %%% corresponding timeline. It will try to minimize the amount of time
 %%% and computing by loading first only the beginning and end of the
@@ -61,6 +61,7 @@ end
 % Load the average intensity
 fprintf(1, 'loading avg intensity\n');
 load(intensFile,'avgIntensity');
+nFirstFrames = numel(avgIntensity); 
 
 % Load the lastFrames average intensity
 if ~isempty(d) && d.bytes>100
@@ -253,8 +254,21 @@ end
 
 if ~exist([pathStub, '_times.txt'], 'file')
     %%%%%% FOR LIL-RIG where vBox isn't used!%%%%%%
-    vidFs = numFramesFoundBetweenSyncs/diff(tlSyncOnSamps);
-    tVid = ((1:length(avgIntensity))/vidFs)-tlSyncOnSamps(1);
+    % I will now stop spending time figuring out what is the difference between this code and the
+    % lilrig code but the lilrig code just works better for lilrig data.
+    % the alignment difference is significant (1.2 s) 
+    % so hacking it....
+    % Hoping Celian will never see this disgraceful solution. 
+
+    if strcmpi(strobeName,'frontCamStrobe')
+        load([params.expFolder{1,1} '\' 'face_timestamps.mat']); 
+    elseif strcmpi(strobeName,'eyeCamStrobe')
+        load([params.expFolder{1,1} '\' 'eye_timestamps.mat']); 
+    else
+        disp('lilrig alignment likely to be wrong this way.'); 
+        vidFs = numFramesFoundBetweenSyncs/diff(tlSyncOnSamps);
+        tVid = ((1:length(avgIntensity))/vidFs)-tlSyncOnSamps(1);
+    end
     numFramesMissed = nan;
 else
     % Get offset and compression coefficients.

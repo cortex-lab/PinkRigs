@@ -8,6 +8,7 @@ function checkForNewPinkRigRecordings(varargin)
 % NOTE "expDate" can be 'all'--faster than a bit integer
 varargin = ['expDate', {0}, varargin];
 varargin = ['recompute', {0}, varargin];
+varargin = ['subject', 'active', varargin];
 params = csv.inputValidation(varargin{:});
 
 % Take first value since these inputs cannot differ between mice
@@ -25,6 +26,7 @@ csvData.IsActive = num2cell(num2str(activeMice));
 csvDataSort = sortrows(csvData, 'Subject', 'ascend');
 csvDataSort = sortrows(csvDataSort, 'IsActive', 'descend');
 if any(~strcmp(csvDataSort.Subject, csvData.Subject))
+    csvLocation = csv.getLocation('main');
     csv.createBackup(csvLocation);
     csv.writeClean(csvDataSort, csvLocation, 1)
 end

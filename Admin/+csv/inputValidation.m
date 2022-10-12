@@ -26,9 +26,9 @@ function outP = inputValidation(varargin)
 %       The expDef input is 't' AND 's' for  'AV009', BUT 't' for 'AV007'
 
 % Set up an inputPArser object and ensures that all inputs (not just those
-% with defaults) and kept
+% with defaults) are kept
 p = inputParser;
-p.KeepUnmatched=true;
+p.KeepUnmatched = true;
 
 % Default values for subject, expDate, expNum, and expDef
 def_subject = {'active'};
@@ -39,6 +39,10 @@ def_expDef = {'all'};
 % If the input is a table (e.g. the output of csv.queryExp) then convert
 % the table to a structure where each column is a field
 tblDat = varargin(cellfun(@istable, varargin));
+if numel(tblDat)>0 && isempty(tblDat{1})
+    % Case when an empty list of exp is given.
+    def_subject = {'none'};
+end
 tblDatConverted = cellfun(@(x) table2struct(x, 'ToScalar', 1), tblDat, 'uni', 0);
 varargin(cellfun(@istable, varargin)) = tblDatConverted;
 
@@ -62,45 +66,57 @@ outP = p.Results;
 outP = orderfields(outP, {'subject'; 'expDate'; 'expNum'; 'expDef'});
 unmatchedFields = fields(p.Unmatched);
 for i = 1:length(unmatchedFields)
+    if strcmpi(unmatchedFields{i}, 'invariantParams')
+        invariantParams = unnestCell(p.Unmatched.(unmatchedFields{i}));
+    else
     outP.(unmatchedFields{i}) = p.Unmatched.(unmatchedFields{i});
+    end
 end
+if ~exist('invariantParams', 'var'); invariantParams = {'svloiubsverilvub'}; end
 
 % This runs the "mkCell" function on all fields of "outP" to convert to
 % cells if they aren't already cells.
 outP = structfun(@mkCell, outP, 'uni', 0);
 
 % Get location of the main csv and load it 
-if ~isfield(outP, 'mainCSV')
+if ~isfield(outP, 'mainCSV') || isempty(outP.mainCSV)
     mainCSVLoc = csv.getLocation('main');
     mainCSV = csv.readTable(mainCSVLoc);
 else
     mainCSV = outP.mainCSV{1};
 end
 
-%Validate subjects and interpret input optional input strings
+% Validate subjects and interpret input optional input strings
+if isempty(outP.subject)
+    % No subject. Just return.
+    return
+end
 if strcmp(outP.subject{1},'active')
     % All “active” mice in the main csv
     outP.subject = mainCSV.Subject(strcmp(mainCSV.IsActive,'1'));
 elseif strcmp(outP.subject{1},'implanted')
     % All mice with an implant-date with a probe in the main csv
-    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d_\d\d_\d\d', 'once')), mainCSV.P0_implantDate);
+    implanted = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), mainCSV.P0_implantDate);
     implanted(strcmpi(mainCSV.P0_type, 'P3B')) = 0;
     outP.subject = mainCSV.Subject(implanted);
 elseif strcmp(outP.subject{1},'all')
     % All mice in the main csv
     outP.subject = mainCSV.Subject;
+elseif strcmp(outP.subject{1},'none')
+    outP.subject = mainCSV.Subject([],:);
 end
 
 % Check that all "subjects" exist in the main csv. If not, error
-if ~all(ismember(outP.subject, mainCSV.Subject))
+if ~all(ismember(outP.subject, [mainCSV.Subject]))
     error('Unrecognized mouse names!')
 end
-implantDates = cellfun(@(x) mainCSV.P0_implantDate{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);
+P0_implants = mainCSV.P0_implantDate;
+implantDates = cellfun(@(x) P0_implants{strcmp(mainCSV.Subject, x)}, outP.subject, 'uni', 0);
 validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDates);
 implantDates(~validImplants) = deal({'none'});
 outP.implantDate = implantDates;
 
-% Check the lenth 
+% Check the length 
 nSubjects = length(outP.subject);
 outP.mainCSV = repmat({mainCSV}, nSubjects,1); % saves loading time later;
 paramLengths = structfun(@length, outP);
@@ -110,7 +126,8 @@ paramLengths = structfun(@length, outP);
 % (or every) subject, e.g. {'t'; 's'} has been input as multiple cells
 % instead of a single cell. In this example, {{'t';'s}} might be the
 % correct input.
-if ~all(paramLengths == nSubjects | paramLengths == 1)
+invariantParamsIdx = contains(fields(outP), invariantParams);
+if ~all(paramLengths == nSubjects | paramLengths == 1 | invariantParamsIdx)
     error('All inputs should have length=1 or length=nSubjects')
 end
 
@@ -118,7 +135,10 @@ end
 % where a field has length=1 and subjects has length>1.
 fieldNames = fields(outP);
 for i = 1:length(fieldNames)
-    if paramLengths(i) == nSubjects
+    if invariantParamsIdx(i)
+        outP.(fieldNames{i}) = repmat({unnestCell(outP.(fieldNames{i}),0)},nSubjects,1);
+        continue;
+    elseif paramLengths(i) == nSubjects
         outP.(fieldNames{i}) = outP.(fieldNames{i})(:);
         continue; 
     end
@@ -128,7 +148,6 @@ end
 % Use the funtion "string2expDef" to convert optional input strings (e.g.
 % 't' or 's') into their corresponding exp definitions
 outP.expDef = cellfun(@string2expDef, outP.expDef, 'uni', 0);
-outP.expDef = cellfun(@(x) vertcat(x{:}), outP.expDef, 'uni', 0);
 
 % Use "convertCellNum2String" to make sure that expNum is a string or
 % vertically concatenated cell of strings
@@ -192,6 +211,7 @@ switch expDefInput{i}
         fullExpDef{i} = expDefInput(i);
 end
 end
+fullExpDef = unnestCell(fullExpDef);
 end
 
 %% Function to convert a numeric input into a string or cell of strings

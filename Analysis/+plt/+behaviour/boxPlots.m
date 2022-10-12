@@ -6,6 +6,10 @@ varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
 extracted = plt.behaviour.getTrainingData(varargin{:});
+if ~any(extracted.validSubjects)
+    fprintf('WARNING: No data found for requested subjects... Returning \n');
+    return
+end
 params = csv.inputValidation(varargin{:});
 
 blkDates = extracted.blkDates;
@@ -30,7 +34,7 @@ for i = find(extracted.validSubjects)'
     if isempty(extracted.data{i}) || extracted.nExp{i} == 1 
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
     else
-        boxPlot.extraInf = num2str([extracted.nExp{i} 'Sess']);
+        boxPlot.extraInf = [num2str(extracted.nExp{i}) ' Sess'];
     end
     if ~isempty(extracted.data{i})
         tDat = extracted.data{i};

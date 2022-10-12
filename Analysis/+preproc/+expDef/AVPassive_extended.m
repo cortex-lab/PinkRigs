@@ -66,7 +66,8 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
 
     % Add delay to trial start and end because of issues with alignment?
     % It's a bit of a hacky thing to do.
-    delay = 0.2;
+    %delay = 0.2; trialStEnTimes = trialStEnTimes + delay;
+    trialStEnTimes = [trialEnd(:)-.22 trialEnd(:)+.02];
     
     %% visual stimulus timings 
     % get all screen flips 
@@ -74,7 +75,7 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     
     % sort by trial
     numClicks = 1; 
-    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes);
+    visOnOffByTrial = indexByTrial(trialStEnTimes, photoDiodeFlipTimes);
     vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
     visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
     visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);
@@ -98,7 +99,7 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
         error('There should always be an equal number on/off signals for clicks');
     end
     allClicks = sort([timelineClickOn timelineClickOff]);
-    audOnOffByTrial = indexByTrial(trialStEnTimes+delay, allClicks(:,1), allClicks);
+    audOnOffByTrial = indexByTrial(trialStEnTimes, allClicks(:,1), allClicks);
     aud2Remove = cellfun(@(x) size(x,1)~=numClicks, audOnOffByTrial);
     audOnOffByTrial(aud2Remove)= deal({nan*ones(1, 2)});
     audPeriodOnOff = cellfun(@(x) [x(1,1) x(end,2)], audOnOffByTrial, 'uni', 0);
@@ -112,7 +113,7 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
 
     %% reward times 
     reward = timeproc.getChanEventTime(timeline,'rewardEcho'); 
-    rewardAll = indexByTrial(trialStEnTimes+delay, reward(:));
+    rewardAll = indexByTrial(trialStEnTimes, reward(:));
     rew2Remove = cellfun(@(x) length(x)~=1, rewardAll);
     rewardAll(rew2Remove) = deal({nan});
     %% save it in ev
@@ -134,9 +135,9 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     ev.timeline_visOn = cellfun(@(x) single(x(:,1)), visOnOffByTrial, 'uni', 0);
     ev.timeline_visOff = cellfun(@(x) single(x(:,2)), visOnOffByTrial, 'uni', 0); 
     
-    audPeriodOnOff = cell2mat(audPeriodOnOff);
-    ev.timeline_audPeriodOff = single(audPeriodOnOff(:,1));
-    ev.timeline_audPeriodOn = single(audPeriodOnOff(:,2));
+    audPeriodOnOff = cell2mat(audPeriodOnOff);    
+    ev.timeline_audPeriodOn = single(audPeriodOnOff(:,1));
+    ev.timeline_audPeriodOff = single(audPeriodOnOff(:,2));
 
     visPeriodOnOff = cell2mat(visPeriodOnOff);
     ev.timeline_visPeriodOn = single(visPeriodOnOff(:,1));

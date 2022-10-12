@@ -9,12 +9,16 @@ csvFields = fields(csvData);
 serialsFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'serial')), 'uni', 0)';
 serialsFromCSV = cell2mat(cellfun(@str2double, serialsFromCSV, 'uni', 0));
 
+probeTypeFromCSV = cellfun(@(x) csvData.(x), csvFields(contains(csvFields, 'type')), 'uni', 0)';
+probeTypeFromCSV = cat(2,probeTypeFromCSV{:});
+
 if ~exist('queryData','var') || isempty(queryData)
     queryData = unique(serialsFromCSV);
     queryData(isnan(queryData)) = [];
 end
 if ~exist('mkPlt','var');  mkPlt = 0; end
 if ~exist('implantSelect','var');  implantSelect = 'all'; end
+if isnumeric(queryData); queryData = reshape(queryData,[numel(queryData),1]); end
 if ~iscell(queryData); queryData = num2cell(queryData,2); end
 
 
@@ -56,25 +60,28 @@ if isnumeric(queryData{1})
         probeInfo.explantDates = cellfun(@(x) x{end}, probeInfo.explantDates, 'uni', 0);
     end
 else
-    implantDate = cellfun(@(x) csvData.P0_implantDate{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    P0_implantDates = csvData.P0_implantDate; %(This plays better with cmd calls)
+    implantDate = cellfun(@(x) P0_implantDates{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
     validImplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), implantDate);
     implantDate(~validImplants) = deal({'none'});
 
-    explantDate = cellfun(@(x) csvData.P0_explantDate{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    P0_explantDates = csvData.P0_explantDate; %(This plays better with cmd calls)
+    explantDate = cellfun(@(x) P0_explantDates{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
     validExplants = cellfun(@(x) ~isempty(regexp(x,'\d\d\d\d-\d\d-\d\d', 'once')), explantDate);
     explantDate(~validExplants) = deal({'none'});
 
     serialNumbers = cellfun(@(x) serialsFromCSV(strcmp(csvData.Subject, x),:), queryData, 'uni', 0);
     serialNumbers = cellfun(@(x) x(~isnan(x)), serialNumbers, 'uni', 0);
 
-    probeType = cellfun(@(x) csvData.P0_type{strcmp(csvData.Subject, x)}, queryData, 'uni', 0);
+    probeTypes = cellfun(@(x) probeTypeFromCSV(strcmp(csvData.Subject, x),:), queryData, 'uni', 0);
+    probeTypes = cellfun(@(y) y(cell2mat(cellfun(@(x) ~isempty(x), y, 'uni', 0))), probeTypes, 'uni', 0);
 
     % resort it
     probeInfo.subject = queryData;
     probeInfo.implantDate = implantDate;
     probeInfo.explantDate = explantDate;
     probeInfo.serialNumbers = serialNumbers;
-    probeInfo.probeType = probeType;
+    probeInfo.probeType = probeTypes;
 end
 
 %% Plot figure

@@ -25,6 +25,7 @@ extractedExperiments = table();
 for mm = 1:numel(params.subject)
     
     % Loop through subjects
+    if ~exist(csv.getLocation(params.subject{mm}), 'file'); continue; end
     mouseExps = csv.readTable(csv.getLocation(params.subject{mm}));
     csvHeaders = mouseExps.Properties.VariableNames';
 
@@ -41,6 +42,7 @@ for mm = 1:numel(params.subject)
     end
 
     % Add implant info
+    if isempty(mouseExps); continue; end
     datNums = num2cell(datenum(mouseExps.expDate, 'yyyy-mm-dd'));
     if strcmp(params.implantDate(mm), 'none')
         mouseExps.daysSinceImplant = repmat({nan}, height(mouseExps), 1);
@@ -79,7 +81,7 @@ for mm = 1:numel(params.subject)
     chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
     chkVals{5} = num2str(params.checkAlignMic{mm});
     chkVals{6} = num2str(params.checkAlignEphys{mm});
-    for i = find(~contains(chkVals, 'ignore'))
+    for i = find(~contains(chkVals, 'ignore'))'
         if isempty(i); continue; end
         if strcmpi(chkVals{i}(1), '~')
             mouseExps = mouseExps(~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end)),:);
