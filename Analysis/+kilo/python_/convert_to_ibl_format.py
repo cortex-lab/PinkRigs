@@ -196,7 +196,7 @@ def run_batch_ibl_formatting(run_for=2):
     print('current hour is %.2f' % start_hour)
 
     print('starting my work on queue..')
-    for idx,rec in queue_csv.iterrows():
+    for idx,rec in queue_csv.iloc[::-1].iterrows():
         #check if recording is not being sorted already 
         if rec.doneTag==0: 
             check_time = time.now()
