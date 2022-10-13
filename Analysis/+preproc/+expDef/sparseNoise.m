@@ -39,9 +39,20 @@ end
 timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
 
 if length(blockRefTimes) ~= length(timelineRefTimes)
-    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,0);
+    if (length(blockRefTimes)-length(timelineRefTimes))==1
+       truncated_block = blockRefTimes(2:end);
+       if sum((diff(truncated_block)-diff(timelineRefTimes))>0.25)==0
+           blockRefTimes=truncated_block; 
+           stimArray = stimArray(:,:,2:end);
+       else
+           [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,1);
+       end
+
+    else
+        [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,1);
+    end
 elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
-    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes,0.25,0);
+    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes,0.25,1);
 end
 block.alignment = 'photodiode';
 if length(blockRefTimes) ~= length(timelineRefTimes)
@@ -55,8 +66,8 @@ if max(stimTimeInds{1})>length(timelineRefTimes)
     ix_drop=find(stimTimeInds{1}>length(timelineRefTimes));
     stimTimeInds{1}(ix_drop)=[];
     stimPositions{1}(ix_drop,:)=[];
-    fromdrop=size(stimArray,3)-size(ix_drop,1)+1; 
-    stimArray(:,:,fromdrop:end)=[];
+%     fromdrop=size(stimArray,3)-size(ix_drop,1)+1; 
+%     stimArray(:,:,fromdrop:end)=[];
 end 
 
 %
