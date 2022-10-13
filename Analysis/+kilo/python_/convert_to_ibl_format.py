@@ -185,8 +185,8 @@ def ks_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=False):
     
 def run_batch_ibl_formatting(run_for=2):
     # get queue
-    root = get_server_location / 'Helpers'
-    queue_csv_file = '%s\ibl_formatting_queue.csv' % root
+    root = get_server_location() / 'Helpers'
+    queue_csv_file = root / 'ibl_formatting_queue.csv' 
     queue_csv = pd.read_csv(queue_csv_file)
     print('checking the queue...')
 
