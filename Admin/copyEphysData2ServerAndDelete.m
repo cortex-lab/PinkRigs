@@ -31,7 +31,8 @@ fprintf('Checking subject in file name against probe serials in CSV... \n')
 serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
 
 [uniqueProbes, ~, uniIdx] = unique(serialsFromMeta);
-matchedSubjects = csv.getCurrentSubjectFromProbeSerial(uniqueProbes);
+probeInfo = csv.checkProbeUse(uniqueProbes,'last');
+matchedSubjects = probeInfo.implantedSubjects;
 
 expectedSubject = matchedSubjects(uniIdx);
 if any(cellfun(@isempty, expectedSubject))
