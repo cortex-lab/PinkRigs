@@ -136,8 +136,8 @@ def run_pyKS_on_queue(run_for=5.5):
     
     run_for = float(run_for)
     print(run_for,type(run_for))
-    stage_KS_queue(mouse_selection=['allActive'],date_selection='last5',resort=False)    
-
+    stage_KS_queue(mouse_selection='allActive',date_selection='last10',resort=False)   
+ 
     root = get_server_location()
     root = root / 'Helpers'
     queue_csv_file = root / 'pykilosort_queue.csv'
