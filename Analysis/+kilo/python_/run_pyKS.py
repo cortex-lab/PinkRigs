@@ -151,7 +151,7 @@ def run_pyKS_on_queue(run_for=5.5):
         shutil.rmtree(KS_workpath)
 
     while check_hour<(start_hour+run_for):
-        print('current hour is %.2f' % start_hour)
+        print('current hour is %.2f' % check_hour)
         
         print('checking the pyks queue...')
         queue_csv = recheck_queue(overwrite=False)
@@ -178,5 +178,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-   #run_pyKS_on_queue() 
-   run_pyKS_on_queue(run_for=sys.argv[1])
+   run_pyKS_on_queue(run_for=1) 
+   #run_pyKS_on_queue(run_for=sys.argv[1])
