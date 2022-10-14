@@ -18,6 +18,6 @@ expInfo = csv.queryExp('subject',mname,'expDate',expDate,'expNum',expNum);
 [ephysRefTimes,timelineRefTimes,~,~] = preproc.align.ephys(expInfo);
 co=robustfit(timelineRefTimes{1},ephysRefTimes{1});
 fitTimeline_times = @(t)t*co(2) + co(1);
-ev.stimTimesMain=fitTimeline_times(ev.stimTimes); 
-ev.stimArrayTimesMain=fitTimeline_times(ev.stimArrayTimes); 
+ev.stimTimesMain=fitTimeline_times(ev.squareOnTimes); 
+%ev.stimArrayTimesMain=fitTimeline_times(ev.stimArrayTimes); 
 end

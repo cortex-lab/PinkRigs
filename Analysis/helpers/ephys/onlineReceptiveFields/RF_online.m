@@ -61,8 +61,8 @@ after_ix=t_after*newFs;
 delay_ix=delay*newFs; 
 
 
-xs=unique(sNdat.stimPositions(:,1)); 
-ys=unique(sNdat.stimPositions(:,2));
+xs=unique(sNdat.squareElevation); 
+ys=unique(sNdat.squareAzimuth);
 
 RESPONSE=zeros(size(mua,2),size(ys,1),size(xs,1));
 sNstartix = ceil(sNdat.stimTimesMain(:) * newFs)';
@@ -71,7 +71,7 @@ dt=-before_ix:1:after_ix;
 
 for xct=1:size(xs,1)
      for yct=1:size(ys,1)         
-         [ix,~]=find(sNdat.stimPositions(:,1)==xs(xct) & sNdat.stimPositions(:,2)==ys(yct));
+         [ix,~]=find(sNdat.squareElevation==xs(xct) & sNdat.squareAzimuth==ys(yct));
          nrlix=sNstartix(ix);
          indref=nrlix+repmat(dt',1,numel(ix));
          resp_sq=reshape(mua(indref, :), [size(indref) size(mua,2)]);
