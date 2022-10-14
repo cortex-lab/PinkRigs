@@ -152,7 +152,7 @@ function clusterCount(varargin)
     xticks([1 5 10 25 50 100])
     xticklabels([1 5 10 25 50 100])
     ylim([1,2000])
-    xlim([1,max(days)])
+    xlim([0,max(days)])
 
     % slope
     figure('Position',[680   728   200   250]);

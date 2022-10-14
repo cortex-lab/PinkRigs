@@ -44,6 +44,7 @@ if length(blockRefTimes) ~= length(timelineRefTimes)
        if sum((diff(truncated_block)-diff(timelineRefTimes))>0.25)==0
            blockRefTimes=truncated_block; 
            stimArray = stimArray(:,:,2:end);
+%% I am starting to not understand this ---- if flips are thrown away the indexing is surely False????
        else
            [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,1);
        end
