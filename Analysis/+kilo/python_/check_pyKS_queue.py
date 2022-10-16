@@ -40,8 +40,8 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
     # check
     
-    print(mouse_selection)
-    print(date_selection)
+    print('mice selected: %s' % mouse_selection)
+    print('dates selected: %s' % date_selection)
 
     # check which mice are active on Master csv
     root = get_server_location()
