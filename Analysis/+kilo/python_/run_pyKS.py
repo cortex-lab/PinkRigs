@@ -112,7 +112,8 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
     """
     root = get_server_location()
     root = root / 'Helpers'
-    queue_csv_file = root / 'pykilosort_queue.csv' 
+    queue_csv_file = root / 'pykilosort_queue.csv'
+
     queue_csv = pd.read_csv(queue_csv_file)
     if overwrite: 
         rec = queue_csv[queue_csv.ephysName==my_ephys_name]
@@ -135,7 +136,7 @@ def run_pyKS_on_queue(run_for=5.5):
 
     
     run_for = float(run_for)
-    print(run_for,type(run_for))
+    print('kilo should be running for %.0f hours' % run_for)
     stage_KS_queue(mouse_selection='allActive',date_selection='last10',resort=False)   
  
     root = get_server_location()
@@ -178,5 +179,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-   run_pyKS_on_queue(run_for=1) 
-   #run_pyKS_on_queue(run_for=sys.argv[1])
+   #run_pyKS_on_queue(run_for=2) 
+   run_pyKS_on_queue(run_for=sys.argv[1])
