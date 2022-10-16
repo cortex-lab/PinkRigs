@@ -70,7 +70,7 @@ switch lower(computerType)
         csv.checkForNewPinkRigRecordings('expDate', 1);
 
         c = clock;
-        if c(4) > 20
+        if c(4) > 20 % trigger at 10pm 
             fprintf('Update on training... \n')
             % Get plot of the mice trained today.
             expList = csv.queryExp('expDate', 0, 'expDef', 'training');
@@ -90,7 +90,7 @@ switch lower(computerType)
             end
         end
 
-        if c(4) < 20 && c(4) > 2
+        if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
             %%% Bypassing preproc.main for now to go through experiments
             %%% that have been aligned but not preprocessed... Have to fix
             %%% it! Have to wait until it's a 0 and not a NaN when ephys
@@ -107,12 +107,13 @@ switch lower(computerType)
 
         c = clock;
         if c(4) > 20 || c(4) < 2
-            Kilo_runFor = num2str(2);
+            Kilo_runFor = num2str(2); % 2hrs at 10pm/1am run 
         else
-            Kilo_runFor = num2str(5);
+            Kilo_runFor = num2str(5); % 5 hrs at the 4am,10am & 4pm run 
         end
 
         dbstop if error % temporarily, to debug
+        sprintf('current hour is %.0f, running kilo for %s hours',c(4),Kilo_runFor)
         fprintf('Running pykilosort on the queue... \n')
         runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
         [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
@@ -123,7 +124,7 @@ switch lower(computerType)
         end
 
         disp(resultpyKS);
-
+        % run at all times 
         fprintf('creating the ibl format... \n')
         checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
         checkWhichMice = 'all';
