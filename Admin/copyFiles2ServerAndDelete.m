@@ -34,13 +34,13 @@ else
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{cIdx}));
             else
-                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', data2Copy);
+                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{cIdx});
             end
         end
         try
             copyfile(localFilePaths{cIdx},fileparts(serverFilePaths{cIdx}));
         catch
-            fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
+            fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
         end
         elapsedTime = toc;
         d = dir(localFilePaths{cIdx});
