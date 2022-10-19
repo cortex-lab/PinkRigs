@@ -95,7 +95,7 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
         % Find the beginning and end of the experiments
         %%% This will work if there's no absurd time between ephys
         %%% start/end and timeline start/end.
-        flipThresh = 1; % time between flips to define experiment gap (s)
+        flipThresh = 5; % time between flips to define experiment gap (s)
         flipperStEnIdx = [[1;find(diff(ephysFlipperTimes_ee) > flipThresh)+1], ...
             [find(diff(ephysFlipperTimes_ee) > flipThresh); length(ephysFlipperTimes_ee)]];
         if size(flipperStEnIdx,1) == 1 

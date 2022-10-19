@@ -5,14 +5,20 @@ import datetime
 from os.path import exists
 import dateutil.parser
 import smtplib
+from pathlib import Path
 import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
+# import PinkRig utils
+from csv_pyhandlers import get_server_location
+pinkRig_csv_path = get_server_location()
+email_path = pinkRig_csv_path / r'Helpers\AVrigEmail.txt'
+
 def send_email(mname):
     # Get sender and receiver emails.    
-    with open(r'\\zserver.cortexlab.net\Code\AVrig\Helpers\AVrigEmail.txt') as f:
+    with open(email_path.__str__()) as f:
         sender_email,pwd = f.read().splitlines()
     receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
 
@@ -45,7 +51,7 @@ def send_email(mname):
     server.sendmail(sender_email,receivers_email,msg.as_string())
 
 
-basepath = r'\\zserver.cortexlab.net\Code\AVrig'
+basepath = pinkRig_csv_path.__str__()
 mouseList = pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice = mouseList['Subject'][mouseList['IsActive']==1].values
 

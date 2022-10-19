@@ -183,15 +183,13 @@ alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
 probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
 
 % check for acute recordings .... 
-if ~strcmpi(probeInfo.probeType{1}, 'Acute')
-    if strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
-        potentialProbes = 0;
-    else
-        potentialProbes = length(probeInfo.serialNumbers{1});
-    end
-else
+if strcmpi(probeInfo.probeType{1}, 'Acute')
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
     potentialProbes = length(alignment.ephys);
+elseif strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
+    potentialProbes = 0;
+else
+    potentialProbes = length(probeInfo.serialNumbers{1});
 end
 
 

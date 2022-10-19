@@ -4,6 +4,12 @@ import pandas as pd
 import numpy as np
 import sys
 
+# get PinkRig handlers 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Admin.csv_pyhandlers import get_server_location 
+
 def check_date_selection(date_selection,date):
     import datetime 
     date_range = []
@@ -34,11 +40,11 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
     # check
     
-    print(mouse_selection)
-    print(date_selection)
+    print('mice selected: %s' % mouse_selection)
+    print('dates selected: %s' % date_selection)
 
     # check which mice are active on Master csv
-    root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
+    root = get_server_location()
 
     master_csv = pd.read_csv(root / '!MouseList.csv')
     if mouse_selection=='allActive': 
@@ -100,7 +106,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
     print(new_recs_to_sort)
     # clean current queue
-    queue_file = os.path.join(root,'Helpers','pykilosort_queue.csv')
+    queue_file = root/ r'Helpers/pykilosort_queue.csv'
     old_queue = pd.read_csv(queue_file,index_col=False)
     new_queue = old_queue[old_queue['sortedTag'] != 1]
 

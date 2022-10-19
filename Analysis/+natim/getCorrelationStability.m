@@ -14,13 +14,13 @@ function [sigCorrStruct,noiseCorrStruct] = getCorrelationStability(spikeData,pai
                 noiseCorr_d2 = natim.getCorrelationMatrix({spikeData{d2}(:,:,pairs{d1,d2}(2,:),:)},'noise');
                 
                 % correlate them across days
-                strud1 = triu(sigCorr_d1{1},1); strud1(strud1 == 0) = [];
-                strud2 = triu(sigCorr_d2{1},1); strud2(strud2 == 0) = [];
-                sigCorrStruct(d1,d2) = corr(strud1',strud2');
+                strud1 = triu(sigCorr_d1{1},1); strud1 = mat2vec(strud1(triu(true(size(strud1)),1)));
+                strud2 = triu(sigCorr_d2{1},1); strud2 = mat2vec(strud2(triu(true(size(strud2)),1)));
+                sigCorrStruct(d1,d2) = corr(strud1,strud2);
                 
-                strud1 = triu(noiseCorr_d1{1},1); strud1(strud1 == 0) = [];
-                strud2 = triu(noiseCorr_d2{1},1); strud2(strud2 == 0) = [];
-                noiseCorrStruct(d1,d2) = corr(strud1',strud2');
+                strud1 = triu(noiseCorr_d1{1},1); strud1 = mat2vec(strud1(triu(true(size(strud1)),1)));
+                strud2 = triu(noiseCorr_d2{1},1); strud2 = mat2vec(strud2(triu(true(size(strud2)),1)));
+                noiseCorrStruct(d1,d2) = corr(strud1,strud2);
             else
                 sigCorrStruct(d1,d2) = nan;
                 noiseCorrStruct(d1,d2) = nan;

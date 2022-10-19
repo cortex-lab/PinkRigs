@@ -15,8 +15,7 @@ checkFields = {'checkTimeline', ...
     };
 
 defVals = cellfun(@(x) [x, {'ignore'}], checkFields, 'uni', 0);
-if istable(varargin{1}) && length(varargin) == 1; varargin = {varargin}; end
-varargin = [[defVals{:}], varargin{:}];
+varargin = [[defVals{:}], varargin];
 params = csv.inputValidation(varargin{:});
 
 % Loop through csv to look for experiments that weren't

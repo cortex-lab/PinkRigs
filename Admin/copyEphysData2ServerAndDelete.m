@@ -63,7 +63,7 @@ if ignoreSubjectMismatch && any(subjectMismatch)
     subjectMismatch = subjectMismatch*0;
     expectedSubject = subjectFromBinName;
 end
-validIdx = ~subjectMismatch & ~dateMismatch;
+validIdx = ~subjectMismatch; %& ~dateMismatch;
 validEphysFiles = localEphysFiles(validIdx);
 validSubjects = expectedSubject(validIdx);
 validDates = dateFromBinName(validIdx);

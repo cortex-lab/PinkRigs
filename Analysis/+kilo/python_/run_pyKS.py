@@ -9,11 +9,16 @@ from pathlib import Path
 from datetime import datetime as time # to sort only for a fixed amount of time
 
 # error handlers 
-import sys,shutil
+import sys,shutil,glob
 
 # pykilosort 
 from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 
+# PinkRig specific helpers 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Admin.csv_pyhandlers import get_server_location
 #queue updates and ibl formatter 
 from check_pyKS_queue import stage_KS_queue
 from pyhelpers import save_error_message
@@ -105,9 +110,10 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
     overwrite_value: float 
     
     """
+    root = get_server_location()
+    root = root / 'Helpers'
+    queue_csv_file = root / 'pykilosort_queue.csv'
 
-    root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
-    queue_csv_file = '%s\pykilosort_queue.csv' % root
     queue_csv = pd.read_csv(queue_csv_file)
     if overwrite: 
         rec = queue_csv[queue_csv.ephysName==my_ephys_name]
@@ -130,11 +136,12 @@ def run_pyKS_on_queue(run_for=5.5):
 
     
     run_for = float(run_for)
-    print(run_for,type(run_for))
-    stage_KS_queue(mouse_selection=['AV008'],date_selection='last5',resort=False)    
-
-    root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
-    queue_csv_file = '%s\pykilosort_queue.csv' % root
+    print('kilo should be running for %.0f hours' % run_for)
+    stage_KS_queue(mouse_selection='allActive',date_selection='last10',resort=False)   
+ 
+    root = get_server_location()
+    root = root / 'Helpers'
+    queue_csv_file = root / 'pykilosort_queue.csv'
 
     start_time = time.now()
     start_hour = start_time.hour+start_time.minute/60
@@ -145,7 +152,7 @@ def run_pyKS_on_queue(run_for=5.5):
         shutil.rmtree(KS_workpath)
 
     while check_hour<(start_hour+run_for):
-        print('current hour is %.2f' % start_hour)
+        print('current hour is %.2f' % check_hour)
         
         print('checking the pyks queue...')
         queue_csv = recheck_queue(overwrite=False)
@@ -156,7 +163,7 @@ def run_pyKS_on_queue(run_for=5.5):
             print('appears that there is nothing to sort')
             break
         else: 
-            rec = to_sort_recs.iloc[0]
+            rec = to_sort_recs.iloc[-1] # start from the end of the queue
 
             _ = recheck_queue(overwrite=True,my_ephys_name=rec.ephysName,overwrite_value=.5)
             input_dir = Path(rec.ephysName)            
@@ -172,5 +179,5 @@ def run_pyKS_on_queue(run_for=5.5):
             check_hour = check_time.hour+check_time.minute/60
 
 if __name__ == "__main__":  
-   #run_pyKS_on_queue() 
+   #run_pyKS_on_queue(run_for=2) 
    run_pyKS_on_queue(run_for=sys.argv[1])
