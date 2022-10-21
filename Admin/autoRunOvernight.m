@@ -153,7 +153,6 @@ switch lower(computerType)
             Kilo_runFor = num2str(5);
         end
 
-
         dbstop if error % temporarily, to debug
         fprintf('Running pykilosort on the queue... \n')
         githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
@@ -166,6 +165,7 @@ switch lower(computerType)
         end
 
         disp(resultpyKS);
+        fprintf('Starting now %s... \n',datestr(now))
 
     case {'celians'}
         fprintf('Detected kilo2 computer... \n')
