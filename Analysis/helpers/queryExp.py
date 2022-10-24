@@ -64,7 +64,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
     """
 
 
-    root = Path(r'C:\Users\Flora\Documents\AVrig')
+    root = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
     mainCSVLoc = root / '!MouseList.csv' 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice

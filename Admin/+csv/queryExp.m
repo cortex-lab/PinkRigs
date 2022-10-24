@@ -15,6 +15,7 @@ checkFields = {'checkTimeline', ...
     };
 
 defVals = cellfun(@(x) [x, {'ignore'}], checkFields, 'uni', 0);
+if istable(varargin{1}) && length(varargin) == 1; varargin = {varargin}; end
 varargin = [[defVals{:}], varargin{:}];
 params = csv.inputValidation(varargin{:});
 
@@ -42,6 +43,7 @@ for mm = 1:numel(params.subject)
     end
 
     % Add implant info
+    if isempty(mouseExps); continue; end
     datNums = num2cell(datenum(mouseExps.expDate, 'yyyy-mm-dd'));
     if strcmp(params.implantDate(mm), 'none')
         mouseExps.daysSinceImplant = repmat({nan}, height(mouseExps), 1);

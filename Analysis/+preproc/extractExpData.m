@@ -198,6 +198,24 @@ function extractExpData(varargin)
                                 IBLFormatQMetricsFile = fullfile(KSFolder,'ibl_format');    
                                 if exist(IBLFormatQMetricsFile,"file")
                                     qMetrics = preproc.getQMetrics(KSFolder);
+                                    % the qMetrics don't get calculated for
+                                    % some trash units, but we need to keep
+                                    % the dimensions consistent of
+                                    % course...
+                                    qMetrics= removevars(qMetrics,{'cluster_id_1'}); % remove a useless variable
+                                    cname = setdiff(spkONE.clusters.av_IDs,qMetrics.cluster_id); 
+
+                                    added_array = qMetrics(1,:); 
+                                    added_array{1,added_array.Properties.VariableNames(1:end-1)} = nan; 
+                                    added_array{1,'ks2_label'} = {'noise'}; 
+
+                                    for i=1:numel(cname)
+                                        added_array(1,'cluster_id') = {cname(i)}; 
+                                        qMetrics = [qMetrics;added_array];
+                                    end
+                                    qMetrics = sortrows(qMetrics,'cluster_id');
+
+
                                     saveONEFormat(qMetrics, ...
                                         probeONEFolder,'clusters','_av_qualityMetrics','pqt',stub);
                                 end

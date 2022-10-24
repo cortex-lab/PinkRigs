@@ -21,7 +21,7 @@ else
 end
 
 [extracted.subject, extracted.blkDates, extracted.rigNames, extracted.AVParams, extracted.nExp...
-    ] = deal(repmat({{'X'}},length(params.subject),1));
+    ] = deal(repmat({'X'},length(params.subject),1));
 extracted.data = cell(length(params.subject),1);
 
 extracted.validSubjects = ones(length(params.subject),1);
