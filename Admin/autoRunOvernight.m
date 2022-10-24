@@ -89,22 +89,7 @@ switch lower(computerType)
                 fprintf('Updating on training failed with error "%s".\n', resultTrain)
             end
         end
-
-        if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
-            %%% Bypassing preproc.main for now to go through experiments
-            %%% that have been aligned but not preprocessed... Have to fix
-            %%% it! Have to wait until it's a 0 and not a NaN when ephys
-            %%% hasn't been aligned...
-
-            fprintf('Running preprocessing...\n')
-
-            % Alignment
-            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
-
-            % Extracting data
-            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
-        end
-
+        
         c = clock;
         if c(4) > 20 || c(4) < 2
             Kilo_runFor = num2str(2); % 2hrs at 10pm/1am run 
@@ -139,6 +124,22 @@ switch lower(computerType)
         disp(resultIBL);
         fprintf('Stopping now %s. \n',datestr(now))
 
+        c = clock;
+        if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
+            %%% Bypassing preproc.main for now to go through experiments
+            %%% that have been aligned but not preprocessed... Have to fix
+            %%% it! Have to wait until it's a 0 and not a NaN when ephys
+            %%% hasn't been aligned...
+
+            fprintf('Running preprocessing...\n')
+
+            % Alignment
+            preproc.align.main('expDate', 7, 'checkAlignAny', '0')
+
+            % Extracting data
+            preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
+        end
+
 
     case {'kilo2'}
         fprintf('Detected kilo2 computer... \n')
@@ -152,7 +153,6 @@ switch lower(computerType)
             Kilo_runFor = num2str(5);
         end
 
-
         dbstop if error % temporarily, to debug
         fprintf('Running pykilosort on the queue... \n')
         githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
@@ -165,6 +165,7 @@ switch lower(computerType)
         end
 
         disp(resultpyKS);
+        fprintf('Starting now %s... \n',datestr(now))
 
     case {'celians'}
         fprintf('Detected kilo2 computer... \n')

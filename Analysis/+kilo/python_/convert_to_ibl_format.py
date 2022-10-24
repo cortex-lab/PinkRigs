@@ -156,10 +156,6 @@ def extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=False):
 
             # I might need to rewrite the channels.localCoordinate files. These seem to be wrong
             # on npix 2.0. (as in: incorrect spcing and positional identifier.)
-            print('arrived to test pos.')
-
-
-
             if do_raw_files:
                 extract_rmsmap(efile.ap, out_folder=out_path, spectra=False)
         if efile.get('lf') and efile.lf.exists() and do_raw_files:
