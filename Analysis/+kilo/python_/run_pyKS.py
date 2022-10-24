@@ -7,7 +7,8 @@ import pandas as pd
 pd.options.mode.chained_assignment = None # disable warning, we will overwrite some rows when sortedTag changes 
 from pathlib import Path
 from datetime import datetime as time # to sort only for a fixed amount of time
-
+from datetime import timedelta
+import time as t
 # error handlers 
 import sys,shutil,glob
 
@@ -112,7 +113,8 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
     """
     root = get_server_location()
     root = root / 'Helpers'
-    queue_csv_file = root / 'pykilosort_queue.csv' 
+    queue_csv_file = root / 'pykilosort_queue.csv'
+
     queue_csv = pd.read_csv(queue_csv_file)
     if overwrite: 
         rec = queue_csv[queue_csv.ephysName==my_ephys_name]
@@ -123,7 +125,7 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
   
 
 
-def run_pyKS_on_queue(run_for=5.5): 
+def run_pyKS_on_queue(run_for=0.5): 
     """
     run pyKS on the pyKS queue
 
@@ -135,7 +137,8 @@ def run_pyKS_on_queue(run_for=5.5):
 
     
     run_for = float(run_for)
-    print(run_for,type(run_for))
+    run_for_minutes = run_for * 60
+    print('kilo should be running for %.0f hours' % run_for)
     stage_KS_queue(mouse_selection='allActive',date_selection='last10',resort=False)   
  
     root = get_server_location()
@@ -143,15 +146,13 @@ def run_pyKS_on_queue(run_for=5.5):
     queue_csv_file = root / 'pykilosort_queue.csv'
 
     start_time = time.now()
-    start_hour = start_time.hour+start_time.minute/60
-    check_hour = start_hour
-
+    check_time = time.now()-start_time
     # delete the current workpath 
     if KS_workpath.is_dir():
         shutil.rmtree(KS_workpath)
 
-    while check_hour<(start_hour+run_for):
-        print('current hour is %.2f' % start_hour)
+    while check_time<(timedelta(minutes=run_for_minutes)):
+        print('current hour is %.2f' % time.now().hour)
         
         print('checking the pyks queue...')
         queue_csv = recheck_queue(overwrite=False)
@@ -174,9 +175,8 @@ def run_pyKS_on_queue(run_for=5.5):
                 _ = recheck_queue(overwrite=True,my_ephys_name=rec.ephysName,overwrite_value=-1)
 
             # update the hour at the end of the loop if still going 
-            check_time = time.now()
-            check_hour = check_time.hour+check_time.minute/60
+            check_time = time.now()-start_time
 
 if __name__ == "__main__":  
-   #run_pyKS_on_queue() 
+   #run_pyKS_on_queue(run_for=0.006) 
    run_pyKS_on_queue(run_for=sys.argv[1])
