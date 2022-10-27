@@ -11,7 +11,6 @@ end
 isDirectory = cellfun(@isfolder, localFilePaths);
 localFilePaths = localFilePaths(~isDirectory);
 serverFilePaths = serverFilePaths(~isDirectory);
-
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
 if any(contains(serverFilePaths, 'ephys'))    
@@ -34,13 +33,13 @@ else
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{cIdx}));
             else
-                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', data2Copy);
+                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{cIdx});
             end
         end
         try
             copyfile(localFilePaths{cIdx},fileparts(serverFilePaths{cIdx}));
         catch
-            fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
+            fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
         end
         elapsedTime = toc;
         d = dir(localFilePaths{cIdx});
@@ -48,23 +47,53 @@ else
         fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
     end
 end
-
+    
 serverFileDetails = cellfun(@dir, serverFilePaths, 'uni', 0);
 localFileDetails = cell2mat(cellfun(@dir, localFilePaths, 'uni', 0));
 
 failedCopy = cellfun(@isempty, serverFileDetails);
-localFileDetails(failedCopy) = []; 
-serverFileDetails = cell2mat(serverFileDetails);
+vid2Check = contains(cellfun(@(x) x.name, serverFileDetails, 'uni',0), '.mj2') & ~failedCopy;
+for i = find(vid2Check)'
+    corruptLocal = 0;
+    corruptServer = 0;
+    localVid = fullfile(localFileDetails(i).folder, localFileDetails(i).name);
+    serverVid = fullfile(serverFileDetails{i}.folder, serverFileDetails{i}.name);
+
+    try VideoReader(localVid); catch, corruptLocal = 1; end %#ok<*TNMLP>
+    try VideoReader(serverVid); catch, corruptServer = 1; end
+
+    if corruptServer == corruptLocal && corruptLocal == 1
+        fprintf('%s corrupted locally \n',serverFileDetails{i}.name);
+    elseif corruptServer ~= corruptLocal && corruptLocal == 0
+        fprintf('%s corrupted when copying. Deleting and will retry next time \n', serverFileDetails{i}.name);
+        delete(serverVid);
+        failedCopy(i) = 1;
+    elseif corruptServer ~= corruptLocal && corruptLocal == 1
+        fprintf('%s is corrupted locally but not on server?!?!?! \n', serverFileDetails{i}.name);
+        failedCopy(i) = 1;
+    elseif corruptServer == corruptLocal && corruptLocal == 0
+%         fprintf('%s safely copied. No corruption :) \n', serverFileDetails{i}.name);
+    end
+end
+
+serverFileDetails = cell2mat(serverFileDetails(~failedCopy));
+localFileDetails = localFileDetails(~failedCopy); 
 
 %% Deletions
-% delete files that have been copied correctly
 oldIdx = ([localFileDetails(:).datenum]<=now-0)';
 sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
 
-toDelete = localFileDetails(oldIdx & ~sizeMismatch);
-fprintf('Deleting...')
-tic;
-arrayfun(@(x) delete(fullfile(x.folder, x.name)), toDelete);
-elapsedTime = toc;
-fprintf('Done in %d sec.\n',elapsedTime)
+% delete local files that have been copied correctly
+local2Delete = localFileDetails(oldIdx & ~sizeMismatch);
+fprintf('Deleting local files... \n')
+arrayfun(@(x) delete(fullfile(x.folder, x.name)), local2Delete);
+
+% delete server files that have been copied correctly
+if any(sizeMismatch)
+    server2Delete = serverFileDetails(oldIdx & sizeMismatch);
+    fprintf('Deleting "bad" server files... \n')
+    arrayfun(@(x) delete(fullfile(x.folder, x.name)), server2Delete);
+end
+
+fprintf('Done! \n')
 end
