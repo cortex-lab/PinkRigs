@@ -50,20 +50,19 @@ end
 
 localFileMD5 = cellfun(@(x) GetMD5(x, 'File'), localFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
 serverFileMD5 = cellfun(@(x) GetMD5(x, 'File'), serverFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
-failedCopy = cellfun(@(x,y) strcmp(x,y), localFileMD5, serverFileMD5)>0;
+failedCopy = cellfun(@(x,y) ~strcmp(x,y), localFileMD5, serverFileMD5);
 
 %% Deletions
 % delete local files that have been copied correctly
 if any(~failedCopy)
     fprintf('Deleting local files... \n')
-    arrayfun(@(x) delete(x), localFilePaths(~failedCopy));
+    cellfun(@(x) delete(x), localFilePaths(~failedCopy));
 end
 
 % delete server files that have been copied correctly
 if any(failedCopy)
-    server2Delete = serverFileDetails(failedCopy);
     fprintf('Deleting "bad" server files... \n')
-    arrayfun(@(x) delete(fullfile(x.folder, x.name)), server2Delete);
+    cellfun(@(x) delete(x), serverFilePaths(failedCopy));
 end
 
 fprintf('Done! \n')
