@@ -26,7 +26,7 @@ function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensio
                     end
                 end
 
-                Sbytes=whosstruct(var);
+                Sbytes = whosstruct(var);
                 totalSize = sum(structfun(@(x) x, Sbytes));
                 fracSize =  structfun(@(x) x, Sbytes)/totalSize;
                 while length(fracSize) > 4 && sum(maxk(fracSize,floor(0.2*length(fracSize))))>0.75
@@ -35,7 +35,7 @@ function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensio
                     largeVar.(maxField{1}) = var.(maxField{1});
                     var = rmfield(var, maxField{1});
 
-                    Sbytes=whosstruct(var);
+                    Sbytes = whosstruct(var);
                     totalSize = sum(structfun(@(x) x, Sbytes));
                     fracSize =  structfun(@(x) x, Sbytes)/totalSize;
                 end
