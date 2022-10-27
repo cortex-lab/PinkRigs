@@ -47,53 +47,30 @@ else
         fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
     end
 end
-    
-serverFileDetails = cellfun(@dir, serverFilePaths, 'uni', 0);
-localFileDetails = cell2mat(cellfun(@dir, localFilePaths, 'uni', 0));
 
-failedCopy = cellfun(@isempty, serverFileDetails);
-vid2Check = contains(cellfun(@(x) x.name, serverFileDetails, 'uni',0), '.mj2') & ~failedCopy;
-for i = find(vid2Check)'
-    corruptLocal = 0;
-    corruptServer = 0;
-    localVid = fullfile(localFileDetails(i).folder, localFileDetails(i).name);
-    serverVid = fullfile(serverFileDetails{i}.folder, serverFileDetails{i}.name);
-
-    try VideoReader(localVid); catch, corruptLocal = 1; end %#ok<*TNMLP>
-    try VideoReader(serverVid); catch, corruptServer = 1; end
-
-    if corruptServer == corruptLocal && corruptLocal == 1
-        fprintf('%s corrupted locally \n',serverFileDetails{i}.name);
-    elseif corruptServer ~= corruptLocal && corruptLocal == 0
-        fprintf('%s corrupted when copying. Deleting and will retry next time \n', serverFileDetails{i}.name);
-        delete(serverVid);
-        failedCopy(i) = 1;
-    elseif corruptServer ~= corruptLocal && corruptLocal == 1
-        fprintf('%s is corrupted locally but not on server?!?!?! \n', serverFileDetails{i}.name);
-        failedCopy(i) = 1;
-    elseif corruptServer == corruptLocal && corruptLocal == 0
-%         fprintf('%s safely copied. No corruption :) \n', serverFileDetails{i}.name);
-    end
-end
-
-serverFileDetails = cell2mat(serverFileDetails(~failedCopy));
-localFileDetails = localFileDetails(~failedCopy); 
+localFileMD5 = cellfun(@(x) GetMD5(x, 'File'), localFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
+serverFileMD5 = cellfun(@(x) GetMD5(x, 'File'), serverFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
+failedCopy = cellfun(@(x,y) strcmp(x,y), localFileMD5, serverFileMD5)>0;
 
 %% Deletions
-oldIdx = ([localFileDetails(:).datenum]<=now-0)';
-sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
-
 % delete local files that have been copied correctly
-local2Delete = localFileDetails(oldIdx & ~sizeMismatch);
-fprintf('Deleting local files... \n')
-arrayfun(@(x) delete(fullfile(x.folder, x.name)), local2Delete);
+if any(~failedCopy)
+    fprintf('Deleting local files... \n')
+    arrayfun(@(x) delete(x), localFilePaths(~failedCopy));
+end
 
 % delete server files that have been copied correctly
-if any(sizeMismatch)
-    server2Delete = serverFileDetails(oldIdx & sizeMismatch);
+if any(failedCopy)
+    server2Delete = serverFileDetails(failedCopy);
     fprintf('Deleting "bad" server files... \n')
     arrayfun(@(x) delete(fullfile(x.folder, x.name)), server2Delete);
 end
 
 fprintf('Done! \n')
+end
+
+
+function outPut = md5Error(~,~,~)
+%function to handle errors when getting the md5 hash
+outPut = 'md5Error';
 end
