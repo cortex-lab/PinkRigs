@@ -30,7 +30,7 @@ SET /A GBTest = 500
 if %FreeSpace:~0,-10% gtr %GBTest% (
 	echo "Free space more than %GBTest%GB. Opening SpikeGLX"
     timeout /T 2 /NOBREAK > nul
-    cd C:\Users\Experiment\Documents\SpikeGLX\Release_v20201103-phase30\SpikeGLX 
+    cd C:\Users\Experiment\Documents\SpikeGLX\Release_v20221012-phase30\SpikeGLX 
     start SpikeGLX.exe
 )
 if %FreeSpace:~0,-10% leq %GBTest% (
