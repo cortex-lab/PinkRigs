@@ -21,7 +21,7 @@ try
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
             if statusFacemap > 0
-                log = append(log,'Facemap failed with error "%s".\n', resultFacemap);
+                log = append(log,sprintf('Facemap failed with error "%s".\n', resultFacemap));
             end
     
             disp(resultFacemap);
@@ -56,7 +56,7 @@ try
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
             if statusFacemap > 0
-                log = append(log,'Facemap failed with error "%s".\n', resultFacemap);
+                log = append(log,sprintf('Facemap failed with error "%s".\n', resultFacemap));
             end
     
             disp(resultFacemap);
@@ -65,7 +65,7 @@ try
             %%
             log = append(log,'Detected kilo computer... \n');
 
-            log = append(log,'Starting now %s... \n',datestr(now));
+            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
     
             dbstop if error % temporarily, to debug
     
@@ -89,7 +89,7 @@ try
                     'python ' checkTrainingPath ' &&' ...
                     'conda deactivate']);
                 if statusTrain > 0
-                    log = append(log,'Updating on training failed with error "%s".\n', resultTrain);
+                    log = append(log,sprintf('Updating on training failed with error "%s".\n', resultTrain));
                 end
             end
             
@@ -99,16 +99,15 @@ try
             else
                 Kilo_runFor = num2str(5); % 5 hrs at the 4am,10am & 4pm run 
             end
-    
-            dbstop if error % temporarily, to debug
-            log = append(log,'current hour is %.0f, running kilo for %s hours',c(4),Kilo_runFor);
+
+            log = append(log,sprintf('current hour is %.0f, running kilo for %s hours',c(4),Kilo_runFor));
             log = append(log,'Running pykilosort on the queue... \n');
             runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
             if statuspyKS > 0
-                log = append(log,'Running pyKS failed... "%s".\n', resultpyKS);
+                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
             end
     
             disp(resultpyKS);
@@ -123,10 +122,10 @@ try
                 'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
             if statusIBL > 0
-                log = append(log,'Updating the queue failed with error "%s".\n', resultIBL);
+                log = append(log,sprintf('Updating the queue failed with error "%s".\n', resultIBL));
             end
             disp(resultIBL);
-            log = append(log,'Stopping now %s. \n',datestr(now));
+            log = append(log,sprintf('Stopping now %s. \n',datestr(now)));
     
             c = clock;
             if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
@@ -148,7 +147,7 @@ try
         case {'kilo2'}
             log = append(log,'Detected kilo2 computer... \n');
 
-            log = append(log,'Starting now %s... \n',datestr(now));
+            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
     
             c = clock;
             if c(4) > 20 || c(4) < 2
@@ -165,16 +164,16 @@ try
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
             if statuspyKS > 0
-                log = append(log,'Running pyKS failed... "%s".\n', resultpyKS);
+                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
             end
     
             disp(resultpyKS);
-            log = append(log,'Stopping now %s. \n',datestr(now));
+            log = append(log,sprintf('Stopping now %s. \n',datestr(now)));
     
         case {'celians'}
             log = append(log,'Detected kilo2 computer... \n');
 
-            log = append(log,'Starting now %s... \n',datestr(now));
+            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
     
             c = clock;
             if c(4) > 20 || c(4) < 2
@@ -191,7 +190,7 @@ try
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
             if statuspyKS > 0
-                log = append(log,'Running pyKS failed... "%s".\n', resultpyKS);
+                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
             end
     
             disp(resultpyKS);
@@ -205,7 +204,7 @@ end
 % Save log and close matlab session
 logPath = 'C:\autoRunLog';
 c = clock;
-logFile = [num2str(c(1)) '-' num2str(c(2)) '-' num2str(c(3)) '_' num2str(c(4)) '-' num2str(c(5)) '_log.txt'];
+logFile = [regexprep(regexprep(datestr(now,31),' ','_'),':','-') '_log.txt'];
 if ~exist(logPath,'dir')
     mkdir(logPath);
 end
