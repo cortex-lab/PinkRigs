@@ -5,8 +5,12 @@ if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
 
 fprintf('Starting now %s...',datestr(now))
 
-% find all folders with bin files
-localEphysFiles = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.cbin'}, 'uni', 0));
+% find all folders with both ap.cbin files and sync.mat
+localCompressed = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.cbin'}, 'uni', 0));
+localSync = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'sync.mat'}, 'uni', 0));
+completeFolders = intersect({localCompressed.folder}', {localSync.folder}');
+localEphysFiles = localCompressed(contains({localCompressed.folder}', completeFolders));
+
 if isempty(localEphysFiles)
     fprintf('There are no ephys files in the local directory. Returning... \n');
     pause(1);
@@ -45,17 +49,6 @@ if any(subjectMismatch)
 else
     fprintf('All expected subjects match file names. Nice! \n');
 end
-%%
-% for i = 1:length(localEphysFiles)
-%     syncPath = fullfile(localEphysFiles(i).folder, 'sync.mat');
-%     if exist(syncPath, 'file'); continue; end
-%     metaS = readMetaData_spikeGLX(localEphysFiles(i).name,localEphysFiles(i).folder);
-% 
-%     apPath = fullfile(localEphysFiles(i).folder, localEphysFiles(i).name);
-%     fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', ...
-%         subjectFromBinName{i}, dateFromBinName{i})
-%     extractSync(apPath, str2double(metaS.nSavedChans));
-% end
 
 %%
 if ignoreSubjectMismatch && any(subjectMismatch)
