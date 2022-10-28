@@ -37,11 +37,11 @@ try
     
             log = append(log,'Compressing local data... \n');
             compressPath = which('compress_data.py');
-            [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+            [statusComp, resultComp] = system(['conda activate PinkRigs && ' ...
                 'python ' compressPath ' && ' ...
                 'conda deactivate']);
             if statusComp > 0
-                error('Compressing local data failed.')
+                error('Compressing local data failed with error: %s.', resultComp)
             end
     
             log = append(log,'Running "copyEphysData2ServerAndDelete"... \n');
@@ -203,7 +203,6 @@ end
 
 % Save log and close matlab session
 logPath = 'C:\autoRunLog';
-c = clock;
 logFile = [regexprep(regexprep(datestr(now,31),' ','_'),':','-') '_log.txt'];
 if ~exist(logPath,'dir')
     mkdir(logPath);
