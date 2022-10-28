@@ -3,6 +3,9 @@ function extractLocalSync(localFolder)
     %%% locally.
 
     localEphysFiles = dir(fullfile(localFolder, '/**/*.ap.bin'));
+    localEphysFilesAgeInMins = (now-[localEphysFiles.datenum]')*24*60;
+    localEphysFiles(localEphysFilesAgeInMins < 60) = []; 
+
     %%
     for i = 1:length(localEphysFiles)
         syncPath = fullfile(localEphysFiles(i).folder, 'sync.mat');
