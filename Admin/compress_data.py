@@ -16,7 +16,7 @@ for locFile in locFiles:
     chFile = re.sub('ap.bin','ap.ch',locFile)
 
     rec_timestamp = os.path.getmtime(locFile)
-    rec_datestamp = datetime.datetime.fromtimestamp(timestamp)
+    rec_datestamp = datetime.datetime.fromtimestamp(rec_timestamp)
     today_datestamp = datetime.datetime.today()
     rec_age = today_datestamp - rec_datestamp
     rec_age_min = rec_age.days*24*60+rec_age.seconds/60
