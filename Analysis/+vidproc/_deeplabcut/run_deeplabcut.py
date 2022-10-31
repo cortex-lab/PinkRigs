@@ -27,15 +27,6 @@ pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Analysis.helpers.queryExp import queryCSV, Bunch
 
-# Pink rig dependencies
-from pathlib import Path
-import sys
-pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
-pinkRig_path = Path(pinkRig_path[0])
-sys.path.insert(0, (pinkRig_path.__str__()))
-
-from Analysis.helpers.queryExp import queryCSV,Bunch
-
 
 
 # For accessing files on server
@@ -217,7 +208,7 @@ def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder, 
 
 
 def cut_video(ffmpeg_path, video_paths, cut_video_name_suffix='_subset',
-              subset_start_point=10, cut_duration=10, verbose=True):
+              subset_start_point=0, cut_duration=10, verbose=True):
     """
     Cuts video
     Parameters
@@ -242,12 +233,13 @@ def cut_video(ffmpeg_path, video_paths, cut_video_name_suffix='_subset',
     if verbose:
         print('Cutting videos from %.f to %s seconds' % (start_time, end_time))
 
-    if video_paths is not list:
+    if type(video_paths) is not list:
         video_paths = [video_paths]
 
     cut_video_paths = []
 
     for video_path in video_paths:
+
         video_name = os.path.basename(video_path).split('.')[0]
         subset_video_name_without_ext = video_name + cut_video_name_suffix
         subset_video_name = subset_video_name_without_ext + '.mp4'
@@ -257,7 +249,7 @@ def cut_video(ffmpeg_path, video_paths, cut_video_name_suffix='_subset',
                        '-y',  # overwrite video if existing subset video exists
                        '-i', video_path,
                        '-c', 'copy',
-                       '-t', '%.f' % end_time,
+                       '-t', '%.f' % cut_duration,
                        subset_video_path
                        ]
         sp.call(ffmpeg_args)
@@ -324,6 +316,36 @@ def load_body_parts_xy(vid_path, fov='eyeCam'):
 
     return body_part_xy, body_part_mean_xy
 
+
+def check_file_corrupted(vid_path):
+    """
+    Checks if vid_path (tested on mj2 videos) is corrupted
+    by reading a frame from it and see if anything returns
+    Parameters
+    ----------
+    vid_path
+
+    Returns
+    -------
+
+    """
+    vid_corrupted = 0
+    try:
+        vid = cv2.VideoCapture(vid_path)
+        if not vid.isOpened():
+            vid_corrupted = 1
+
+        # read (next) frame
+        ret, frame = vid.read()
+
+        if not ret:
+            vid_corrupted = 1
+    except:
+        vid_corrupted = 1
+
+    return vid_corrupted
+
+
 def get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCam'):
     """
 
@@ -353,7 +375,7 @@ def get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCa
     elif fov == 'sideCam':
         project_folder_name = 'pinkrigsSideCam'
 
-    project_folder = os.path.join(working_directory, project_folder_name)
+    project_folder = glob.glob(os.path.join(working_directory, '%s-*' % project_folder_name))[0]
 
     yaml_file_path = os.path.join(project_folder, 'config.yaml')
     deeplabcut.analyze_videos(yaml_file_path, cut_video_paths,
@@ -400,6 +422,7 @@ def get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCa
     fig.savefig(os.path.join(output_video_folder, fig_name), dpi=300, bbox_inches='tight', transparent=False)
     plt.close(fig)
 
+    pdb.set_trace()
 
 def main(**csv_kwargs):
     """
@@ -998,8 +1021,36 @@ def main(**csv_kwargs):
                 plt.close(fig)
 
     if 'get_roi_for_facemap' in steps_to_run:
+        ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
+        remote_working_directory = '//zserver/Code/AVRigDLC'
+        working_directory = 'C:/Users/Experiment/Desktop'
+        video_ext = '.mj2'
+        process_most_recent = True
+        sessions = queryCSV(**csv_kwargs)
+        if process_most_recent:
+            sessions = sessions.sort_values('expDate')[::-1]
 
-        get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCam')
+        for row_idx, exp_info in sessions.iterrows():
+
+            exp_folder = exp_info['expFolder'].replace('\\', '/')
+
+            # look for video files
+            video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+            if len(video_files) == 0:
+                print('WARNING: no video files found in %s' % exp_folder)
+                continue
+
+            # remove the *lastFrames.mj2 videos
+            video_files = [x for x in video_files if 'lastFrames' not in x]
+
+            for video_path in video_files:
+
+                vid_corrupted = check_file_corrupted(vid_path=video_path)
+
+                if not vid_corrupted:
+                    fov = os.path.basename(video_path).split('_')[-1].split('.')[0]
+                    get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov=fov)
+
 
 if __name__ == '__main__':
     main(subject='allActive', expDate='last10')
