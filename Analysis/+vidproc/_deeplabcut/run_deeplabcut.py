@@ -1,6 +1,3 @@
-import pdb
-
-import deeplabcut
 import os
 import glob
 import pandas as pd
@@ -10,6 +7,17 @@ import shutil
 import socket   # to get computer name
 import subprocess as sp
 import numpy as np
+
+# Plotting
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+# Image processing
+import deeplabcut
+import cv2
+
+# Debugging
+import pdb
 
 # Pink rig dependencies
 from pathlib import Path
@@ -196,6 +204,191 @@ def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder):
     return None
 
 
+def cut_video(ffmpeg_path, video_paths, cut_video_name_suffix='_subset',
+              subset_start_point=10, cut_duration=10, verbose=True):
+    """
+    Cuts video
+    Parameters
+    ----------
+    ffmpeg_path
+    video_paths
+    subset_start_point
+    cut_duration
+    verbose
+
+    Returns
+    -------
+
+    """
+    # cut_duration = process_params['cut_video']['cut_duration']
+    # subset_start_point = process_params['cut_video']['subset_start_point']
+    # ffmpeg_path = '/home/timothysit/anaconda3/envs/DEEPLABCUT/bin/ffmpeg'
+
+    start_time = subset_start_point
+    end_time = start_time + cut_duration
+
+    if verbose:
+        print('Cutting videos from %.f to %s seconds' % (start_time, end_time))
+
+    if video_paths is not list:
+        video_paths = [video_paths]
+
+    cut_video_paths = []
+
+    for video_path in video_paths:
+        video_name = os.path.basename(video_path).split('.')[0]
+        subset_video_name_without_ext = video_name + cut_video_name_suffix
+        subset_video_name = subset_video_name_without_ext + '.mp4'
+        subset_video_path = os.path.join(os.path.dirname(video_path), subset_video_name)
+        ffmpeg_args = [ffmpeg_path,
+                       '-ss', '%.f' % start_time,
+                       '-y',  # overwrite video if existing subset video exists
+                       '-i', video_path,
+                       '-c', 'copy',
+                       '-t', '%.f' % end_time,
+                       subset_video_path
+                       ]
+        sp.call(ffmpeg_args)
+
+        cut_video_paths.append(subset_video_path)
+
+
+    return cut_video_paths
+
+
+def load_body_parts_xy(vid_path, fov='eyeCam'):
+    """
+
+    Parameters
+    ----------
+    vid_path : path
+    fov : str
+
+    Returns
+    -------
+
+    """
+
+    if fov == 'eyeCam':
+        projectName = 'pinkRigs'
+        scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+        body_parts = ['eyeL', 'eyeR', 'eyeU', 'eyeD', 'pupilL', 'pupilR', 'pupilU', 'pupilD', 'whiskPadL', 'whiskPadR']
+    elif fov == 'frontCam':
+        projectName = 'pinkrigsFrontCam'
+        scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_150000'
+        body_parts = ['eyeL', 'eyeR', 'snoutL', 'snoutR', 'snoutF', 'pawL', 'pawR']
+    elif fov == 'sideCam':
+        projectName = 'pinkrigsSideCam'
+        scorer_name = 'DLC_resnet50_pinkrigsSideCamOct17shuffle1_300000'
+        body_parts = ['eyeL', 'snoutF', 'spout', 'pawL', 'earL', 'earR', 'earU', 'earD']
+
+    output_video_folder = os.path.dirname(vid_path)
+    subset_video_name_without_ext = os.path.basename(vid_path)[0:-4]
+    subset_vid_h5_path = glob.glob(os.path.join(
+        output_video_folder,
+        '*%s*%s*.h5' % (subset_video_name_without_ext, projectName)
+    ))[0]
+
+    subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+
+    body_part_mean_xy = {}
+    body_part_xy = {}
+    for b_part in body_parts:
+        body_part_yvals = np.array([x[(scorer_name, b_part, 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+        body_part_xvals = np.array([x[(scorer_name, b_part, 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+
+        body_part_xy[b_part + '_x'] = body_part_xvals
+        body_part_xy[b_part + '_y'] = body_part_yvals
+
+        # rough imputation of values where eyeR is not found (negative values)
+        body_part_yvals[body_part_yvals < 0] = np.mean(body_part_yvals)
+        body_part_xvals[body_part_xvals < 0] = np.mean(body_part_xvals)
+
+        yvals_mean = np.nanmean(body_part_yvals)
+        xvals_mean = np.nanmean(body_part_xvals)
+
+        body_part_mean_xy[b_part + '_y'] = yvals_mean
+        body_part_mean_xy[b_part + '_x'] = xvals_mean
+
+    return body_part_xy, body_part_mean_xy
+
+def get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCam'):
+    """
+
+    Parameters
+    ----------
+    ffmpeg_path
+    video_path
+    fov
+
+    Returns
+    -------
+
+    """
+
+    # Step 0 : see if the extraction process is already completed for the video path
+
+
+    # Step 1: get subset of video
+    cut_video_paths = cut_video(ffmpeg_path, video_paths=[video_path], cut_video_name_suffix='_subset',
+              subset_start_point=10, cut_duration=10, verbose=True)
+
+    # Step 2 : run deeplabcut on this cut video
+    if fov == 'eyeCam':
+        project_folder_name = 'pinkrigs'
+    elif fov == 'frontCam':
+        project_folder_name = 'pinkrigsFrontCam'
+    elif fov == 'sideCam':
+        project_folder_name = 'pinkrigsSideCam'
+
+    project_folder = os.path.join(working_directory, project_folder_name)
+
+    yaml_file_path = os.path.join(project_folder, 'config.yaml')
+    deeplabcut.analyze_videos(yaml_file_path, cut_video_paths,
+                              save_as_csv=True)
+
+    # Step 3 : load the coordinates and draw the rectangle
+    body_part_xy, body_part_mean_xy = load_body_parts_xy(vid_path=video_path, fov=fov)
+
+    if fov == 'eyeCam':
+        rectangle_width = 200
+        rectangle_height = 150
+
+        rectangle_start_x = (body_part_mean_xy['eyeR_x'] - 300)
+        rectangle_start_y = body_part_mean_xy['eyeR_y']
+
+    elif fov == 'frontCam':
+        rectangle_width = 50
+        rectangle_height = body_part_mean_xy['eyeL_y'] - body_part_mean_xy['eyeR_y']
+
+        rectangle_start_x = body_part_mean_xy['eyeR_x'] + 25
+        rectangle_start_y = body_part_mean_xy['eyeR_y']
+
+    elif fov == 'sideCam':
+        rectangle_width = 150
+        rectangle_height = 100
+        rectangle_start_x = body_part_mean_xy['eyeL_x'] - 75
+        rectangle_start_y = body_part_mean_xy['eyeL_y'] + 25
+
+
+    # Step 4 : plot and save the rectangle coordinates
+    output_video_folder = os.path.dirname(video_path)
+    subset_video_name_without_ext = os.path.basename(video_path)[0:-4]
+    fig, ax = plt.subplots()
+    fig.set_size_inches(3, 3)
+    vidcap = cv2.VideoCapture(video_path)
+    success, image = vidcap.read()  # here we plot just the first frame
+    ax.imshow(image, aspect='auto')
+    roi_rect = mpl.patches.Rectangle(
+            (rectangle_start_x, rectangle_start_y),
+            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+        )
+    ax.add_patch(roi_rect)
+    fig_name = '%s_rectangle_for_facemap.png' % (subset_video_name_without_ext)
+    fig.savefig(os.path.join(output_video_folder, fig_name), dpi=300, bbox_inches='tight', transparent=False)
+    plt.close(fig)
+
+
 def main(**csv_kwargs):
     """
     Parameters
@@ -218,7 +411,7 @@ def main(**csv_kwargs):
     override_time_check = True
     override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
-    steps_to_run = ['run_dlc_pipeline']  # on zelda machines this should be 'run_dlc_pipeline' unless models needs to be updated etc.
+    steps_to_run = ['get_roi_for_facemap']  # on zelda machines this should be 'run_dlc_pipeline' unless models needs to be updated etc.
 
 
     # main_folder = 'smb://zinu.local/subjects/'
@@ -234,7 +427,7 @@ def main(**csv_kwargs):
                        'check_labels', 'create_training_set', 'train_network', 'evaluate_network',
                        'analyze_video', 'create_labeled_video', 'filter_predictions', 'plot_trajectories',
                        'extract_outlier_frames', 'add_video', 'upload_model_to_server', 'download_model_from_server',
-                       'resize_video', 'extract_subset_of_video', 'run_dlc_pipeline']
+                       'resize_video', 'extract_subset_of_video', 'run_dlc_pipeline', 'get_roi_for_facemap']
 
     process_params = {
         'analyze_video': dict(
@@ -601,17 +794,185 @@ def main(**csv_kwargs):
         project_folder = project_folder_search[0]
         yaml_file_path = os.path.join(project_folder, 'config.yaml')
 
-
         for input_video_path in additional_video_paths[projectName]:
 
             run_dlc_pipeline_on_video(input_video_path, yaml_file_path=yaml_file_path,
                                       project_folder=project_folder)
 
+    if 'plot_rectangle_for_facemap' in steps_to_run:
+
+        print('Plotting the rectangle to be given to facemap using DLC anchor points')
+
+        project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
+        project_folder = project_folder_search[0]
+        yaml_file_path = os.path.join(project_folder, 'config.yaml')
+        all_video_paths = []
+        all_video_paths.extend(additional_video_paths[projectName])
+        if not process_params['analyze_video']['only_use_additional_videos']:
+            all_video_paths.extend(project_video_paths[projectName])
+
+        # Loop through each video (assume deeplabcut is processed), plot the first 10 frames or so with the detected points,
+        # then take their mean to draw a rectangle
+
+        for vid_path in all_video_paths:
+
+            output_video_folder = os.path.dirname(vid_path)
+            subset_video_name_without_ext = os.path.basename(vid_path)[0:-4]
+            subset_vid_h5_path = glob.glob(os.path.join(
+                output_video_folder,
+                '*%s*%s*.h5' % (subset_video_name_without_ext, projectName)
+            ))[0]
+
+            if projectName == 'pinkrigs':
+
+                subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+                scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+                body_parts = ['eyeL', 'eyeR', 'eyeU', 'eyeD', 'pupilL', 'pupilR', 'pupilU', 'pupilD', 'whiskPadL',
+                              'whiskPadR']
+
+                # eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+                # eyeR_yvals = np.array([x[(scorer_name, 'eyeR', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+
+                # rough imputation of values where eyeR is not found (negative values)
+                # eyeR_xvals[eyeR_xvals < 0] = np.mean(eyeR_xvals)
+                # eyeR_yvals[eyeR_yvals < 0] = np.mean(eyeR_yvals)
+
+                # eyeR_xvals_mean = np.nanmean(eyeR_xvals)
+                # eyeR_yvals_mean = np.nanmean(eyeR_yvals)
+
+            elif projectName == 'pinkrigsFrontCam':
+
+                subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+                scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_150000'
+                body_parts = ['eyeL', 'eyeR', 'snoutL', 'snoutR', 'snoutF', 'pawL', 'pawR']
 
 
+            elif projectName == 'pinkrigsSideCam':
 
+                subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+                scorer_name = 'DLC_resnet50_pinkrigsSideCamOct17shuffle1_300000'
 
+                body_parts = ['eyeL', 'snoutF', 'spout', 'pawL', 'earL', 'earR', 'earU', 'earD']
 
+            body_part_mean_xy = {}
+            body_part_xy = {}
+
+            for b_part in body_parts:
+                body_part_yvals = np.array(
+                    [x[(scorer_name, b_part, 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+                body_part_xvals = np.array(
+                    [x[(scorer_name, b_part, 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+
+                body_part_xy[b_part + '_x'] = body_part_xvals
+                body_part_xy[b_part + '_y'] = body_part_yvals
+
+                # rough imputation of values where eyeR is not found (negative values)
+                body_part_yvals[body_part_yvals < 0] = np.mean(body_part_yvals)
+                body_part_xvals[body_part_xvals < 0] = np.mean(body_part_xvals)
+
+                yvals_mean = np.nanmean(body_part_yvals)
+                xvals_mean = np.nanmean(body_part_xvals)
+
+                body_part_mean_xy[b_part + '_y'] = yvals_mean
+                body_part_mean_xy[b_part + '_x'] = xvals_mean
+
+            num_frames_to_plot = 1
+            vidcap = cv2.VideoCapture(vid_path)
+
+            with plt.style.context(splstyle.get_style('nature-reviews')):
+
+                if num_frames_to_plot > 1:
+                    fig, axs = plt.subplots(2, 5, sharex=True, sharey=True)
+                    fig.set_size_inches(10, 4)
+
+                    for frame_i in np.arange(num_frames_to_plot):
+                        success, image = vidcap.read()
+
+                        # Need to create a new artist each time, that's why this is within the loop
+                        if projectName == 'pinkrigs':
+                            rectangle_width = 200
+                            eyeCam_rect = mpl.patches.Rectangle(
+                                (eyeR_xvals_mean - 300, eyeR_yvals_mean),
+                                rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
+                            )
+
+                            axs.flatten()[frame_i].imshow(image, aspect='auto')
+                            axs.flatten()[frame_i].add_patch(eyeCam_rect)
+                            axs.flatten()[frame_i].scatter(eyeR_xvals[frame_i], eyeR_yvals[frame_i], color='red', s=3)
+                            axs.flatten()[frame_i].scatter(eyeR_xvals_mean, eyeR_yvals_mean, color='blue', s=3)
+                else:
+                    fig, ax = plt.subplots()
+                    fig.set_size_inches(3, 3)
+                    success, image = vidcap.read()
+
+                    # Need to create a new artist each time, that's why this is within the loop
+                    if projectName == 'pinkrigs':
+                        rectangle_width = 200
+
+                        eyeR_xvals_mean = body_part_mean_xy['eyeR_x']
+                        eyeR_yvals_mean = body_part_mean_xy['eyeR_y']
+
+                        eyeCam_rect = mpl.patches.Rectangle(
+                            (eyeR_xvals_mean - 300, eyeR_yvals_mean),
+                            rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
+                        )
+                        ax.imshow(image, aspect='auto')
+                        ax.add_patch(eyeCam_rect)
+                        # ax.scatter(eyeR_xvals[0], eyeR_yvals[0], color='red', s=3)
+                        # ax.scatter(eyeR_xvals_mean, eyeR_yvals_mean, color='blue', s=3)
+                        for b_part in body_parts:
+                            ax.scatter(body_part_mean_xy['%s_x' % b_part], body_part_mean_xy['%s_y' % b_part],
+                                       color='blue', s=3)
+                            ax.scatter(body_part_xy['%s_x' % b_part][0], body_part_xy['%s_y' % b_part][0], color='red',
+                                       s=3)
+
+                    elif projectName == 'pinkrigsFrontCam':
+
+                        rectangle_width = 50
+                        # rectangle_height = eyeL_yvals_mean - eyeR_yvals_mean
+                        rectangle_height = body_part_mean_xy['eyeL_y'] - body_part_mean_xy['eyeR_y']
+
+                        eyeCam_rect = mpl.patches.Rectangle(
+                            (body_part_mean_xy['eyeR_x'] + 25, body_part_mean_xy['eyeR_y']),
+                            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+                        )
+                        ax.imshow(image, aspect='auto')
+                        ax.add_patch(eyeCam_rect)
+
+                        for b_part in body_parts:
+                            ax.scatter(body_part_mean_xy['%s_x' % b_part], body_part_mean_xy['%s_y' % b_part],
+                                       color='blue', s=3)
+                            ax.scatter(body_part_xy['%s_x' % b_part][0], body_part_xy['%s_y' % b_part][0], color='red',
+                                       s=3)
+
+                    elif projectName == 'pinkrigsSideCam':
+
+                        rectangle_width = 150
+                        rectangle_height = 100
+                        eyeCam_rect = mpl.patches.Rectangle(
+                            (body_part_mean_xy['eyeL_x'] - 75, body_part_mean_xy['eyeL_y'] + 25),
+                            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+                        )
+                        ax.imshow(image, aspect='auto')
+                        ax.add_patch(eyeCam_rect)
+                        # ax.scatter(eyeR_xvals[0], eyeR_yvals[0], color='red', s=3)
+                        # ax.scatter(eyeR_xvals_mean, eyeR_yvals_mean, color='blue', s=3)
+
+                        for b_part in body_parts:
+                            ax.scatter(body_part_mean_xy['%s_x' % b_part], body_part_mean_xy['%s_y' % b_part],
+                                       color='blue', s=3)
+                            ax.scatter(body_part_xy['%s_x' % b_part][0], body_part_xy['%s_y' % b_part][0], color='red',
+                                       s=3)
+
+                fig.suptitle(subset_video_name_without_ext, size=11)
+                fig_name = '%s_rectangle_for_facemap.png' % (subset_video_name_without_ext)
+                fig.savefig(os.path.join(output_video_folder, fig_name), dpi=300, bbox_inches='tight',
+                            transparent=False)
+                plt.close(fig)
+
+    if 'get_roi_for_facemap' in steps_to_run:
+
+        get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCam')
 
 if __name__ == '__main__':
     main(subject='all',expDate='last100')
