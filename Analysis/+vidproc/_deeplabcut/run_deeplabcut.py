@@ -11,6 +11,13 @@ import socket   # to get computer name
 import subprocess as sp
 import numpy as np
 
+# Pink rig dependencies
+from pathlib import Path
+import sys
+pinkRig_path = glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Analysis.helpers.queryExp import queryCSV, Bunch
 
 
 # For accessing files on server
@@ -189,7 +196,7 @@ def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder):
     return None
 
 
-def main():
+def main(**csv_kwargs):
     """
     Parameters
     ----------
@@ -203,8 +210,17 @@ def main():
     If starting from scratch, then run (1) create_project (2) edit_config, (3) extract_frames, (4) label_frames
     """
 
+    print('run_deeplabcut.py called')
+
+    process_most_recent = True  # whether to sort files based on recency and process the most recent data
     access_file_via_server = False
     check_project_made = False  # Check that project is already made
+    override_time_check = True
+    override_limit = 1  # how many times to override time checking before stopping
+    override_counter = 0
+    steps_to_run = ['run_dlc_pipeline']  # on zelda machines this should be 'run_dlc_pipeline' unless models needs to be updated etc.
+
+
     # main_folder = 'smb://zinu.local/subjects/'
     # main_folder = '/run/user/1000/gvfs/smb-share:server=zinu.local,share=subjects'  # 'smb://zinu.local/subjects/'
     main_folder = '/home/timothysit/local_pinkrigs_DLC_training_videos/'
@@ -219,8 +235,6 @@ def main():
                        'analyze_video', 'create_labeled_video', 'filter_predictions', 'plot_trajectories',
                        'extract_outlier_frames', 'add_video', 'upload_model_to_server', 'download_model_from_server',
                        'resize_video', 'extract_subset_of_video', 'run_dlc_pipeline']
-
-    steps_to_run = ['run_dlc_pipeline']
 
     process_params = {
         'analyze_video': dict(
@@ -574,7 +588,11 @@ def main():
     if 'run_dlc_pipeline' in steps_to_run:
 
         # TODO: add the time checks etc.
-        # TODO: get the "sessions" stuff here, then use that to get the video paths
+
+        # Get file information to run deeplabcut
+        sessions = queryCSV(**csv_kwargs)
+        if process_most_recent:
+            sessions = sessions.sort_values('expDate')[::-1]
 
         ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
 
@@ -596,6 +614,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(subject='all',expDate='last100')
 
 
