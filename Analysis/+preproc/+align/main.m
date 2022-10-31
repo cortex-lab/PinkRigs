@@ -176,6 +176,7 @@ function main(varargin)
                 fprintf(1, '* Aligning videos... *\n');
                 
                 vids2Process = videoNames(cellfun(@(x) shouldProcess(x), videoNames));
+                if shouldProcess('video'); vids2Process = videoNames; end
 
                 % Align each of them
                 for v = 1:numel(vids2Process)

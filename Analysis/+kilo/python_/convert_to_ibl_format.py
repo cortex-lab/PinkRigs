@@ -15,10 +15,11 @@ from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25) # always register to the 25 um atlas 
 
 # PinkRig processing tools 
-# import PinkRig ephys processng tools 
+# import PinkRig ephys processng tools
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
-sys.path.insert(0, (pinkRig_path / r'Analysis\+kilo\python_').__str__() )
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Admin.csv_pyhandlers import get_server_location 
 
 from ReadSGLXData.readSGLX import readMeta
 
@@ -56,7 +57,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     print(date_selection)
 
     # check which mice are active on Master csv
-    root = Path(r'\\zserver.cortexlab.net\Code\AVrig')
+    root = get_server_location()
     master_csv = pd.read_csv(root / '!MouseList.csv')
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject
@@ -155,10 +156,6 @@ def extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=False):
 
             # I might need to rewrite the channels.localCoordinate files. These seem to be wrong
             # on npix 2.0. (as in: incorrect spcing and positional identifier.)
-            print('arrived to test pos.')
-
-
-
             if do_raw_files:
                 extract_rmsmap(efile.ap, out_folder=out_path, spectra=False)
         if efile.get('lf') and efile.lf.exists() and do_raw_files:
@@ -184,8 +181,8 @@ def ks_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=False):
     
 def run_batch_ibl_formatting(run_for=2):
     # get queue
-    root = r'\\zserver.cortexlab.net\Code\AVrig\Helpers'
-    queue_csv_file = '%s\ibl_formatting_queue.csv' % root
+    root = get_server_location() / 'Helpers'
+    queue_csv_file = root / 'ibl_formatting_queue.csv' 
     queue_csv = pd.read_csv(queue_csv_file)
     print('checking the queue...')
 
@@ -195,7 +192,7 @@ def run_batch_ibl_formatting(run_for=2):
     print('current hour is %.2f' % start_hour)
 
     print('starting my work on queue..')
-    for idx,rec in queue_csv.iterrows():
+    for idx,rec in queue_csv.iloc[::-1].iterrows():
         #check if recording is not being sorted already 
         if rec.doneTag==0: 
             check_time = time.now()

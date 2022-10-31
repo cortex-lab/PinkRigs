@@ -53,7 +53,6 @@ function main(varargin)
 
             reliableUnits = reliability>0.5;
             db(dd).spikeData = db(dd).spikeData(:,:,reliableUnits,:);
-            db(dd).goodUnits = db(dd).goodUnits(reliableUnits);
             db(dd).C.XPos = db(dd).C.XPos(reliableUnits);
             db(dd).C.Depth = db(dd).C.Depth(reliableUnits);
             db(dd).C.CluID = db(dd).C.CluID(reliableUnits);
@@ -103,6 +102,26 @@ function main(varargin)
 
     %% Plot it
     colAni = lines(numel(subjects));
+
+    % BU
+    figure;
+    hold all
+    for rr = 1:numel(recLocUni)
+        subjectIdx = strcmp(subjects,subjectsAll{rr});
+        plot(idi{rr},NstableDur{rr},'-','color',[colAni(subjectIdx,:)])
+        scatter(idi{rr},NstableDur{rr},10,[colAni(subjectIdx,:)],'filled')
+    end
+
+    ylabel({'Number of'; 'matched clusters'})
+    xlabel('Number of days between recordings')
+    set(gca, 'YScale', 'log')
+    xlim([0.5 7])
+    xticks([1 7])
+    xticklabels([1 7])
+    ylim([1 1000])
+    yticks([1 10 100 1000])
+    yticklabels([1 10 100 1000])
+
     figure;
     subplot(311); hold all
     for rr = 1:numel(recLocUni)

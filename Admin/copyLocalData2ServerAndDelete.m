@@ -24,8 +24,13 @@ if isempty(allLocalFiles)
 else
     serverFolders = cellfun(@(x,y) num2cell(repmat(x,length(y),1),2), serverFolders, allLocalFiles, 'uni', 0);
     serverFolders = vertcat(serverFolders{:});
-    
     allLocalFiles = cell2mat(allLocalFiles);
+    
+    %ignore files that haven't been modified for an hour
+    allLocalFilesAgeInMins = (now-[allLocalFiles.datenum]')*24*60;
+    allLocalFiles(allLocalFilesAgeInMins < 60) = []; 
+    serverFolders(allLocalFilesAgeInMins < 60) = []; 
+    
     allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
     allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
     

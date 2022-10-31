@@ -27,6 +27,16 @@ pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Analysis.helpers.queryExp import queryCSV, Bunch
 
+# Pink rig dependencies
+from pathlib import Path
+import sys
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+
+from Analysis.helpers.queryExp import queryCSV,Bunch
+
+
 
 # For accessing files on server
 if ('Zelda' not in socket.gethostname()) & ('zelda' not in socket.gethostname()):
@@ -165,7 +175,7 @@ def run_dlc_on_video(input_video_path):
     return 1
 
 
-def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder):
+def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder, ffmpeg_path):
 
     output_video_folder = os.path.dirname(input_video_path)
     input_video_name = os.path.basename(input_video_path)
@@ -181,23 +191,25 @@ def run_dlc_pipeline_on_video(input_video_path, yaml_file_path, project_folder):
     # Get window to crop
     crop_window = get_crop_coordinates(output_video_folder, subset_video_name_without_ext, pad_pixels=20)
 
+    crop_window = [int(x) for x in crop_window]
+
     # Update config file with parameters
-    yaml_file_path = os.path.join(project_folder, 'config.yaml')
-    with open(yaml_file_path) as f:
-        yaml_data = yaml.load(f, Loader=yaml.FullLoader)
-        yaml_data['cropping'] = True
-        yaml_data['x1'] = int(crop_window[0])
-        yaml_data['x2'] = int(crop_window[1])
-        yaml_data['y1'] = int(crop_window[2])
-        yaml_data['y2'] = int(crop_window[3])
+    #yaml_file_path = os.path.join(project_folder, 'config.yaml')
+    #with open(yaml_file_path) as f:
+    #    yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+    #    yaml_data['cropping'] = True
+    #    yaml_data['x1'] = crop_window[0]
+    #    yaml_data['x2'] = crop_window[1]
+    #    yaml_data['y1'] = crop_window[2]
+    #    yaml_data['y2'] = crop_window[3]
 
     # save config
-    print('Saving new config file')
-    with open(yaml_file_path, 'w') as f:
-        yaml.dump(yaml_data, f)
+    #print('Saving new config file')
+    #with open(yaml_file_path, 'w') as f:
+    #    yaml.dump(yaml_data, f)
 
     deeplabcut.analyze_videos(yaml_file_path, [input_video_path], dynamic=(False, 0.5, 10),
-                              save_as_csv=True)  # cropping=crop_window)
+                              save_as_csv=True, cropping=crop_window)  # cropping=crop_window)
     deeplabcut.create_labeled_video(yaml_file_path, [input_video_path],
                                     displaycropped=True)
 
@@ -783,11 +795,25 @@ def main(**csv_kwargs):
         # TODO: add the time checks etc.
 
         # Get file information to run deeplabcut
+        # TODO: get the "sessions" stuff here, then use that to get the video paths
+        process_most_recent = True
+
         sessions = queryCSV(**csv_kwargs)
         if process_most_recent:
             sessions = sessions.sort_values('expDate')[::-1]
 
         ffmpeg_path = 'C:/Users/Experiment/.conda/envs/DEEPLABCUT/Library/bin/ffmpeg.exe'
+
+
+        # get list of videos from sessions dataframe
+        pdb.set_trace()
+        exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
+                                  exp_info['expDate'], str(exp_info['expNum']))
+        # look for video files
+        video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+
+        # remove the *lastFrames.mj2 videos
+        video_files = [x for x in video_files if 'lastFrames' not in x]
 
         # Get project folder and yaml
         project_folder_search = glob.glob(os.path.join(working_directory, '%s*' % projectName))
@@ -797,6 +823,7 @@ def main(**csv_kwargs):
         for input_video_path in additional_video_paths[projectName]:
 
             run_dlc_pipeline_on_video(input_video_path, yaml_file_path=yaml_file_path,
+
                                       project_folder=project_folder)
 
     if 'plot_rectangle_for_facemap' in steps_to_run:
@@ -975,6 +1002,6 @@ def main(**csv_kwargs):
         get_roi_for_facemap(video_path, working_directory, ffmpeg_path, fov='frontCam')
 
 if __name__ == '__main__':
-    main(subject='all',expDate='last100')
+    main(subject='allActive', expDate='last10')
 
 

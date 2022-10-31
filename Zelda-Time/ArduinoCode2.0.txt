@@ -61,20 +61,7 @@ void setup(void)
 
   cli();//stop interrupts
 
-//set timer0 interrupt at 1kHz
-  TCCR0A = 0;// set entire TCCR2A register to 0
-  TCCR0B = 0;// same for TCCR2B
-  TCNT0  = 0;//initialize counter value to 0
-  // set compare match register for 1khz increments
-  OCR0A = 249;// = (16*10^6) / (2000*64) - 1 (must be <256)
-  // turn on CTC mode
-  TCCR0A |= (1 << WGM01);
-  // Set CS01 and CS00 bits for 64 prescaler
-  TCCR0B |= (1 << CS01) | (1 << CS00);   
-  // enable timer compare interrupt
-  TIMSK0 |= (1 << OCIE0A);
-
-//set timer1 interrupt at 100Hz for flipper
+//set timer1 interrupt at 10Hz for flipper
   TCCR1A = 0;// set entire TCCR1A register to 0
   TCCR1B = 0;// same for TCCR1B
   TCNT1  = 0;//initialize counter value to 0
@@ -101,9 +88,7 @@ ISR(TIMER1_COMPA_vect){ // flipper code, runs at 100Hz
     digitalWrite(FLIPPER_OUT_PIN,LOW);
     digitalWrite(LED_STATUS_PIN, LOW);
     }
-}
-  
-ISR(TIMER0_COMPA_vect){ // mic and cam sync code, runs at 1kHz
+
  if(syncTrigger != digitalRead(FLIPPER_ENABLE_PIN)){
     Serial.println("Detected Trigger");
     syncTrigger = digitalRead(FLIPPER_ENABLE_PIN);
@@ -112,7 +97,7 @@ ISR(TIMER0_COMPA_vect){ // mic and cam sync code, runs at 1kHz
     syncCount = 0;
     syncLive = 1;
  }
-  if(syncCount >= 200){
+  if(syncCount >= 2){
    digitalWrite(MIC_SYNC_PIN, LOW);
    digitalWrite(CAM_SYNC_PIN, HIGH);
    syncLive = 0;
@@ -122,6 +107,7 @@ ISR(TIMER0_COMPA_vect){ // mic and cam sync code, runs at 1kHz
  if (syncLive == 1){
    syncCount = syncCount+1;
     }
+
 }
 
 void loop(void) // update Peltier PWM value and serial print every 2s
@@ -136,9 +122,9 @@ void loop(void) // update Peltier PWM value and serial print every 2s
   sensors.requestTemperatures();
 
   //print the temperature in Celsius
-  //Serial.print("Temperature: ");
-  //Serial.print(sensors.getTempCByIndex(0));
-  //Serial.println("C");
+  Serial.print("Temperature: ");
+  Serial.print(sensors.getTempCByIndex(0));
+  Serial.println("C");
 
   //update Peltier status
   
@@ -146,8 +132,8 @@ void loop(void) // update Peltier PWM value and serial print every 2s
   myPID.Compute();
   
   analogWrite(PELTIER_OUT_PIN,PeltierPWM);
-  //Serial.print("PWM output: ");
-  //Serial.println(PeltierPWM);
+  Serial.print("PWM output: ");
+  Serial.println(PeltierPWM);
 
   delay(2000);
 }

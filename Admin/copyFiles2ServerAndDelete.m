@@ -11,7 +11,6 @@ end
 isDirectory = cellfun(@isfolder, localFilePaths);
 localFilePaths = localFilePaths(~isDirectory);
 serverFilePaths = serverFilePaths(~isDirectory);
-
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
 if any(contains(serverFilePaths, 'ephys'))    
@@ -34,13 +33,13 @@ else
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{cIdx}));
             else
-                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', data2Copy);
+                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{cIdx});
             end
         end
         try
             copyfile(localFilePaths{cIdx},fileparts(serverFilePaths{cIdx}));
         catch
-            fprintf('WARNING: Problem copying file %s. Skipping.... \n', data2Copy);
+            fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
         end
         elapsedTime = toc;
         d = dir(localFilePaths{cIdx});
@@ -49,22 +48,28 @@ else
     end
 end
 
-serverFileDetails = cellfun(@dir, serverFilePaths, 'uni', 0);
-localFileDetails = cell2mat(cellfun(@dir, localFilePaths, 'uni', 0));
-
-failedCopy = cellfun(@isempty, serverFileDetails);
-localFileDetails(failedCopy) = []; 
-serverFileDetails = cell2mat(serverFileDetails);
+localFileMD5 = cellfun(@(x) GetMD5(x, 'File'), localFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
+serverFileMD5 = cellfun(@(x) GetMD5(x, 'File'), serverFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
+failedCopy = cellfun(@(x,y) ~strcmp(x,y), localFileMD5, serverFileMD5);
 
 %% Deletions
-% delete files that have been copied correctly
-oldIdx = ([localFileDetails(:).datenum]<=now-0)';
-sizeMismatch = ([localFileDetails(:).bytes]~=[serverFileDetails(:).bytes])';
+% delete local files that have been copied correctly
+if any(~failedCopy)
+    fprintf('Deleting local files... \n')
+    cellfun(@(x) delete(x), localFilePaths(~failedCopy));
+end
 
-toDelete = localFileDetails(oldIdx & ~sizeMismatch);
-fprintf('Deleting...')
-tic;
-arrayfun(@(x) delete(fullfile(x.folder, x.name)), toDelete);
-elapsedTime = toc;
-fprintf('Done in %d sec.\n',elapsedTime)
+% delete server files that have been copied correctly
+if any(failedCopy)
+    fprintf('Deleting "bad" server files... \n')
+    cellfun(@(x) delete(x), serverFilePaths(failedCopy));
+end
+
+fprintf('Done! \n')
+end
+
+
+function outPut = md5Error(~,~,~)
+%function to handle errors when getting the md5 hash
+outPut = 'md5Error';
 end
