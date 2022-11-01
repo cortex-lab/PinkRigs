@@ -21,49 +21,49 @@ if any(contains(serverFilePaths, 'ephys'))
     copiedAlready = copiedAlready | copiedAlreadyCelian;
 end
 
-if all(copiedAlready)
-    fprintf('All data is already copied .. \n')
-else
-    files2copy = find(~copiedAlready);
-    for i = 1:length(files2copy)
-        cIdx = files2copy(i);
-        fprintf('Copying %s ...\n', localFilePaths{cIdx});
+%% Loop to copy/check/delete files
+for i = 1:length(copiedAlready)
+    failedCopy = 0*copiedAlready>0;
+    localFileMD5 = GetMD5(localFilePaths{i}, 'File');
+    fprintf('Processing %s ...\n', localFilePaths{i});
+    if ~copiedAlready(i)
+        fprintf('Copying %s ...\n', localFilePaths{i});
         tic;
-        if ~isfolder(fileparts(serverFilePaths{cIdx}))
+        if ~isfolder(fileparts(serverFilePaths{i}))
             if makeMissingDirs
-                mkdir(fileparts(serverFilePaths{cIdx}));
+                mkdir(fileparts(serverFilePaths{i}));
             else
-                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{cIdx});
+                fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{i});
             end
         end
         try
-            copyfile(localFilePaths{cIdx},fileparts(serverFilePaths{cIdx}));
+            copyfile(localFilePaths{i},fileparts(serverFilePaths{i}));
+            serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+            if ~strcmp(localFileMD5, serverFileMD5)
+                fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i});
+                failedCopy(i) = 1;
+            else
+                elapsedTime = toc;
+                d = dir(localFilePaths{i});
+                rate = d.bytes/(10^6)/elapsedTime;
+                fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)               
+            end
         catch
-            fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
+            fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i});
+            failedCopy(i) = 1;
         end
-        elapsedTime = toc;
-        d = dir(localFilePaths{cIdx});
-        rate = d.bytes/(10^6)/elapsedTime;
-        fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
+    else
+        serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+        failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+    end
+    if failedCopy(i) == 0
+        fprintf('Copy successful. Deleting local file... \n')
+%         delete(localFilePaths{i});
+    elseif exist(serverFilePaths{i}, 'file')
+        movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
     end
 end
-
-localFileMD5 = cellfun(@(x) GetMD5(x, 'File'), localFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
-serverFileMD5 = cellfun(@(x) GetMD5(x, 'File'), serverFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
-failedCopy = cellfun(@(x,y) ~strcmp(x,y), localFileMD5, serverFileMD5);
-
-%% Deletions
-% delete local files that have been copied correctly
-if any(~failedCopy)
-    fprintf('Deleting local files... \n')
-    cellfun(@(x) delete(x), localFilePaths(~failedCopy));
-end
-
-% delete server files that have been copied incorrectly
-if any(failedCopy)
-    fprintf('Deleting "bad" server files... \n')
-    cellfun(@(x) delete(x), serverFilePaths(failedCopy));
-end
+%% TODO--email list of bad copies to users
 
 fprintf('Done! \n')
 end
