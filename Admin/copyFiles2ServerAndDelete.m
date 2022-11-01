@@ -59,7 +59,7 @@ if any(~failedCopy)
     cellfun(@(x) delete(x), localFilePaths(~failedCopy));
 end
 
-% delete server files that have been copied correctly
+% delete server files that have been copied incorrectly
 if any(failedCopy)
     fprintf('Deleting "bad" server files... \n')
     cellfun(@(x) delete(x), serverFilePaths(failedCopy));
