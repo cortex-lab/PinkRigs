@@ -9,9 +9,10 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Admin.csv_pyhandlers import get_server_location 
+import datetime 
 
 def check_date_selection(date_selection,date):
-    import datetime 
+    
     date_range = []
 
     if 'last' in date_selection: 
@@ -80,6 +81,8 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
+
+
                         # look for pyKS folder with spike times in the same folder as ap.bin
                         KS_rez = r'%s\**\pyKS\**\spike_times.npy' % (os.path.dirname(ephys_file))
                         KS_rez = glob.glob(KS_rez,recursive=True) # should not be longer than 1?
@@ -98,6 +101,14 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
                         # override KS_done if resorting is requested 
                         if resort: 
                             KS_done = False
+
+                        # override KS_done if the file was modified in the last hour. 
+                        # check when the ephys file was created and don't sort if it's less than an hour. 
+                        last_modification_time = Path(ephys_file).stat().st_mtime
+                        modification_thr = 1 # 1 hr
+                        is_recently_modified_file = ((datetime.datetime.now().timestamp()-last_modification_time)/3600)<modification_thr
+                        if is_recently_modified_file:
+                            KS_done = True
 
                         if not KS_done:
                             print(ephys_file)
@@ -125,4 +136,4 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
 
 if __name__ == "__main__":
    stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])
-   #stage_KS_queue(mouse_selection='all',date_selection='all')
+   #stage_KS_queue(mouse_selection='allActive',date_selection='last10')
