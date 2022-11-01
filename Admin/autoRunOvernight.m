@@ -111,6 +111,7 @@ try
             end
     
             disp(resultpyKS);
+            log = append(log,resultpyKS);
 
             % run at all times 
             log = append(log,'creating the ibl format... \n');
@@ -168,6 +169,7 @@ try
             end
     
             disp(resultpyKS);
+            log = append(log,resultpyKS);
             log = append(log,sprintf('Stopping now %s. \n',datestr(now)));
     
         case {'celians'}
