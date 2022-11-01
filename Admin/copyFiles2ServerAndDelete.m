@@ -25,6 +25,7 @@ if all(copiedAlready)
     fprintf('All data is already copied .. \n')
 else
     files2copy = find(~copiedAlready);
+    failedCopy = 0*files2copy>0;
     for i = 1:length(files2copy)
         cIdx = files2copy(i);
         fprintf('Copying %s ...\n', localFilePaths{cIdx});
@@ -36,21 +37,28 @@ else
                 fprintf('WARNING: Directory missing for: %s. Skipping.... \n', localFilePaths{cIdx});
             end
         end
+        localFileMD5 = GetMD5(localFilePaths{cIdx}, 'File');
         try
             copyfile(localFilePaths{cIdx},fileparts(serverFilePaths{cIdx}));
+            serverFileMD5 = GetMD5(serverFilePaths{cIdx}, 'File');
+            if ~strcmp(localFileMD5, serverFileMD5)
+                fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
+                failedCopy(i) = 1;
+            else
+                elapsedTime = toc;
+                d = dir(localFilePaths{cIdx});
+                rate = d.bytes/(10^6)/elapsedTime;
+                fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
+            end
         catch
             fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{cIdx});
+            if exist(serverFilePaths{cIdx}, 'file')
+                movefile(serverFilePaths{cIdx}, [serverFilePaths{cIdx} '_FAILEDCOPY']);
+            end
+            failedCopy(i) = 1;
         end
-        elapsedTime = toc;
-        d = dir(localFilePaths{cIdx});
-        rate = d.bytes/(10^6)/elapsedTime;
-        fprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate)
     end
 end
-
-localFileMD5 = cellfun(@(x) GetMD5(x, 'File'), localFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
-serverFileMD5 = cellfun(@(x) GetMD5(x, 'File'), serverFilePaths, 'ErrorHandler', @md5Error, 'uni', 0);
-failedCopy = cellfun(@(x,y) ~strcmp(x,y), localFileMD5, serverFileMD5);
 
 %% Deletions
 % delete local files that have been copied correctly
