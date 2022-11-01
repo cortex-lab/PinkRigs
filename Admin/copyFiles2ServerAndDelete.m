@@ -58,7 +58,7 @@ for i = 1:length(copiedAlready)
     end
     if failedCopy(i) == 0
         fprintf('Copy successful. Deleting local file... \n')
-        delete(localFilePaths{i});
+%         delete(localFilePaths{i});
     elseif exist(serverFilePaths{i}, 'file')
         movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
     end
