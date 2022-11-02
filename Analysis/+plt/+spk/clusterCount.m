@@ -1,4 +1,4 @@
-function clusterCount(varargin)
+function [clusterNum, recLocAll, days] = clusterCount(varargin)
     %%% This function will plot the number of clusters across days for a
     %%% the specified subject(s).
     
@@ -9,6 +9,7 @@ function clusterCount(varargin)
     varargin = ['expDate', {inf}, varargin];
     varargin = ['expDef', {{{'s','i','n'}}}, varargin]; 
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
+    varargin = ['pltIndiv', 0, varargin];
     params = csv.inputValidation(varargin{:});
 
     %% Get exp list
@@ -105,10 +106,11 @@ function clusterCount(varargin)
                     X = [ones(numel(recIdx),1), days(recIdx)'];
                     b{ss,pp}(rr,:) = (X\log10(clusterNum(recIdx)'));
 
-                    plot(days(recIdx), clusterNum(recIdx),'-','color',[colAni(ss,:) .2])
-                    scatter(days(recIdx), clusterNum(recIdx),5,colAni(ss,:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
-                    plot(days(recIdx), 10.^(X*b{ss,pp}(rr,:)'), 'color',colAni(ss,:),'LineWidth',1)
-
+                    if params.pltIndiv{1}
+                        plot(days(recIdx), clusterNum(recIdx),'-','color',[colAni(ss,:) .2])
+                        scatter(days(recIdx), clusterNum(recIdx),5,colAni(ss,:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
+                        plot(days(recIdx), 10.^(X*b{ss,pp}(rr,:)'), 'color',colAni(ss,:),'LineWidth',1)
+                    end
                 else
                     recLocSlope{ss,pp}{rr} = '';
                     b{ss,pp}(rr,:) = [nan;nan];

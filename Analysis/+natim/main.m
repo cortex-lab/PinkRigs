@@ -1,4 +1,4 @@
-function main(varargin)
+function [dball, res] = main(varargin)
     %%% This function will plot the number of clusters across days for a
     %%% the specified subject(s).
     
@@ -175,3 +175,15 @@ function main(varargin)
     xlim([1,30])
     ylabel({'Stability of' ; 'noise correlations'})
     xlabel('Number of days between recordings')
+
+    %% Save res
+
+    res.subjectsAll = subjectsAll;
+    res.Nstable = Nstable;
+    res.Pstable = Pstable;
+    res.dur = dur;
+    res.NstableDur = NstableDur;
+    res.PstableDur = PstableDur;
+    res.idi = idi;
+    res.noiseCorrStructDur = noiseCorrStructDur;
+    res.sigCorrStructDur = sigCorrStructDur;
