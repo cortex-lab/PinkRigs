@@ -67,12 +67,17 @@ for i = 1:length(copiedAlready)
             fprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i});
             failedCopy(i) = 1;
         end
+        if failedCopy(i) == 0
+            fprintf('Copy successful. Will delete local file... \n')
+        end
     else
         serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
         failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+        if failedCopy(i) == 0
+            fprintf('Copied already. Will delete local file... \n')
+        end
     end
     if failedCopy(i) == 0
-        fprintf('Copy successful. Deleting local file... \n')
         delete(localFilePaths{i});
     elseif exist(serverFilePaths{i}, 'file')
         movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
