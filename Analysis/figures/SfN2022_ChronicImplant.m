@@ -4,7 +4,7 @@
 % [clusterNum, recLocAll, days] = plt.spk.clusterCount(pltIndiv=0);
 % save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability','clusterNum', 'recLocAll', 'days')
 
-load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability')
+load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability')
 
 %% Plot it
 recInfo = cellfun(@(x) split(x,'__'),recLocAll,'uni',0);
