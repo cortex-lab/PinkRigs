@@ -1,12 +1,25 @@
 %% ------ Stability plots ------
 %% Get data
 
-% [clusterNum, recLocAll, days] = plt.spk.clusterCount(pltIndiv=0);
-% save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability','clusterNum', 'recLocAll', 'days')
+[clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
+save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
 
-load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability')
+load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');
 
 %% Plot it
+
+for rr = 1:numel(qualityMetrics)
+    if ~isempty(qualityMetrics{rr})
+        % qm(rr) = nanmedian(qualityMetrics{rr}.firing_rate);
+        % qm(rr) = nanmedian(qualityMetrics{rr}.amp_median);
+        qm(rr) = nanmedian(qualityMetrics{rr}.missed_spikes_est);
+        % qm(rr) = sum(strcmp(qualityMetrics{rr}.ks2_label,"good"));
+    else
+        % happens a few times, will fix later
+        qm(rr)= nan;
+    end
+end
+
 recInfo = cellfun(@(x) split(x,'__'),recLocAll,'uni',0);
 subjectsAll = cellfun(@(x) x{1}, recInfo, 'UniformOutput', false);
 probeSNAll = cellfun(@(x) x{2}, recInfo, 'UniformOutput', false);
@@ -54,11 +67,11 @@ for ss = 1:numel(subjects)
 
                 % Compute the slope
                 X = [ones(numel(recIdx),1), days(recIdx)'];
-                b{ss,pp}(rr,:) = (X\log10(clusterNum(recIdx)'));
+                b{ss,pp}(rr,:) = (X\log10(qm(recIdx)'));
 
                 if pltIndiv
-                    plot(days(recIdx), clusterNum(recIdx),'-','color',[colAni(ss,:) .2])
-                    scatter(days(recIdx), clusterNum(recIdx),5,colAni(ss,:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
+                    plot(days(recIdx), qm(recIdx),'-','color',[colAni(ss,:) .2])
+                    scatter(days(recIdx), qm(recIdx),5,colAni(ss,:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
                     plot(days(recIdx), 10.^(X*b{ss,pp}(rr,:)'), 'color',colAni(ss,:),'LineWidth',1)
                 end
             else
@@ -71,10 +84,10 @@ for ss = 1:numel(subjects)
         fullProbeScanSpec = cellfun(@(x) [subjects{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
         ee = numel(fullProbeScanSpec)+2;
         n = 1;
-        clear clusterNumProbe dayFullProbe
+        clear qmProbe dayFullProbe
         while ee < numel(recLocGood)
             if all(cell2mat(cellfun(@(x) ismember(x,recLocGood(ee-numel(fullProbeScanSpec)-2+1:ee)), fullProbeScanSpec, 'uni', 0)))
-                clusterNumProbe(n) = sum(clusterNum(subAndProbeIdx(ee-numel(fullProbeScanSpec)-2+1:ee)));
+                qmProbe(n) = sum(qm(subAndProbeIdx(ee-numel(fullProbeScanSpec)-2+1:ee)));
                 dayFullProbe(n) = days(subAndProbeIdx(ee));
                 ee = ee+numel(fullProbeScanSpec)+2;
                 n = n+1;
@@ -82,11 +95,11 @@ for ss = 1:numel(subjects)
                 ee = ee+1;
             end
         end
-        if exist('clusterNumProbe','var') && numel(dayFullProbe)>1
-            plot(dayFullProbe,clusterNumProbe,'-','color',[colAni(ss,:) .2])
-            scatter(dayFullProbe,clusterNumProbe,15,colAni(ss,:),'filled','MarkerEdgeAlpha',0.5,'MarkerFaceAlpha',0.5)
+        if exist('qmProbe','var') && numel(dayFullProbe)>1
+            plot(dayFullProbe,qmProbe,'-','color',[colAni(ss,:) .2])
+            scatter(dayFullProbe,qmProbe,15,colAni(ss,:),'filled','MarkerEdgeAlpha',0.5,'MarkerFaceAlpha',0.5)
             X = [ones(numel(dayFullProbe),1), dayFullProbe'];
-            ball = (X\log10(clusterNumProbe'));
+            ball = (X\log10(qmProbe'));
             plot(dayFullProbe, 10.^(X*ball), 'color',colAni(ss,:),'LineWidth',2)
             fullProbeSubj{end+1} = [subjects{ss} ' ' probes{pp}];
             text(dayFullProbe(end), 10.^(X(end,:)*ball),fullProbeSubj{end},'color',colAni(ss,:))
@@ -142,19 +155,25 @@ end
 figure('Position',[680   728   200   250]);
 hold all
 [~,idx] = sort(APpos);
-x = APpos(idx);
+x = APpos;
 y = 100*(10.^(slopeVec)-1);
-scatter(x,y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
+scatter(x(idx),y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
 fullProbeIdx = find(contains(subjVec(idx),fullProbeSubj));
-scatter(x(fullProbeIdx),y(idx(fullProbeIdx)),40*uses(idx(fullProbeIdx)),colAnitmp(idx(fullProbeIdx),:),'filled');
+scatter(x(idx(fullProbeIdx)),y(idx(fullProbeIdx)),40*uses(idx(fullProbeIdx)),colAnitmp(idx(fullProbeIdx),:),'filled');
 ylabel({'% change of unit';  ' count (%/day)'})
 xlabel('AP position')
 
-%% ------ Q metrics stability plots ------
-%% Get data
-
-
-%% Plot it
+figure('Position',[680   728   200   250]);
+hold all
+[~,idx] = sort(APpos);
+x = MLpos;
+y = APpos;
+scatter(x(idx),y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
+fullProbeIdx = find(contains(subjVec(idx),fullProbeSubj));
+scatter(x(idx(fullProbeIdx)),y(idx(fullProbeIdx)),40*uses(idx(fullProbeIdx)),colAnitmp(idx(fullProbeIdx),:),'filled');
+ylabel('AP position')
+xlabel('ML position')
+axis equal tight
 
 
 %% ------ Natural images plots ------

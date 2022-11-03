@@ -1,4 +1,4 @@
-function [clusterNum, recLocAll, days] = clusterCount(varargin)
+function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
     %%% This function will plot the number of clusters across days for a
     %%% the specified subject(s).
     
@@ -10,6 +10,7 @@ function [clusterNum, recLocAll, days] = clusterCount(varargin)
     varargin = ['expDef', {{{'s','i','n'}}}, varargin]; 
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
     varargin = ['pltIndiv', 0, varargin];
+    varargin = ['getQM', 0, varargin];
     params = csv.inputValidation(varargin{:});
 
     %% Get exp list
@@ -46,14 +47,28 @@ function [clusterNum, recLocAll, days] = clusterCount(varargin)
                 recPath{nn} = alignment.ephys(pp).ephysPath;
                 recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
+                if params.getQM{1}
+                    attr = {'_av_KSLabels','qualityMetrics'};
+                else
+                    attr = {'_av_KSLabels'};
+                end
+
                 clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                     object='clusters', ...
-                    attribute='_av_KSLabels');
+                    attribute=attr);
                 KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
                 goodUnits = KSLabels == 2;
 
                 % Get cluster count
                 clusterNum{nn} = sum(goodUnits);
+
+                if params.getQM{1} && isfield(clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters,'qualityMetrics')
+                    qualityMetrics{nn} = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.qualityMetrics;
+                else
+                    % not sure why it can be that sometimes there's no such
+                    % field?
+                    qualityMetrics{nn} = {};
+                end
 
                 nn = nn + 1;
             end
