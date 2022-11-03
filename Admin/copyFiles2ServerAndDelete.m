@@ -1,6 +1,6 @@
 function copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMissingDirs)
 if ~exist('makeMissingDirs', 'var'); makeMissingDirs = 0; end
-
+%%
 serverList = getServersList;
 serverList = cellfun(@(x) x(1:10), serverList, 'uni', 0);
 
@@ -26,6 +26,17 @@ for i = 1:length(copiedAlready)
     failedCopy = 0*copiedAlready>0;
     localFileMD5 = GetMD5(localFilePaths{i}, 'File');
     fprintf('Processing %s ...\n', localFilePaths{i});
+    
+    %This exception deals with the fact that we expect timeline to be
+    %different, so we only "copy" if we can't open the server version
+    if contains(localFilePaths{i}, 'timeline', 'ignorecase', 1)
+        try load(serverFilePaths{i})
+            serverFilePaths{i} = localFilePaths{i};
+        catch
+            fprintf('Server timeline appears corrupt for %s ...\n', localFilePaths{i});
+        end
+    end
+    
     if ~copiedAlready(i)
         fprintf('Copying %s ...\n', localFilePaths{i});
         tic;
@@ -58,7 +69,7 @@ for i = 1:length(copiedAlready)
     end
     if failedCopy(i) == 0
         fprintf('Copy successful. Deleting local file... \n')
-%         delete(localFilePaths{i});
+        delete(localFilePaths{i});
     elseif exist(serverFilePaths{i}, 'file')
         movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
     end
@@ -66,10 +77,4 @@ end
 %% TODO--email list of bad copies to users
 
 fprintf('Done! \n')
-end
-
-
-function outPut = md5Error(~,~,~)
-%function to handle errors when getting the md5 hash
-outPut = 'md5Error';
 end
