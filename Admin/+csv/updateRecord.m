@@ -392,6 +392,9 @@ elseif strcmpi(nDat.alignBlock, 'nan')
 elseif strcmpi(nDat.alignBlock, '0')
     % Issue a "0" if block alignment isn't complete yet
     nDat.extractEvents = '0';
+else
+    % Issue a "0" if non of the above are true
+    nDat.extractEvents = '0';
 end
 
 % Assign status for spike extraction.

@@ -4,7 +4,7 @@
 % [clusterNum, recLocAll, days] = plt.spk.clusterCount(pltIndiv=0);
 % save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability','clusterNum', 'recLocAll', 'days')
 
-load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability')
+load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability')
 
 %% Plot it
 recInfo = cellfun(@(x) split(x,'__'),recLocAll,'uni',0);
@@ -29,6 +29,8 @@ pltIndiv = 0;
 recLocSlope = cell(1,1);
 b = cell(1,1);
 useNum = nan(numel(subjects),2);
+fullProbeSubj = {};
+subj = {};
 for ss = 1:numel(subjects)
     subjectIdx = contains(subjectsAll,subjects(ss));
     probes = unique(probeSNAll(subjectIdx));
@@ -80,18 +82,21 @@ for ss = 1:numel(subjects)
                 ee = ee+1;
             end
         end
-        if exist('clusterNumProbe','var')
+        if exist('clusterNumProbe','var') && numel(dayFullProbe)>1
             plot(dayFullProbe,clusterNumProbe,'-','color',[colAni(ss,:) .2])
             scatter(dayFullProbe,clusterNumProbe,15,colAni(ss,:),'filled','MarkerEdgeAlpha',0.5,'MarkerFaceAlpha',0.5)
             X = [ones(numel(dayFullProbe),1), dayFullProbe'];
             ball = (X\log10(clusterNumProbe'));
             plot(dayFullProbe, 10.^(X*ball), 'color',colAni(ss,:),'LineWidth',2)
-            text(dayFullProbe(end), 10.^(X(end,:)*ball),[subjects{ss} ' ' probes{pp}],'color',colAni(ss,:))
+            fullProbeSubj{end+1} = [subjects{ss} ' ' probes{pp}];
+            text(dayFullProbe(end), 10.^(X(end,:)*ball),fullProbeSubj{end},'color',colAni(ss,:))
         end
 
         slopeMean(ss,pp) = nanmean(b{ss,pp}(:,2));
+        subj{ss,pp} = [subjects{ss} ' ' probes{pp}];
     end
 end
+subj(cell2mat(cellfun(@(x) isempty(x), subj, 'uni', 0))) = {' '};
 
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
@@ -106,20 +111,58 @@ xlim([3,max(days)])
 
 % slope
 figure('Position',[680   728   200   250]);
-tmp = slopeMean(~isnan(slopeMean(:)));
+hold all
+slopeVec = slopeMean(~isnan(slopeMean(:)));
 uses = useNum(~isnan(slopeMean(:)));
+subjVec = subj(~isnan(slopeMean(:))); % This is wrong
 colAnitmp = [colAni(~isnan(slopeMean(:,1)),:); colAni(~isnan(slopeMean(:,2)),:)];
-[~,idx] = sort(tmp);
-scatter(1:numel(tmp),100*(10.^(tmp(idx))-1),40*uses,colAnitmp(idx,:),'filled');
+[~,idx] = sort(slopeVec);
+x = 1:numel(slopeVec);
+y = 100*(10.^(slopeVec)-1);
+scatter(x,y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
+fullProbeIdx = find(contains(subjVec(idx),fullProbeSubj));
+scatter(x(fullProbeIdx),y(idx(fullProbeIdx)),40*uses(idx(fullProbeIdx)),colAnitmp(idx(fullProbeIdx),:),'filled');
 ylabel({'% change of unit';  ' count (%/day)'})
 xlabel('Experiment')
+
+% slope as a function of AP position
+% find pos of each probe
+mice = csv.readTable(csv.getLocation('main'));
+probeRef = regexp(subjVec,' ','split');
+APpos = nan(1,numel(probeRef));
+MLpos = nan(1,numel(probeRef));
+for p = 1:numel(probeRef)
+    probeInfo = csv.checkProbeUse(str2num(probeRef{p}{2}));
+    subIdx = strcmp(probeInfo.implantedSubjects{1},probeRef{p}{1});
+    APpos(p) = str2double(probeInfo.positionAP{1}{subIdx});
+    MLpos(p) = str2double(probeInfo.positionML{1}{subIdx});
+end
+
+% plot slope as a function of AP position
+figure('Position',[680   728   200   250]);
+hold all
+[~,idx] = sort(APpos);
+x = APpos(idx);
+y = 100*(10.^(slopeVec)-1);
+scatter(x,y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
+fullProbeIdx = find(contains(subjVec(idx),fullProbeSubj));
+scatter(x(fullProbeIdx),y(idx(fullProbeIdx)),40*uses(idx(fullProbeIdx)),colAnitmp(idx(fullProbeIdx),:),'filled');
+ylabel({'% change of unit';  ' count (%/day)'})
+xlabel('AP position')
+
+%% ------ Q metrics stability plots ------
+%% Get data
+
+
+%% Plot it
+
 
 %% ------ Natural images plots ------
 %% Get data
 
-mice = csv.readTable(csv.getLocation('main'));
-[dball, res] = natim.main(subject=mice(contains(mice.Subject, 'CB'),:).Subject);
-save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_natIm','dball', 'res','-v7.3')
+% mice = csv.readTable(csv.getLocation('main'));
+% [dball, res] = natim.main(subject=mice(contains(mice.Subject, 'CB020'),:).Subject);
+% save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_natIm','dball', 'res','-v7.3')
 
 load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_natIm')
 
@@ -135,20 +178,37 @@ colormap(gray)
 axis equal tight
 
 %% Plot stability
+subjects = unique(res.subjectsAll);
+recLocUni = unique({dball.recLoc});
+recLocUni = recLocUni(cell2mat(cellfun(@(x) sum(strcmp({dball.recLoc},x))>1, recLocUni, 'uni', 0)));
 colAni = lines(numel(subjects));
+
+% Starting from d1 only
 figure;
 hold all
 for rr = 1:numel(recLocUni)
-    subjectIdx = strcmp(subjects,subjectsAll{rr});
-    plot(idi{rr},NstableDur{rr},'-','color',[colAni(subjectIdx,:)])
-    scatter(idi{rr},NstableDur{rr},10,[colAni(subjectIdx,:)],'filled')
+    subjectIdx = strcmp(subjects,res.subjectsAll{rr});
+    plot(res.dur{rr}(:,1),res.Nstable{rr}(:,1),'-','color',[colAni(subjectIdx,:)])
+    scatter(res.dur{rr}(:,1),res.Nstable{rr}(:,1),10,[colAni(subjectIdx,:)],'filled')
+end
+ylabel({'Number of'; 'matched clusters'})
+xlabel('Number of days after exp start')
+set(gca, 'YScale', 'log')
+ylim([1 1000])
+yticks([1 10 100 1000])
+yticklabels([1 10 100 1000])
+
+% All days
+figure;
+hold all
+for rr = 1:numel(recLocUni)
+    subjectIdx = strcmp(subjects,res.subjectsAll{rr});
+    plot(res.idi{rr},res.NstableDur{rr},'-','color',[colAni(subjectIdx,:)])
+    scatter(res.idi{rr},res.NstableDur{rr},10,[colAni(subjectIdx,:)],'filled')
 end
 ylabel({'Number of'; 'matched clusters'})
 xlabel('Number of days between recordings')
 set(gca, 'YScale', 'log')
-% xlim([0.5 7])
-% xticks([1 7])
-% xticklabels([1 7])
 ylim([1 1000])
 yticks([1 10 100 1000])
 yticklabels([1 10 100 1000])
@@ -156,15 +216,15 @@ yticklabels([1 10 100 1000])
 figure;
 subplot(311); hold all
 for rr = 1:numel(recLocUni)
-    subjectIdx = strcmp(subjects,subjectsAll{rr});
-    plot(idi{rr},PstableDur{rr}*100,'-','color',[colAni(subjectIdx,:) .2])
-    scatter(idi{rr},PstableDur{rr}*100,5,[colAni(subjectIdx,:)],'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
+    subjectIdx = strcmp(subjects,res.subjectsAll{rr});
+    plot(res.idi{rr},res.PstableDur{rr}*100,'-','color',[colAni(subjectIdx,:) .2])
+    scatter(res.idi{rr},res.PstableDur{rr}*100,5,[colAni(subjectIdx,:)],'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
 
-    notnan = ~isnan(PstableDur{rr}); notnan(1) = 0;
-    X = [ones(numel(idi{rr}(notnan)),1), log10(idi{rr}(notnan))];
-    b = (X\PstableDur{rr}(notnan)'*100);
-    plot(idi{rr}(2:end), X*b, 'color',colAni(subjectIdx,:),'LineWidth',2)
-    text(idi{rr}(end), X(end,:)*b,[subjects(subjectIdx) '-' recLocUni{rr}],'color',colAni(subjectIdx,:))
+    notnan = ~isnan(res.PstableDur{rr}); notnan(1) = 0;
+    X = [ones(numel(res.idi{rr}(notnan)),1), log10(res.idi{rr}(notnan))];
+    b = (X\res.PstableDur{rr}(notnan)'*100);
+    plot(res.idi{rr}(2:end), X*b, 'color',colAni(subjectIdx,:),'LineWidth',2)
+    text(res.idi{rr}(end), X(end,:)*b,[subjects(subjectIdx) '-' recLocUni{rr}],'color',colAni(subjectIdx,:))
 end
 ylim([0 100])
 xticks([1 5 10 20 30])
@@ -175,13 +235,13 @@ xlabel('Number of days between recordings')
 
 subplot(312); hold all
 for rr = 1:numel(recLocUni)
-    plot(idi{rr},sigCorrStructDur{rr},'-','color',[colAni(strcmp(subjects,subjectsAll{rr}),:) .2])
-    scatter(idi{rr},sigCorrStructDur{rr},5,colAni(strcmp(subjects,subjectsAll{rr}),:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
+    plot(res.idi{rr},res.sigCorrStructDur{rr},'-','color',[colAni(strcmp(subjects,res.subjectsAll{rr}),:) .2])
+    scatter(res.idi{rr},res.sigCorrStructDur{rr},5,colAni(strcmp(subjects,res.subjectsAll{rr}),:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
 
-    notnan = ~isnan(sigCorrStructDur{rr}); notnan(1) = 0;
-    X = [ones(numel(idi{rr}(notnan)),1), idi{rr}(notnan)];
-    b = (X\sigCorrStructDur{rr}(notnan)');
-    plot(idi{rr}(notnan), X*b, 'color',colAni(strcmp(subjects,subjectsAll{rr}),:),'LineWidth',2)
+    notnan = ~isnan(res.sigCorrStructDur{rr}); notnan(1) = 0;
+    X = [ones(numel(res.idi{rr}(notnan)),1), res.idi{rr}(notnan)];
+    b = (X\res.sigCorrStructDur{rr}(notnan)');
+    plot(res.idi{rr}(notnan), X*b, 'color',colAni(strcmp(subjects,res.subjectsAll{rr}),:),'LineWidth',2)
 end
 ylim([0 1])
 xticks([1 5 10 20 30])
@@ -192,13 +252,13 @@ xlabel('Number of days between recordings')
 
 subplot(313); hold all
 for rr = 1:numel(recLocUni)
-    plot(idi{rr},noiseCorrStructDur{rr},'-','color',[colAni(strcmp(subjects,subjectsAll{rr}),:) .2])
-    scatter(idi{rr},noiseCorrStructDur{rr},5,colAni(strcmp(subjects,subjectsAll{rr}),:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
+    plot(res.idi{rr},res.noiseCorrStructDur{rr},'-','color',[colAni(strcmp(subjects,res.subjectsAll{rr}),:) .2])
+    scatter(res.idi{rr},res.noiseCorrStructDur{rr},5,colAni(strcmp(subjects,res.subjectsAll{rr}),:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2)
 
-    notnan = ~isnan(noiseCorrStructDur{rr}); notnan(1) = 0;
-    X = [ones(numel(idi{rr}(notnan)),1), idi{rr}(notnan)];
-    b = (X\noiseCorrStructDur{rr}(notnan)');
-    plot(idi{rr}(notnan), X*b, 'color',colAni(strcmp(subjects,subjectsAll{rr}),:),'LineWidth',2)
+    notnan = ~isnan(res.noiseCorrStructDur{rr}); notnan(1) = 0;
+    X = [ones(numel(res.idi{rr}(notnan)),1), res.idi{rr}(notnan)];
+    b = (X\res.noiseCorrStructDur{rr}(notnan)');
+    plot(res.idi{rr}(notnan), X*b, 'color',colAni(strcmp(subjects,res.subjectsAll{rr}),:),'LineWidth',2)
 end
 ylim([0 1])
 xticks([1 5 10 20 30])
@@ -206,9 +266,9 @@ xticklabels([1 5 10 20 30])
 xlim([1,30])
 ylabel({'Stability of' ; 'noise correlations'})
 
-%% Plot correlation
+%% Plot example recording
 
-expIdx2Keep = find(strcmp({dball.recLoc},recLocUni{1}));
+expIdx2Keep = find(strcmp({dball.recLoc},recLocUni{5}));
 db = dball(expIdx2Keep);
 
 for dd = 1:numel(db)
@@ -217,7 +277,7 @@ for dd = 1:numel(db)
     resp2 = reshape(nanmean(db(dd).spikeData(:,:,:,2:2:end),[1 4]), [s(2),s(3)]);
     reliability = diag(corr(resp1,resp2));
 
-    reliableUnits = reliability>0.3;
+    reliableUnits = reliability>0.5;
     db(dd).spikeData = db(dd).spikeData(:,:,reliableUnits,:);
     db(dd).C.XPos = db(dd).C.XPos(reliableUnits);
     db(dd).C.Depth = db(dd).C.Depth(reliableUnits);
@@ -240,5 +300,9 @@ for i = 1:numel(db); db(i).C.DepthCorrected = DepthCorrected{i}; end
 XPos = cellfun(@(x) x.XPos, {db.C}, 'uni', 0);
 BestDist = natim.getBestDist(BestMatch, XPos, DepthCorrected);
 
-[pairAcrossAll_fewDays,sigCorr,noiseCorr] = natim.plotMatchedNeuronsAcrossDays(1:5, BestMatch, BestCorr, BestDist, ...
-        {db.spikeData}, XPos, DepthCorrected, [db.days],[0.05 0.5 150]);
+[Nstable, Pstable, dur, NstableDur, PstableDur, idi, pairAcrossAll_pairsOfDays] = natim.getMatchingStability(BestMatch,BestCorr,BestDist,[db.days],[0.05 0.5 150],1);
+figure; 
+plot(dur,Nstable)
+
+[pairAcrossAll_fewDays,sigCorr,noiseCorr] = natim.plotMatchedNeuronsAcrossDays(1:7, BestMatch, BestCorr, BestDist, ...
+        {db.spikeData}, XPos, DepthCorrected, [db.days],[0.05 0.5 150],9);

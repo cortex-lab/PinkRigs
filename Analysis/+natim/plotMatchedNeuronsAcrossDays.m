@@ -1,8 +1,12 @@
-function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,spikeData,XPos,Depth,days,p)
+function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,spikeData,XPos,Depth,days,p,neuronIdx)
 
     if ~exist('p','var')
         p = [];
     end
+    if ~exist('neuronIdx','var')
+        neuronIdx = 1;
+    end
+
     pairAcrossAll = natim.matchNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,p);
     nCluFinal = size(pairAcrossAll,2);
 
@@ -59,7 +63,6 @@ function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,Bes
 
     %% plot a cluster conserved across days
     
-    neuronIdx = 1;
     % raster
     figure;
     for d = 1:numel(dn)

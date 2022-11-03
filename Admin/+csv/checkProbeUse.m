@@ -25,6 +25,8 @@ if ~iscell(queryData); queryData = num2cell(queryData,2); end
 subjects = cell(1,numel(queryData));
 implantDate = cell(1,numel(queryData));
 explantDate = cell(1,numel(queryData));
+positionAP = cell(1,numel(queryData));
+positionML = cell(1,numel(queryData));
 probeInfo = struct;
 
 if isnumeric(queryData{1})
@@ -36,6 +38,8 @@ if isnumeric(queryData{1})
             subjects{i}{pp} = csvData.Subject{subjectIdx(pp)};
             implantDate{i}{pp} = csvData.(sprintf('P%d_implantDate',probeIdx(pp)-1)){subjectIdx(pp)};
             explantDate{i}{pp} = csvData.(sprintf('P%d_explantDate',probeIdx(pp)-1)){subjectIdx(pp)};
+            positionAP{i}{pp} = csvData.(sprintf('P%d_AP',probeIdx(pp)-1)){subjectIdx(pp)};
+            positionML{i}{pp} = csvData.(sprintf('P%d_ML',probeIdx(pp)-1)){subjectIdx(pp)};
         end
         undefIdx = cellfun(@isempty, explantDate{i}) | ...
             cellfun(@(x) strcmp(x,'Permanent'), explantDate{i});
@@ -47,17 +51,22 @@ if isnumeric(queryData{1})
         subjects{i} = subjects{i}(sortIdx);
         implantDate{i} = implantDate{i}(sortIdx);
         explantDate{i} = explantDate{i}(sortIdx);
-
+        positionAP{i} = positionAP{i}(sortIdx);
+        positionML{i} = positionML{i}(sortIdx);
 
         probeInfo.implantedSubjects{i,1} = subjects{i};
         probeInfo.implantDates{i,1} = implantDate{i};
         probeInfo.explantDates{i,1} = explantDate{i};
+        probeInfo.positionAP{i,1} = positionAP{i};
+        probeInfo.positionML{i,1} = positionML{i};
         probeInfo.serialNumber{i,1} = queryData{i};
     end
     if strcmpi(implantSelect, 'last')
         probeInfo.implantedSubjects = cellfun(@(x) x{end}, probeInfo.implantedSubjects, 'uni', 0);
         probeInfo.implantDates = cellfun(@(x) x{end}, probeInfo.implantDates, 'uni', 0);
         probeInfo.explantDates = cellfun(@(x) x{end}, probeInfo.explantDates, 'uni', 0);
+        probeInfo.positionAP = cellfun(@(x) x{end}, probeInfo.positionAP, 'uni', 0);
+        probeInfo.positionML = cellfun(@(x) x{end}, probeInfo.positionML, 'uni', 0);
     end
 else
     P0_implantDates = csvData.P0_implantDate; %(This plays better with cmd calls)
