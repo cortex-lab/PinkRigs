@@ -73,7 +73,7 @@ try
             csv.checkForNewPinkRigRecordings('expDate', 1);
     
             c = clock;
-            if c(4) > 20 % trigger at 10pm 
+            if c(4) > 21 % trigger at 10pm 
                 log = append(log,'Update on training... \n');
                 % Get plot of the mice trained today.
                 expList = csv.queryExp('expDate', 0, 'expDef', 'training');

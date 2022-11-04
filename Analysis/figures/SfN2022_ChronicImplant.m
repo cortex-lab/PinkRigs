@@ -1,19 +1,20 @@
 %% ------ Stability plots ------
 %% Get data
 
-[clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
-save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
-
-load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');
+% [clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
+% save('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
+%%
+load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');
 
 %% Plot it
 
 for rr = 1:numel(qualityMetrics)
     if ~isempty(qualityMetrics{rr})
-        % qm(rr) = nanmedian(qualityMetrics{rr}.firing_rate);
-        % qm(rr) = nanmedian(qualityMetrics{rr}.amp_median);
-        qm(rr) = nanmedian(qualityMetrics{rr}.missed_spikes_est);
-        % qm(rr) = sum(strcmp(qualityMetrics{rr}.ks2_label,"good"));
+        idx2Use = strcmp(qualityMetrics{rr}.ks2_label,"good");
+        qm(rr) = sum(qualityMetrics{rr}.firing_rate(idx2Use)); yRng = [1000 50000]; %Total spks/s
+%         qm(rr) = nanmedian(qualityMetrics{rr}.amp_median(idx2Use));
+%         qm(rr) = nanmedian(qualityMetrics{rr}.missed_spikes_est(idx2Use));
+%         qm(rr) = sum(idx2Use); yRng = [10 2000]; %Total units
     else
         % happens a few times, will fix later
         qm(rr)= nan;
@@ -119,7 +120,7 @@ yticks([1 10 100 1000])
 yticklabels([1 10 100 1000])
 xticks([5 10 25 50 100])
 xticklabels([5 10 25 50 100])
-ylim([10,2000])
+ylim(yRng)
 xlim([3,max(days)])
 
 % slope

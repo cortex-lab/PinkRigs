@@ -43,7 +43,7 @@ for i = 1:length(params.subject)
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock);
     if any(~alignedBlock)
         fprintf('Missing block alignments. Will try and align...\n')
-        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'process', 'block');
+        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'recompute', 'block', 'process', 'block');
         currData = csv.queryExp(currData);
     end
 
