@@ -19,6 +19,7 @@ try
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
             copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
             % update environment
@@ -28,12 +29,7 @@ try
                 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
-            if statusFacemap > 0
-                fprintf(fid,sprintf('Facemap failed with error "%s".\n', resultFacemap));
-            end
-    
-            disp(resultFacemap);
-            fprintf(fid,regexprep(resultFacemap,'\','/'));
+            printMessage(statusFacemap,resultFacemap,fid)
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -42,21 +38,22 @@ try
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
             copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "extractLocalSync" (%s)... \n',datestr(now));
             extractLocalSync('D:\ephysData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
-            fprintf(fid,'Compressing local data... (%s)... \n',datestr(now));
+            fprintf(fid,'Compressing local data (%s)... \n',datestr(now));
             compressPath = which('compress_data.py');
             [statusComp, resultComp] = system(['conda activate PinkRigs && ' ...
                 'python ' compressPath ' && ' ...
                 'conda deactivate']);
-            if statusComp > 0
-                error('Compressing local data failed with error: %s.', resultComp)
-            end
+            printMessage(statusComp,resultComp,fid)
     
             fprintf(fid,'Running "copyEphysData2ServerAndDelete" (%s)... \n',datestr(now));
             copyEphysData2ServerAndDelete('D:\ephysData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
             % update environment
@@ -66,12 +63,7 @@ try
                 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
-            if statusFacemap > 0
-                fprintf(fid,sprintf('Facemap failed with error "%s".\n', resultFacemap));
-            end
-    
-            disp(resultFacemap);
-            fprintf(fid,regexprep(resultFacemap,'\','/'));
+            printMessage(statusFacemap,resultFacemap)
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -83,6 +75,7 @@ try
     
             fprintf(fid,'Running "csv.checkForNewPinkRigRecordings" (%s)... \n',datestr(now));
             csv.checkForNewPinkRigRecordings('expDate', 1);
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
             c = clock;
             if c(4) > 20 % trigger at 10pm 
@@ -100,9 +93,7 @@ try
                 [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
                     'python ' checkTrainingPath ' &&' ...
                     'conda deactivate']);
-                if statusTrain > 0
-                    fprintf(fid,sprintf('Updating on training failed with error "%s".\n', resultTrain));
-                end
+                printMessage(statusTrain,resultTrain,fid)
             end
             
             c = clock;
@@ -117,11 +108,7 @@ try
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                fprintf(fid,sprintf('Running pyKS failed with error "%s".\n', resultpyKS));
-            end
-            disp(resultpyKS);
-            fprintf(fid,regexprep(resultpyKS,'\','/'));
+            printMessage(statuspyKS,resultpyKS,fid)
 
             % run at all times 
             fprintf(fid,'Creating the ibl format (%s)... \n',datestr(now));
@@ -132,11 +119,7 @@ try
             [statusIBL,resultIBL] = system(['activate iblenv && ' ...
                 'python ' checkScriptPath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
-            if statusIBL > 0
-                fprintf(fid,sprintf('Creating IBL format failed with error "%s".\n', resultIBL));
-            end
-            disp(resultIBL);
-            fprintf(fid,regexprep(resultIBL,'\','/'));
+            printMessage(statusIBL,resultIBL,fid)
     
             c = clock;
             if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
@@ -152,6 +135,8 @@ try
     
                 % Extracting data
                 preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
+
+                fprintf(fid,'Done (%s).\n',datestr(now));
             end
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -172,12 +157,7 @@ try
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                fprintf(fid,sprintf('Running pyKS failed with error "%s".\n', resultpyKS));
-            end
-    
-            disp(resultpyKS);
-            fprintf(fid,regexprep(resultIBL,'\','/'));
+            printMessage(statuspyKS,resultpyKS,fid)
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -198,12 +178,7 @@ try
                 'cd C:\Users\Hamish\OneDrive - University College London\Documents\GitHub\PinkRigs &&' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                fprintf(fid,sprintf('Running pyKS failed with error "%s".\n', resultpyKS));
-            end
-    
-            disp(resultpyKS);
-            fprintf(fid,regexprep(resultIBL,'\','/'));
+            printMessage(statuspyKS,resultpyKS,fid)
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     end
@@ -218,4 +193,15 @@ fclose(fid);
 quit
 
 
+end
+
+function printMessage(status,result,fid)
+    result = regexprep(result,'\','/');
+    disp(result);
+    if status > 0
+        fprintf(fid,sprintf('Failed with error "%s".\n', result));
+    else
+        fprintf(fid,sprintf('%s.\n', result));
+        fprintf(fid,'Done (%s).\n',datestr(now));
+    end
 end
