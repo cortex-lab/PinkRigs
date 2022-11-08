@@ -1,9 +1,8 @@
-function copyEphysData2ServerAndDelete(localFolder, ignoreSubjectMismatch)
+function copyEphysData2ServerAndDelete(localFolder)
 %% This funtion will need to be run at the end of each experiment/day? and
-if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end 
 if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
 
-fprintf('Starting now %s...',datestr(now))
+fprintf('Starting now %s...\n',datestr(now))
 localEphysFolders = dir([localFolder '\**\*']);
 localEphysFolders = localEphysFolders([localEphysFolders.isdir]' & ...
     contains({localEphysFolders.name}', 'imec') & ...
