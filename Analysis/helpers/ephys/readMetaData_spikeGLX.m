@@ -1,11 +1,18 @@
 function [meta] = readMetaData_spikeGLX(binName, path)
 
+if nargin == 2
+
     % Create the matching metafile name
     [dumPath,name,dumExt] = fileparts(binName);
     metaName = strcat(name, '.meta');
 
     % Parse ini file into cell entries C{1}{i} = C{2}{i}
     fid = fopen(fullfile(path, metaName), 'r');
+elseif nargin == 1
+    
+    % If input is just the meta file
+    fid = fopen(binName, 'r'); 
+end
 % -------------------------------------------------------------
 %    Need 'BufSize' adjustment for MATLAB earlier than 2014
 %    C = textscan(fid, '%[^=] = %[^\r\n]', 'BufSize', 32768);
