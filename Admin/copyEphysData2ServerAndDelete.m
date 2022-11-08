@@ -9,6 +9,9 @@ fprintf('Starting now %s...',datestr(now))
 localCompressed = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.cbin'}, 'uni', 0));
 localSync = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'sync.mat'}, 'uni', 0));
 completeFolders = intersect({localCompressed.folder}', {localSync.folder}');
+
+
+
 localEphysFiles = localCompressed(contains({localCompressed.folder}', completeFolders));
 
 if isempty(localEphysFiles)
