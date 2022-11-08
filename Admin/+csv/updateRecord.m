@@ -221,6 +221,9 @@ if any(alignFile)
             nDat.(['align' tstName{i}]) = '2';
         end
     end
+    if round(now-blk.endDateTime)<7 && ~strcmpi(nDat.existTimeline, '1')
+        nDat.alignBlock = '0';
+    end
 
     % EPHYS alignment
     if potentialProbes == 0

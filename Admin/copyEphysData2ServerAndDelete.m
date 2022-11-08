@@ -8,9 +8,20 @@ localEphysFolders = localEphysFolders([localEphysFolders.isdir]' & ...
     contains({localEphysFolders.name}', 'imec') & ...
     ~contains({localEphysFolders.name}', '.'));
 
+<<<<<<< HEAD
+% find all folders with both ap.cbin files and sync.mat
+localCompressed = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'.ap.cbin'}, 'uni', 0));
+localSync = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), {'sync.mat'}, 'uni', 0));
+completeFolders = intersect({localCompressed.folder}', {localSync.folder}');
+
+
+
+localEphysFiles = localCompressed(contains({localCompressed.folder}', completeFolders));
+=======
 localEphysPaths = arrayfun(@(x) [x.folder filesep x.name], localEphysFolders, 'uni', 0);
 localEphysPathContents = cellfun(@dir, localEphysPaths, 'uni', 0);
 localEphysFolders(cellfun(@(x) isempty(x) | all([x.isdir]), localEphysPathContents)) = [];
+>>>>>>> 64bb2eded05282cfe33aaa0d3687af529dc3fe00
 
 subjectFromFolder = arrayfun(@(x) x.name(1:5), localEphysFolders, 'uni', 0);
 dateFromFolder = arrayfun(@(x) cell2mat(regexp(x.name, '\d\d\d\d-\d\d-\d\d', 'match')), localEphysFolders, 'uni', 0);

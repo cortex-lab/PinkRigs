@@ -1,25 +1,25 @@
 %% ------ Stability plots ------
 %% Get data
 
-[clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
-save('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
-
-load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');
+% [clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
+% save('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
+%%
+load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');
 
 %% Plot it
 
 for rr = 1:numel(qualityMetrics)
     if ~isempty(qualityMetrics{rr})
-        % qm(rr) = nanmedian(qualityMetrics{rr}.firing_rate);
-        % qm(rr) = nanmedian(qualityMetrics{rr}.amp_median);
-        qm(rr) = nanmedian(qualityMetrics{rr}.missed_spikes_est);
-        % qm(rr) = sum(strcmp(qualityMetrics{rr}.ks2_label,"good"));
+        idx2Use = strcmp(qualityMetrics{rr}.ks2_label,"good");
+        qm(rr) = sum(qualityMetrics{rr}.firing_rate(idx2Use)); yRng = [100 20000]; %Total spks/s
+%         qm(rr) = nanmedian(qualityMetrics{rr}.amp_median(idx2Use)); yRng = [10 200]; %Median spk amp
+%         qm(rr) = nanmedian(qualityMetrics{rr}.missed_spikes_est(idx2Use));
+%         qm(rr) = sum(idx2Use); yRng = [10 2000]; %Total units
     else
         % happens a few times, will fix later
         qm(rr)= nan;
     end
 end
-
 recInfo = cellfun(@(x) split(x,'__'),recLocAll,'uni',0);
 subjectsAll = cellfun(@(x) x{1}, recInfo, 'UniformOutput', false);
 probeSNAll = cellfun(@(x) x{2}, recInfo, 'UniformOutput', false);
@@ -97,7 +97,7 @@ for ss = 1:numel(subjects)
         end
         if exist('qmProbe','var') && numel(dayFullProbe)>1
             plot(dayFullProbe,qmProbe,'-','color',[colAni(ss,:) .2])
-            scatter(dayFullProbe,qmProbe,15,colAni(ss,:),'filled','MarkerEdgeAlpha',0.5,'MarkerFaceAlpha',0.5)
+            scatter(dayFullProbe,qmProbe,15,colAni(ss,:),'filled')
             X = [ones(numel(dayFullProbe),1), dayFullProbe'];
             ball = (X\log10(qmProbe'));
             plot(dayFullProbe, 10.^(X*ball), 'color',colAni(ss,:),'LineWidth',2)
@@ -119,7 +119,7 @@ yticks([1 10 100 1000])
 yticklabels([1 10 100 1000])
 xticks([5 10 25 50 100])
 xticklabels([5 10 25 50 100])
-ylim([10,2000])
+ylim(yRng)
 xlim([3,max(days)])
 
 % slope
@@ -189,12 +189,13 @@ load('\\zserver\Lab\Share\Celian\dataForSfn2022_ChronicImplant_natIm')
 
 %% Get natural images
 imgDir = '\\zserver.cortexlab.net\Data\pregenerated_textures\Anna\selection112';
-imID = 1;
+imID = 38;
 im = load(fullfile(imgDir, sprintf('img%d.mat',imID)));
 figure;
 imagesc(im.img)
 colormap(gray)
 axis equal tight
+axis off
 
 %% Plot stability
 subjects = unique(res.subjectsAll);
