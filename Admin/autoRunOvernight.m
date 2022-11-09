@@ -1,18 +1,27 @@
 function autoRunOvernight
-%% Functions that will run on timeline computers
+%% Functions that will run on all computers
 computerType = getComputerType;
 githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
 
-log = '';
+% Save log and close matlab session
+logPath = 'C:\autoRunLog';
+logFile = [regexprep(regexprep(datestr(now,31),' ','_'),':','-') '_log.txt'];
+if ~exist(logPath,'dir')
+    mkdir(logPath);
+end
+fid = fopen(fullfile(logPath,logFile),'wt');
+
+fprintf(fid,'Starting now %s... \n',datestr(now));
 try
     switch lower(computerType)
         case 'time'
-            log = append(log,'Detected timeline computer... \n');
+            fprintf(fid,'Detected timeline computer... \n');
     
-            log = append(log,'Running "copyLocalData2ServerAndDelete"... \n');
+            fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
             copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
-            log = append(log,'Running "runFacemap" ... \n');
+            fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
             % update environment
             eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
             [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
@@ -20,34 +29,33 @@ try
                 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
-            if statusFacemap > 0
-                log = append(log,sprintf('Facemap failed with error "%s".\n', resultFacemap));
-            end
-    
-            disp(resultFacemap);
+            printMessage(statusFacemap,resultFacemap,fid)
+
+            fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
         case 'ephys'
-            log = append(log,'Detected ephys computer... \n');
+            fprintf(fid,'Detected ephys computer... \n');
     
-            log = append(log,'Running "copyLocalData2ServerAndDelete"... \n');
+            fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
             copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
-            log = append(log,'Running "extractLocalSync"... \n');
+            fprintf(fid,'Running "extractLocalSync" (%s)... \n',datestr(now));
             extractLocalSync('D:\ephysData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
-            log = append(log,'Compressing local data... \n');
+            fprintf(fid,'Compressing local data (%s)... \n',datestr(now));
             compressPath = which('compress_data.py');
             [statusComp, resultComp] = system(['conda activate PinkRigs && ' ...
                 'python ' compressPath ' && ' ...
                 'conda deactivate']);
-            if statusComp > 0
-                error('Compressing local data failed with error: %s.', resultComp)
-            end
+            printMessage(statusComp,resultComp,fid)
     
-            log = append(log,'Running "copyEphysData2ServerAndDelete"... \n');
+            fprintf(fid,'Running "copyEphysData2ServerAndDelete" (%s)... \n',datestr(now));
             copyEphysData2ServerAndDelete('D:\ephysData');
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
-            log = append(log,'Running "runFacemap" ... \n');
+            fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
             % update environment
             eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
             [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
@@ -55,26 +63,23 @@ try
                 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
-            if statusFacemap > 0
-                log = append(log,sprintf('Facemap failed with error "%s".\n', resultFacemap));
-            end
-    
-            disp(resultFacemap);
+            printMessage(statusFacemap,resultFacemap)
+
+            fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
         case {'kilo1'}
             %%
-            log = append(log,'Detected kilo computer... \n');
-
-            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
+            fprintf(fid,'Detected kilo1 computer... \n');
     
             dbstop if error % temporarily, to debug
     
-            log = append(log,'Running "csv.checkForNewPinkRigRecordings"... \n');
+            fprintf(fid,'Running "csv.checkForNewPinkRigRecordings" (%s)... \n',datestr(now));
             csv.checkForNewPinkRigRecordings('expDate', 1);
+            fprintf(fid,'Done (%s).\n',datestr(now));
     
             c = clock;
-            if c(4) > 21 % trigger at 10pm 
-                log = append(log,'Update on training... \n');
+            if c(4) > 20 % trigger at 10pm 
+                fprintf(fid,'Update on training (%s)... \n',datestr(now));
                 % Get plot of the mice trained today.
                 expList = csv.queryExp('expDate', 0, 'expDef', 'training');
                 if ~isempty(expList)
@@ -88,9 +93,7 @@ try
                 [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
                     'python ' checkTrainingPath ' &&' ...
                     'conda deactivate']);
-                if statusTrain > 0
-                    log = append(log,sprintf('Updating on training failed with error "%s".\n', resultTrain));
-                end
+                printMessage(statusTrain,resultTrain,fid)
             end
             
             c = clock;
@@ -100,33 +103,23 @@ try
                 Kilo_runFor = num2str(5); % 5 hrs at the 4am,10am & 4pm run 
             end
 
-            log = append(log,sprintf('current hour is %.0f, running kilo for %s hours',c(4),Kilo_runFor));
-            log = append(log,'Running pykilosort on the queue... \n');
+            fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
             runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
-            end
-    
-            disp(resultpyKS);
-            log = append(log,resultpyKS);
+            printMessage(statuspyKS,resultpyKS,fid)
 
             % run at all times 
-            log = append(log,'creating the ibl format... \n');
-            checkQueuePath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+            fprintf(fid,'Creating the ibl format (%s)... \n',datestr(now));
+            checkScriptPath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
             checkWhichMice = 'all';
             whichKS = 'pyKS';
             checkWhichDates = 'last300';
             [statusIBL,resultIBL] = system(['activate iblenv && ' ...
-                'python ' checkQueuePath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
+                'python ' checkScriptPath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                 'conda deactivate']);
-            if statusIBL > 0
-                log = append(log,sprintf('Updating the queue failed with error "%s".\n', resultIBL));
-            end
-            disp(resultIBL);
-            log = append(log,sprintf('Stopping now %s. \n',datestr(now)));
+            printMessage(statusIBL,resultIBL,fid)
     
             c = clock;
             if c(4) < 20 && c(4) > 2 % should be triggered at 4am,10am,4pm
@@ -135,20 +128,20 @@ try
                 %%% it! Have to wait until it's a 0 and not a NaN when ephys
                 %%% hasn't been aligned...
     
-                log = append(log,'Running preprocessing...\n');
+                fprintf(fid,'Running preprocessing (%s)... \n',datestr(now));
     
                 % Alignment
                 preproc.align.main('expDate', 7, 'checkAlignAny', '0')
     
                 % Extracting data
                 preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
+
+                fprintf(fid,'Done (%s).\n',datestr(now));
             end
-    
+            fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
         case {'kilo2'}
-            log = append(log,'Detected kilo2 computer... \n');
-
-            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
+            fprintf(fid,'Detected kilo2 computer... \n');
     
             c = clock;
             if c(4) > 20 || c(4) < 2
@@ -158,24 +151,18 @@ try
             end
     
             dbstop if error % temporarily, to debug
-            log = append(log,'Running pykilosort on the queue... \n');
+            fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
             githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
             runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
-            end
-    
-            disp(resultpyKS);
-            log = append(log,resultpyKS);
-            log = append(log,sprintf('Stopping now %s. \n',datestr(now)));
+            printMessage(statuspyKS,resultpyKS,fid)
+
+            fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
         case {'celians'}
-            log = append(log,'Detected kilo2 computer... \n');
-
-            log = append(log,sprintf('Starting now %s... \n',datestr(now)));
+            fprintf(fid,'Detected Celian''s computer... \n');
     
             c = clock;
             if c(4) > 20 || c(4) < 2
@@ -185,34 +172,36 @@ try
             end
     
             dbstop if error % temporarily, to debug
-            log = append(log,'Running pykilosort on the queue... \n');
+            fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
             runpyKS = 'Analysis\+kilo\python_\run_pyKS.py';
             [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                 'cd C:\Users\Hamish\OneDrive - University College London\Documents\GitHub\PinkRigs &&' ...
                 'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                 'conda deactivate']);
-            if statuspyKS > 0
-                log = append(log,sprintf('Running pyKS failed... "%s".\n', resultpyKS));
-            end
-    
-            disp(resultpyKS);
+            printMessage(statuspyKS,resultpyKS,fid)
+
+            fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     end
 
 
 catch me
-    log = append(log,me.message);
+    fprintf(fid,sprintf('Global error: %s',me.message));
 end
-
-% Save log and close matlab session
-logPath = 'C:\autoRunLog';
-logFile = [regexprep(regexprep(datestr(now,31),' ','_'),':','-') '_log.txt'];
-if ~exist(logPath,'dir')
-    mkdir(logPath);
-end
-fid = fopen(fullfile(logPath,logFile),'wt');
-fprintf(fid, log);
 fclose(fid);
+
+% Close matlab sessions
 quit
 
 
+end
+
+function printMessage(status,result,fid)
+    result = regexprep(result,'\','/');
+    disp(result);
+    if status > 0
+        fprintf(fid,sprintf('Failed with error "%s".\n', result));
+    else
+        fprintf(fid,sprintf('%s.\n', result));
+        fprintf(fid,'Done (%s).\n',datestr(now));
+    end
 end
