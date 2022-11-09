@@ -41,9 +41,9 @@ try
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "extractSyncAndCompress" (%s)... \n',datestr(now));
-            extractLocalSync('D:\extractSyncAndCompress');
+            extractSyncAndCompress('D:\extractSyncAndCompress');
             fprintf(fid,'Done (%s).\n',datestr(now));
-            
+
 %             fprintf(fid,'Running "extractLocalSync" (%s)... \n',datestr(now));
 %             extractLocalSync('D:\ephysData');
 %             fprintf(fid,'Done (%s).\n',datestr(now));
