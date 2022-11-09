@@ -5,7 +5,7 @@ function checkAndUpdatePinkRigRepo
     cd(fileparts(which('zeldaStartup')));
     [~, ~] = system('git remote update');
     [status, cmdout] = system('git status');
-    
+    % TEST
     % Some warning messages to use
     warnMessage1 = 'Cannot connect with GIT. PinkRig repo may be outdated!!!';
     warnMessage2 = 'Cannot pull from GIT... PinkRig repo may be outdated!!!';
