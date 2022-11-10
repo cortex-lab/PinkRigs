@@ -190,7 +190,7 @@ try
 
 
 catch me
-    fprintf(fid,sprintf('Global error: %s',me.message));
+    fprintf(fid,sprintf('Global error: %s',regexprep(me.message,'\','/')));
 end
 fclose(fid);
 
