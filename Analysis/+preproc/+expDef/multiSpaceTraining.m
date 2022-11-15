@@ -185,94 +185,114 @@ end
 tExt.audStimOnOff = [timelineClickOn' timelineClickOff'];
 tExt.audStimPeriodOnOff = audPeriodOnOffTimeline;
 
-%% Extract visual onsets (unreliable after initial flip)
-%Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
-photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDThorLabs')';
-trialGapThresh = 1./max(clickRate)*5;
-visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
-visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
-visPeriodOnOffTimeline = [visPeriodOnTimeline, visPeriodOffTimeline];
-visPeriodOnOffTimeline(diff(visPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
+%% Will loop through photodiode types in case one is broken
+photoDiodeNames = {timeline.hw.inputs(contains({timeline.hw.inputs.name},'photoD')).name};
+err = 1; nn = 1;
+while err && nn<=numel(photoDiodeNames) 
+    try
+        %% Extract visual onsets (unreliable after initial flip)
+        %Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
+        fprintf('****Reading %s...\n', photoDiodeNames{nn});
+        photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, photoDiodeNames{nn})';
+        trialGapThresh = 1./max(clickRate)*5;
+        visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
+        visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
+        visPeriodOnOffTimeline = [visPeriodOnTimeline, visPeriodOffTimeline];
+        visPeriodOnOffTimeline(diff(visPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
 
-%Sanity check (should be match between stim starts from block and from timeline)
-compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
+        %Sanity check (should be match between stim starts from block and from timeline)
+        compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
 
-nonVisTrials = visContrast(eIdx)==0;
-stimStartRef = stimStartBlock(~nonVisTrials);
-if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-    fprintf('****Removing photodiode times that do not match stimulus starts \n');
+        nonVisTrials = visContrast(eIdx)==0;
+        stimStartRef = stimStartBlock(~nonVisTrials);
+        if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+            fprintf('****Removing photodiode times that do not match stimulus starts \n');
 
-    [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
-    visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
-end
+            [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
+            visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
+        end
 
-if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-    fprintf('****WARNING: Could not fix start-end times\n');
-    fprintf('****Will perform incomplete identification based on trial structure\n');
-    
-    visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
-    visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
-    visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
-else
-    visPeriodOnOffTimeline = visPeriodOnOffTimeline(1:length(stimStartRef),:);
-end
-tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
+        if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+            fprintf('****WARNING: Could not fix start-end times\n');
+            fprintf('****Will perform incomplete identification based on trial structure\n');
 
-% Could add this in for pasive
-photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
-photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
-if isfield(block.events,'selected_paramsetValues')
-    responseWindow = block.events.selected_paramsetValues.responseWindow;
-else
-    responseWindow = [block.paramsValues.responseWindow];
-    responseWindow = responseWindow(1); 
-end   
-if isinf(responseWindow); responseWindow = 0; end
-expectedFlashTrainLength = clickRate*responseWindow*2*(stimStartRef*0+1);
-misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
+            visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
+            visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
+            visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
+        else
+            visPeriodOnOffTimeline = visPeriodOnOffTimeline(1:length(stimStartRef),:);
+        end
+        tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
 
-repeatNums = e.repeatNumValues(eIdx)';
-stimMoves = repeatNums*0;
+        % Could add this in for pasive
+        photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
+        photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
+        if isfield(block.events,'selected_paramsetValues')
+            responseWindow = block.events.selected_paramsetValues.responseWindow;
+        else
+            responseWindow = [block.paramsValues.responseWindow];
+            responseWindow = responseWindow(1);
+        end
+        if isinf(responseWindow); responseWindow = 0; end
+        expectedFlashTrainLength = clickRate*responseWindow*2*(stimStartRef*0+1);
+        misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
 
-%To deal with old mice where closed loop never changed
-if ~isfield(block.events, 'wheelMovementOnValues')
-    block.events.wheelMovementOnValues = block.events.newTrialValues;
-end
-stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
-stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
-stim_closedLoop = stimMoves;
-stimMoves = stimMoves(~nonVisTrials);
+        repeatNums = e.repeatNumValues(eIdx)';
+        stimMoves = repeatNums*0;
 
-isTimeOut = responseRecorded(~nonVisTrials)==0;
-photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
-photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
-photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
+        %To deal with old mice where closed loop never changed
+        if ~isfield(block.events, 'wheelMovementOnValues')
+            block.events.wheelMovementOnValues = block.events.newTrialValues;
+        end
+        stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
+        stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
+        stim_closedLoop = stimMoves;
+        stimMoves = stimMoves(~nonVisTrials);
 
-visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
-tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
-if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
-%% MOVEMENT
-responseMadeIdx = responseRecorded ~= 0;
-timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
-timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
-timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
-timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
-timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
+        isTimeOut = responseRecorded(~nonVisTrials)==0;
+        photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
+        photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
+        photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
 
-missedOnset = isnan(timelineStimOnset);
-validIdx = responseMadeIdx & ~missedOnset;
-stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
-stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
-stimEndIdx = stimEndIdx-stimOnsetIdx;
-if any(missedOnset)
-    if sum(missedOnset) >0.25*length(missedOnset)
-        error('Over 25% of stimulus onsets are missing???');
-    else
-        warning('There are missing stimulus onesets?! Will process identified ones');
+        visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
+        tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
+        if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
+
+
+        %% MOVEMENT
+        responseMadeIdx = responseRecorded ~= 0;
+        timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
+        timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
+        timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
+        timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
+        timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
+
+        missedOnset = isnan(timelineStimOnset);
+        validIdx = responseMadeIdx & ~missedOnset;
+        stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
+        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
+        stimEndIdx = stimEndIdx-stimOnsetIdx;
+        if any(missedOnset)
+            if sum(missedOnset) >0.25*length(missedOnset)
+                error('Over 25% of stimulus onsets are missing???');
+            else
+                warning('There are missing stimulus onsets?! Will process identified ones');
+            end
+        end
+        if isempty(stimOnsetIdx)
+            warning('Looks like the mouse did not make a single choice?!');
+        end
+
+
+        err = 0; % continue
+    catch me
+        nn = nn+1;
     end
 end
-if isempty(stimOnsetIdx)
-    warning('Looks like the mouse did not make a single choice?!');
+
+if err
+    msgText = getReport(me);
+    error(msgText)
 end
 
 wheelDeg = extractWheelDeg(timeline);

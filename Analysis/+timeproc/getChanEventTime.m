@@ -60,7 +60,7 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
                         evTimes(find(diff(evTimes)<(12/1000))+1) = [];
                 end
 
-            case 'photoDThorLabs'
+            case {'photoDThorLabs','photoDRaw'}
                 switch mode
                     case 'default'
                         % Uses k-means here to get thresholds.
