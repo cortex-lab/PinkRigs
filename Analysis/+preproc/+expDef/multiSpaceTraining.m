@@ -187,7 +187,7 @@ tExt.audStimPeriodOnOff = audPeriodOnOffTimeline;
 
 %% Extract visual onsets (unreliable after initial flip)
 %Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
-photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode')';
+photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDThorLabs')';
 trialGapThresh = 1./max(clickRate)*5;
 visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
 visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
