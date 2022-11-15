@@ -19,6 +19,7 @@ dateFromFolder = arrayfun(@(x) cell2mat(regexp(x.name, '\d\d\d\d-\d\d-\d\d', 'ma
 splitFolders = arrayfun(@(x) regexp([x.folder filesep x.name],'\','split'), localEphysFolders, 'uni', 0);
 serverFolders = cellfun(@(x,y) getExpPath(x,y), subjectFromFolder, dateFromFolder, 'uni', 0);
 serverFolders = cellfun(@(x,y) fullfile(x, 'ephys', y(end-1), y(end)), serverFolders, splitFolders);
+if isempty(serverFolders); serverFolders = num2cell(serverFolders); end % otherwise crashes?
 localFolders = arrayfun(@(x) [x.folder filesep x.name], localEphysFolders, 'uni', 0);
 
 % Check that sync and compressed files exist either on server or locally
