@@ -1,4 +1,13 @@
 function errorMessages = fetchErrorMessage(varargin)
+    %%% This function will return all the error messages for a (possibly
+    %%% specified) list of experiments. You can also specify which error
+    %%% messages you want to look at with argument "whichMessage", which
+    %%% should be cell containing the fields of the mice csv you want to
+    %%% check, e.g.:
+    %%%     whichMessage = {'align','extractSpikes'}
+    %%% 'align' will fetch error messages for all alignments, and
+    %%% 'extractSpikes' for the spikes extraction.
+    %%% A few general options are: 'all', 'align', 'aligncam', 'fmapcam'
 
     varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
     varargin = ['whichMessage', 'all', varargin];
