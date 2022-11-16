@@ -155,8 +155,7 @@ if exist([pathStub, '_times.txt'], 'file')
 
     % Then check that have been compensated for in the next frame
     largeIFI_corrected = IFI(largeIFI((IFI(largeIFI)-median(IFI)+sum(IFI(largeIFI+1:2))-median(IFI) > 0.9*median(IFI))));
-    framesMissed = largeIFI_corrected/median(IFI); % maybe won't be exactly that number??
-    numFramesMissed = numel(framesMissed);
+    numFramesMissed = sum(largeIFI_corrected/median(IFI)); % maybe won't be exactly that number??
 
     if numFramesMissed>0 && params.crashMissedFrames{1}
         % Then error the whole thing to make sure you don't miss it
@@ -267,7 +266,7 @@ if ~exist([pathStub, '_times.txt'], 'file')
         vidFs = numFramesFoundBetweenSyncs/diff(tlSyncOnSamps);
         tVid = ((1:length(avgIntensity))/vidFs)-tlSyncOnSamps(1);
     end
-    framesMissed = nan;
+    numFramesMissed = nan;
 else
     % Get offset and compression coefficients.
     vidFs = mean(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end))); % computed empirically...
