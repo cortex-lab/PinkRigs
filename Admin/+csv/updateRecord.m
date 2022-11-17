@@ -347,16 +347,16 @@ nDat.issortedKS2(isnan(nDat.alignEphys)) = nan;
 nDat.issortedKS2(nDat.alignEphys == 0) = 0;
 nDat.issortedKS2(nDat.alignEphys == 2) = 0;
 
-% This loop checks the issortedKS2 fields if ephys alignment is good ("1")
+% This loop checks the issortedPyKS fields if ephys alignment is good ("1")
 nDat.issortedPyKS = zeros(1, potentialProbes);
 for pIdx = find(nDat.alignEphys == 1)
     % If ephys alignment is "good" check if sorting files exist. If
-    % they do, then give a "1" to issortedKS2 or issortedPyKS.
+    % they do, then give a "1" to issortedPyKS or issortedPyKS.
     ephysPath = alignment.ephys(pIdx).ephysPath;
     if ~isempty(dir([ephysPath '\**\output\spike_times.npy']))
-        % Issue a "1" if "results" file for KS2 exists
+        % Issue a "1" if "results" file for pyKS exists
         nDat.issortedPyKS(pIdx) = 1;
-    elseif ~isempty(dir([ephysPath '\KSerror.json']))
+    elseif ~isempty(dir([ephysPath '\**\pyKS_error.json']))
         % Issue a "2" if error file is in folder
         nDat.issortedPyKS(pIdx) = 2;
     else
