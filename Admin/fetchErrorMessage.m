@@ -85,8 +85,7 @@ function errorMessages = fetchErrorMessage(varargin)
         % Facemap
         %%% NO ERROR MESSAGE?
 
-        % Sorting
-        %%% NOT SURE WHAT THE ERROR MESSAGE IS?
+        % Sorting 
         if shouldFetch('issortedPyKS')
             % Happens in the associated ephys folder
             alignmentFile = dir(fullfile(expInfo.expFolder{1},'*_alignment.mat'));
@@ -94,7 +93,7 @@ function errorMessages = fetchErrorMessage(varargin)
                 alignment = load(fullfile(alignmentFile.folder,alignmentFile.name), 'ephys');
                 for probeNum = 1:numel(alignment.ephys)
                     probeRef = sprintf('probe%s',num2str(probeNum-1));
-                    errorMessageFile = dir(fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','PyKSError.json'));
+                    errorMessageFile = dir(fullfile(alignment.ephys(probeNum).ephysPath,'pyKS','pyKS_error.json'));
                     errorMessages(ee).issortedPyKS.(probeRef) = readJSON(errorMessageFile);
                 end
             end
