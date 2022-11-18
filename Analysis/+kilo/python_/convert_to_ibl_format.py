@@ -64,7 +64,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     elif mouse_selection=='all': 
         mice_to_check=master_csv.Subject
     else: 
-        mice_to_check = mouse_selection   
+        mice_to_check = pd.Series(mouse_selection)
 
     new_recs_to_convert = []
 
