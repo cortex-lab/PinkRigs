@@ -25,9 +25,13 @@ localFolders = arrayfun(@(x) [x.folder filesep x.name], localEphysFolders, 'uni'
 % Check that sync and compressed files exist either on server or locally
 localCompressed = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.cbin'])), localFolders, 'uni', 0));
 serverCompressed = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.cbin'])), serverFolders, 'uni', 0));
+localCh = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.ch'])), localFolders, 'uni', 0));
+serverCh = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.ch'])), serverFolders, 'uni', 0));
 localSync = cell2mat(cellfun(@(x) ~isempty(dir([x '\*sync.mat'])), localFolders, 'uni', 0));
 serverSync = cell2mat(cellfun(@(x) ~isempty(dir([x '\*sync.mat'])), serverFolders, 'uni', 0));
-readyFolders = (localCompressed | serverCompressed) & (localSync | serverSync);
+readyFolders = (localCompressed | serverCompressed) & ...
+    (localCh | serverCh) & ...
+    (localSync | serverSync);
 
 if isempty(readyFolders)
     fprintf('There are no ephys files in the local directory. Returning... \n');
