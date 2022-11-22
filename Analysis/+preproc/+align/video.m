@@ -1,4 +1,4 @@
-function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
+function [tVid,framesMissed,nFirstFrames] = video(varargin)
 %%% This function will align the time frames of the input video to the
 %%% corresponding timeline. It will try to minimize the amount of time
 %%% and computing by loading first only the beginning and end of the
@@ -155,12 +155,9 @@ if exist([pathStub, '_times.txt'], 'file')
 
     % Then check that have been compensated for in the next frame
     largeIFI_corrected = IFI(largeIFI((IFI(largeIFI)-median(IFI)+sum(IFI(largeIFI+1:2))-median(IFI) > 0.9*median(IFI))));
-    numFramesMissed = largeIFI_corrected/median(IFI); % maybe won't be exactly that number??
-    if isempty(numFramesMissed)
-        numFramesMissed = 0;
-    end
+    numFramesMissed = sum(largeIFI_corrected/median(IFI)); % maybe won't be exactly that number??
 
-    if numFramesMissed && params.crashMissedFrames{1}
+    if numFramesMissed>0 && params.crashMissedFrames{1}
         % Then error the whole thing to make sure you don't miss it
         error('missed frames: %d \n', numFramesMissed)
     else
@@ -207,7 +204,7 @@ if ~isempty(strobeSamps)
     fprintf(1, 'missed frames with the strobes: %d \n', numMissedFrames_wStrobes);
 end
 
-if exist([pathStub, '_times.txt'], 'file') && numFramesMissed && params.plt{1}
+if exist([pathStub, '_times.txt'], 'file') && numFramesMissed>0 && params.plt{1}
     % Check which ones have been lost to further understand the issue
     % missedidx = find(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),3))>1) + vidSyncOnFrames(1)-1;
     missedidx = largeIFI;

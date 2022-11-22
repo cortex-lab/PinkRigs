@@ -177,6 +177,9 @@ axis equal tight
 
 
 %% ------ Natural images plots ------
+
+%%% NOTE THAT POSTER HASN'T BEEN UPDATED
+
 %% Get data
 
 % mice = csv.readTable(csv.getLocation('main'));

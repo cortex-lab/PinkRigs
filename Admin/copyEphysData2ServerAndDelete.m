@@ -19,14 +19,19 @@ dateFromFolder = arrayfun(@(x) cell2mat(regexp(x.name, '\d\d\d\d-\d\d-\d\d', 'ma
 splitFolders = arrayfun(@(x) regexp([x.folder filesep x.name],'\','split'), localEphysFolders, 'uni', 0);
 serverFolders = cellfun(@(x,y) getExpPath(x,y), subjectFromFolder, dateFromFolder, 'uni', 0);
 serverFolders = cellfun(@(x,y) fullfile(x, 'ephys', y(end-1), y(end)), serverFolders, splitFolders);
+if isempty(serverFolders); serverFolders = num2cell(serverFolders); end % otherwise crashes?
 localFolders = arrayfun(@(x) [x.folder filesep x.name], localEphysFolders, 'uni', 0);
 
 % Check that sync and compressed files exist either on server or locally
 localCompressed = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.cbin'])), localFolders, 'uni', 0));
 serverCompressed = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.cbin'])), serverFolders, 'uni', 0));
+localCh = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.ch'])), localFolders, 'uni', 0));
+serverCh = cell2mat(cellfun(@(x) ~isempty(dir([x '\*.ap.ch'])), serverFolders, 'uni', 0));
 localSync = cell2mat(cellfun(@(x) ~isempty(dir([x '\*sync.mat'])), localFolders, 'uni', 0));
 serverSync = cell2mat(cellfun(@(x) ~isempty(dir([x '\*sync.mat'])), serverFolders, 'uni', 0));
-readyFolders = (localCompressed | serverCompressed) & (localSync | serverSync);
+readyFolders = (localCompressed | serverCompressed) & ...
+    (localCh | serverCh) & ...
+    (localSync | serverSync);
 
 if isempty(readyFolders)
     fprintf('There are no ephys files in the local directory. Returning... \n');

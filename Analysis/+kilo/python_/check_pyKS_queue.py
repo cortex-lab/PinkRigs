@@ -40,7 +40,6 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # which mice to sort -- FT or FT032
     # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
     # check
-    
     print('mice selected: %s' % mouse_selection)
     print('dates selected: %s' % date_selection)
 
@@ -53,7 +52,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     elif mouse_selection=='all': 
         mice_to_check=master_csv.Subject
     else: 
-        mice_to_check = mouse_selection   
+        mice_to_check = pd.Series(mouse_selection)
 
     new_recs_to_sort = []
 
@@ -61,10 +60,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
         my_dates = pd.DataFrame()
         subject_csv_name = '%s.csv' % mouse
         subject_csv_path = root / subject_csv_name
+
         if subject_csv_path.is_file():
             subject_csv = pd.read_csv(root / subject_csv_name)
             my_dates = subject_csv.drop_duplicates('expDate')
-            
             for my_path in my_dates.expFolder:
                 mp = Path(my_path)
 
@@ -76,10 +75,11 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
                 # that is: 
 
                     #if some dates have been subselected
+
                 if check_date_selection(date_selection,date):
                     ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
-
+                    
                     for ephys_file in ephys_files:
 
 

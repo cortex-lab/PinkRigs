@@ -9,7 +9,7 @@ def mainCompress(binFile=''):
     cbinFile = re.sub('ap.bin','ap.cbin',binFile)
     chFile = re.sub('ap.bin','ap.ch',binFile)
 
-    if not os.path.exists(cbinFile):
+    if not os.path.exists(cbinFile) and not os.path.exists(chFile):
         compress(binFile, cbinFile, chFile, sample_rate=30000., n_channels=385, 
                  dtype=np.int16, check_after_compress=True)
 

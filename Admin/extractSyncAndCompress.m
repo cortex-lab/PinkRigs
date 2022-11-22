@@ -97,7 +97,12 @@ function log = extractSyncAndCompress(localFolder, ignoreSubjectMismatch)
             else
                 log = appendAndPrint(log, sprintf('%s.\n',regexprep(resultComp,'\','/')));
                 % Deleting .bin
-                delete(binFileName)
+                if exist(cbinFileName, 'file') && exist(chFileName, 'file')
+                    delete(binFileName)
+                    log = appendAndPrint(log, 'Deleted bin file.');
+                else
+                    log = appendAndPrint(log, 'Something weird happened: compression ran fine but the .cbin or the .ch file is missing. Recheck?\n');
+                end
             end
         else
             log = appendAndPrint(log, 'Already compressed! Check why .bin file hasn''t been deleted?\n');

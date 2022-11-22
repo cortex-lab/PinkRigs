@@ -59,13 +59,14 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort 
     # or sorted, but requested a resort
 
     if (is_errored & recompute_errored_sorting) or ((not is_sorted) & (not is_errored)) or (is_sorted & resort): 
+        
+        output_dir = path_to_file.parent / 'pyKS'
+        output_dir.mkdir(parents=False, exist_ok=True) 
+        
         try:   
-                # read the metadata and get the x- and ypos of channels                     
+            # read the metadata and get the x- and ypos of channels                     
 
             channel_map  = neuropixel_probe_from_metafile(list((path_to_file.parent).glob('*.meta'))[0] )
-
-            output_dir = path_to_file.parent / 'pyKS'
-            output_dir.mkdir(parents=False, exist_ok=True) 
 
             #if there is a remainder .kilosort temp processing folder, delete           
 
