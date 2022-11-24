@@ -52,6 +52,7 @@ switch info.instruction
         fwrite(src, data);
         
     case {'ExpEnd', 'ExpInterrupt'}
+        pause(60); % time to get the end buzzer
         stop(ar);
         Fs = ar.SampleRate;
         nBits = ar.BitsPerSample;
