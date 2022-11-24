@@ -131,8 +131,12 @@ moveOnsetIdx = abs(velThreshPoints(srtIdx));
 moveOnsetSign = sign(velThreshPoints(srtIdx))';
 moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
 
-onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
-onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
+if ~isempty(moveOnsetIdx)
+    onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
+    onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
+else
+    onsetTimDirByTrial = repmat({[nan, nan]}, size(trialStEnTimes,1),1); 
+end
 
 changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
 trialStEnIdx = (trialStEnTimes*sR);
