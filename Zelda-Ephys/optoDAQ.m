@@ -8,8 +8,12 @@ s.ExternalTriggerTimeout = Inf;
 s.TriggersPerRun = Inf;
 % define update rate
 s.Rate = 10000;
-% create a waveform and pre-load it onto the board
-s.queueOutputData([rand(20000, 1); 0]*5);
+
+rampUpDur = 0.5; % in ms
+flatDur = 1; % in ms
+rampDownDur = 0.1; % in ms
+% create a waveform and pre-load it onto the board;
+s.queueOutputData([linspace(0,1,rampUpDur*s.Rate)';ones(flatDur*s.Rate,1);linspace(1,0,rampDownDur*s.Rate)']*5);
 ​
 %% after starting it will wait for TTL to actually fire the output waveform
 s.startBackground
