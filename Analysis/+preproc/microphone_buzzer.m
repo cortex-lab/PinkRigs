@@ -4,7 +4,7 @@ clc; clear all;
 params.subject = {'AV037'};
 params.expDate = '2022-11-24';
 %params.expDef = 'p';
-params.expNum = 3;
+params.expNum = 1;
 exp2checkList = csv.queryExp(params);
 expInfo = exp2checkList(1,:);
 expInfo = csv.loadData(expInfo, 'dataType',{'timeline','events'});
@@ -31,6 +31,8 @@ tic;
 toc; 
 % the times are not relative to the whole trace so add that 
 audPeriodOn_end=audPeriodOn_end+((micdl-samplelenth)/Fs); 
+audPeriodOn_start = audPeriodOn_start(1:7);
+% audPeriodOn_end(end) = [];
 
 %%
 % look at the onset times 
@@ -67,10 +69,10 @@ mictimes_tl=fitmic_times(mictimes);
 
 %% check average spectrogram -- do aud!!
 
-visOn_tl = expInfo.dataEvents{1,1}.timeline_audPeriodOn;
+visOn_tl = expInfo.dataEvents{1,1}.timeline_visPeriodOn;
 visOn_tl = visOn_tl(~isnan(visOn_tl));
 
-myM=mictimes_tl-visOn_tl(1:145); 
+myM=mictimes_tl-visOn_tl(1:45); 
 [~,ix]=min(abs(myM),[],2);
 %
 %figure; plot(micdata_sub(ix(2)-200:ix(2)+1000));

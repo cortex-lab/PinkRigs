@@ -20,14 +20,6 @@ serverFilePaths = serverFilePaths(~isDirectory);
 % serverFilePaths(contains(serverFilePaths, '.bin')) = [];
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
-if any(contains(serverFilePaths, 'ephys'))    
-    slashIdx = cellfun(@(x) strfind(x, filesep), serverFilePaths, 'uni', 0);
-    serverFilePathsCelian = cellfun(@(x,y) [x(1:y(end-2)-1) x(y(end-1):end)], serverFilePaths, slashIdx, 'uni', 0);
-    copiedAlreadyCelian = cellfun(@(x) exist(x,'file'), serverFilePathsCelian)>0;
-    serverFilePaths(copiedAlreadyCelian) = serverFilePathsCelian(copiedAlreadyCelian);
-    copiedAlready = copiedAlready | copiedAlreadyCelian;
-end
-
 %% Loop to copy/check/delete files
 failedCopy = 0*copiedAlready>0;
 for i = 1:length(copiedAlready)
