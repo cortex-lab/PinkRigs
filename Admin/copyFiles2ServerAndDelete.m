@@ -15,6 +15,9 @@ end
 isDirectory = cellfun(@isfolder, localFilePaths);
 localFilePaths = localFilePaths(~isDirectory);
 serverFilePaths = serverFilePaths(~isDirectory);
+% Pip needs to test this
+% localFilePaths(contains(localFilePaths, '.bin')) = [];
+% serverFilePaths(contains(serverFilePaths, '.bin')) = [];
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
 if any(contains(serverFilePaths, 'ephys'))    

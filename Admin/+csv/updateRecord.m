@@ -114,7 +114,7 @@ end
 % pink rigs, but this may not be true (e.g. see current exception for
 % FT009). Need to decide how to change this in the future...??
 blk = load(blockPath); blk = blk.block;
-if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT010';'FT011';'FT027'})
+if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'})
     return;
 end
 
