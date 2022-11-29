@@ -397,6 +397,18 @@ end
 tExt.rewardTimes(cellfun(@length, tExt.rewardTimes)>1) = {nan};
 tExt.rewardTimes(responseRecorded~=1) = {nan};
 tExt.rewardTimes = cellfun(@double, tExt.rewardTimes); 
+
+%%
+if isfield(e, 'is_laserOnValues')
+    is_laser_On = e.is_laserOnValues(eIdx);
+    all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut'); 
+    laser_times_trial_indexed = NaN(numel(is_laser_On),4); 
+    laser_times_trial_indexed(is_laser_On,:)= all_laser_times; 
+else
+    is_laser_On = NaN(numel(eIdx),4); 
+    laser_times_trial_indexed = NaN(numel(is_laser_On),4); 
+end
+laser_times_trial_indexed = single(laser_times_trial_indexed);
 %% Populate n with all fields;
 ev.is_blankTrial = is_blankTrial;
 ev.is_visualTrial = is_visualTrial;    
@@ -428,6 +440,12 @@ ev.timeline_allMoveOn = cellfun(@(x) x(:,1), tExt.allMovOnsetsTimDir, 'uni', 0);
 ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0); 
 ev.timeline_wheelTime  = cellfun(@(x) x(:,1), tExt.wheelTraceTimeValue, 'uni', 0); 
 ev.timeline_wheelValue  = cellfun(@(x) x(:,2), tExt.wheelTraceTimeValue, 'uni', 0); 
+
+ev.is_laserTrial = is_laser_On; 
+ev.timeline_laserOn_rampStart = laser_times_trial_indexed(:,1); 
+ev.timeline_laserOn_rampEnd = laser_times_trial_indexed(:,2); 
+ev.timeline_laserOff_rampStart = laser_times_trial_indexed(:,3); 
+ev.timeline_laserOff_rampEnd = laser_times_trial_indexed(:,4); 
 
 ev.stim_correctResponse = single(correctResponse);     
 ev.stim_repeatNum = single(repeatNums);         

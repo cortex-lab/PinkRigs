@@ -122,6 +122,18 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
                 rewardTrace = chan > thresh;
                 evTimes = strfind(rewardTrace', [0 1])+1;
                 evTimes = timelineTime(evTimes); % in timeline time
+
+            case 'laserOut'
+                % I detect both the beginning and the end of the ramp. 
+                tlSyncThresh = [min(chan)+0.01*range(chan) max(chan)-0.01*range(chan)]; 
+                [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
+                [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
+                laserOnStart = sort(laserOnStart); 
+                laserOffStart  = sort(laserOffStart);                 
+                evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd]; 
+
+                %
+
         end
         
     else
