@@ -441,7 +441,7 @@ ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0
 ev.timeline_wheelTime  = cellfun(@(x) x(:,1), tExt.wheelTraceTimeValue, 'uni', 0); 
 ev.timeline_wheelValue  = cellfun(@(x) x(:,2), tExt.wheelTraceTimeValue, 'uni', 0); 
 
-ev.is_laserTrial = is_laser_On; 
+ev.is_laserTrial = is_laser_On'; 
 ev.timeline_laserOn_rampStart = laser_times_trial_indexed(:,1); 
 ev.timeline_laserOn_rampEnd = laser_times_trial_indexed(:,2); 
 ev.timeline_laserOff_rampStart = laser_times_trial_indexed(:,3); 
