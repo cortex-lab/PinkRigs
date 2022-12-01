@@ -51,12 +51,12 @@ function [dball, res] = main(varargin)
             resp2 = reshape(nanmean(db(dd).spikeData(:,:,:,2:2:end),[1 4]), [s(2),s(3)]);
             reliability = diag(corr(resp1,resp2));
 
-            reliableUnits = reliability>0.5;
-            db(dd).spikeData = db(dd).spikeData(:,:,reliableUnits,:);
-            db(dd).C.XPos = db(dd).C.XPos(reliableUnits);
-            db(dd).C.Depth = db(dd).C.Depth(reliableUnits);
-            db(dd).C.CluID = db(dd).C.CluID(reliableUnits);
-            db(dd).C.CluLab = db(dd).C.CluLab(reliableUnits);
+            units2Keep = squeeze(nanmean(db(dd).spikeData,[1 2 4]))>0.1 & (db(dd).C.CluLab == 2) & reliability>0.3;
+            db(dd).spikeData = db(dd).spikeData(:,:,units2Keep,:);
+            db(dd).C.XPos = db(dd).C.XPos(units2Keep);
+            db(dd).C.Depth = db(dd).C.Depth(units2Keep);
+            db(dd).C.CluID = db(dd).C.CluID(units2Keep);
+            db(dd).C.CluLab = db(dd).C.CluLab(units2Keep);
         end
 
         % Perform CCA
