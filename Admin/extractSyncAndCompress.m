@@ -17,7 +17,7 @@ function log = extractSyncAndCompress(localFolder, ignoreSubjectMismatch)
     localEphysFiles(localEphysFilesAgeInMins < 60) = []; 
 
     if isempty(localEphysFiles)
-        fprintf('There are no ephys files that are ready in the local directory. Returning... \n');
+        log = appendAndPrint(log, 'There are no ephys files that are ready in the local directory. Returning... \n');
         pause(1);
         return;
     end
@@ -112,9 +112,4 @@ function log = extractSyncAndCompress(localFolder, ignoreSubjectMismatch)
     
     % Just clean up the log 
     log = regexprep(log,'Skipping...','Skipping...\n');
-end
-
-function logapp = appendAndPrint(log, message)
-    logapp = append(log, message);
-    fprintf(message)
 end

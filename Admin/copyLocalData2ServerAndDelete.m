@@ -1,7 +1,9 @@
-function copyLocalData2ServerAndDelete(localFolder)
+function log = copyLocalData2ServerAndDelete(localFolder)
 %% This funtion will need to be run at the end of each experiment/day? and
 %% identify data
 if ~exist('localFolder', 'var'); localFolder = 'D:\LocalExpData'; end
+
+log = '';
 
 % find all folders with a relevant file like timeline
 files2Check = {'Timeline.mat';'block.mat';'eyeCam*';'frontCam*';'sideCam*';'mic.mat'};
@@ -20,7 +22,7 @@ serverFolders = cellfun(@(x,y,z) getExpPath(x,y,z), subjects, expDates, expNums,
 allLocalFiles = cellfun(@dir, localFolders, 'uni', 0);
 
 if isempty(allLocalFiles)
-    fprintf('NOTE: No files in local folder ... will clean any empty folders \n');
+    log = appendAndPrint(log, sprintf('NOTE: No files in local folder ... will clean any empty folders \n'));
 else
     serverFolders = cellfun(@(x,y) num2cell(repmat(x,length(y),1),2), serverFolders, allLocalFiles, 'uni', 0);
     serverFolders = vertcat(serverFolders{:});
@@ -34,7 +36,8 @@ else
     allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
     allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
     
-    copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths)
+    log_copy = copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths);
+    log = append(log, log_copy);
 end
 cleanEmptyFoldersInDirectory(localFolder);
 end
