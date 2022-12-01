@@ -18,7 +18,8 @@ try
             fprintf(fid,'Detected timeline computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyLocalData2ServerAndDelete('D:\LocalExpData');
+            log = copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,log);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
@@ -37,27 +38,18 @@ try
             fprintf(fid,'Detected ephys computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyLocalData2ServerAndDelete('D:\LocalExpData');
+            log = copyLocalData2ServerAndDelete('D:\LocalExpData');
+            fprintf(fid,log);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "extractSyncAndCompress" (%s)... \n',datestr(now));
             log = extractSyncAndCompress('D:\ephysData');
             fprintf(fid,log);
             fprintf(fid,'Done (%s).\n',datestr(now));
-
-%             fprintf(fid,'Running "extractLocalSync" (%s)... \n',datestr(now));
-%             extractLocalSync('D:\ephysData');
-%             fprintf(fid,'Done (%s).\n',datestr(now));
-%     
-%             fprintf(fid,'Compressing local data (%s)... \n',datestr(now));
-%             compressPath = which('compress_data.py');
-%             [statusComp, resultComp] = system(['conda activate PinkRigs && ' ...
-%                 'python ' compressPath ' && ' ...
-%                 'conda deactivate']);
-%             printMessage(statusComp,resultComp,fid)
     
             fprintf(fid,'Running "copyEphysData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyEphysData2ServerAndDelete('D:\ephysData');
+            log = copyEphysData2ServerAndDelete('D:\ephysData');
+            fprintf(fid,log);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
