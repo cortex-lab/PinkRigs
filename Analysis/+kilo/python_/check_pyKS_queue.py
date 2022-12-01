@@ -103,8 +103,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
                             KS_done = False
 
                         # override KS_done if the file was modified in the last hour. 
-                        # check when the ephys file was created and don't sort if it's less than an hour. 
-                        last_modification_time = Path(ephys_file).stat().st_mtime
+                        # check when the ephys file was created and don't sort if it's less than an hour.
+                        # actually check when the corresponding .meta was 'created', for now.. 
+                        meta_file_path = list((Path(ephys_file).parent).glob('*.meta'))[0]
+                        last_modification_time = Path(meta_file_path).stat().st_ctime
                         modification_thr = 1 # 1 hr
                         is_recently_modified_file = ((datetime.datetime.now().timestamp()-last_modification_time)/3600)<modification_thr
                         if is_recently_modified_file:
