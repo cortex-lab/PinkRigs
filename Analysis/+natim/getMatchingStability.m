@@ -1,7 +1,7 @@
 function [Nstable, Pstable, dur, NstableDur, PstableDur, idi, pairAcrossAll] = getMatchingStability(BestMatch,BestCorr,BestDist,days,p,plt)
 
     if ~exist('p','var')
-        p = [];
+        p = [0.05 0.5 150];
     end
     
     if ~exist('plt','var')
@@ -14,7 +14,7 @@ function [Nstable, Pstable, dur, NstableDur, PstableDur, idi, pairAcrossAll] = g
         for d2 = 1:size(BestMatch,1)
             dur(d1,d2) = abs(days(d2)-days(d1));
 
-            pairAcrossAll{d1,d2} = natim.matchNeuronsAcrossDays([d1 d2],BestMatch,BestCorr,BestDist,[0.05 0.5 150]);        
+            pairAcrossAll{d1,d2} = natim.matchNeuronsAcrossDays([d1 d2],BestMatch,BestCorr,BestDist,p);        
             if d1~=d2
                 Nstable(d1,d2) = size(pairAcrossAll{d1,d2},2);
                 Pstable(d1,d2) = size(pairAcrossAll{d1,d2},2)/size(BestMatch{d1,d2},1); 
@@ -50,7 +50,7 @@ function [Nstable, Pstable, dur, NstableDur, PstableDur, idi, pairAcrossAll] = g
         colorbar
         c = caxis;
         caxis([0 c(2)])
-        title('Number of matched clusers')
+        title('Number of matched clusters')
 
         subplot(122)
         plot(idi(2:end),NstableDur(2:end),'k','LineWidth',2)

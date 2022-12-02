@@ -22,9 +22,9 @@ for d = 1:numel(spikeData)
     Md1 = Md1(~nanidx,:);
     Md2 = Md2(~nanidx,:);
     corrd_tmp = corr(Md1,Md2);
-    if strcmp(type,'noise')
-        for ii = 1:size(corrd_tmp,1); corrd_tmp(ii,ii) = 0; end
-    end
+    % if strcmp(type,'noise')
+    %     corrd_tmp(eye(corrd_tmp)) = 0;
+    % end
     corrd{d} = corrd_tmp;
 end
 

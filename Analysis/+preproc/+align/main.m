@@ -190,10 +190,10 @@ function main(varargin)
 
                     fprintf(1, 'Aligning video %s... \n',vidName);
                     try
-                        [frameTimes, missedFrames,nFirstFrames] = preproc.align.video(expInfo);
+                        [frameTimes, numFramesMissed,nFirstFrames] = preproc.align.video(expInfo);
                         
-                        if missedFrames > 0
-                           error('Missed frames: %d. Recheck.', missedFrames) 
+                        if numFramesMissed > 0
+                           error('Missed frames: %d. Recheck.', numFramesMissed) 
                         end
                         
                         stub = [expDate '_' expNum '_' subject '_' vidName];

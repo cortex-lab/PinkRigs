@@ -129,7 +129,7 @@ function [data, proc, recPathUni] = loadData(varargin)
         data(nn).C.CluID = C{ee}.IDs;
         data(nn).C.CluLab = C{ee}.KSLabels;
         data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
-        data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
+        data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))>0.1);
         data(nn).days = days{ee};
         data(nn).recLoc = recLocAll{ee};
 
