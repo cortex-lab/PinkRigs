@@ -18,8 +18,7 @@ try
             fprintf(fid,'Detected timeline computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            log = copyLocalData2ServerAndDelete('D:\LocalExpData');
-            fprintf(fid,log);
+            copyLocalData2ServerAndDelete('D:\LocalExpData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
@@ -38,18 +37,15 @@ try
             fprintf(fid,'Detected ephys computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            log = copyLocalData2ServerAndDelete('D:\LocalExpData');
-            fprintf(fid,log);
+            copyLocalData2ServerAndDelete('D:\LocalExpData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "extractSyncAndCompress" (%s)... \n',datestr(now));
-            log = extractSyncAndCompress('D:\ephysData');
-            fprintf(fid,log);
+            extractSyncAndCompress('D:\ephysData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "copyEphysData2ServerAndDelete" (%s)... \n',datestr(now));
-            log = copyEphysData2ServerAndDelete('D:\ephysData');
-            fprintf(fid,log);
+            copyEphysData2ServerAndDelete('D:\ephysData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
