@@ -1,4 +1,4 @@
-function [tVid,framesMissed,nFirstFrames] = video(varargin)
+function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
 %%% This function will align the time frames of the input video to the
 %%% corresponding timeline. It will try to minimize the amount of time
 %%% and computing by loading first only the beginning and end of the
@@ -200,8 +200,8 @@ strobeSamps = timeproc.getChanEventTime(timeline,strobeName);
 if ~isempty(strobeSamps)
     % Take the strobes if exist
     numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
-    numMissedFrames_wStrobes = numStrobesFoundBetweenSyncs - numFramesFoundBetweenSyncs;
-    fprintf(1, 'missed frames with the strobes: %d \n', numMissedFrames_wStrobes);
+    numFramesMissed_wStrobes = numStrobesFoundBetweenSyncs - numFramesFoundBetweenSyncs;
+    fprintf(1, 'missed frames with the strobes: %d \n', numFramesMissed_wStrobes);
 end
 
 if exist([pathStub, '_times.txt'], 'file') && numFramesMissed>0 && params.plt{1}
