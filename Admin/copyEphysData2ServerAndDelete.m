@@ -1,8 +1,10 @@
-function copyEphysData2ServerAndDelete(localFolder)
+function log = copyEphysData2ServerAndDelete(localFolder)
 %% This funtion will need to be run at the end of each experiment/day? and
 if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
 
-fprintf('Starting now %s... \n',datestr(now))
+log = '';
+
+log = appendAndPrint(log, sprintf('Starting now %s... \n',datestr(now)));
 localEphysFolders = dir([localFolder '\**\*']);
 localEphysFolders = localEphysFolders([localEphysFolders.isdir]' & ...
     contains({localEphysFolders.name}', 'imec') & ...
@@ -34,7 +36,7 @@ readyFolders = (localCompressed | serverCompressed) & ...
     (localSync | serverSync);
 
 if isempty(readyFolders)
-    fprintf('There are no ephys files in the local directory. Returning... \n');
+    log = appendAndPrint(log, sprintf('There are no ephys files in the local directory. Returning... \n'));
     pause(1);
     return;
 end 
@@ -58,10 +60,12 @@ if ~matchTest
     error('File paths names do not correspond..?')
 end
 
-copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1)
+log_copy = copyFiles2ServerAndDelete(allLocalFilePaths, allServerFilePaths, 1);
+log = append(log, log_copy);
+
 %%
 cleanEmptyFoldersInDirectory(localFolder);
 
-fprintf('Stopping now %s.',datestr(now))
+log = appendAndPrint(log, sprintf('Stopping now %s.',datestr(now)));
 
 end

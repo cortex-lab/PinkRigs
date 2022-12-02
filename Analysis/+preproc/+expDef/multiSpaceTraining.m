@@ -402,6 +402,10 @@ tExt.rewardTimes = cellfun(@double, tExt.rewardTimes);
 if isfield(e, 'is_laserOnValues')
     is_laser_On = e.is_laserOnValues(eIdx);
     all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut'); 
+    % sometimes there is an extra trial in all_laser_times
+    if  (size(all_laser_times,1)-sum(is_laser_On))==1
+        all_laser_times(end,:) = []; 
+    end
     laser_times_trial_indexed = NaN(numel(is_laser_On),4); 
     laser_times_trial_indexed(is_laser_On,:)= all_laser_times; 
 else
