@@ -17,6 +17,12 @@ function log = extractSyncAndCompress(localFolder, fid, ignoreSubjectMismatch)
     localEphysFilesAgeInMins = (now-[localEphysFiles.datenum]')*24*60;
     localEphysFiles(localEphysFilesAgeInMins < 60) = []; 
 
+    % Check that they all have metadata
+    metaDataExists = cell2mat(arrayfun(@(x) exist(fullfile(x.folder,regexprep(x.name,'ap.bin','ap.meta')),'file'), localEphysFiles, 'uni', 0))>0;
+    tmplog = cellfun(@(x) sprintf('Metadata missing for %s. Skipping... \n', x), {localEphysFiles(~metaDataExists).name}, 'uni', 0);
+    log = appendAndPrint(log, strcat(tmplog{:}), fid);
+    localEphysFiles(~metaDataExists) = []; 
+    
     if isempty(localEphysFiles)
         log = appendAndPrint(log, 'There are no ephys files that are ready in the local directory. Returning... \n', fid);
         pause(1);
