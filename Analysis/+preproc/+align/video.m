@@ -274,7 +274,7 @@ else
     b = tlSyncOnSamps(1) - a*(A.data(vidSyncOnFrames(1),end)) + percentExpo*vidFs;
 
     % Check if a takes absurd values
-    if a<0.98 || a>1.02
+    if a<0.99 || a>1.01
         error('The alignment is weird: a = %s. Maybe manually recheck?',a)
     end
 
