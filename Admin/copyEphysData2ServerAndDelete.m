@@ -50,6 +50,11 @@ function log = copyEphysData2ServerAndDelete(localFolder,fid)
     serverFolders = vertcat(serverFolders{:});
     allLocalFiles = cell2mat(allLocalFiles);
     
+    % Do not copy bin files over to the server
+    isBinFile = cell2mat(arrayfun(@(x) contains(x.name,'.ap.bin'),allLocalFiles,'uni',0));
+    allLocalFiles(isBinFile) = [];
+    serverFolders(isBinFile) = [];
+    
     allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
     allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
     
