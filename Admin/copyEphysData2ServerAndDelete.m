@@ -57,8 +57,8 @@ function log = copyEphysData2ServerAndDelete(localFolder,fid)
 
     % Copy all the peripherals (.ch, .meta, sync) first, then .cbin
     isCbinFile = cell2mat(arrayfun(@(x) contains(x.name,'.ap.cbin'),allLocalFiles,'uni',0));
-    allLocalFiles = [allLocalFiles(~isCbinFile) allLocalFiles(isCbinFile)];
-    serverFolders = [serverFolders(~isCbinFile) serverFolders(isCbinFile)];
+    allLocalFiles = cat(1,allLocalFiles(~isCbinFile), allLocalFiles(isCbinFile));
+    serverFolders = cat(1,serverFolders(~isCbinFile), serverFolders(isCbinFile));
     
     allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
     allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
