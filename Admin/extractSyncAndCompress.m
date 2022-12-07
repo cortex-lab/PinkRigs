@@ -81,8 +81,8 @@ function log = extractSyncAndCompress(localFolder, fid, ignoreSubjectMismatch)
     %% Loop through files to extract sync and compress them
     for i = 1:length(validEphysFiles)
         binFileName = fullfile(validEphysFiles(i).folder, validEphysFiles(i).name);
-        log = appendAndPrint(log, sprintf('Looking at file %s.\n', ...
-                regexprep(validEphysFiles(i).name,'\','/')), fid);
+        log = appendAndPrint(log, sprintf('Looking at file %s (%s).\n', ...
+                regexprep(validEphysFiles(i).name,'\','/'), datestr(now)), fid);
             
         % Extracting the sync
         syncPath = fullfile(validEphysFiles(i).folder, 'sync.mat');

@@ -39,7 +39,7 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
         end
         
         if ~copiedAlready(i)
-            log = appendAndPrint(log, sprintf('Copying %s ...\n', localFilePaths{i}), fid);
+            log = appendAndPrint(log, sprintf('Copying %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
             tic;
             if ~isfolder(fileparts(serverFilePaths{i}))
                 if makeMissingDirs
@@ -87,5 +87,5 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
     end
     %% TODO--email list of bad copies to users
     
-    log = appendAndPrint(log, sprintf('Done! \n'), fid);
+    log = appendAndPrint(log, sprintf('Done (%s)! \n', datestr(now)), fid);
 end
