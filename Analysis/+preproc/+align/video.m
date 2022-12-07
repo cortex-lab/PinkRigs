@@ -273,6 +273,11 @@ else
     a = (tlSyncOnSamps(2) - tlSyncOnSamps(1))/(A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end));
     b = tlSyncOnSamps(1) - a*(A.data(vidSyncOnFrames(1),end)) + percentExpo*vidFs;
 
+    % Check if a takes absurd values
+    if a<0.98 || a>1.02
+        error('The alignment is weird: a = %s. Maybe manually recheck?',a)
+    end
+
     % Here I cannot use matlab's timing as they have a lot of 'fake'
     % jitter. So I just recompute the times. Note that first and last
     % frames should have the same timing.
