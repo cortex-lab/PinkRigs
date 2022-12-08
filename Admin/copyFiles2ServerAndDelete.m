@@ -26,7 +26,7 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
     failedCopy = 0*copiedAlready>0;
     for i = 1:length(copiedAlready)
         localFileMD5 = GetMD5(localFilePaths{i}, 'File');
-        log = appendAndPrint(log, sprintf('Processing %s ...\n', localFilePaths{i}), fid);
+        log = appendAndPrint(log, sprintf('Processing %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
         
         %This exception deals with the fact that we expect timeline to be
         %different, so we only "copy" if we can't open the server version
@@ -40,7 +40,6 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
         
         if ~copiedAlready(i)
             log = appendAndPrint(log, sprintf('Copying %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
-            tic;
             if ~isfolder(fileparts(serverFilePaths{i}))
                 if makeMissingDirs
                     mkdir(fileparts(serverFilePaths{i}));
@@ -49,16 +48,19 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
                 end
             end
             try
+                tic;
                 copyfile(localFilePaths{i},fileparts(serverFilePaths{i}));
+                elapsedTime = toc;
+                d = dir(localFilePaths{i});
+                rate = d.bytes/(10^6)/elapsedTime;
+                log = appendAndPrint(log, sprintf('Ran copying in %d sec (%d MB/s).\n',elapsedTime,rate), fid);
+                tic;
+                log = appendAndPrint(log, sprintf('Running GetMD5 (%s).\n',datestr(now)), fid); 
                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+                log = appendAndPrint(log, sprintf('Done running GetMD5 in %d sec.\n',elapsedTime), fid);
                 if ~strcmp(localFileMD5, serverFileMD5)
-                    log = appendAndPrint(log, sprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i}), fid);
+                    log = appendAndPrint(log, sprintf('WARNING: MD5 checksum doesn''t match for file %s. Skipping.... \n', localFilePaths{i}), fid);
                     failedCopy(i) = 1;
-                else
-                    elapsedTime = toc;
-                    d = dir(localFilePaths{i});
-                    rate = d.bytes/(10^6)/elapsedTime;
-                    log = appendAndPrint(log, sprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate), fid); 
                 end
             catch
                 log = appendAndPrint(log, sprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i}), fid);
