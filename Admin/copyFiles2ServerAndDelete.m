@@ -57,6 +57,7 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
                 tic;
                 log = appendAndPrint(log, sprintf('Running GetMD5 (%s).\n',datestr(now)), fid); 
                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+                elapsedTime = toc;
                 log = appendAndPrint(log, sprintf('Done running GetMD5 in %d sec.\n',elapsedTime), fid);
                 if ~strcmp(localFileMD5, serverFileMD5)
                     log = appendAndPrint(log, sprintf('WARNING: MD5 checksum doesn''t match for file %s. Skipping.... \n', localFilePaths{i}), fid);
