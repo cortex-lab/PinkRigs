@@ -33,9 +33,11 @@ function getAvgMovInt(pathStub, nFramesToLoad)
             ch = 0;
         end
         % last bit
-        img = read(vr, [ch*chunkSize+1 nF]);
-        avgIntensity(ch*chunkSize+1:nF) = squeeze(mean(mean(img, 1),2));
-        
+        if ch*chunkSize+1 < nF
+            img = read(vr, [ch*chunkSize+1 nF]);
+            avgIntensity(ch*chunkSize+1:nF) = squeeze(mean(mean(img, 1),2));
+        end
+
         isLoaded = true(size(avgIntensity));
     else
         % load only a defined number of frames at the beginning and end of
