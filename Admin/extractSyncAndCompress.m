@@ -15,7 +15,7 @@ function log = extractSyncAndCompress(localFolder, fid, ignoreSubjectMismatch)
     %% Get files that have been modified more than 1h ago
     localEphysFiles = dir(fullfile(localFolder, '/**/*.ap.bin'));
     localEphysFilesAgeInMins = (now-[localEphysFiles.datenum]')*24*60;
-    localEphysFiles(localEphysFilesAgeInMins < 60) = []; 
+    localEphysFiles(localEphysFilesAgeInMins < 120) = []; 
 
     % Check that they all have metadata
     metaDataExists = cell2mat(arrayfun(@(x) exist(fullfile(x.folder,regexprep(x.name,'ap.bin','ap.meta')),'file'), localEphysFiles, 'uni', 0))>0;

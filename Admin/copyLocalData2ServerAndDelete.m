@@ -31,8 +31,8 @@ function log = copyLocalData2ServerAndDelete(localFolder,fid)
         
         %ignore files that haven't been modified for an hour
         allLocalFilesAgeInMins = (now-[allLocalFiles.datenum]')*24*60;
-        allLocalFiles(allLocalFilesAgeInMins < 60) = []; 
-        serverFolders(allLocalFilesAgeInMins < 60) = []; 
+        allLocalFiles(allLocalFilesAgeInMins < 120) = []; 
+        serverFolders(allLocalFilesAgeInMins < 120) = []; 
         
         allServerFilePaths = arrayfun(@(x,y) fullfile(y{1}, x.name), allLocalFiles, serverFolders, 'uni', 0);
         allLocalFilePaths = arrayfun(@(x) fullfile(x.folder, x.name), allLocalFiles, 'uni', 0);
