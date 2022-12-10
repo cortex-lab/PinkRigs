@@ -27,11 +27,11 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
     for i = 1:length(copiedAlready)
         log = appendAndPrint(log, sprintf('Processing %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
 
-        tic;
-        log = appendAndPrint(log, sprintf('Running GetMD5 on local file (%s).\n',datestr(now)), fid); 
-        localFileMD5 = GetMD5(localFilePaths{i}, 'File');
-        elapsedTime = toc;
-        log = appendAndPrint(log, sprintf('Done running GetMD5 on local file in %d sec.\n',elapsedTime), fid);
+%         tic;
+%         log = appendAndPrint(log, sprintf('Running GetMD5 on local file (%s).\n',datestr(now)), fid); 
+%         localFileMD5 = GetMD5(localFilePaths{i}, 'File');
+%         elapsedTime = toc;
+%         log = appendAndPrint(log, sprintf('Done running GetMD5 on local file in %d sec.\n',elapsedTime), fid);
         
         %This exception deals with the fact that we expect timeline to be
         %different, so we only "copy" if we can't open the server version
@@ -60,14 +60,14 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
                 rate = d.bytes/(10^6)/elapsedTime;
                 log = appendAndPrint(log, sprintf('Ran copying in %d sec (%d MB/s).\n',elapsedTime,rate), fid);
                 tic;
-                log = appendAndPrint(log, sprintf('Running GetMD5 on server file (%s).\n',datestr(now)), fid); 
-                serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
-                elapsedTime = toc;
-                log = appendAndPrint(log, sprintf('Done running GetMD5 on server file in %d sec.\n',elapsedTime), fid);
-                if ~strcmp(localFileMD5, serverFileMD5)
-                    log = appendAndPrint(log, sprintf('WARNING: MD5 checksum doesn''t match for file %s. Skipping.... \n', localFilePaths{i}), fid);
-                    failedCopy(i) = 1;
-                end
+%                 log = appendAndPrint(log, sprintf('Running GetMD5 on server file (%s).\n',datestr(now)), fid); 
+%                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+%                 elapsedTime = toc;
+%                 log = appendAndPrint(log, sprintf('Done running GetMD5 on server file in %d sec.\n',elapsedTime), fid);
+%                 if ~strcmp(localFileMD5, serverFileMD5)
+%                     log = appendAndPrint(log, sprintf('WARNING: MD5 checksum doesn''t match for file %s. Skipping.... \n', localFilePaths{i}), fid);
+%                     failedCopy(i) = 1;
+%                 end
             catch
                 log = appendAndPrint(log, sprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i}), fid);
                 failedCopy(i) = 1;
@@ -78,8 +78,9 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
         else
             dserver = dir(serverFilePaths{i});
             if (now - dserver.datenum)*24 > 1
-                serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
-                failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+%                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+%                 failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+                failedCopy(i) = 0; % force it for now
                 if failedCopy(i) == 0
                     log = appendAndPrint(log, sprintf('Copied already. Will delete local file... \n'), fid);
                 end
