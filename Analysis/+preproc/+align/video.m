@@ -54,7 +54,7 @@ end
 d = dir([pathStub '_lastFrames.mj2']); % to check if it's there and worth loading
 if ~isempty(d) && ~exist(intensFile_lastFrames, 'file')
     if d.bytes>100
-        vidproc.getAvgMovInt([pathStub '_lastFrames'], params.nFramesToLoad{1});
+        vidproc.getAvgMovInt([pathStub '_lastFrames'], inf);
     end
 end
 
