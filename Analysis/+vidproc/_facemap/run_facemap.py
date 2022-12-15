@@ -1521,10 +1521,10 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     # also write a json file to the ONE folder
                     if output_format == 'ONE':
                         if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc')):
-                            os.makedir(os.path.join(exp_folder, 'ONE_preprc'))
+                            os.makedirs(os.path.join(exp_folder, 'ONE_preprc'))
                         if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc',
                                                           video_fov)):
-                            os.makedir(os.path.join(exp_folder, 'ONE_preproc',
+                            os.makedirs(os.path.join(exp_folder, 'ONE_preproc',
                                                     video_fov))
 
                         corrupted_json_file = os.path.join(exp_folder, 'ONE_preproc',
