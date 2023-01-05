@@ -179,7 +179,7 @@ for i=1:height(expList)
         micPath = cell2mat([currExp.expFolder '\' expPathStub '_mic.mat']);
         if exist(micPath, 'file')
             mic = load(micPath);
-            if exist('tim', 'var')
+            if exist('mic', 'var')
                 expList.dataMic{i} = mic;
             end
         end

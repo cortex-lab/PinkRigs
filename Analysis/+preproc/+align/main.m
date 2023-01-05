@@ -44,8 +44,8 @@ function main(varargin)
         %If there is no timeline. All alignment is NaN
         if strcmp(expInfo.existTimeline, '0')
             if ~all(structfun(@(x) strcmpi(x,'nan'), notAlignedYet))
-                [block, ephys] = deal(nan);
-                save(savePath,'block', 'ephys');
+                [block, ephys, mic] = deal(nan);
+                save(savePath,'block', 'ephys','mic');
                 csv.updateRecord('subject', subject, ...
                     'expDate', expDate,...
                     'expNum', expNum);
@@ -214,6 +214,7 @@ function main(varargin)
                 fprintf(1, '* Video alignment done. *\n');
                                 
                 change = 1;
+
             end
             
             %% Align microphone to timeline
@@ -229,9 +230,11 @@ function main(varargin)
                 % Align it
                 try
                     fprintf(1, '* Aligning mic... *\n');
-                    %%% TODO -- ERRORS FOR NOW
-                    error('Have not found or coded a way to align file yet.') % for now
-                    fprintf(1, '* Mic alignment done. *\n');
+                    % as the mic is sampled v high and we assume even
+                    % sampling, we only save the linear fit coeffs. 
+                    [~,co] = preproc.align.mic(expInfo);
+                    mic.slope = co(1); 
+                    mic.intercept = co(2); 
                     
                     % Remove any error file
                     if exist(fullfile(micONEFolder, 'AlignMicError.json'),'file')
@@ -240,12 +243,17 @@ function main(varargin)
                 catch me
                     msgText = getReport(me);
                     warning('Could not align mic: threw an error (%s)',msgText)
-                    
+                    mic = 'error';
                     % Save error message locally
                     saveErrMess(msgText,fullfile(micONEFolder, 'AlignMicError.json'))
                 end
                 
                 change = 1;
+                if exist(savePath,'file')
+                    save(savePath,'mic','-append')
+                else
+                    save(savePath,'mic')
+                end                
             end
             
             %% Update the csv
