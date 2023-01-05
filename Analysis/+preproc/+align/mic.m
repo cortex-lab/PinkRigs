@@ -82,8 +82,10 @@ sndOffsetTspec = tspec(sndOffsetSpec);  % offset times in s
 
 % plot the click detection
 f = figure('visible','off'); hold all
-figure; plot(x); 
+plot(x)
 xline(sndOnsetSpec,'r'); axis tight;
+ylabel('mean spectrogram, filtered')
+xlabel('mic sample')
 if startend==-1
     saveas(f,[pathStub 'mic_buzz_end.png'],'png');
 else
