@@ -1,10 +1,10 @@
-% some prelimiary alignment of microphone
+% some prelimiary alignment of microphone using the auditroy stimuli 
 
 clc; clear all; 
-params.subject = {'AV037'};
-params.expDate = '2022-11-24';
-%params.expDef = 'p';
-params.expNum = 1;
+params.subject = {['AV030']};
+params.expDate = '2022-12-08';
+params.expDef = 'p';
+%params.expNum = 1;
 exp2checkList = csv.queryExp(params);
 expInfo = exp2checkList(1,:);
 expInfo = csv.loadData(expInfo, 'dataType',{'timeline','events'});
