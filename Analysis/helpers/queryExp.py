@@ -92,16 +92,16 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
             if 'all' not in expDate: 
                 # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
 
-                if ('postImplant' in expDate) & (expList.size>0):
+                if ('postImplant' in expDate):
                     implant_date  = mouseList[mouseList.Subject == mm].P0_implantDate
                     # check whether mouse was implanted at all or not.
-                    if ~implant_date.isnull().values[0]: 
+                    if ~implant_date.isnull().values[0] & (expList.size>0): 
                         implant_date = implant_date.values[0]
                         implant_date = implant_date.replace('_','-').lower()
                         implant_date_range = implant_date + ':' + expList.expDate.iloc[-1]
                         selected_dates = check_date_selection(implant_date_range,expList.expDate)
                     else: 
-                        print('%s was not implanted. Why would you be calling it...?' % mm)
+                        print('%s was not implanted or did not have the requested type of exps.' % mm)
                         selected_dates = np.zeros(expList.expDate.size).astype('bool')
 
                 else:  
