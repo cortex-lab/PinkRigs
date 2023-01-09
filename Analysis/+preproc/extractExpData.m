@@ -145,12 +145,13 @@ function extractExpData(varargin)
                                 case 'PyKS'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
                             end
+                            IBLFormatFolder = fullfile(KSFolder,'ibl_format');
 
                             stub = [expDate '_' expNum '_' subject '_' ...
                                 sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
 
                             try
-                                if shouldProcess('spikes')
+                                if shouldProcess('spikes') && exist(IBLFormatFolder,'dir')
                                     % Initialize the folder (do it here
                                     % because want to delete it only when
                                     % processing the spikes)
@@ -162,7 +163,7 @@ function extractExpData(varargin)
                                     % write a json file in target ONE that
                                     % contains the string of the IBL
                                     % format file 
-                                    IBLFormatFolder = fullfile(KSFolder,'ibl_format');
+                                    
                                     saveErrMess(IBLFormatFolder,fullfile(probeONEFolder, sprintf('_av_rawephys.path.%s.json',stub)))
 
                                     % Align them
@@ -202,7 +203,7 @@ function extractExpData(varargin)
                                     % some trash units, but we need to keep
                                     % the dimensions consistent of
                                     % course...
-                                    qMetrics= removevars(qMetrics,{'cluster_id_1'}); % remove a useless variable
+                                    qMetrics = removevars(qMetrics,{'cluster_id_1'}); % remove a useless variable
                                     cname = setdiff(spkONE.clusters.av_IDs,qMetrics.cluster_id); 
 
                                     added_array = qMetrics(1,:); 
