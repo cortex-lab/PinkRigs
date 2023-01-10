@@ -27,10 +27,15 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.use('Agg')  # to play nicely with pyqt:
 # see: https://stackoverflow.com/questions/33051790/could-not-find-or-load-the-qt-platform-plugin-xcb
+import sciplotlib.style as splstyle
 
 import subprocess as sp
 
 import datetime
+
+
+# Run deeplabcut to get anchor points to draw ROI
+import deeplabcut
 
 # Pink rig dependencies
 from pathlib import Path
@@ -39,7 +44,7 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 
-from Analysis.helpers.queryExp import queryCSV,Bunch
+from Analysis.helpers.queryExp import queryCSV, Bunch
 
 """
 This is a modified version of automatic_facemap.py, combined with batch_process_pinkavrig_videos.py
@@ -646,20 +651,24 @@ def run_facemap_mod(filenames, motSVD=True, movSVD=False, GUIobject=None, parent
 
     # TODO: may be good to check video corruption around here
     # eg. error on AN022 2021-06-16 experiment 2 eye/side camera
+    # pdb.set_trace()
 
     if rois is not None:
         for r in rois:
             # Tim: added thing here to update yrange and xrange
             if r['yrange'] == 'full':
                 r['yrange'] = np.arange(0, Ly[0]).astype(np.int32)
-            elif r['yrange'] > 0:
-                r['yrange'] = np.arange(r['yrange'], Ly[0]).astype(np.int32)
-            elif r['yrange'] < 0:
-                r['yrange'] = np.arange(0, Ly[0] - r['yrange']).astype(np.int32)
+            elif type(r['yrange']) is int:
+                if r['yrange'] > 0:
+                    r['yrange'] = np.arange(r['yrange'], Ly[0]).astype(np.int32)
+                elif r['yrange'] < 0:
+                    r['yrange'] = np.arange(0, Ly[0] - r['yrange']).astype(np.int32)
 
             if r['xrange'] == 'full':
                 r['xrange'] = np.arange(0, Lx[0]).astype(np.int32)
-                r['ellipse'] = np.zeros((Ly[0], Lx[0])).astype(bool)  # this is useless for now
+
+            r['ellipse'] = np.zeros((Ly[0], Lx[0])).astype(bool)  # this is useless for now
+
             if r['rind'] == 1:
                 r['yrange_bin'] = np.arange(np.floor(r['yrange'][0] / sbin),
                                             np.floor(r['yrange'][-1] / sbin)).astype(int)
@@ -1152,9 +1161,176 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
 
     return 0
 
+def cut_video(video_path):
+    """
+    Cut video for running deeplabcut on subset of video (for ROI cropping)
+    Parameters
+    ----------
+    video_path : str
+        path to the video to cut
+
+    Returns
+    -------
+
+    """
+
+    subset_start_point = 5
+    cut_duration = 10
+    ffmpeg_path = 'C:/Program Files/ffmpeg/bin/ffmpeg.exe'   # set up by Tim
+    # Also note that this doesn't work if ffmpeg is in C:/ffmpeg/ for some reason...
+    video_name = os.path.basename(video_path).split('.')[0]
+    subset_video_name_without_ext = video_name + '_subset'
+    subset_video_name = subset_video_name_without_ext + '.mp4'
+    subset_video_path = os.path.join(os.path.dirname(video_path), subset_video_name)
+    ffmpeg_args = [ffmpeg_path,
+                   '-ss', '%.f' % subset_start_point,
+                   '-y',  # overwrite video if existing subset video exists
+                   '-i', video_path,
+                   '-c', 'copy',
+                   '-t', '%.f' % (cut_duration),
+                   subset_video_path
+                   ]
+    sp.call(ffmpeg_args)
+
+    return subset_video_path
+
+
+def get_dlc_roi_window(vid_path, projectName):
+    """
+    Parameters
+    ----------
+    vid_path : str
+        path to original video (not the cut version)
+    projectName : str
+
+    Returns
+    -------
+
+    """
+    output_video_folder = os.path.dirname(vid_path)
+    subset_video_name_without_ext = os.path.basename(vid_path)[0:-4]
+    subset_vid_h5_path = glob.glob(os.path.join(
+        output_video_folder,
+        '*%s*%s*.h5' % (subset_video_name_without_ext, projectName)
+    ))[0]
+
+    if projectName == 'pinkrigs':
+
+        subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+        scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+        body_parts = ['eyeL', 'eyeR', 'eyeU', 'eyeD', 'pupilL', 'pupilR', 'pupilU', 'pupilD', 'whiskPadL', 'whiskPadR']
+
+        # eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+        # eyeR_yvals = np.array([x[(scorer_name, 'eyeR', 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+
+        # rough imputation of values where eyeR is not found (negative values)
+        # eyeR_xvals[eyeR_xvals < 0] = np.mean(eyeR_xvals)
+        # eyeR_yvals[eyeR_yvals < 0] = np.mean(eyeR_yvals)
+
+        # eyeR_xvals_mean = np.nanmean(eyeR_xvals)
+        # eyeR_yvals_mean = np.nanmean(eyeR_yvals)
+
+    elif projectName == 'pinkrigsFrontCam':
+
+        subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+        scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_150000'
+        body_parts = ['eyeL', 'eyeR', 'snoutL', 'snoutR', 'snoutF', 'pawL', 'pawR']
+
+
+    elif projectName == 'pinkrigsSideCam':
+
+        subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
+        scorer_name = 'DLC_resnet50_pinkrigsSideCamOct17shuffle1_300000'
+
+        body_parts = ['eyeL', 'snoutF', 'spout', 'pawL', 'earL', 'earR', 'earU', 'earD']
+
+    body_part_mean_xy = {}
+    body_part_xy = {}
+
+    for b_part in body_parts:
+        body_part_yvals = np.array([x[(scorer_name, b_part, 'y')] for (_, x) in subset_vid_output_df.iterrows()])
+        body_part_xvals = np.array([x[(scorer_name, b_part, 'x')] for (_, x) in subset_vid_output_df.iterrows()])
+
+        body_part_xy[b_part + '_x'] = body_part_xvals
+        body_part_xy[b_part + '_y'] = body_part_yvals
+
+        # rough imputation of values where eyeR is not found (negative values)
+        body_part_yvals[body_part_yvals < 0] = np.mean(body_part_yvals)
+        body_part_xvals[body_part_xvals < 0] = np.mean(body_part_xvals)
+
+        yvals_mean = np.nanmean(body_part_yvals)
+        xvals_mean = np.nanmean(body_part_xvals)
+
+        body_part_mean_xy[b_part + '_y'] = yvals_mean
+        body_part_mean_xy[b_part + '_x'] = xvals_mean
+
+    # Defining roi_window
+    roi_window = dict()
+
+    pdb.set_trace()
+
+    if projectName == 'pinkrigs':
+        rectangle_width = 200
+
+        eyeR_xvals_mean = body_part_mean_xy['eyeR_x']
+        eyeR_yvals_mean = body_part_mean_xy['eyeR_y']
+
+        roi_window['mpl_obj'] = mpl.patches.Rectangle(
+            (eyeR_xvals_mean - 300, eyeR_yvals_mean),
+            rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
+        )
+
+        x_start = eyeR_xvals_mean - 300
+        x_end = x_start + rectangle_width
+        y_start = eyeR_xvals_mean
+        y_end = y_start + 150
+
+        roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
+        roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+
+    elif projectName == 'pinkrigsFrontCam':
+
+        rectangle_width = 50
+        # rectangle_height = eyeL_yvals_mean - eyeR_yvals_mean
+        rectangle_height = body_part_mean_xy['eyeL_y'] - body_part_mean_xy['eyeR_y']
+
+        roi_window['mpl_obj'] = mpl.patches.Rectangle(
+            (body_part_mean_xy['eyeR_x'] + 25, body_part_mean_xy['eyeR_y']),
+            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+        )
+
+        x_start = body_part_mean_xy['eyeR_x'] + 25
+        x_end = x_start + rectangle_width
+        y_start = body_part_mean_xy['eyeR_y']
+        y_end = y_start + rectangle_height
+
+        roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
+        roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+
+    elif projectName == 'pinkrigsSideCam':
+
+        rectangle_width = 150
+        rectangle_height = 100
+        roi_window['mpl_obj'] = mpl.patches.Rectangle(
+            (body_part_mean_xy['eyeL_x'] - 75, body_part_mean_xy['eyeL_y'] + 25),
+            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+        )
+
+        x_start = body_part_mean_xy['eyeL_x'] - 75
+        x_end = x_start + rectangle_width
+        y_start = body_part_mean_xy['eyeL_y'] + 25
+        y_end = y_start + rectangle_height
+
+        roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
+        roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+
+    return roi_window
+
+
 def batch_process_facemap(output_format='flat', sessions=None,
                           subset_mice_to_use=None, subset_date_range=None,
-                          recompute_facemap=False, recompute_ONE=False):
+                          recompute_facemap=False, recompute_ONE=False,
+                          run_on_cropped_roi=True):
     """
       
     Parameters
@@ -1191,7 +1367,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
     num_videos_ran = 0
     facemap_roi_selection_mode = 'automatic'
     align_to_timeline = False
-    plot_results = False
+    plot_results = True
     run_video_compression = False
     load_from_server = False
     video_ext = '.mj2'
@@ -1506,14 +1682,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
                           'but going to recompute facemap because '
                           'recompute_facemap is set to True' % processed_facemap_path)
 
-
             if ((len(processed_facemap_path) == 0) or recompute_facemap) & (len(processing_facemap_txt_path) == 0) & (
             corrupted_txt_file_not_found):
 
                 print('%s not processed yet, will run facemap on it now' % video_fov)
 
                 # Check file is not corrupted
-
                 vid_corrupted = check_file_corrupted(vid_path=video_fpath)
                 if vid_corrupted:
                     open(corrupted_txt_file, 'a').close()
@@ -1534,6 +1708,43 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
                     print('%s is corrupted, skipping...' % video_fov)
                     continue
+
+
+                # Check whether to run on cropped ROI
+                if run_on_cropped_roi:
+
+                    # cut video
+                    cut_video_fpath = cut_video(video_fpath)
+
+                    # run deeplabcut to get the anchor coordinates
+                    working_directory = 'C:/Users/Experiment/Desktop/avRigDLC'
+                    if 'eyeCam' in video_fpath:
+                        projectName = 'pinkrigs'
+                    elif 'frontCam' in video_fpath:
+                        projectName = 'pinkrigsFrontCam'
+                    elif 'sideCam' in video_fpath:
+                        projectName = 'pinkrigsSideCam'
+
+                    project_folder_search = glob.glob(os.path.join(working_directory, '%s-Tim*' % projectName))
+                    project_folder = project_folder_search[0]
+                    yaml_file_path = os.path.join(project_folder, 'config.yaml')
+
+                    deeplabcut.analyze_videos(yaml_file_path, [cut_video_fpath],
+                                               save_as_csv=True)
+
+                    # read the coordinates
+                    roi_window = get_dlc_roi_window(video_fpath, projectName)
+
+                    # modify the crop window settings to give to facemap
+                    # currently assume just a single ROI
+                    # 2023-01-07 : flip xrange and yrange
+                    proc['rois'][0]['xrange'] = roi_window['xrange']
+                    proc['rois'][0]['yrange'] = roi_window['yrange']
+
+                    if plot_results:
+                        # plot the ROI locations and window just to check
+                        pdb.set_trace()
+
 
                 # make an empty text file saying that the facemap file is being processed
                 e = datetime.datetime.now()
@@ -1576,11 +1787,52 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     ax.spines['right'].set_visible(False)
                     ax.spines['left'].set_visible(False)
                     ax.spines['bottom'].set_visible(False)
-                    fig_name = 'facemap_avgframe_reshaped.png'
+                    fig_name = '%s_%.f_%s_facemap_%s_avgframe_reshaped.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['Subject'], video_fov)
                     fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
 
                     plt.close(fig)
-                    pdb.set_trace()
+
+
+                    # Plot average frame + ROI window + top motion SVDs
+                    motmask_reshape = facemap_output['motMask_reshape'][1]
+
+                    roi_y_idx = facemap_output['rois'][0]['yrange']
+                    roi_x_idx = facemap_output['rois'][0]['xrange']
+                    roi_y_idx_range = roi_y_idx[-1] - roi_y_idx[0]
+                    roi_x_idx_range = roi_x_idx[-1] - roi_x_idx[0]
+
+                    avgframe_reshape_roi_subset = avgframe_reshape[roi_y_idx, :][:, roi_x_idx]
+
+                    with plt.style.context(splstyle.get_style('nature-reviews')):
+                        fig, axs = plt.subplots(1, 5)
+                        fig.set_size_inches(15, 3)
+
+                        cmap = 'gray'
+
+                        axs[0].imshow(avgframe_reshape, cmap=cmap)
+                        axs[0].set_title('Average frame', size=11)
+                        roi_rect = mpl.patches.Rectangle(
+                            (roi_x_idx[0], roi_y_idx[0]),
+                            roi_x_idx_range, roi_y_idx_range, edgecolor='red', facecolor='red', fill=False, lw=1
+                        )
+
+                        axs[0].add_patch(roi_rect)
+
+                        axs[1].set_title('Average frame cropped ROI', size=11)
+                        axs[1].imshow(avgframe_reshape_roi_subset, cmap=cmap)
+
+                        # motion masks
+                        n_motmask_to_plot = 3
+                        for motmask_idx in np.arange(n_motmask_to_plot):
+                            axs[motmask_idx + 2].imshow(motmask_reshape[:, :, motmask_idx], cmap=cmap)
+                            axs[motmask_idx + 2].set_title('Motion mask SVD %.f' % (motmask_idx + 1), size=11)
+
+                        fig.suptitle('%s %s exp %.f' %
+                                     (exp_info['Subject'], exp_info['expDate'], exp_info['expNum']), size=11)
+                        fig_name = '%s_%.f_%s_facemap_%s_roi_crop_and_mask.png' % \
+                                   (exp_info['expDate'], exp_info['expNum'], exp_info['Subject'], video_fov)
+                        fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
+
 
             else:
                 file_skipped += 1
@@ -1842,4 +2094,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject = 'all',expDate = 'last100')
+    main(subject='all', expDate='last100')
