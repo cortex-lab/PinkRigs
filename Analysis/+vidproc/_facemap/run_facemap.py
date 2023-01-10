@@ -1041,7 +1041,12 @@ def update_mouse_csv_record():
 
 
 def plot_facemap_results():
+    """
 
+    Returns
+    -------
+
+    """
     # TODO: first locate the csv with all the information
     mouse_info_csv_paths = get_mouse_info_csv_paths()
 
@@ -1063,8 +1068,6 @@ def plot_facemap_results():
             # remove the *lastFrames.mj2 videos
             video_files = [x for x in video_files if 'lastFrames' not in x]
             video_file_fov_names = [os.path.basename(x).split('_')[3].split('.')[0] for x in video_files]
-
-            pdb.set_trace()
 
             # load facemap results
             facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
@@ -1092,6 +1095,10 @@ def plot_facemap_results():
 def convert_facemap_output_to_ONE_format(facemap_output_file):
     """
     Convert facemap output to ONE format
+    Parameters
+    ----------
+    facemap_output_file : str
+        path to facemap output (face proc) npy file
     """
 
     facemap_output_file = Path(facemap_output_file)
@@ -1197,12 +1204,13 @@ def cut_video(video_path):
 
 def get_dlc_roi_window(vid_path, projectName):
     """
+    Get region of interest from deeplabcut anchor points, and outputs rectangle for facemap
     Parameters
     ----------
     vid_path : str
         path to original video (not the cut version)
     projectName : str
-
+        name of deeplabcut project to use
     Returns
     -------
 
@@ -1267,8 +1275,6 @@ def get_dlc_roi_window(vid_path, projectName):
     # Defining roi_window
     roi_window = dict()
 
-    pdb.set_trace()
-
     if projectName == 'pinkrigs':
         rectangle_width = 200
 
@@ -1282,7 +1288,7 @@ def get_dlc_roi_window(vid_path, projectName):
 
         x_start = eyeR_xvals_mean - 300
         x_end = x_start + rectangle_width
-        y_start = eyeR_xvals_mean
+        y_start = eyeR_yvals_mean
         y_end = y_start + 150
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
@@ -1303,6 +1309,10 @@ def get_dlc_roi_window(vid_path, projectName):
         x_end = x_start + rectangle_width
         y_start = body_part_mean_xy['eyeR_y']
         y_end = y_start + rectangle_height
+
+        # this is when rectangle_height is negative
+        if y_end < y_start:
+            y_start, y_end = y_end, y_start
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
         roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
@@ -1330,9 +1340,9 @@ def get_dlc_roi_window(vid_path, projectName):
 def batch_process_facemap(output_format='flat', sessions=None,
                           subset_mice_to_use=None, subset_date_range=None,
                           recompute_facemap=False, recompute_ONE=False,
-                          run_on_cropped_roi=True):
+                          run_on_cropped_roi=True, old_date_to_overwrite=None):
     """
-      
+    Runs facemap SVD processing on videos given dataframe of video paths and information
     Parameters
     ----------
     
@@ -1395,7 +1405,6 @@ def batch_process_facemap(output_format='flat', sessions=None,
     if main_info_folder_in_server:
         gvfs = Gio.Vfs.get_default()
         mouse_info_folder = gvfs.get_file_for_uri(mouse_info_folder).get_path()
-
 
     if sessions is None:
         if subset_mice_to_use is not None:
@@ -1473,7 +1482,6 @@ def batch_process_facemap(output_format='flat', sessions=None,
         all_mouse_info['server_path'] = [os.path.join('\\\\', *os.path.normpath(x).split(os.sep)[2:4]) for x in sessions['expFolder'].values]
         all_mouse_info['subject'] = all_mouse_info['Subject']
 
-    # pdb.set_trace()
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
 
@@ -1653,6 +1661,22 @@ def batch_process_facemap(output_format='flat', sessions=None,
             # look for text file that says that the video is processed
             processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
 
+            if len(processed_facemap_txt_path) != 0:
+                processed_date_is_old = np.zeros((len(processed_facemap_txt_path), ))
+                for nfile, processed_txt_path in enumerate(processed_facemap_txt_path):
+                    processed_date = os.path.basename(processed_txt_path)[0:10]
+
+                    if old_date_to_overwrite is not None:
+                        if len(old_date_to_overwrite) > 0:
+                            old_date_to_overwrite_dt = datetime.datetime.strptime(old_date_to_overwrite, '%Y-%m-%d')
+                            processed_date_dt = datetime.datetime.strptime(processed_date, '%Y-%m-%d')
+                            if old_date_to_overwrite_dt > processed_date_dt:
+                                processed_date_is_old[nfile] = 1
+
+                if np.all(processed_date_is_old):
+                    # set face proc file path to empty to trigger recomputation and overwrite
+                    processed_facemap_path = []
+
             # check whether file was already marked as corrupted
             vid_corrupted = check_file_corrupted(vid_path=video_fpath)
 
@@ -1685,6 +1709,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
             if ((len(processed_facemap_path) == 0) or recompute_facemap) & (len(processing_facemap_txt_path) == 0) & (
             corrupted_txt_file_not_found):
 
+                # pdb.set_trace()
                 print('%s not processed yet, will run facemap on it now' % video_fov)
 
                 # Check file is not corrupted
@@ -1737,13 +1762,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
                     # modify the crop window settings to give to facemap
                     # currently assume just a single ROI
-                    # 2023-01-07 : flip xrange and yrange
                     proc['rois'][0]['xrange'] = roi_window['xrange']
                     proc['rois'][0]['yrange'] = roi_window['yrange']
 
-                    if plot_results:
-                        # plot the ROI locations and window just to check
-                        pdb.set_trace()
+                    # if plot_results:
+                    #     # plot the ROI locations and window just to check
+                    #     pdb.set_trace()
 
 
                 # make an empty text file saying that the facemap file is being processed
@@ -2041,6 +2065,9 @@ def main(**csv_kwargs):
     process_most_recent = True
     recompute_ONE = False
     recompute_facemap = False
+    old_date_to_overwrite = ''
+    # if facemap processed data is older than this date, then overwrite existing
+    # (regardless of recompute_facemap) leave empty '' or None to forego option
 
     sessions = queryCSV(**csv_kwargs)
     if process_most_recent:
@@ -2081,7 +2108,8 @@ def main(**csv_kwargs):
             batch_process_facemap(output_format=output_format, sessions=sessions,
                                   subset_mice_to_use=subset_mice_to_use,
                                   recompute_ONE=recompute_ONE,
-                                  recompute_facemap=recompute_facemap)
+                                  recompute_facemap=recompute_facemap,
+                                  old_date_to_overwrite=old_date_to_overwrite)
 
 
             if override_time_check:
@@ -2094,4 +2122,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject='all', expDate='last100')
+    main(subject='all', expDate='last30')
