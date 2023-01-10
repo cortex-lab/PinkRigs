@@ -189,7 +189,8 @@ quit
 end
 
 function printMessage(status,result,fid)
-    result = regexprep(result,'\','/');
+    result = regexprep(result,'\','\\');
+    result = regexprep(result,'%','%%');
     disp(result);
     if status > 0
         fprintf(fid,sprintf('Failed with error "%s".\n', result));
