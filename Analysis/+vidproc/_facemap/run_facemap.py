@@ -9,7 +9,7 @@ from facemap import utils, process
 from tqdm import tqdm
 import time
 import cv2
-from pathlib import Path # I have a distinct aversion for os.path.join.
+from pathlib import Path  # I have a distinct aversion for os.path.join.
 
 # some facemap process stuff
 from io import StringIO
@@ -1340,7 +1340,8 @@ def get_dlc_roi_window(vid_path, projectName):
 def batch_process_facemap(output_format='flat', sessions=None,
                           subset_mice_to_use=None, subset_date_range=None,
                           recompute_facemap=False, recompute_ONE=False,
-                          run_on_cropped_roi=True, old_date_to_overwrite=None):
+                          run_on_cropped_roi=True, old_date_to_overwrite=None,
+                          verbose=False, print_warnings=False):
     """
     Runs facemap SVD processing on videos given dataframe of video paths and information
     Parameters
@@ -1624,8 +1625,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
             print('WARNING: video filename format is strange for %s, skipping' % exp_folder)
             continue
 
-        print('%.f Candidate videos to look over' % len(video_files))
-        print('\n'.join(video_files))
+        if verbose:
+            print('%.f Candidate videos to look over' % len(video_files))
+            print('\n'.join(video_files))
 
         tot_video_files += len(video_files)
 
@@ -2065,7 +2067,7 @@ def main(**csv_kwargs):
     process_most_recent = True
     recompute_ONE = False
     recompute_facemap = False
-    old_date_to_overwrite = ''
+    old_date_to_overwrite = '2023-01-09'
     # if facemap processed data is older than this date, then overwrite existing
     # (regardless of recompute_facemap) leave empty '' or None to forego option
 
