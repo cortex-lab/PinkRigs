@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime as time # to sort only for a fixed amount of time
-from pyhelpers import save_error_message
+from .pyhelpers import save_error_message
 
 pd.options.mode.chained_assignment = None # disable warning, we will overwrite some rows when sortedTag changes 
 
@@ -21,7 +21,7 @@ pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Admin.csv_pyhandlers import get_server_location 
 
-from ReadSGLXData.readSGLX import readMeta
+from .ReadSGLXData.readSGLX import readMeta
 
 def check_date_selection(date_selection,date):
     import datetime 
@@ -276,8 +276,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 
 if __name__ == "__main__":
-   stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection='allActive',ks_folder = 'pyKS', date_selection='last7')
-   run_batch_ibl_formatting(run_for=2)
+   #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
+   stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last1000')
+   run_batch_ibl_formatting(run_for=10)
 
 
