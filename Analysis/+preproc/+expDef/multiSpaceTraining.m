@@ -400,7 +400,7 @@ tExt.rewardTimes = cellfun(@double, tExt.rewardTimes);
 
 %%
 if isfield(e, 'is_laserOnValues')
-    if sum(e.is_laserOnValues(eIdx))>0
+    if sum(e.is_laserOnValues)>0
         is_laser_On = e.is_laserOnValues(eIdx);
         all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut'); 
         % sometimes there is an extra trial in all_laser_times
