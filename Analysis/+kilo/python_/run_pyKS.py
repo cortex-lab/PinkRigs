@@ -140,7 +140,7 @@ def run_pyKS_on_queue(run_for=0.5):
     run_for = float(run_for)
     run_for_minutes = run_for * 60
     print('kilo should be running for %.0f hours' % run_for)
-    stage_KS_queue(mouse_selection='all',date_selection='last1000',resort=False)   
+    stage_KS_queue(mouse_selection='allActive',date_selection='last7',resort=False)   
  
     root = get_server_location()
     root = root / 'Helpers'
