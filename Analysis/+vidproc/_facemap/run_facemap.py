@@ -2056,7 +2056,7 @@ def main(**csv_kwargs):
     print('run_facemap called')
 
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
-    override_time_check = True
+    override_time_check = False
     override_limit = 1  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
@@ -2124,4 +2124,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject='all', expDate='last30')
+    main(subject='all', expDate='last1000')
