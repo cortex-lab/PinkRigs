@@ -250,7 +250,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
             # get the xyz_picks if the histology exist.
 
         for shank in recorded_shanks:
-            shank_file_name = 'SN%s_shank%s.npy' % (probe_sn,shank)
+            subject = subject_path.parent.name # this might have changed since Michael' automatic copying was introduced. 
+            shank_file_name = '%s_SN%s_shank%s.npy' % (subject,probe_sn,shank)
             shank_anat_path = brainreg_path / shank_file_name
 
             if shank_anat_path.is_file():
