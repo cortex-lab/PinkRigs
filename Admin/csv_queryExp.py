@@ -1,12 +1,37 @@
-import datetime
-import pdb
+"""
+a bunch of functions that unify csv handling across 
+python codes, planned to be somewhat equivalent to +csv. funcs in the matlab base 
 
+"""
+import datetime
 import pandas as pd
-import re,inspect,json
+import re,inspect,json,os,sys,glob
 import numpy as np
 from pathlib import Path
 
+# get PinkRig handlers 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+
+def get_server_location(): 
+    return Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+
 def check_date_selection(date_selection,dateList):
+    """
+    funct to match a called date range to a list of dates (indicating all epxeriments in the csv, for example)
+
+    Parameters:
+    -----------
+    date selection: If str: Can be all,lastX,date range, or a single date
+                    If list: string of selected dates (e.g. ['2022-03-15','2022-03-30'])
+        corresponds to the selected dates 
+    dateList: list
+        corresponds to all dates to match to 
+    
+    Return: list
+        list of dates selected from dateList that pass the criteria determined by date_selection
+    """
     date_range = []
     date_range_called = False # when a from to type of date range called. Otherwise date_selection is treated as list of dates 
     if 'last' in date_selection:
@@ -65,8 +90,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         concatenated csv of requested experiments and its params 
     """
 
-
-    root = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+    root = get_server_location()
     mainCSVLoc = root / '!MouseList.csv' 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
@@ -79,7 +103,6 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
             subject = [subject]
         mouse2checkList = mouseList[mouseList.Subject.isin(subject)]['Subject']
     exp2checkList = []
-
     for mm in mouse2checkList:
         mouse_csv = root / (mm  + '.csv')
         if mouse_csv.is_file():
@@ -90,16 +113,16 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
             if 'all' not in expDate: 
                 # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
 
-                if 'postImplant' in expDate:
+                if ('postImplant' in expDate):
                     implant_date  = mouseList[mouseList.Subject == mm].P0_implantDate
                     # check whether mouse was implanted at all or not.
-                    if ~implant_date.isnull().values[0]: 
+                    if ~implant_date.isnull().values[0] & (expList.size>0): 
                         implant_date = implant_date.values[0]
                         implant_date = implant_date.replace('_','-').lower()
                         implant_date_range = implant_date + ':' + expList.expDate.iloc[-1]
                         selected_dates = check_date_selection(implant_date_range,expList.expDate)
                     else: 
-                        print('%s was not implanted. Why would you be calling it...?' % mm)
+                        print('%s was not implanted or did not have the requested type of exps.' % mm)
                         selected_dates = np.zeros(expList.expDate.size).astype('bool')
 
                 else:  
@@ -116,9 +139,14 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
 
             exp2checkList.append(expList)
 
-    exp2checkList = pd.concat(exp2checkList)
-    # re-index
-    exp2checkList = exp2checkList.reset_index(drop=True)
+    if len(exp2checkList)>0:
+        exp2checkList = pd.concat(exp2checkList)
+        # re-index
+        exp2checkList = exp2checkList.reset_index(drop=True)
+    
+    else: 
+        print('you did not call any experiments.')
+        exp2checkList = None
     
 
     return exp2checkList
@@ -288,4 +316,3 @@ def load_data(data_name_dict=None,**kwargs):
 
 
   
-

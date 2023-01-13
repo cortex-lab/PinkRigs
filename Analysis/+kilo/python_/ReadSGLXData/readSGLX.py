@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+# this func is the direct copy of Bill Karsh's SpikeGLX python reader, downloaded from the website.
 """
 Requires python 3
 

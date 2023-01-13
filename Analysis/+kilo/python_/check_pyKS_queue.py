@@ -8,32 +8,7 @@ import sys
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_pyhandlers import get_server_location 
-import datetime 
-
-def check_date_selection(date_selection,date):
-    
-    date_range = []
-
-    if 'last' in date_selection: 
-        date_selection = date_selection.split('last')[1]
-        date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
-        date_range.append(datetime.datetime.today())
-    else:
-        date_selection=date_selection.split(':')
-        for d in date_selection:
-            date_range.append(datetime.datetime.strptime(d,'%Y-%m-%d'))   
-
-        if len(date_range) == 1:
-            date_range.append(date_range[0])
-
-    exp_date = datetime.datetime.strptime(date,'%Y-%m-%d')
-    if (exp_date >= date_range[0]) & (exp_date <= date_range[1]):
-        Out=True
-    else:
-        Out=False  
-
-    return Out
+from Admin.csv_queryExp import get_server_location, check_date_selection
 
 def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
