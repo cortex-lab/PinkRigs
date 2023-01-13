@@ -4,10 +4,8 @@ from pathlib import Path
 from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25)
 
-# the stupid matlab folder structure doing the +kilo. 
-kilofolder = __import__("Analysis.+kilo.python_.ReadSGLXData.readSGLX")
-kilo = getattr(kilofolder, "+kilo")
-readMeta = kilo.python_.ReadSGLXData.readSGLX.readMeta
+# PinkRig specific imports 
+from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
 
 
 def get_chan_coordinates(root):
