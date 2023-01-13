@@ -19,7 +19,7 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_pyhandlers import get_server_location
+from Admin.csv_queryExp import get_server_location
 #queue updates and ibl formatter 
 from check_pyKS_queue import stage_KS_queue
 from pyhelpers import save_error_message
