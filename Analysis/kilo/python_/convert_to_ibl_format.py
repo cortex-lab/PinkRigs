@@ -18,8 +18,8 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Admin.csv_queryExp import get_server_location, check_date_selection
-from pyhelpers import save_error_message
-from ReadSGLXData.readSGLX import readMeta
+from .pyhelpers import save_error_message
+from .ReadSGLXData.readSGLX import readMeta
 
 def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
@@ -202,7 +202,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
     out_path.mkdir(parents=False, exist_ok=True) # make directory if it does not exist
 
     # extract the data to ibl_format if it has not been done already.
-    if not (out_path / 'cluster_matrics.tsv').is_file() or recompute:
+    if not (out_path / '_iblqc_ephysTimeRmsAP.rms.npy').is_file() or recompute:
         print('converting data to IBL format ...')
         extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=True) 
 
