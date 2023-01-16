@@ -1,0 +1,44 @@
+function recList = getRecordingPathFromExp(varargin)
+    
+    varargin = ['checkAlignEphys', true, varargin]; % force it
+    params = csv.inputValidation(varargin{:});
+    exp2checkList = csv.queryExp(params);
+    
+    %% Find all the relevant ephys files#
+    cc = 1;
+    for ee = 1:size(exp2checkList,1)
+        % Get exp info
+        expInfo = exp2checkList(ee,:);
+    
+        % Assign variables from exp2checkList to ease of use later
+        expDate = exp2checkList.expDate{ee,1};
+        expNum = exp2checkList.expNum{ee,1};
+        expDef = exp2checkList.expDef{ee,1};
+        subject = exp2checkList.subject{ee,1};
+        expFolder = exp2checkList.expFolder{ee,1};
+        recompute = exp2checkList.recompute{ee,1};
+        KSversion = exp2checkList.KSversion{ee,1};
+    
+        % Get the alignment file
+        pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
+        alignmentFile = [pathStub '_alignment.mat'];
+    
+        alignment = load(alignmentFile, 'ephys');
+
+        if ~isempty(fieldnames(alignment))
+            if ~strcmp(alignment.ephys,'error')
+                for probeNum = 1:numel(alignment.ephys)
+                    switch KSversion
+                        case 'KS2'
+                            KSFolder{cc} = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
+                        case 'PyKS'
+                            KSFolder{cc} = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
+                    end
+
+                    cc = cc + 1;
+                end
+            end
+        end
+    end
+
+    recList = unique(KSFolder);
