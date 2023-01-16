@@ -3,7 +3,7 @@ import sys,glob,re,pickle,json
 from pathlib import Path
 import numpy as np
 #ephys data specific packages 
-from ReadSGLXData.readSGLX import readMeta
+from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
 from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 
 def match_recordings(Subject='AV005'):
