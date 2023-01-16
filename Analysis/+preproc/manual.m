@@ -4,6 +4,12 @@ close all
 
 clear params
 % 
+params.subject = {['all']};
+csvData = csv.inputValidation(params);
+csvData = csvData.mainCSV{1};
+% select data of SC implant (based on AP position) 
+is_SC = cellfun(@(x)str2double(x), csvData.P0_AP)<-3.7;
+SC_subject = csvData.Subject(is_SC);
 
 params.subject = {'AV015'};
 % params.expDate = 'last4';
