@@ -2,6 +2,10 @@
 
 pinkRigsRepo = fileparts(which('zeldaStartup.m'));
 
+% Node to emphasize
+selectNode = {'loadKSdir_AV.m'};
+showOnlySelectedNode = 1;
+
 % Get function paths, names and extension
 funcFiles = dir(fullfile(pinkRigsRepo,'**','*'));
 funcFiles(cell2mat(cellfun(@(x) ~contains(x,{'.m','.py','.bat'}), {funcFiles.name}, 'uni', 0))) = [];
@@ -37,22 +41,28 @@ nLabels = strcat(funcNames,'.',funcExt);
 G = digraph(connectivityMatrix,nLabels,'omitselfloops');
 D = distances(G);
 
+if showOnlySelectedNode
+    idxNode = find(contains(nLabels,selectNode));
+    outsideNodes = nLabels(D(idxNode,:) == Inf & D(:,idxNode)' == Inf);
+    G = rmnode(G,find(contains(G.Nodes.Name,outsideNodes)));
+    nLabels = nLabels(~contains(nLabels,outsideNodes));
+    D = distances(G);
+end
+
 %% Display graph
 
 figure;
 p = plot(G,'Layout','force','NodeLabel',nLabels, 'Interpreter', 'none');
 
 % Show successors and predecessors
-selectNode = {'natim.main.m'};
-
-% pred
+% successors
 % succ = successors(G,selectNode);
 succ = nLabels(D(contains(nLabels,selectNode),:)<inf);
 GFsucc = rmedge(G,find((~contains(G.Edges.EndNodes(:,1),selectNode) | ~contains(G.Edges.EndNodes(:,2),succ)) & ...
     (~contains(G.Edges.EndNodes(:,1),succ))));
 highlight(p,GFsucc,'EdgeColor',[0.9 0.3 0.1],'NodeColor',[0.9 0.3 0.1])
 
-% succ
+% predecessors
 pred = predecessors(G,selectNode);
 GFpred = rmedge(G,find(~contains(G.Edges.EndNodes(:,2),selectNode) | ~contains(G.Edges.EndNodes(:,1),pred)));
 highlight(p,GFpred,'EdgeColor',[0.3 0.9 0.1],'NodeColor',[0.3 0.9 0.1])
