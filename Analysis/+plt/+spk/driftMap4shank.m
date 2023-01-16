@@ -1,7 +1,9 @@
 function plotDriftMap4shank(varargin)
     % function to plot Driftmap. Supports any configuration of a 2.0 probe.
-    % Plots drift estimate if drift.times.npy exists.
+    % Plots drift estimate if drift.times.npy/drift folder (in later version of pykilosort) exists.
     % user needs to navigate to kilosort folder upon running the function or input ks folder 
+    % for example naviage to 
+    % zaru\Subjects\AV025\2022-11-10\ephys\AV025_2022-11-10_ActivePassiveSparseNoise_g0\AV025_2022-11-10_ActivePassiveSparseNoise_g0_imec0\pyKS\output
     if ~isempty(varargin)
         ksDir = varargin{1};
     else 
