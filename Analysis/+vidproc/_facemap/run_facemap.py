@@ -40,11 +40,11 @@ import deeplabcut
 # Pink rig dependencies
 from pathlib import Path
 import sys
-pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 
-from Analysis.helpers.queryExp import queryCSV, Bunch
+from Admin.csv_queryExp import queryCSV, Bunch 
 
 """
 This is a modified version of automatic_facemap.py, combined with batch_process_pinkavrig_videos.py
