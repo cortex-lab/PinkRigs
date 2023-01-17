@@ -3,7 +3,7 @@
 clc; clear all; 
 params.subject = {['AV030']};
 params.expDate = '2022-12-09';
-params.expDef = 'm';
+params.expDef = 'p';
 %params.expNum = 1;
 exp2checkList = csv.queryExp(params);
 expInfo = exp2checkList(1,:);
@@ -29,10 +29,10 @@ ev = expInfo.dataEvents{1,1};
 ev.stim_visContrast = int16(ev.stim_visContrast*100);
 contrasts = unique(ev.stim_visContrast); 
 contrasts(contrasts<.00001)=[];
-hold all;
+figure;hold all;
 
-for c=1:1
-    on_time = ev.timeline_visPeriodOn(ev.is_visualTrial & ev.stim_audAzimuth==0);
+for c=1:numel(contrasts)
+    on_time = ev.timeline_visPeriodOn(ev.is_coherentTrial & (ev.stim_visAzimuth==60) & (ev.stim_visContrast==contrasts(c)));
     n_samples=40; 
     r_idx = randi([1,numel(on_time)],1,n_samples);
     on_time = on_time(r_idx); 
