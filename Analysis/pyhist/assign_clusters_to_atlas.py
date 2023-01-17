@@ -55,7 +55,7 @@ def get_chan_coordinates(root):
 
 def coordinate_matching(local_coordinate_array,target_coordinate_array):
     """
-    performs a coordinate matching bsed on xy positions. 
+    performs a coordinate matching bsed on xy positions using the channels.localCoordinates.npy output of the ibl format  
     Basically outputs which indices in target coordinate array match the coordinates in local
     If does not find identical match, performs a nearest match whereby it checks the coordinates: 
         1. to the left, 2. to the right 3. one down 4. one up
