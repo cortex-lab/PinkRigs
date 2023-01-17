@@ -1,5 +1,19 @@
 function evTimes = getChanEventTime(timeline,chanName, mode)
-    %%% This function will extract event times depending on the chan. 
+    %% Extracts event times depending on the chan. 
+    %
+    % Parameters:
+    % -------------------
+    % timeline: struct
+    %   Timeline struct
+    % chanName: str
+    %   Name of the channel to extract
+    % mode (optional): str
+    %   Mode to extract events: default vs. errorMode
+    %
+    % Returns: 
+    % -------------------
+    % evTimes: vector
+    %   Contains the event times
     
     if ~exist('mode','var')
         mode = 'default';
