@@ -1,5 +1,18 @@
 function changeMouseAndExpNum(expPath,newMouse,newExpNum)
-    %% When the wrong mouse name is chosen in MC
+    %% Changes the mouse name and exp num in all files of a folder.
+    % Usually happens when the wrong mouse name is chosen in MC. Better to
+    % do it once everything has been copied on the server.
+    %
+    % Parameters:
+    % -------------------
+    % expPath: str
+    %   Path of the experiment
+    % newMouse: str
+    %   New mouse name
+    % newExpNum: str
+    %   New exp num
+
+    %% 
     
     newExpNum = num2str(newExpNum);
     [subject, ~, expNum, ~] = parseExpPath(expPath);

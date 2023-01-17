@@ -1,5 +1,22 @@
 function log = extractSyncAndCompress(localFolder, fid, ignoreSubjectMismatch)
+    %% Extracts the sync data from and compresses the .bin file.
+    % Runs locally on all ephys computers.
+    %
+    % Parameters:
+    % -------------------
+    % localFolder: str
+    %   Local directory in which to find the ephys data
+    % fid: open text file
+    %   Where to write the log
+    % ignoreSubjectMismatch: bool
+    %   1 to ignore when there's a mismatch in the name of the file
+    %
+    % Returns: 
+    % -------------------
+    % log: str
+    %   Log of what happened.
 
+    %%
     if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
     if ~exist('fid', 'var'); fid = []; end
     if ~exist('ignoreSubjectMismatch', 'var'); ignoreSubjectMismatch = 0; end
