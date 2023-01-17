@@ -8,32 +8,7 @@ import sys
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_pyhandlers import get_server_location 
-import datetime 
-
-def check_date_selection(date_selection,date):
-    
-    date_range = []
-
-    if 'last' in date_selection: 
-        date_selection = date_selection.split('last')[1]
-        date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
-        date_range.append(datetime.datetime.today())
-    else:
-        date_selection=date_selection.split(':')
-        for d in date_selection:
-            date_range.append(datetime.datetime.strptime(d,'%Y-%m-%d'))   
-
-        if len(date_range) == 1:
-            date_range.append(date_range[0])
-
-    exp_date = datetime.datetime.strptime(date,'%Y-%m-%d')
-    if (exp_date >= date_range[0]) & (exp_date <= date_range[1]):
-        Out=True
-    else:
-        Out=False  
-
-    return Out
+from Admin.csv_queryExp import get_server_location, check_date_selection
 
 def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
@@ -76,7 +51,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
 
                     #if some dates have been subselected
 
-                if check_date_selection(date_selection,date):
+                if check_date_selection(date_selection,[date])[0]:
                     ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
                     
@@ -103,10 +78,14 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
                             KS_done = False
 
                         # override KS_done if the file was modified in the last hour. 
-                        # check when the ephys file was created and don't sort if it's less than an hour. 
-                        last_modification_time = Path(ephys_file).stat().st_mtime
-                        modification_thr = 1 # 1 hr
-                        is_recently_modified_file = ((datetime.datetime.now().timestamp()-last_modification_time)/3600)<modification_thr
+                        # check when the ephys file was created and don't sort if it's less than an hour.
+                        # actually check when the corresponding .meta was 'created', for now... 
+                        meta_file_list = list((Path(ephys_file).parent).glob('*.meta'))
+                        is_recently_modified_file = len(meta_file_list)==0
+
+                        # last_modification_time = Path(meta_file_path).stat().st_ctime
+                        # modification_thr = 1 # 1 hr
+                        # is_recently_modified_file = ((datetime.datetime.now().timestamp()-last_modification_time)/3600)<modification_thr
                         if is_recently_modified_file:
                             KS_done = True
 

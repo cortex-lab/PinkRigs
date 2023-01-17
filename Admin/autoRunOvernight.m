@@ -18,7 +18,7 @@ try
             fprintf(fid,'Detected timeline computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyLocalData2ServerAndDelete('D:\LocalExpData');
+            copyLocalData2ServerAndDelete('D:\LocalExpData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
@@ -26,10 +26,10 @@ try
             eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
             [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
                 'cd ' githubPath ' && ' ...
-                'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
             printMessage(statusFacemap,resultFacemap,fid)
+            % 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -37,27 +37,15 @@ try
             fprintf(fid,'Detected ephys computer... \n');
     
             fprintf(fid,'Running "copyLocalData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyLocalData2ServerAndDelete('D:\LocalExpData');
+            copyLocalData2ServerAndDelete('D:\LocalExpData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "extractSyncAndCompress" (%s)... \n',datestr(now));
-            log = extractSyncAndCompress('D:\ephysData');
-            fprintf(fid,log);
+            extractSyncAndCompress('D:\ephysData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
-
-%             fprintf(fid,'Running "extractLocalSync" (%s)... \n',datestr(now));
-%             extractLocalSync('D:\ephysData');
-%             fprintf(fid,'Done (%s).\n',datestr(now));
-%     
-%             fprintf(fid,'Compressing local data (%s)... \n',datestr(now));
-%             compressPath = which('compress_data.py');
-%             [statusComp, resultComp] = system(['conda activate PinkRigs && ' ...
-%                 'python ' compressPath ' && ' ...
-%                 'conda deactivate']);
-%             printMessage(statusComp,resultComp,fid)
     
             fprintf(fid,'Running "copyEphysData2ServerAndDelete" (%s)... \n',datestr(now));
-            copyEphysData2ServerAndDelete('D:\ephysData');
+            copyEphysData2ServerAndDelete('D:\ephysData',fid);
             fprintf(fid,'Done (%s).\n',datestr(now));
     
             fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
@@ -65,10 +53,10 @@ try
             eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
             [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
                 'cd ' githubPath ' && ' ...
-                'conda env update --file facemap_environment.yaml --prune' ' &&' ...
                 'python ' eveningFacemapPath ' &&' ...
                 'conda deactivate']);
             printMessage(statusFacemap,resultFacemap)
+            % 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
 
             fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
     
@@ -201,7 +189,8 @@ quit
 end
 
 function printMessage(status,result,fid)
-    result = regexprep(result,'\','/');
+    result = regexprep(result,'\\','\\\\');
+    result = regexprep(result,'%','%%');
     disp(result);
     if status > 0
         fprintf(fid,sprintf('Failed with error "%s".\n', result));

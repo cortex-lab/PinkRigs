@@ -119,7 +119,12 @@ function errorMessages = fetchErrorMessage(varargin)
             end
         end
     end
-end
+
+    % Fill up the whole structure artificially.
+    fnames = fieldnames(errorMessages);
+    errorMessages(size(exp2checkList,1)+1).(fnames{1}) = [];
+    errorMessages(size(exp2checkList,1)+1) = [];
+end 
 
 function errText = readJSON(errFile)
     if ~isempty(errFile)

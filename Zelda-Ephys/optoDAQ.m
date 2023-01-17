@@ -9,12 +9,11 @@ s.TriggersPerRun = Inf;
 % define update rate
 s.Rate = 10000;
 
-rampUpDur = 0.1; % in ms
-flatDur = 0.75; % in ms
+rampUpDur = 0.05; % in ms
+flatDur = 1.5; % in ms
 rampDownDur = 0.35; % in ms
 % create a waveform and pre-load it onto the board;
 s.queueOutputData([linspace(0,1,rampUpDur*s.Rate)';ones(flatDur*s.Rate,1);linspace(1,0,rampDownDur*s.Rate)']*5);
-​
 %% after starting it will wait for TTL to actually fire the output waveform
 s.startBackground
 %% to change parameters/waveforms need to stop the session

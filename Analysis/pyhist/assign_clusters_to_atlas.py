@@ -1,13 +1,14 @@
-import json,re,glob
+import json,re,glob,sys
 import numpy as np
 from pathlib import Path
 from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25)
 
-# the stupid matlab folder structure doing the +kilo. 
-kilofolder = __import__("Analysis.+kilo.python_.ReadSGLXData.readSGLX")
-kilo = getattr(kilofolder, "+kilo")
-readMeta = kilo.python_.ReadSGLXData.readSGLX.readMeta
+# PinkRig specific imports 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
 
 
 def get_chan_coordinates(root):
@@ -126,18 +127,19 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
     matchable=False
     # if the current ibl format file is there, do the aligment with that
     if (ibl_format_path / 'channel_locations.json').is_file(): 
-        chan_pos, allen_xyz, region_ID, region_acrnym = get_chan_coordinates(ibl_format_path)
+        chan_pos, allen_xyz, region_ID, region_acronym = get_chan_coordinates(ibl_format_path)
         anatmap_paths = None
         matchable=True
 
     if anatmap_paths:
+        # here get the nearest sparseNoise recordings
         chan_pos, allen_xyz, region_ID, region_acronym = zip(
         *[get_chan_coordinates(mypath) for mypath in anatmap_paths]
         )
         # concatenate the lists to arrays
         chan_pos,allen_xyz = np.concatenate(chan_pos),np.concatenate(allen_xyz)
         region_ID,region_acronym = np.concatenate(region_ID),np.concatenate(region_acronym) 
-        
+
         # get the channels of interest and subselect
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
         sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
@@ -164,7 +166,12 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         region_ID_clus = np.array([region_ID[clus_ch] for clus_ch in clus_channels])
         region_acronym_clus = np.array([region_acronym[clus_ch] for clus_ch in clus_channels])
         
-        allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus[:,:,0]/1e6,ccf_order='apdvml') 
+        # some units can be in "void" (I imagine mostly noise)
+        # those locations will error for tte converions 
+        allen_xyz_clus = allen_xyz_clus[:,:,0]
+        allen_xyz_clus[region_ID_clus==0] = np.nan
+
+        allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus/1e6,ccf_order='apdvml') 
         allencoords_ccf_mlapdv = allencoords_ccf_apdvml[:,[2,0,1]]                  
     # save the output
         np.save(ibl_format_path / 'clusters.brainLocationIds_ccf_2017.npy',region_ID_clus)

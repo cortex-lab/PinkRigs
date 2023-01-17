@@ -19,10 +19,10 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_pyhandlers import get_server_location
+from Admin.csv_queryExp import get_server_location
 #queue updates and ibl formatter 
-from check_pyKS_queue import stage_KS_queue
-from pyhelpers import save_error_message
+from Analysis.pykilo.check_pyKS_queue import stage_KS_queue
+from Analysis.pykilo.helpers import save_error_message
 
 KS_workpath = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
 
@@ -140,7 +140,7 @@ def run_pyKS_on_queue(run_for=0.5):
     run_for = float(run_for)
     run_for_minutes = run_for * 60
     print('kilo should be running for %.0f hours' % run_for)
-    stage_KS_queue(mouse_selection='allActive',date_selection='last10',resort=False)   
+    stage_KS_queue(mouse_selection='allActive',date_selection='last7',resort=False)   
  
     root = get_server_location()
     root = root / 'Helpers'
@@ -174,10 +174,11 @@ def run_pyKS_on_queue(run_for=0.5):
                 _ = recheck_queue(overwrite=True,my_ephys_name=rec.ephysName,overwrite_value=1)
             else: 
                 _ = recheck_queue(overwrite=True,my_ephys_name=rec.ephysName,overwrite_value=-1)
+                break
 
             # update the hour at the end of the loop if still going 
             check_time = time.now()-start_time
 
 if __name__ == "__main__":  
-   #run_pyKS_on_queue(run_for=0.006) 
-   run_pyKS_on_queue(run_for=sys.argv[1])
+   run_pyKS_on_queue(run_for=14) 
+   #run_pyKS_on_queue(run_for=sys.argv[1])

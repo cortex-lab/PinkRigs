@@ -1,6 +1,6 @@
 function pairAcrossAll = matchNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,p)
 
-    if ~exist('p','var') | isempty(p)
+    if ~exist('p','var') || isempty(p)
         % hardcoded parameters
         % should be inputs
         isolim = 0.05;

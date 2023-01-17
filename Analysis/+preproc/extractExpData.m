@@ -2,14 +2,11 @@ function extractExpData(varargin)
     %%% This function will extract all the important information from the
     %%% experiment's timeline and block, load the spikes, align everything,
     %%% and save a preprocessed version of the data in the exp folder.
-    %%% First argument is a set of params, second a list of experiments,
-    %%% either in a table or cell with paths format.
-
-
-   % Parameters
-   % ------------------
-   % KSversion: str
-   %    'PyKS' or 'KS2'
+    
+    % Parameters
+    % ------------------
+    % KSversion: str
+    %    'PyKS' or 'KS2'
    
     
     %% Get parameters
@@ -123,7 +120,7 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if shouldProcess('spikes') || contains(recompute,'QM')
+                if shouldProcess('spikes') || contains(recompute,'BombcellQM')
                     if contains(expInfo.alignEphys, '1') && contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
@@ -145,12 +142,13 @@ function extractExpData(varargin)
                                 case 'PyKS'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
                             end
+                            IBLFormatFolder = fullfile(KSFolder,'ibl_format');
 
                             stub = [expDate '_' expNum '_' subject '_' ...
                                 sprintf('probe%d-%d',probeNum-1,alignment.ephys(probeNum).serialNumber)];
 
                             try
-                                if shouldProcess('spikes')
+                                if shouldProcess('spikes') && exist(IBLFormatFolder,'dir')
                                     % Initialize the folder (do it here
                                     % because want to delete it only when
                                     % processing the spikes)
@@ -159,10 +157,9 @@ function extractExpData(varargin)
                                     % Get the spike and cluster info
                                     spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSFolder);
                                     
-                                    % write a json file in target ONE that
+                                    % Write a json file in target ONE that
                                     % contains the string of the IBL
                                     % format file 
-                                    IBLFormatFolder = fullfile(KSFolder,'ibl_format');
                                     saveErrMess(IBLFormatFolder,fullfile(probeONEFolder, sprintf('_av_rawephys.path.%s.json',stub)))
 
                                     % Align them
@@ -194,15 +191,15 @@ function extractExpData(varargin)
                                     fprintf('Block duration: %d / last spike: %d\n', block.duration, max(spkONE.spikes.times))
                                 end
                                 
-                                % go get qmetrics??
+                                % Get IBL qmetrics
                                 IBLFormatQMetricsFile = fullfile(KSFolder,'ibl_format');    
                                 if exist(IBLFormatQMetricsFile,"file")
-                                    qMetrics = preproc.getQMetrics(KSFolder);
-                                    % the qMetrics don't get calculated for
+                                    qMetrics = preproc.getIBLQMetrics(KSFolder);
+                                    % The qMetrics don't get calculated for
                                     % some trash units, but we need to keep
                                     % the dimensions consistent of
                                     % course...
-                                    qMetrics= removevars(qMetrics,{'cluster_id_1'}); % remove a useless variable
+                                    qMetrics = removevars(qMetrics,{'cluster_id_1'}); % remove a useless variable
                                     cname = setdiff(spkONE.clusters.av_IDs,qMetrics.cluster_id); 
 
                                     added_array = qMetrics(1,:); 
@@ -214,7 +211,6 @@ function extractExpData(varargin)
                                         qMetrics = [qMetrics;added_array];
                                     end
                                     qMetrics = sortrows(qMetrics,'cluster_id');
-
 
                                     saveONEFormat(qMetrics, ...
                                         probeONEFolder,'clusters','_av_qualityMetrics','pqt',stub);

@@ -16,6 +16,7 @@ function expList = loadData(varargin)
 %   indicates which data types to load.   
     %blk' or 'block': raw block (output = dataBlock)
     %'tim' or 'timeline': raw timeline (output = dataTimeline)
+    % 'mic' or 'microphone': raw microphone data (output = dataMic) 
     %'ev' or 'events':  trial events (output = dataEvents)
     %'eventsFull':  all (including large) trial events (output = dataEvents)
     %'probe': load spike information (can specify probe number) (output = dataSpikes)
@@ -83,7 +84,7 @@ params = rmfield(params, {'dataType'; 'object'; 'attribute';'verbose'});
 expList = csv.queryExp(params);
 
 % Add new fields for loaded data to the expList
-newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline'};
+newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'};
 for i = 1:length(newFields)
     if any(strcmp(expList.Properties.VariableNames, newFields{i})); continue; end
     expList.(newFields{i}) = cell(size(expList,1),1);
@@ -104,7 +105,7 @@ end
 % Loop over each line of the expList and load the requested data
 for i=1:height(expList)
     % Clear any existing data and get current exp details
-    clear dataBlock dataEvents dataSpikes dataTimeline
+    clear dataBlock dataEvents dataSpikes dataTimeline dataMic
 
     currExp = expList(i,:);
     ONEPath = [currExp.expFolder{1} '\ONE_preproc\'];
@@ -172,6 +173,18 @@ for i=1:height(expList)
             end
         end
     end
+
+    %% load mic data if requested
+    if any(contains(dataTypes, {'mic'; 'microphone'}))
+        micPath = cell2mat([currExp.expFolder '\' expPathStub '_mic.mat']);
+        if exist(micPath, 'file')
+            mic = load(micPath);
+            if exist('mic', 'var')
+                expList.dataMic{i} = mic;
+            end
+        end
+    end
+
 end
 
 

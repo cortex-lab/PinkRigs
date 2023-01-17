@@ -7,7 +7,7 @@ function [data, proc, recPathUni] = loadData(varargin)
     % Get processing parameters
     proc.window = [-0.3 0.5 ... % around onset
         0.0 0.5]; % around offset
-    proc.binSize = 0.01; % in ms
+    proc.binSize = 0.002; % in ms
     nBins = int64((proc.window(2) - proc.window(1) + proc.window(4) - proc.window(3))/proc.binSize);
     proc.smoothSize = 5; % PSTH smoothing filter
     gw = gausswin(proc.smoothSize,3);
@@ -129,7 +129,7 @@ function [data, proc, recPathUni] = loadData(varargin)
         data(nn).C.CluID = C{ee}.IDs;
         data(nn).C.CluLab = C{ee}.KSLabels;
         data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
-        data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))'>0.1);
+        data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))>0.1);
         data(nn).days = days{ee};
         data(nn).recLoc = recLocAll{ee};
 

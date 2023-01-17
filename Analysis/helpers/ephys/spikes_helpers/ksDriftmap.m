@@ -9,7 +9,7 @@ end
 clear params
 params.loadPCs = true;
 params.uncorrected_time=true; 
-sp = loadKSdir(ksDir, params);
+sp = loadKSdir_AV(ksDir, params);
 
 if localizedSpikesOnly % go over all templates and check which are not localized (in space)
   localizedTemplates = false(size(sp.temps,1), 1);

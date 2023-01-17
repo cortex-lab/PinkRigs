@@ -27,8 +27,8 @@ function [DepthCorrected, drift] = correctDrift(BestMatch,BestCorr,Depth,plt)
         pairAll{d} = [find(subsel)'; BestMatch{d1,d2}(subsel,1)'];
 
         % get depths
-        depthsd1 = Depth{d1}(pairAll{d}(1,:))'-3500;
-        depthsd2 = Depth{d2}(pairAll{d}(2,:))'-3500;
+        depthsd1 = Depth{d1}(pairAll{d}(1,:))-3500;
+        depthsd2 = Depth{d2}(pairAll{d}(2,:))-3500;
 
         % compute shift
         drift(d) = median(depthsd2-depthsd1);

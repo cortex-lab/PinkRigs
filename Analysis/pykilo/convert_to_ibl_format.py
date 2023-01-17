@@ -4,8 +4,6 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime as time # to sort only for a fixed amount of time
-from pyhelpers import save_error_message
-
 pd.options.mode.chained_assignment = None # disable warning, we will overwrite some rows when sortedTag changes 
 
 # ibl ephys tools 
@@ -19,33 +17,9 @@ atlas = AllenAtlas(25) # always register to the 25 um atlas
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_pyhandlers import get_server_location 
-
-from ReadSGLXData.readSGLX import readMeta
-
-def check_date_selection(date_selection,date):
-    import datetime 
-    date_range = []
-
-    if 'last' in date_selection: 
-        date_selection = date_selection.split('last')[1]
-        date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
-        date_range.append(datetime.datetime.today())
-    else:
-        date_selection=date_selection.split(':')
-        for d in date_selection:
-            date_range.append(datetime.datetime.strptime(d,'%Y-%m-%d'))   
-
-        if len(date_range) == 1:
-            date_range.append(date_range[0])
-
-    exp_date = datetime.datetime.strptime(date,'%Y-%m-%d')
-    if (exp_date >= date_range[0]) & (exp_date <= date_range[1]):
-        Out=True
-    else:
-        Out=False  
-
-    return Out
+from Admin.csv_queryExp import get_server_location, check_date_selection
+from Analysis.pykilo.helpers import save_error_message
+from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
 
 def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
@@ -85,8 +59,9 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
 
                 # only add the mice that need to be sorted if all criteria is fulfilled
                 #if some dates have been subselected
-                if check_date_selection(date_selection,date):
-                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
+                
+                if check_date_selection(date_selection,[date])[0]:
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.bin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
@@ -228,7 +203,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
     out_path.mkdir(parents=False, exist_ok=True) # make directory if it does not exist
 
     # extract the data to ibl_format if it has not been done already.
-    if not (out_path / 'cluster_matrics.tsv').is_file() or recompute:
+    if not (out_path / '_iblqc_ephysTimeRmsAP.rms.npy').is_file() or recompute:
         print('converting data to IBL format ...')
         extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=True) 
 
@@ -250,7 +225,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
             # get the xyz_picks if the histology exist.
 
         for shank in recorded_shanks:
-            shank_file_name = 'SN%s_shank%s.npy' % (probe_sn,shank)
+            shank_file_name = '%s_SN%s_shank%s.npy' % (subject_path.name,probe_sn,shank)
             shank_anat_path = brainreg_path / shank_file_name
 
             if shank_anat_path.is_file():
@@ -276,8 +251,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 
 if __name__ == "__main__":
-   stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection='allActive',ks_folder = 'pyKS', date_selection='last7')
-   run_batch_ibl_formatting(run_for=2)
+   #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
+   stage_queue(mouse_selection='AV025',ks_folder = 'pyKS', date_selection='2022-11-08')
+   run_batch_ibl_formatting(run_for=10)
 
 

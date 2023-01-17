@@ -125,12 +125,17 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
 
             case 'laserOut'
                 % I detect both the beginning and the end of the ramp. 
-                tlSyncThresh = [min(chan)+0.01*range(chan) max(chan)-0.01*range(chan)]; 
+                tlSyncThresh = [min(chan)+0.03*range(chan) max(chan)-0.02*range(chan)]; 
+                % I need to find a more robust way of doing this. 
                 [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
                 laserOnStart = sort(laserOnStart); 
                 laserOffStart  = sort(laserOffStart);                 
                 evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd]; 
+
+            case 'micSync'
+                micSyncThresh = [min(chan)+0.2*range(chan) max(chan)-0.2*range(chan)]; % these seem to work well
+                [~, evTimes, ~] = schmittTimes(timelineTime, chan, micSyncThresh);
 
                 %
 

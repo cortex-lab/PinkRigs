@@ -1,4 +1,4 @@
-function [tVid,framesMissed,nFirstFrames] = video(varargin)
+function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
 %%% This function will align the time frames of the input video to the
 %%% corresponding timeline. It will try to minimize the amount of time
 %%% and computing by loading first only the beginning and end of the
@@ -54,7 +54,7 @@ end
 d = dir([pathStub '_lastFrames.mj2']); % to check if it's there and worth loading
 if ~isempty(d) && ~exist(intensFile_lastFrames, 'file')
     if d.bytes>100
-        vidproc.getAvgMovInt([pathStub '_lastFrames'], params.nFramesToLoad{1});
+        vidproc.getAvgMovInt([pathStub '_lastFrames'], inf);
     end
 end
 
@@ -200,8 +200,8 @@ strobeSamps = timeproc.getChanEventTime(timeline,strobeName);
 if ~isempty(strobeSamps)
     % Take the strobes if exist
     numStrobesFoundBetweenSyncs = sum(strobeSamps>=tlSyncOnSamps(1) & strobeSamps<tlSyncOnSamps(2));
-    numMissedFrames_wStrobes = numStrobesFoundBetweenSyncs - numFramesFoundBetweenSyncs;
-    fprintf(1, 'missed frames with the strobes: %d \n', numMissedFrames_wStrobes);
+    numFramesMissed_wStrobes = numStrobesFoundBetweenSyncs - numFramesFoundBetweenSyncs;
+    fprintf(1, 'missed frames with the strobes: %d \n', numFramesMissed_wStrobes);
 end
 
 if exist([pathStub, '_times.txt'], 'file') && numFramesMissed>0 && params.plt{1}
@@ -272,6 +272,11 @@ else
     vidFs = mean(diff(A.data(vidSyncOnFrames(1):vidSyncOnFrames(2),end))); % computed empirically...
     a = (tlSyncOnSamps(2) - tlSyncOnSamps(1))/(A.data(vidSyncOnFrames(2),end)-A.data(vidSyncOnFrames(1),end));
     b = tlSyncOnSamps(1) - a*(A.data(vidSyncOnFrames(1),end)) + percentExpo*vidFs;
+
+    % Check if a takes absurd values
+    if a<0.99 || a>1.01
+        error('The alignment is weird: a = %s. Maybe manually recheck?',a)
+    end
 
     % Here I cannot use matlab's timing as they have a lot of 'fake'
     % jitter. So I just recompute the times. Note that first and last
