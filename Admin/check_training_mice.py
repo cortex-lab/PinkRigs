@@ -16,11 +16,20 @@ from csv_pyhandlers import get_server_location
 pinkRig_csv_path = get_server_location()
 email_path = pinkRig_csv_path / r'Helpers\AVrigEmail.txt'
 
-def send_email(mname):
+def send_email(email_text):  
+    """
+    function to send email about training. 
+
+    Parameters: 
+    -----------
+    mname: str 
+        large string of email text.
+
+    """
     # Get sender and receiver emails.    
     with open(email_path.__str__()) as f:
         sender_email,pwd = f.read().splitlines()
-    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','magdalena.robacha@gmail.com','c.bimbard@ucl.ac.uk']
+    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','c.bimbard@ucl.ac.uk']
 
     msg = MIMEMultipart()
     msg['Subject'] = 'Mouse training completed'
@@ -33,7 +42,7 @@ def send_email(mname):
     {}
 
     Cheers!
-    AVrig bot""".format(mname))
+    AVrig bot""".format(email_text))
     msg.attach(message)
 
     # Add latest figure about behavior.
@@ -51,12 +60,14 @@ def send_email(mname):
     server.sendmail(sender_email,receivers_email,msg.as_string())
 
 
+
 basepath = pinkRig_csv_path.__str__()
 mouseList = pd.read_csv(r'%s\!MouseList.csv' % basepath)
 activeMice = mouseList['Subject'][mouseList['IsActive']==1].values
 
 deltaDays2Check = 7;
 
+# list of strings with the mice with their training stage
 readyMice = []
 for mname in activeMice:
     expinfo = pd.read_csv(r'%s\%s.csv' % (basepath,mname))
