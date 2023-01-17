@@ -1,6 +1,7 @@
 %% Runs at startup of MATLAB on all pink-rig associated computers
+%  Adds the repo to the path, and sets the vesion of psychtoolbox
 
-%% Check PinkRig repo and update if needed
+%% Update PinkRig repo and update if needed
 checkAndUpdatePinkRigRepo
 addpath(genpath('C:\Users\Experiment\Documents\Github\PinkRigs'));
 

@@ -1,11 +1,19 @@
 function checkForNewPinkRigRecordings(varargin)
-%% Function to check for any new recordings on the pink rigs and update csvs
-% NOTE: This function uses csv.inputValidate to parse inputs
+%% Check for any new recordings on the pink rigs and update csvs
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs or other inputs accepted by this function
+%
+% Parameters:
+% ------------
+% expDate (default = 0): integer or string (see csv.inputValidate)
+% ----number of days into the past to check for new data
+% ----NOTE "expDate" can be 'all'--faster than a big integer
+%
+% recompute (default = 0): logical
+% ----if 1, the mouse csv will be deleted and remade anew
 
 % Add default values for extra inputs:
-% expDate: integer--number of days into the past to check for new data
-% recompute: logical--whether csv should be deleted and remade anew
-% NOTE "expDate" can be 'all'--faster than a bit integer
 varargin = ['expDate', {0}, varargin];
 varargin = ['recompute', {0}, varargin];
 varargin = ['subject', 'active', varargin];
@@ -27,7 +35,6 @@ csvDataSort = sortrows(csvData, 'Subject', 'ascend');
 csvDataSort = sortrows(csvDataSort, 'IsActive', 'descend');
 if any(~strcmp(csvDataSort.Subject, csvData.Subject))
     csvLocation = csv.getLocation('main');
-    csv.createBackup(csvLocation);
     csv.writeClean(csvDataSort, csvLocation, 1)
 end
 
@@ -121,9 +128,8 @@ for i = 1:length(mice2Update)
     csvPathMouse = csv.getLocation(currSub);
    
     if recompute && exist(csvPathMouse, 'file') && ~isempty(dateList)
-        % If recompute is true, backup the old mouse csv and delete since 
+        % If recompute is true, delete old mouse csv since 
         % this file will be completely recomputed
-        csv.createBackup(csvPathMouse);
         delete(csvPathMouse);
     elseif exist(csvPathMouse, 'file') && ~isempty(dateList)
         % If recompute is not true, then don't rerun experiments that are
