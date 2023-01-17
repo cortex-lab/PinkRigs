@@ -64,11 +64,14 @@ def check_file_corrupted(vid_path):
     by reading a frame from it and see if anything returns
     Parameters
     ----------
-    vid_path
+    vid_path : str
+        path to the video to check corruption
 
     Returns
     -------
-
+    vid_corrupted : int
+        1 means the file is corrupted
+        0 means the file is not corrupted
     """
     vid_corrupted = 0
     try:
@@ -88,10 +91,19 @@ def check_file_corrupted(vid_path):
 
 
 def run_facemap(video_fpath):
-    # this is just a copy of the code here:
-    # https://github.com/MouseLand/facemap/blob/main/tutorial.ipynb
-    # Also reference process.run here so that the output format is the same
-    # https://github.com/MouseLand/facemap/blob/0e8fa78ee7f2c48cc73221ff9f3cfbec43d88957/facemap/process.py#L489
+    """
+    Copy of the facemap code
+    https://github.com/MouseLand/facemap/blob/main/tutorial.ipynb
+    Also reference process.run here so that the output format is the same
+    https://github.com/MouseLand/facemap/blob/0e8fa78ee7f2c48cc73221ff9f3cfbec43d88957/facemap/process.py#L489
+    Parameters
+    ----------
+    video_fpath : str
+        path to the video to be preocessed
+    Returns
+    -------
+    None
+    """
 
     video = pims.Video(video_fpath)
     Ly = video.frame_shape[0]
@@ -798,12 +810,14 @@ def facemap_save(proc, savepath=None):
     Save function from facemap modified here to allow saving of larger files
     Parameters
     ----------
-    proc
-    savepath
-
+    proc : dict
+        facemap output with motion SVDs, pupil size etc.
+    savepath : str
+        where to save the facemap output
     Returns
     -------
-
+    savename : str
+        name of the file that was saved to
     """
     # save ROIs and traces
     basename, filename = os.path.split(proc['filenames'][0][0])
@@ -838,18 +852,23 @@ def compress_video(video_fpath, ffmpeg_path='/usr/bin/ffmpeg', crf=1, output_vid
     TODO: note output_vidoe_format 'mj2' does not work with h264 for now... need to find a solution
     Parameters
     ----------
-    video_fpath
-    ffmpeg_path
-    crf
-    output_video_format
-
+    video_fpath : str
+        path to video you want to compress
+    ffmpeg_path : str
+        where ffmpeg is located on your computer
+    crf : int
+        how much compression to do, 0 means loseless, and higher means more compression
+        Kenneth from says IBL uses crf = 29, but that is actually not loseless
+        according to the ffmpeg docs, crf = 0 is loseless
+    output_video_format : str
+        video file format to ouput
     Returns
     -------
-
+    output_path : str
+        path to the compressed video
     """
 
-    # kenneth from says IBL uses crf = 29, but that is actually not loseless
-    # according to the ffmpeg docs, crf = 0 is loseless
+
 
     if output_video_format is None:
         output_video_format = video_fpath.rpartition('.')[-1]
@@ -1099,6 +1118,10 @@ def convert_facemap_output_to_ONE_format(facemap_output_file):
     ----------
     facemap_output_file : str
         path to facemap output (face proc) npy file
+
+    Returns
+    -------
+    0 if the function ran succesfully
     """
 
     facemap_output_file = Path(facemap_output_file)
@@ -1178,7 +1201,8 @@ def cut_video(video_path):
 
     Returns
     -------
-
+    subset_video_path : str
+        path to the video that was cut
     """
 
     subset_start_point = 5
@@ -1968,6 +1992,20 @@ def get_all_mouse_info():
 
 
 def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
+    """
+    Looks through videos on the server and see which ones are processed / corrupted
+    Parameters
+    ----------
+    load_from_server : bool
+        only applies to Linux computers, whether the filepath is a server paths
+    video_ext : str
+        video extensions to look for
+    Returns
+    -------
+    progress_df : pandas dataframe
+        dataframe with information about name of each video file, whether it is processed,
+        when it was processed, and whether the video is corrupted
+    """
 
     all_mouse_info= get_all_mouse_info()
 
