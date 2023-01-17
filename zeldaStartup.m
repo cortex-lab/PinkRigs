@@ -1,3 +1,5 @@
+%% Runs at startup of MATLAB on all pink-rig associated computers
+
 %% Check PinkRig repo and update if needed
 checkAndUpdatePinkRigRepo
 addpath(genpath('C:\Users\Experiment\Documents\Github\PinkRigs'));
