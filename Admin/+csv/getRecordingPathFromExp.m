@@ -1,5 +1,11 @@
 function recList = getRecordingPathFromExp(varargin)
-    
+    %% Fetches the recording location for a list of experiments.
+    %
+    % Returns: 
+    % -------------------
+    % recList: cell array
+    %   List of kilosort directories.
+
     varargin = ['KSversion', 'PyKS', varargin];
     varargin = [varargin, 'checkAlignEphys', true]; % force it
     params = csv.inputValidation(varargin{:});
