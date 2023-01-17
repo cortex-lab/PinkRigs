@@ -12,7 +12,7 @@ function [units2Keep, pairAcrossAll_pairsOfDays, drift] = getMatchedPool(db,plt)
         resp2 = reshape(nanmean(db(dd).spikeData(:,:,:,2:2:end),[4]), [s(1)*s(2),s(3)]);
         reliability = diag(corr(resp1,resp2));
 
-        units2Keep{dd} = find(squeeze(nanmean(db(dd).spikeData,[1 2 4]))>0.1 & (db(dd).C.CluLab == 2) & reliability>0.05);
+        units2Keep{dd} = find(squeeze(nanmean(db(dd).spikeData,[1 2 4]))>0.1 & (db(dd).C.CluLab == 2) & reliability>0.01);
         db(dd).spikeData = db(dd).spikeData(:,:,units2Keep{dd},:);
         db(dd).C.XPos = db(dd).C.XPos(units2Keep{dd});
         db(dd).C.Depth = db(dd).C.Depth(units2Keep{dd});

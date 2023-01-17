@@ -7,7 +7,7 @@ function [data, proc, recPathUni] = loadData(varargin)
     % Get processing parameters
     proc.window = [-0.3 0.5 ... % around onset
         0.0 0.5]; % around offset
-    proc.binSize = 0.01; % in ms
+    proc.binSize = 0.002; % in ms
     nBins = int64((proc.window(2) - proc.window(1) + proc.window(4) - proc.window(3))/proc.binSize);
     proc.smoothSize = 5; % PSTH smoothing filter
     gw = gausswin(proc.smoothSize,3);

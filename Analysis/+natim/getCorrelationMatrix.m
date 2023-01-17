@@ -6,14 +6,14 @@ end
 
 % Get correlation matrices
 corrd = cell(numel(spikeData),1);
-for d = 1:numel(spikeData)
-    s = size(spikeData{d});
+for dd = 1:numel(spikeData)
+    s = size(spikeData{dd});
     switch type
         case 'signal'
-            Md1 = reshape(nanmean(spikeData{d}(:,:,:,1:2:end),4),[s(1)*s(2),s(3)]);
-            Md2 = reshape(nanmean(spikeData{d}(:,:,:,2:2:end),4),[s(1)*s(2),s(3)]);
+            Md1 = reshape(nanmean(spikeData{dd}(:,:,:,1:2:end),4),[s(1)*s(2),s(3)]);
+            Md2 = reshape(nanmean(spikeData{dd}(:,:,:,2:2:end),4),[s(1)*s(2),s(3)]);
         case 'noise'
-            Md1 = spikeData{d} - nanmean(spikeData{d},4);
+            Md1 = spikeData{dd} - nanmean(spikeData{dd},4);
             Md1 = reshape(permute(Md1,[2 1 4 3]),[s(2)*s(1)*s(4),s(3)]);
             Md2 = Md1;
     end
@@ -25,7 +25,7 @@ for d = 1:numel(spikeData)
     % if strcmp(type,'noise')
     %     corrd_tmp(eye(corrd_tmp)) = 0;
     % end
-    corrd{d} = corrd_tmp;
+    corrd{dd} = corrd_tmp;
 end
 
 end
