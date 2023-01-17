@@ -1,11 +1,24 @@
 function chan = extractChan(timeline,chanName,varargin)
-    %%% Will extract specific channel from timeline.
-    %%% Additional argument to display or not warning when not found.
+    %% Extracts a specific channel from timeline.
+    %
+    % Parameters:
+    % -------------------
+    % timeline: struct
+    %   Timeline struct
+    % chanName: str
+    %   Name of the channel to extract
+    % dispWarning: bool
+    %   Display or not the warning
+    %
+    % Returns: 
+    % -------------------
+    % chan: vector
+    %   Data of the channel of interest
 
     if nargin < 3
-        dispWaring = 1;
+        dispWarning = 1;
     else
-        dispWaring = varargin{1};
+        dispWarning = varargin{1};
     end
     
     
@@ -25,7 +38,7 @@ function chan = extractChan(timeline,chanName,varargin)
             chan = timeline.rawDAQData(:,chanIndex);
         else
             chan = [];
-            if dispWaring
+            if dispWarning
                 warning('Couldn''t find channel %s in timeline.',chanName)
             end
         end

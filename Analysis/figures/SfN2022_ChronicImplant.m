@@ -1,3 +1,5 @@
+%% Code to reproduce the figures for the SfN 2022 poster.
+
 %% ------ Stability plots ------
 %% Get data
 

@@ -1,6 +1,5 @@
 function functionGraph(selectNode,showOnlySelectedNode)
-    %% Computes the dB SPL from sound data.
-    % Will build a connectivity graph of functions in the PinkRigs repo. 
+    %% Will build a connectivity graph of functions in the PinkRigs repo. 
     % The directionality of the arrows between two linked functions 
     % indicate which one is calling which.
     %
@@ -19,7 +18,7 @@ function functionGraph(selectNode,showOnlySelectedNode)
         showOnlySelectedNode = 0;
     end
 
-    if ~strcmp(selectNode(end-1:end),'.m')
+    if ~isempty(selectNode) && ~strcmp(selectNode(end-1:end),'.m')
         selectNode = [selectNode '.m'];
     end
     
@@ -75,16 +74,18 @@ function functionGraph(selectNode,showOnlySelectedNode)
     figure;
     p = plot(G,'Layout','force','NodeLabel',nLabels, 'Interpreter', 'none');
 
-    % Show successors and predecessors
-    % successors
-    % succ = successors(G,selectNode);
-    succ = nLabels(D(contains(nLabels,selectNode),:)<inf);
-    GFsucc = rmedge(G,find((~contains(G.Edges.EndNodes(:,1),selectNode) | ~contains(G.Edges.EndNodes(:,2),succ)) & ...
-        (~contains(G.Edges.EndNodes(:,1),succ))));
-    highlight(p,GFsucc,'EdgeColor',[0.9 0.3 0.1],'NodeColor',[0.9 0.3 0.1])
+    if ~isempty(selectNode)
+        % Show successors and predecessors
+        % successors
+        % succ = successors(G,selectNode);
+        succ = nLabels(D(contains(nLabels,selectNode),:)<inf);
+        GFsucc = rmedge(G,find((~contains(G.Edges.EndNodes(:,1),selectNode) | ~contains(G.Edges.EndNodes(:,2),succ)) & ...
+            (~contains(G.Edges.EndNodes(:,1),succ))));
+        highlight(p,GFsucc,'EdgeColor',[0.9 0.3 0.1],'NodeColor',[0.9 0.3 0.1])
 
-    % predecessors
-    pred = predecessors(G,selectNode);
-    GFpred = rmedge(G,find(~contains(G.Edges.EndNodes(:,2),selectNode) | ~contains(G.Edges.EndNodes(:,1),pred)));
-    highlight(p,GFpred,'EdgeColor',[0.3 0.9 0.1],'NodeColor',[0.3 0.9 0.1])
+        % predecessors
+        pred = predecessors(G,selectNode);
+        GFpred = rmedge(G,find(~contains(G.Edges.EndNodes(:,2),selectNode) | ~contains(G.Edges.EndNodes(:,1),pred)));
+        highlight(p,GFpred,'EdgeColor',[0.3 0.9 0.1],'NodeColor',[0.3 0.9 0.1])
+    end
 end

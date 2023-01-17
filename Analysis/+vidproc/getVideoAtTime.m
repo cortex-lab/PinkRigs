@@ -1,6 +1,21 @@
 function movie = getVideoAtTime(expPath,t,vidName,win)
-    %%% Extract a chunk of video at time 't', centered on window 'win'
-    %%% Time 't' given will be in timeline time!
+    %% Extract a chunk of video at time 't', centered on window 'win'
+    %
+    % Parameters:
+    % -------------------
+    % expPath: str
+    %   Path of the experiment
+    % t: double
+    %   Time in timeline time
+    % vidName: str
+    %   Which video to look at
+    % win: vector
+    %   Window to look at
+    %
+    % Returns: 
+    % -------------------
+    % movie: array
+    %   Associated movie
     
     %% Convert time into video time
     alignmentFile = dir(fullfile(expPath,'*alignment.mat'));

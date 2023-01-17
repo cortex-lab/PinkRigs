@@ -1,29 +1,56 @@
 function outP = inputValidation(varargin)
-% Get active mouse list from main csv
-%%% INPUTS
-%   Inputs can take the form of a structure (e.g. params.subject = 'AV009')
-%   or name-value pairs (e.g. subject=AV009 or 'subject', 'AV009'). There
-%   are four parameters that will always be returned with defaults if they
-%   are not provided: "subject", "expDate", "expDef" and "expNum". 
-
-%   "subject" is the field that all other inputs are measured against such
-%   that every input of length "1" will be repeated to match the length of
-%   "subject"
-
-%   For single inputs, these can typically be strings, a cell of strings,
-%   or integers. If you want to have a different input (e.g. date range)
-%   for each subject, you MUST input a cell array that is the same length
-%   as your "subject" cell array. Otherwise, you will receive an error.
-
-%   NOTE: this function can deal with multiple inputs for each subject (for
-%   example, if you wanted multiple expDefs for each subject) BUT BE 
-%   CAREFUL with cell formatting. To illustrate this, consider these cases:
-%   (1) .subject = {'AV009'; 'AV007'} and .expDef({'t'; 's'})
-%       The expDef input is 't' for  'AV009' and 's' for 'AV007'
-%   (2) .subject = {'AV009'; 'AV007'} and .expDef({{'t'; 's'}})
-%       The expDef input is 't' AND 's' for  'AV009' AND 'AV007'
-%   (3) .subject = {'AV009'; 'AV007'} and .expDef({{'t'; 's'}; 't'})
-%       The expDef input is 't' AND 's' for  'AV009', BUT 't' for 'AV007'
+%% Validates inputs formany functions (so they all use the same format)
+%
+% Parameters:
+% ------------
+% 
+% NOTE: Inputs can take the form of a structure (e.g. params.subject = 'AV009')
+% or name-value pairs (e.g. subject=AV009 or 'subject', 'AV009'). There
+% are four parameters that will always be returned with defaults if they
+% are not provided: "subject", "expDate", "expDef" and "expNum". 
+%
+% subject (default = 'active'): string (e.g. 'all' or 'AV009')
+% ----The subject(s) to be included
+% ----NOTE:This is the field that all other inputs are measured against.
+% ----Every input of length "1" is repeated to match the length of "subject"
+% ----For single inputs, these can typically be strings, a cell of strings,
+% ----or integers. If you want to have a different input (e.g. date range)
+% ----for each subject, you MUST input a cell array that is the same length
+% ----as your "subject" cell array. Otherwise, you will receive an error.
+% ----
+%
+% expDate (default = 'all'): string or integer (e.g. 'all' or '2022-11-12')
+% ----The experiment date(s) to be included
+% ----NOTE: for a all possible formats, see the "extractDates" function
+% ----within csv.queryExp
+% ----
+%
+% expNum (default = 'all'): string or integer (e.g. '1' or 1)
+% ----The experiment number(s) to to be included
+% ----
+%
+% expDef (default = 'all'): string or cell of strings (e.g. 's' or 'sparseNoise')
+% ----The experiment definition(s) to to be included
+% NOTE: there are some handy shortcuts (e.g. 't' for all training
+% functions). Thse can be seen in the "string2expDef" function contained
+% within this function
+% ----
+%
+% ----NOTE: this function can deal with multiple inputs for each subject (for
+% ----example, if you wanted multiple expDefs for each subject) BUT BE 
+% ----CAREFUL with cell formatting. To illustrate this, consider these cases:
+% ----(1) .subject = {'AV009'; 'AV007'} and .expDef({'t'; 's'})
+% ----The expDef input is 't' for  'AV009' and 's' for 'AV007'
+% ----(2) .subject = {'AV009'; 'AV007'} and .expDef({{'t'; 's'}})
+% ----The expDef input is 't' AND 's' for  'AV009' AND 'AV007'
+% ----(3) .subject = {'AV009'; 'AV007'} and .expDef({{'t'; 's'}; 't'})
+% ----The expDef input is 't' AND 's' for  'AV009', BUT 't' for 'AV007'
+%
+% Returns: 
+% ---------------
+%
+% outP: stuct of cell arrays
+% ----For each structure field, there should be a cell for each subject
 
 % Set up an inputPArser object and ensures that all inputs (not just those
 % with defaults) are kept

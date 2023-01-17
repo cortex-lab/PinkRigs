@@ -1,7 +1,7 @@
 function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
 % NOTE: This function uses csv.inputValidate to parse inputs
-
+%
 % NOTE: That the same dataTypes, objects, and attributes will be loaded for
 % all mice. You will have to separate mice before calling the function if
 % you want these to be different for each mouse. ALSO, the length of
@@ -13,14 +13,14 @@ function expList = loadData(varargin)
 % -------------------
 
 % dataType (default='events'): str/cell of strings 
-%   indicates which data types to load.   
-    %blk' or 'block': raw block (output = dataBlock)
-    %'tim' or 'timeline': raw timeline (output = dataTimeline)
-    % 'mic' or 'microphone': raw microphone data (output = dataMic) 
-    %'ev' or 'events':  trial events (output = dataEvents)
-    %'eventsFull':  all (including large) trial events (output = dataEvents)
-    %'probe': load spike information (can specify probe number) (output = dataSpikes)
-    %'all': loads 'blk', 'tim', 'ev' 
+% ----indicates which data types to load.   
+% ----blk' or 'block': raw block (output = dataBlock)
+% ----'tim' or 'timeline': raw timeline (output = dataTimeline)
+% ----'mic' or 'microphone': raw microphone data (output = dataMic) 
+% ----'ev' or 'events':  trial events (output = dataEvents)
+% ----'eventsFull':  all (including large) trial events (output = dataEvents)
+% ----'probe': load spike information (can specify probe number) (output = dataSpikes)
+% ----'all': loads 'blk', 'tim', 'ev' 
 
 % object (default='all'): str/cell of strings 
     % objects to load for each dataType. At the moment, this is only relevant 

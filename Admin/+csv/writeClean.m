@@ -1,21 +1,25 @@
 function writeClean(csvData, csvLocation, removeNaN)
 %% Writes a "clean" csv file from "csvData"--meaning no "NaN" or "NaT"
-%  NOTE: It's likely the "clean" aspect of this function will only ever be
-%  used when writing to the "main" mouse csv. If it isn't used, all the
-%  empy cells in that csv will have NaN or NaT.
-
-
-% "csvData": table--the data (table) to be written
-% "csvLocation": string--the location where the csv will be saved
-% "removeNaN": logical--if all cases of NaN and NaT should be removed
+% 
+% NOTE: It's likely the "clean" aspect of this function will only ever be
+% used when writing to the "main" mouse csv. If it isn't used, all the
+% empy cells in that csv will have NaN or NaT. This is difficult to read
+%
+% Parameters:
+% ------------
+% csvData (required): table
+% ----the data (table) to be written
+%
+% csvLocation (required): string
+% ----the location where the csv will be saved
+%
+% removeNaN (default = 0): logical
+% ----if 1 all cases of NaN and NaT should be removed
 
 % Set default value for "removeNaN" (which is 0)
 if ~exist('removeNaN', 'var'); removeNaN = 0; end
 
-% Create backup of csv
-csv.createBackup(csvLocation);
-
-% We convert dates to have uncerscores for saving as this prevents
+% We convert dates to have underscores for saving as this prevents
 % instability in opening/closing of the excel files
 if contains('expDate', csvData.Properties.VariableNames)
     csvData.expDate = cellfun(@(x) strrep(x, '-', '_'), csvData.expDate, 'uni', 0);

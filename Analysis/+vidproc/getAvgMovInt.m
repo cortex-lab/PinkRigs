@@ -1,9 +1,14 @@
 function getAvgMovInt(pathStub, nFramesToLoad)
-    %%% This function will compute the average intensity of a movie, mainly
-    %%% in order to extract the dark flashes.
-    %%%
-    %%% This code is inspired by the code from kilotrode
-    %%% (https://github.com/cortex-lab/kilotrodeRig).
+    %% Computes the average intensity of a movie
+    % Note: inspired by the code from kilotrode (https://github.com/cortex-lab/kilotrodeRig).
+    %
+    % Parameters:
+    % -------------------
+    % pathStub: str
+    %   Path to video
+    % nFramesToLoad: int
+    %   Number of frames to load
+    %
     
     if ~exist('nFramesToLoad', 'var')
         nFramesToLoad = [];

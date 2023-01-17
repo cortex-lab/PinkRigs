@@ -1,5 +1,5 @@
 function spl = getSPL(tDat_exp, tDat94filt, tDat114filt, micF)
-    %% Computes the dB SPL from sound data.
+    %% Computes the dB SPL from sound waveform.
     %
     % Parameters:
     % -------------------

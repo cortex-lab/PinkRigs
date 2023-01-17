@@ -1,11 +1,31 @@
 function combinedTable = insertNewData(newData, subject)
-%% Function to insert a table containing new data into a mouse CSV
+%% Insert a table containing new data into an existing mouse CSV
+%
+% Parameters:
+% ------------
+%
+% newData (required): table
+% ----a table with fields matching the existing  mouse csv
+% ----
+%
+% subject (required): string
+% ----the subjected where the new data should be inserted
+% ----
+%
+% Returns: 
+% ---------------
+%
+% combinedTable: table 
+% ----A new, sorted table with data inserted
 
-% "newData" is a table with fields matching the existing  mouse csv. 
-% "subject" is the name of the mouse that the new data corresponds to
+
+% If no subject provided, then error
+if ~exist('subject', 'var') || isempty(subject)
+    error('No subject provided for data insertion... \n')
+end
 
 % If "newData" is empty then "return"
-if isempty(newData)
+if ~exist('newData', 'var') || isempty(newData)
     fprintf('Asked to write empty data for %s, returning... \n', subject)
     return
 end
