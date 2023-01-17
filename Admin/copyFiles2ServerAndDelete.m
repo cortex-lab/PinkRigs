@@ -15,8 +15,8 @@ end
 isDirectory = cellfun(@isfolder, localFilePaths);
 localFilePaths = localFilePaths(~isDirectory);
 serverFilePaths = serverFilePaths(~isDirectory);
-localFilePaths(contains(localFilePaths, '.bin')) = [];
-serverFilePaths(contains(serverFilePaths, '.bin')) = [];
+localFilePaths(contains(localFilePaths, '.ap.bin')) = [];
+serverFilePaths(contains(serverFilePaths, '.ap.bin')) = [];
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
 %% Loop to copy/check/delete files

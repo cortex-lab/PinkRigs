@@ -399,13 +399,13 @@ tExt.rewardTimes(responseRecorded~=1) = {nan};
 tExt.rewardTimes = cellfun(@double, tExt.rewardTimes); 
 
 %%
-if isfield(e, 'is_laserOnValues')
+if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
     is_laser_On = e.is_laserOnValues(eIdx);
     all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut'); 
     laser_times_trial_indexed = NaN(numel(is_laser_On),4); 
     laser_times_trial_indexed(is_laser_On,:)= all_laser_times; 
 else
-    is_laser_On = NaN(numel(eIdx),4); 
+    is_laser_On = NaN(numel(eIdx),1)'; 
     laser_times_trial_indexed = NaN(numel(is_laser_On),4); 
 end
 laser_times_trial_indexed = single(laser_times_trial_indexed);
