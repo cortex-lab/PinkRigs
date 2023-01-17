@@ -1,6 +1,20 @@
 function createBackup(csvLocation)
-%% Will create a timestamped backup of the CSV in the "Backups" folder
-%  "csvLocation" is the full path of the .csv file to be backed up
+%% Create a timestamped backup of the CSV in the "Backups" folder
+% 
+% NOTE: Backups are stored "\\zinu.cortexlab.net\Subjects\PinkRigs\Backups"
+%
+% Parameters:
+% ------------
+% XXX (default = XXX): integer or string
+% ----
+%
+% XXX (default = XXX): logical
+% ----if 1, the mouse csv will be deleted and remade anew
+
+
+%% 
+%
+%"csvLocation" is the full path of the .csv file to be backed up
 
 % Check that file exists, and warn experimenter if it doesn't
 if ~exist(csvLocation, 'file')
