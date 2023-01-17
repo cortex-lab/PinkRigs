@@ -59,8 +59,9 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
 
                 # only add the mice that need to be sorted if all criteria is fulfilled
                 #if some dates have been subselected
-                if check_date_selection(date_selection,date):
-                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
+                
+                if check_date_selection(date_selection,[date])[0]:
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.bin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
@@ -251,7 +252,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 if __name__ == "__main__":
    #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='last1000')
+   stage_queue(mouse_selection='AV025',ks_folder = 'pyKS', date_selection='2022-11-08')
    run_batch_ibl_formatting(run_for=10)
 
 
