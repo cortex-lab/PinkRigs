@@ -1,4 +1,4 @@
-function spikeStruct = loadKSdir(ksDir, varargin)
+function spikeStruct = loadKSdir_AV(ksDir, varargin)
 % Function taken from the spikes repository. 
 % adapted to take the output of pykilosort even on stitched data
    

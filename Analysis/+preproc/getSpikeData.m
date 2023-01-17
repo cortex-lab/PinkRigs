@@ -25,7 +25,7 @@ function [spk,sp] = getSpikeData(ephysPath,varargin)
     
     %% Get spike data
     
-    sp = loadKSdir(KSFolder,params);
+    sp = loadKSdir_AV(KSFolder,params);
     
     spk.spikes.time = sp.st;
     spk.spikes.cluster = sp.clu;
