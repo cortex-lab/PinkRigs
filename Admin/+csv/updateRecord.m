@@ -1,14 +1,21 @@
 function csvData = updateRecord(varargin)
-%% Function to check for any new recordings on the pink rigs and update csvs
+%% Update the csv files for specified experiments
 % NOTE: This function uses csv.inputValidate to parse inputs
-
-% In genral, the following meanings should be ascrived to the values in the
+%
+% Parameters:
+% ------------
+%
+% NOTE that paramters should be input as name-value pairs etc. according to
+% the csv.inputValidate function. Defaults for subjects, dates, etc. are
+% contained within csv.inputValidate.
+%
+% In genral, the following meanings should be ascribed to the values in the
 % csv files, and this code attempts to be consistent with that:
 %   '1' indicates "all good" whether it's alignment, spk, etc.
 %   '0' indicates "not attempted yet"
 %   '2' indicates there was an error in processing this
 %   'NaN' indicates "not done, and not expected to be done"
-
+%
 % For example, issortedKS2 would be "NaN" if there was no ephys recorded
 % since you would not expect to extract any spikes in this case. Similarly
 % if the faceCam file is missing, then alignment would be "NaN" for

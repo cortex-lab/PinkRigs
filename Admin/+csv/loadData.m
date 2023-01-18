@@ -8,10 +8,12 @@ function expList = loadData(varargin)
 % objects should equal the length of dataTypes OR "1" and the same is true
 % for attributes. If you want to suppress the written confirmation of
 % loading, then set "verbose" to 0.
-
+%
 % Parameters: 
 % -------------------
-
+% NOTE that paramters should be input as name-value pairs etc. according to
+% the csv.inputValidate function
+%
 % dataType (default='events'): str/cell of strings 
 % ----indicates which data types to load.   
 % ----blk' or 'block': raw block (output = dataBlock)
@@ -21,24 +23,28 @@ function expList = loadData(varargin)
 % ----'eventsFull':  all (including large) trial events (output = dataEvents)
 % ----'probe': load spike information (can specify probe number) (output = dataSpikes)
 % ----'all': loads 'blk', 'tim', 'ev' 
-
+% ----
+%
 % object (default='all'): str/cell of strings 
-    % objects to load for each dataType. At the moment, this is only relevant 
-    % for "probe" dataTypes but will likely be relevant for others later. 
-    % Examples below:
-    %   'spikes' to load only spike data
-    %   'templates' to load only template data
-
+% ----objects to load for each dataType. At the moment, this is only relevant 
+% ----for "probe" dataTypes but will likely be relevant for others later. 
+% ----Examples below:
+% ----'spikes' to load only spike data
+% ----'templates' to load only template data
+%
 % attribute (default='all'): str/cell of strings 
-    % attributes to load for each object. At the moment, this is only relevant 
-    % for "probe" dataTypes but will likely be relevant for others later. 
-    %   'spikes' to load only spike data
-    %   'templates' to load only template data
-
+% ----attributes to load for each object. At the moment, this is only relevant 
+% ----for "probe" dataTypes but will likely be relevant for others later. 
+% ----'spikes' to load only spike data
+% ----'templates' to load only template data
+%
 % Returns: 
 % ---------------
+%
 % expList: table 
-
+% ----New fields with loaded data in structures will be included. 
+% ----{'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'}
+% ----These fields will not be included if they are not requested.
 
 
 varargin = ['dataType', {'events'}, varargin];

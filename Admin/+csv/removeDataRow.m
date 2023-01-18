@@ -1,10 +1,15 @@
 function removeDataRow(subject, expDate, expNum)
-%% Function to remove row from a csv 
+%% Removes a specified row from a csv 
 %  NOTE: At time of writing, this funciton is only called within 
 %  csv.updateRecord but I made it external as it could be of general use
-
-% "subject", "expDate", and "expNum" are all strings that indicate the csv
-% (subject) and row (expDate/expNum) that needs to be removed
+%
+% Parameters:
+% ------------
+% subject (required): string
+% expDate (required): string
+% expNum (required): string
+% ----These inputs specify the subject, date, and expNum of the csv row to
+% ----be deleted. These should be unique to a single experiment.
 
 % Make sure expDate and expNum are both cells
 if ~iscell(expDate); expDate = {expDate}; end
