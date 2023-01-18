@@ -219,7 +219,7 @@ def get_anatmap_path_same_day(ibl_format_path):
 
     return anatmap_paths
 
-def call_for_anatmap(subject='AV025',probe='probe0',near_date=None,check_processed=False): 
+def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,check_processed=False): 
     """
     function to call which recordings should be used for anatomy
     basically this function searches for single shank recordings
@@ -272,9 +272,9 @@ def call_for_anatmap(subject='AV025',probe='probe0',near_date=None,check_process
         recdat_shank = recdat[recdat.shank==sh]
         unique_depths = np.unique(recdat_shank.depth_range)
         for my_d in unique_depths:
-            recdat_shank_ = recdat_shank[recdat_shank.depth_range==my_d]
+            recdat_shank_d = (recdat_shank[recdat_shank.depth_range==my_d]).copy()
             # and select either the nerest to an asked date all the 1st post Implant
-            all_dates = [datetime.datetime.strptime(d,'%Y-%m-%d') for d in recdat_shank_.expDate]
+            all_dates = [datetime.datetime.strptime(d,'%Y-%m-%d') for d in recdat_shank_d.expDate]
             if near_date:
                 selected_date = datetime.datetime.strptime(near_date,'%Y-%m-%d')
                 possible_dates_prior = [d  for d in all_dates if d<=selected_date]
@@ -283,5 +283,9 @@ def call_for_anatmap(subject='AV025',probe='probe0',near_date=None,check_process
                 date_for_shank = min(all_dates)
             
             date_for_shank = date_for_shank.strftime('%Y-%m-%d')
-            rec = recdat_shank_[recdat_shank_.expDate==date_for_shank]
-            out_dat = pd.concat((out_dat,rec))
+            selected_rec = recdat_shank_d[recdat_shank_d.expDate==date_for_shank]
+            out_dat = pd.concat([out_dat,selected_rec])
+    
+    out_dat = out_dat.drop_duplicates(subset=['shank_range','depth_range'])
+
+    return out_dat
