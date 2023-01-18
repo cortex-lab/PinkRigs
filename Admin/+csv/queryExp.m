@@ -1,6 +1,41 @@
 function extractedExperiments = queryExp(varargin)
-%%% This function will fetch all possible experiments to check for
-%%% computing alignment, preprocessing etc.
+%% This function will fetch experiments according to predefined filters
+% NOTE: This function uses csv.inputValidate to parse inputs
+%
+% Parameters: 
+% -------------------
+% NOTE that paramters should be input as name-value pairs etc. according to
+% the csv.inputValidate function. Defaults for subjects, dates, etc. are
+% contained within csv.inputValidate.
+%
+% checkTimeline (default='ignore'): string 
+% checkAlignAny (default='ignore'): string 
+% checkAlignEphys (default='ignore'): string 
+% checkAlignBlock (default='ignore'): string 
+% checkAlignCam (default='ignore'): string 
+% checkAlignMic (default='ignore'): string 
+% checkSorting (default='ignore'): string 
+% checkSpikes (default='ignore'): string 
+% checkSpikes (default='ignore'): string 
+% checkEvents (default='ignore'): string 
+% ----In all the above cases, the relevant fields will be checked, and the
+% ----user can input a filter to match (e.g. 'checkEvents'='1' will return
+% ----experiments with successful event extraction) or a filter to exclude
+% ----by using the '~' symbol (e.g. 'checkEvents'='~1' will return all
+% ----experiments without successful event extraction)
+% ----
+%
+% expDate (default = expDate = 'all')
+% ----There are many options for expDate to select dates, ranges etc. These
+% ----Are described in the "extractDates" function within this function
+% ----
+%
+% Returns: 
+% ---------------
+%
+% extractedExperiments: table 
+% ----Table with all the csv information for the selected experiments
+
 
 % Assign defaults for params not contained in "inputValidation"
 checkFields = {'checkTimeline', ...

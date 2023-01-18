@@ -244,6 +244,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
                 else:
                     with open(Path(out_path, 'xyz_picks_shank%s.json' % shank), "w") as f:
                         json.dump(xyz_picks, f, indent=2)
+            
+                print('success in saving xyz_picks from track.')
             else: 
                 print('the probe/shank IDs do not match.')                
     else: 

@@ -1,5 +1,4 @@
 function changePinkRigsFunction(oldName, newName, fileExt)
-
 if ~exist('fileExt', 'var'); fileExt = '.m'; end
 
 %% Parameters

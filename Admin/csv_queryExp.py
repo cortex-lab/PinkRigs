@@ -188,7 +188,6 @@ class Bunch(dict):
             raise FileNotFoundError(f"{npz_file}")
         return Bunch(np.load(npz_file))
 
-
 def load_ONE_object(collection_folder,object,attributes='all'): 
     """
     function that loads any ONE object with npy extension
@@ -253,9 +252,6 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     return output
 
-
-
-
 def load_data(data_name_dict=None,**kwargs):
     """
     Paramters: 
@@ -314,5 +310,47 @@ def load_data(data_name_dict=None,**kwargs):
 
     return recordings
 
+def simplify_recdat(recording,probe='probe0'): 
+    """
+    spits out the event,spike etc bunches with one line
+    allows for quicker calling of data in a single experiment
+    Parameters: 
+    -----------
+    recording: pd.Series
+        details of recording as outputted by load date
+    Retruns:
+    --------
+        Bunch,Bunch,Bunch,Bunch
+        for ev,spikes,clusters & channels
+        if it does not exist, we will out None
+    """
+    ev,spikes,clusters,channels = None,None,None,None
+    if hasattr(recording,'events'):
+        ev = recording.events._av_trials
 
-  
+    if hasattr(recording,probe):
+        p_dat = recording[probe]
+        if hasattr(p_dat,'spikes'):
+            spikes = p_dat.spikes
+        
+        if hasattr(p_dat,'clusters'):
+            clusters = p_dat.clusters
+        
+        if hasattr(p_dat,'channels'):
+            channels = p_dat.channels
+
+    return (ev,spikes,clusters,channels)
+
+def get_recorded_channel_position(channels):
+    """
+    todo: get IBL channels parameter. I think this needs to be implemented on the PinkRig level.
+    """
+    if not channels: 
+        xrange, yrange = None, None
+    else:
+        xcoords = channels.localCoordinates[:,0]
+        ycoords = channels.localCoordinates[:,1]
+        xrange = (np.min(xcoords),np.max(xcoords))
+        yrange = (np.min(ycoords),np.max(ycoords))
+
+    return (xrange,yrange)

@@ -2,16 +2,21 @@ function checkForNewPinkRigRecordings(varargin)
 %% Check for any new recordings on the pink rigs and update csvs
 % 
 % NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
-% name-value pairs or other inputs accepted by this function
+% name-value pairs other inputs accepted by this function
 %
 % Parameters:
 % ------------
 % expDate (default = 0): integer or string (see csv.inputValidate)
-% ----number of days into the past to check for new data
-% ----NOTE "expDate" can be 'all'--faster than a big integer
+%   number of days into the past to check for new data
+%   NOTE "expDate" can be 'all'--faster than a big integer
 %
 % recompute (default = 0): logical
-% ----if 1, the mouse csv will be deleted and remade anew
+%   if 1, the mouse csv will be deleted and remade anew
+%
+% Examples:
+% ------------
+% csv.checkForNewPinkRigRecordings('subject', 'AV009', 'expDate', 10)
+% csv.checkForNewPinkRigRecordings('subject', 'AV012', 'expDate', 'all')
 
 % Add default values for extra inputs:
 varargin = ['expDate', {0}, varargin];

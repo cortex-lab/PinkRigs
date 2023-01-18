@@ -1,5 +1,6 @@
-import json,re,glob,sys
+import json,re,glob,sys,datetime
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from ibllib.atlas import AllenAtlas
 atlas = AllenAtlas(25)
@@ -9,7 +10,7 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
-
+from Admin.csv_queryExp import load_data,get_recorded_channel_position
 
 def get_chan_coordinates(root):
     """
@@ -218,3 +219,69 @@ def get_anatmap_path_same_day(ibl_format_path):
 
     return anatmap_paths
 
+def call_for_anatmap(subject='AV025',probe='probe0',near_date=None,check_processed=False): 
+    """
+    function to call which recordings should be used for anatomy
+    basically this function searches for single shank recordings
+    and gets unique depths for each shanks
+
+    Paramters:
+    ---------
+    subject: str
+        subject name 
+    probe: str
+        'probe0' or 'probe1'
+    near_date: None/str
+        a string of a date. in this case the algorithm will look for the nearest date before date given by near_date
+    check_processed: bool 
+        not implemented 
+        filter recordings by which one already has clusters.mlapdv.npy
+    """
+    data_dict = {
+    ('%s_raw' % probe):{'channels':'all'}
+    }
+    
+    sn_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='sparseNoise')
+    spont_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='spontaneous')
+    recdat = pd.concat((sn_recs,spont_recs))
+
+
+    shank_range,depth_range = zip(*[get_recorded_channel_position(rec[('%s_raw' % probe)].channels) for _,rec in recdat.iterrows()])
+    # should also check whether the brain region id really exists. 
+
+    recdat = recdat.assign(
+        shank_range = shank_range, 
+        depth_range = depth_range
+    )
+
+    if check_processed: 
+        pass
+
+    recdat = recdat.dropna(subset=['shank_range','depth_range'])
+
+    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<35 for _,rec in recdat.iterrows()]
+    recdat = recdat[is_single_shank]
+    recdat = recdat.assign(
+        shank = [int(sh[0]/200) for sh in recdat.shank_range]
+    )
+    # and contain all unique depths for each shank
+
+    out_dat = pd.DataFrame(columns=recdat.columns)
+    shanks = np.unique(recdat.shank)
+    for sh in shanks: 
+        recdat_shank = recdat[recdat.shank==sh]
+        unique_depths = np.unique(recdat_shank.depth_range)
+        for my_d in unique_depths:
+            recdat_shank_ = recdat_shank[recdat_shank.depth_range==my_d]
+            # and select either the nerest to an asked date all the 1st post Implant
+            all_dates = [datetime.datetime.strptime(d,'%Y-%m-%d') for d in recdat_shank_.expDate]
+            if near_date:
+                selected_date = datetime.datetime.strptime(near_date,'%Y-%m-%d')
+                possible_dates_prior = [d  for d in all_dates if d<=selected_date]
+                date_for_shank = max(possible_dates_prior)
+            else:
+                date_for_shank = min(all_dates)
+            
+            date_for_shank = date_for_shank.strftime('%Y-%m-%d')
+            rec = recdat_shank_[recdat_shank_.expDate==date_for_shank]
+            out_dat = pd.concat((out_dat,rec))
