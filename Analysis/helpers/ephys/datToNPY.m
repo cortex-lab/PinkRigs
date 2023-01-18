@@ -1,5 +1,3 @@
-
-
 function datToNPY(inFilename, outFilename, dataType, shape, varargin)
 % function datToNPY(inFilename, outFilename, shape, dataType, [fortranOrder, littleEndian])
 %

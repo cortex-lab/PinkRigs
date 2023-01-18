@@ -1,4 +1,25 @@
 function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binFileFolder)
+    %% Fetches the recording site
+    % WARNING: Should be double-checked for Neuropixels 1.0, or even for
+    % 1-shank 2.0 probes.
+    %
+    % Parameters:
+    % -------------------
+    % binFileName: str
+    %   Name of the bin file
+    % binFileFolder: str
+    %   Path to the bin file.
+    %
+    % Returns:
+    % -------------------
+    % chanPos: array
+    %   Position of the channels on the probe
+    % elecPos: array
+    %   Position of the electrodes on the probe
+    % shank: array
+    %   Shank to which each channel (ordered as in chanPos) belongs
+    % probeSN: int
+    %   Serial number of the probe
 
     metaData = readMetaData_spikeGLX(binFileName,binFileFolder);
     probeSN = metaData.imDatPrb_sn;
@@ -28,7 +49,7 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
         elseif numel(chanProp) == 4
             if c == 1
                 warning('WATCH OUT: IMRO seems to be a Npx2.0 1 shank version--watch out, not sure what the chanMap is?')
-                %%% Have a bette way to check that?
+                %%% Have a better way to check that?
                 probeType = '2SS';
             end
             chans(c) = str2double(chanProp{1});

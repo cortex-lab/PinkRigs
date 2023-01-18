@@ -1,9 +1,22 @@
 function generateIMROProtocol(basePath,imroprop,days)
-    %%% This function will generate the architecture and IMRO files for a
-    %%% given protocol.
+    %% Generate the architecture and IMRO files for a given protocol.
+    %
+    % Parameters:
+    % -------------------
+    % basePath: str
+    %   Path for the IMRO protocol
+    % imroprop: struct
+    %   Structure for IMRO specs, as in 'exampleIMROProtocol', with fields:
+    %     protocol: name of the protocol
+    %     probe(1).patternTag: pattern of shanks 'hs2','hs4','ss'
+    %     probe(1).botRow: bottom row to use
+    %     probe(1).shankChoice: array of shanks to record from
+    %     probe(1).refElec: Reference (0 is external, 1 internal)
+    % days: cell str
+    %   List of days ('YYYY-MM-DD')
     
     if ~exist('days','var')
-        days = cellstr(num2str([1:numel(imroprop)]'));
+        days = cellstr(num2str((1:numel(imroprop))'));
     end
 
     if ~exist(basePath,'dir')

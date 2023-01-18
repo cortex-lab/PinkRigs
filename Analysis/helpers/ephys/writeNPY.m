@@ -1,5 +1,3 @@
-
-
 function writeNPY(var, filename)
 % function writeNPY(var, filename)
 %

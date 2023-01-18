@@ -1,6 +1,3 @@
-
-
-
 function header = constructNPYheader(dataType, shape, varargin)
 
 	if ~isempty(varargin)

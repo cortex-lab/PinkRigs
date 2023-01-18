@@ -1,8 +1,14 @@
 function plotRecordingSites(recFolderList,savePlt,recompute)
-    %%% This function will read the recordings' metadata and plot the 
-    %%% recording sites (and save the plot if savePlt).
-    %%% recFolderList contains the list of recordings (path up to the  
-    %%% folder containing both probes)
+    %% Plots the recording sites (and save the plot if savePlt).
+    %
+    % Parameters:
+    % -------------------
+    % recFolderList: cell of str
+    %   Contains the list of recordings
+    % savePlt: bool
+    %   Whether to save the plot
+    % recompute: bool
+    %   Whether to recompute 
     
     if ~exist('recompute','var')
         recompute = 0;

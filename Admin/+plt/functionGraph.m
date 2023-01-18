@@ -54,13 +54,23 @@ function functionGraph(selectNode,showOnlySelectedNode)
         connectivityMatrix(ff,:) = cell2mat(cellfun(@(x) contains(funcText,x), funcNames, 'uni', 0));
 
         if any(connectivityMatrix(ff,:))
-            % Check that it's not on a commented line
-            funcTextAsCells = regexprep(regexp(funcText, '\n', 'split'),' ','');
+            % Check that it's not on a commented line, and that it's a
+            % proper call (and not just another function having a similar 
+            % name)
+            funcTextAsCells = regexp(funcText, '\n', 'split');
             funIdx = find(connectivityMatrix(ff,:)>0);
             for fff = 1:numel(funIdx)
                 lineIdx = cell2mat(cellfun(@(x) contains(x,funcNames{funIdx(fff)}), funcTextAsCells, 'uni', 0));
-                commented = all(cell2mat(cellfun(@(x) strcmp(x(1),'%'), funcTextAsCells(lineIdx), 'uni', 0)));
+
+                % See if commented
+                commented = all(cell2mat(cellfun(@(x) strcmp(x(1),'%'), regexprep(funcTextAsCells(lineIdx),' ',''), 'uni', 0)));
                 if commented
+                    connectivityMatrix(ff,funIdx(fff)) = 0;
+                end
+
+                % See if it's a real call
+                afterCall = regexp(funcTextAsCells(lineIdx),funcNames{funIdx(fff)},'split');
+                if ~ismember(afterCall{1}{2}(1),{';',' ','('})
                     connectivityMatrix(ff,funIdx(fff)) = 0;
                 end
             end
@@ -76,7 +86,8 @@ function functionGraph(selectNode,showOnlySelectedNode)
 
     idxNode = find(contains(nLabels,selectNode));
     if isempty(idxNode) && ~isempty(selectNode)
-        error('Function does not exist.')
+        warning('Function does not exist.')
+        return
     end
     if showOnlySelectedNode
         outsideNodes = nLabels(D(idxNode,:) == Inf & D(:,idxNode)' == Inf);

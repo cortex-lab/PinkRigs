@@ -4,13 +4,13 @@ function plotIMROProtocol(basePath,savePlt,daysIn,pltAll)
     % Parameters:
     % -------------------
     % basePath: str
-    %   Timeline structure.
-    % ev: struct
-    %   Structure containing all relevant events information.
-    % basePath: str
-    %   Timeline structure.
-    % ev: struct
-    %   Structure containing all relevant events information.
+    %   Path to the IMRO protocol
+    % savePlt: bool
+    %   Whether to save the plot
+    % daysIn: cell of str
+    %   Days to include
+    % pltAll: bool
+    %   Plot everything
 
     if ~exist('savePlt','var')
         savePlt = 0;

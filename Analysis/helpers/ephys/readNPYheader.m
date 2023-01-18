@@ -1,5 +1,3 @@
-
-
 function [arrayShape, dataType, fortranOrder, littleEndian, totalHeaderLength, npyVersion] = readNPYheader(filename)
 % function [arrayShape, dataType, fortranOrder, littleEndian, ...
 %       totalHeaderLength, npyVersion] = readNPYheader(filename)
