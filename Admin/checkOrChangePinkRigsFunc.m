@@ -1,4 +1,22 @@
-function changePinkRigsFunction(oldName, newName, fileExt)
+function checkOrChangePinkRigsFunc(oldName, newName, fileExt)
+%% Checks, and optionally changes, the name 
+% 
+% NOTE: It's likely the "clean" aspect of this function will only ever be
+% used when writing to the "main" mouse csv. If it isn't used, all the
+% empy cells in that csv will have NaN or NaT. This is difficult to read
+%
+% Parameters:
+% ------------
+% csvData (required): table
+%   the data (table) to be written
+%
+% csvLocation (required): string
+%   the location where the csv will be saved
+%
+% removeNaN (default = 0): logical
+%   if 1 all cases of NaN and NaT should be removed
+
+
 if ~exist('fileExt', 'var'); fileExt = '.m'; end
 
 %% Parameters

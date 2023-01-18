@@ -1,6 +1,8 @@
 function expList = loadData(varargin)
 %% Load ev and/or spk data from particular mice and/or dates
-% NOTE: This function uses csv.inputValidate to parse inputs
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
 %
 % NOTE: That the same dataTypes, objects, and attributes will be loaded for
 % all mice. You will have to separate mice before calling the function if
@@ -10,42 +12,43 @@ function expList = loadData(varargin)
 % loading, then set "verbose" to 0.
 %
 % Parameters: 
-% -------------------
-% NOTE that paramters should be input as name-value pairs etc. according to
-% the csv.inputValidate function
+% ---------------
+% Classic PinkRigs inputs (optional)
 %
 % dataType (default='events'): str/cell of strings 
-% ----indicates which data types to load.   
-% ----blk' or 'block': raw block (output = dataBlock)
-% ----'tim' or 'timeline': raw timeline (output = dataTimeline)
-% ----'mic' or 'microphone': raw microphone data (output = dataMic) 
-% ----'ev' or 'events':  trial events (output = dataEvents)
-% ----'eventsFull':  all (including large) trial events (output = dataEvents)
-% ----'probe': load spike information (can specify probe number) (output = dataSpikes)
-% ----'all': loads 'blk', 'tim', 'ev' 
-% ----
-%
+%   indicates which data types to load.   
+%   'blk' or 'block': raw block (output = dataBlock)
+%   'tim' or 'timeline': raw timeline (output = dataTimeline)
+%   'mic' or 'microphone': raw microphone data (output = dataMic) 
+%   'ev' or 'events':  trial events (output = dataEvents)
+%   'eventsFull':  all (including large) trial events (output = dataEvents)
+%   'probe': load spike information (can specify probe number) (output = dataSpikes)
+%   'all': loads 'blk', 'tim', 'ev' 
+%   
 % object (default='all'): str/cell of strings 
-% ----objects to load for each dataType. At the moment, this is only relevant 
-% ----for "probe" dataTypes but will likely be relevant for others later. 
-% ----Examples below:
-% ----'spikes' to load only spike data
-% ----'templates' to load only template data
+%   objects to load for each dataType. At the moment, this is only relevant 
+%   for "probe" dataTypes but will likely be relevant for others later. 
+%   Examples below:
+%   'spikes' to load only spike data
+%   'templates' to load only template data
 %
 % attribute (default='all'): str/cell of strings 
-% ----attributes to load for each object. At the moment, this is only relevant 
-% ----for "probe" dataTypes but will likely be relevant for others later. 
-% ----'spikes' to load only spike data
-% ----'templates' to load only template data
+%   attributes to load for each object. At the moment, this is only relevant 
+%   for "probe" dataTypes but will likely be relevant for others later. 
+%   'spikes' to load only spike data
+%   'templates' to load only template data
 %
 % Returns: 
 % ---------------
-%
 % expList: table 
-% ----New fields with loaded data in structures will be included. 
-% ----{'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'}
-% ----These fields will not be included if they are not requested.
-
+%   New fields with loaded data in structures will be included. 
+%   {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'}
+%    These fields will not be included if they are not requested.
+%
+% Examples: 
+% ---------------
+% csv.loadData('subject', 'AV008', 'dataType', {{'tim'; 'blk'}});
+% csv.loadData(queryExpTable, 'dataType', {{'tim'; 'blk'}});
 
 varargin = ['dataType', {'events'}, varargin];
 varargin = ['object', {'all'}, varargin];

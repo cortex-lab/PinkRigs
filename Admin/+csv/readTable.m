@@ -5,16 +5,14 @@ function csvData = readTable(csvPath)
 % change depending on, for example, if there are NaN's
 %
 % Parameters:
-% ------------
+% ---------------
 % csvPath (required): string
-% ----Path of the csv file to read
-% ----
+%   Path of the csv file to read
 %
 % Returns: 
 % ---------------
-%
 % csvData: table 
-% ----Table with all the loaded csv data
+%   Table with all the loaded csv data
 
 % These lines set the reading options of the csv to "char" for all columns
 opts = detectImportOptions(csvPath, 'Delimiter',',');

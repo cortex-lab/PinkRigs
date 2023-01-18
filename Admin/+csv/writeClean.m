@@ -8,13 +8,13 @@ function writeClean(csvData, csvLocation, removeNaN)
 % Parameters:
 % ------------
 % csvData (required): table
-% ----the data (table) to be written
+%   the data (table) to be written
 %
 % csvLocation (required): string
-% ----the location where the csv will be saved
+%   the location where the csv will be saved
 %
 % removeNaN (default = 0): logical
-% ----if 1 all cases of NaN and NaT should be removed
+%   if 1 all cases of NaN and NaT should be removed
 
 % Set default value for "removeNaN" (which is 0)
 if ~exist('removeNaN', 'var'); removeNaN = 0; end

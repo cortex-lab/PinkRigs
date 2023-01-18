@@ -1,13 +1,12 @@
 function csvData = updateRecord(varargin)
 %% Update the csv files for specified experiments
-% NOTE: This function uses csv.inputValidate to parse inputs
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
 %
 % Parameters:
 % ------------
-%
-% NOTE that paramters should be input as name-value pairs etc. according to
-% the csv.inputValidate function. Defaults for subjects, dates, etc. are
-% contained within csv.inputValidate.
+% Classic PinkRigs inputs (optional)
 %
 % In genral, the following meanings should be ascribed to the values in the
 % csv files, and this code attempts to be consistent with that:
@@ -22,6 +21,11 @@ function csvData = updateRecord(varargin)
 % facecam, since there is no hope of alignning the file. Conversely, if the
 % file did exist, but there was an error in aligning the frames, it should
 % be a "2".
+%
+% Examples: 
+% ---------------
+% csv.updateRecord('subject', 'AV008', 'expDate', 'last20');
+% csv.updateRecord('subject', 'all', 'expDate', 0, 'expDef', 'passive');
 
 % Return an empty "csvData" if no inputs are given
 if isempty(varargin); csvData = []; return; end

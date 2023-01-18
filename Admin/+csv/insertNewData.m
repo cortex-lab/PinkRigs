@@ -3,20 +3,20 @@ function combinedTable = insertNewData(newData, subject)
 %
 % Parameters:
 % ------------
-%
 % newData (required): table
-% ----a table with fields matching the existing  mouse csv
-% ----
+%   a table with fields matching the existing  mouse csv
 %
 % subject (required): string
-% ----the subjected where the new data should be inserted
-% ----
+%   the subjected where the new data should be inserted
 %
 % Returns: 
-% ---------------
-%
+% ------------
 % combinedTable: table 
-% ----A new, sorted table with data inserted
+%   A new, sorted table with data inserted
+%
+% Examples: 
+% ------------
+% csv.insertNewData(newData, 'AV008');
 
 
 % If no subject provided, then error

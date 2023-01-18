@@ -4,12 +4,12 @@ function removeDataRow(subject, expDate, expNum)
 %  csv.updateRecord but I made it external as it could be of general use
 %
 % Parameters:
-% ------------
+% ---------------
 % subject (required): string
 % expDate (required): string
 % expNum (required): string
-% ----These inputs specify the subject, date, and expNum of the csv row to
-% ----be deleted. These should be unique to a single experiment.
+%   These inputs specify the subject, date, and expNum of the csv row to
+%   be deleted. These should be unique to a single experiment.
 
 % Make sure expDate and expNum are both cells
 if ~iscell(expDate); expDate = {expDate}; end

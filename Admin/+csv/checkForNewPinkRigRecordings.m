@@ -2,7 +2,7 @@ function checkForNewPinkRigRecordings(varargin)
 %% Check for any new recordings on the pink rigs and update csvs
 % 
 % NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
-% name-value pairs other inputs accepted by this function
+% name-value pairs, including those specific to this function
 %
 % Parameters:
 % ------------
