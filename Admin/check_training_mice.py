@@ -22,7 +22,7 @@ def send_email(email_text):
 
     Parameters: 
     -----------
-    mname: str 
+    email_text: str 
         large string of email text.
 
     """
