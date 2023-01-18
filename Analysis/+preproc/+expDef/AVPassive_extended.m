@@ -1,26 +1,40 @@
 function ev = AVPassive_extended(timeline, block, alignmentBlock)
-%%% This function will fetch all important information from the AV
-    %%% protocols, during postactive or during training.
-
-    % Returns:  
-    % ev.is_blankTrial      %logical: indicating "blank" trials
-    % ev.is_visualTrial     %logical: indicating "visual" trials
-    % ev.is_auditoryTrial   %logical: indicating "auditory" trials
-    % ev.is_coherentTrial   %logical: indicating "coherent" trials
-    % ev.is_conflictTrial   %logical: indicating "conflict" trials
-    % ev.is_rewardTrial   %logical: indicating "reward click" trials
+    %% Fetches all important information from the AV passive protocols
+    %
+    % Parameters:
+    % -------------------
+    % timeline: struct
+    %   Timeline structure.
+    % block: struct
+    %   Block structure
+    % alignmentBlock: struct
+    %   Alignement structure, containing fields "originTimes" and
+    %   "timelineTimes"
+    %
+    % Returns: 
+    % -------------------
+    % ev: struct
+    %   Structure containing all relevant events information.
+    %   All fields should have the form [nxm] where n is the number of trials.
+    %   FOR TIMES: all relative to trial start
+    %       ev.is_blankTrial      %logical: indicating "blank" trials
+    %       ev.is_visualTrial     %logical: indicating "visual" trials
+    %       ev.is_auditoryTrial   %logical: indicating "auditory" trials
+    %       ev.is_coherentTrial   %logical: indicating "coherent" trials
+    %       ev.is_conflictTrial   %logical: indicating "conflict" trials
+    %       ev.is_rewardTrial   %logical: indicating "reward click" trials
     % 
-    % ev.block_trialOnOff   %nx2 matrix: [starttime endtime]
-    % ev.block_stimOn       %nx1 matrix: start times for stimulus period
+    %       ev.block_trialOnOff   %nx2 matrix: [starttime endtime]
+    %       ev.block_stimOn       %nx1 matrix: start times for stimulus period
     % 
-    % ev.timeline_rewardOn  %nx1 matrix: reward times 
-    % ev.timeline_audOnOff  %nx8 matrix: [on off] times for aud stimuli (each click)
-    % ev.timeline_visOnOff  %nx8 matrix: [on off] times for vis stimuli (each flash)
+    %       ev.timeline_rewardOn  %nx1 matrix: reward times 
+    %       ev.timeline_audOnOff  %nx8 matrix: [on off] times for aud stimuli (each click)
+    %       ev.timeline_visOnOff  %nx8 matrix: [on off] times for vis stimuli (each flash)
     % 
-    % ev.stim_audAmplitude        %nx1 matrix: aud amplitude
-    % ev.stim_visContrast         %nx1 matrix: vis contrast
-    % ev.stim_audAzimuth          %nx1 matrix: aud azimuth presented
-    % ev.stim_visAzimuth          %nx1 matrix: vis azimuth presented   
+    %       ev.stim_audAmplitude        %nx1 matrix: aud amplitude
+    %       ev.stim_visContrast         %nx1 matrix: vis contrast
+    %       ev.stim_audAzimuth          %nx1 matrix: aud azimuth presented
+    %       ev.stim_visAzimuth          %nx1 matrix: vis azimuth presented   
 
     eIdx = 1:numel(block.events.endTrialValues);
 

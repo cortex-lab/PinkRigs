@@ -1,6 +1,24 @@
 function ev = imageWorld(timeline, block, alignmentBlock)
-    %%% This function will fetch all important information from the expDef
-    %%% imageWorld.
+    %% Fetches all important information from the imageWorld protocols
+    %
+    % Parameters:
+    % -------------------
+    % timeline: struct
+    %   Timeline structure.
+    % block: struct
+    %   Block structure
+    % alignmentBlock: struct
+    %   Alignement structure, containing fields "originTimes" and
+    %   "timelineTimes"
+    %
+    % Returns: 
+    % -------------------
+    % ev: struct
+    %   Structure containing all relevant events information. 
+    %   All fields should have the form [nxm] where n is the number of trials.
+    %       imageOnsetTimes: image onset times
+    %       imageOffsetTimes: image offset times
+    %       imageIDs: image IDs
     
     %% Extract photodiode onsets in timeline
     %%% Note that here it will correspond to the real photodiode onsets,

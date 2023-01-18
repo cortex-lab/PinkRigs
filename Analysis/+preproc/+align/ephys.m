@@ -7,28 +7,24 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
     % -------------------
     % Classic PinkRigs inputs (optional).
     % ephysPath: cell of str
-    %   Specific list of paths.
+    %   Specific list of paths
     % toleranceThreshold: double
     %   Tolerance threshold in try2alignVectors    
-    % timeline: cell of str
-    %   Specific list of paths.
-
+    % timeline: struct
+    %   Timeline structure
     % 
     %
     % Returns: 
     % -------------------
-    % mictimes_tl: vector
-    %   Mic times in timeline time
-    % co: 2-element vector
-    %   Contains the slope and intercept of the fit
+    % ephysRefTimesReord: vector
+    %   Flipper switch times in ephys time
+    % timelineRefTimesReord: vector
+    %   Flipper switch times in timeline time
+    % ephysPathReord: cell array
+    %   Associated ephys paths.
+    % serialNumberReord: cell array
+    %   Serial number of the probe for each recording in ephysPathReord
 
-    %%% This function will align the flipper of the ephys data to the
-    %%% flipper taken from the timeline.
-    %%%
-    %%% This code is inspired by the code from kilotrode
-    %%% (https://github.com/cortex-lab/kilotrodeRig) and Pip's 
-    %%% ephys2timeline script.
-    
     %% Get parameters
     % Parameters for processing (can be inputs in varargin{1})
     varargin = ['ephysPath', {[]}, varargin]; % for specific ephys folders (give full path)
