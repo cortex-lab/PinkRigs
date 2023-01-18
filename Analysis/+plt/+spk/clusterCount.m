@@ -1,6 +1,20 @@
 function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
-    %%% This function will plot the number of clusters across days for a
-    %%% the specified subject(s).
+    %% Plot the number of clusters across days for a the specified subject(s).
+    %
+    % Parameters:
+    % -------------------
+    % Classic PinkRigs input.
+    %
+    % Returns: 
+    % -------------------
+    % clusterNum: vector
+    %   Number of clusters across days.
+    % recLocAll: cell of str
+    %   Fingerprint of the recording locations
+    % days: vector
+    %   Number of days from implantation
+    % qualityMetrics: struct
+    %   Quality metrics for each day
     
     %% Get parameters
     mice = csv.readTable(csv.getLocation('main'));

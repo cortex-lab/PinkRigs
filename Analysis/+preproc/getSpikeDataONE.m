@@ -1,6 +1,15 @@
-function spk = getSpikeDataONE(ephysPath,KSFolder)
-    %%% This function will load the spike data (spike time, templates, etc.). 
-    %%% "spk" contains a condensed summary with spikes times & template info.
+function spk = getSpikeDataONE(KSFolder)
+    %% Loads the ephys data from a KS folder.
+    %
+    % Parameters:
+    % -------------------
+    % KSFolder: str
+    %   Path to kilosort folder
+    %
+    % Returns: 
+    % -------------------
+    % spk: struct
+    %   Contains a condensed summary with spikes times & template info.
 
     %% Parameters
 
@@ -80,18 +89,16 @@ function spk = getSpikeDataONE(ephysPath,KSFolder)
         clusXpos(ii) = nanmedian(spikeXPos(spkIdx)); % not sure why there can be nans here
         clusDepths(ii) = nanmedian(spikeDepths(spkIdx));
         clusShankIDs(ii) = nanmedian(spikeShankIDs(spkIdx));
-
-
     end
 
-    %%%% some metrics from the IBL format %%%%%
+    % Some metrics from the IBL format
     clusWav = readNPY(fullfile(IBLFormatFolder,'clusters.waveforms.npy'));
-    clusWavChan = readNPY(fullfile(IBLFormatFolder,'clusters.waveformsChannels.npy'));
+    % clusWavChan = readNPY(fullfile(IBLFormatFolder,'clusters.waveformsChannels.npy'));
     clusWavChan = single(tempWavChan);
     clusAmps = readNPY(fullfile(IBLFormatFolder,'clusters.amps.npy'));
     clusPeakToTrough = readNPY(fullfile(IBLFormatFolder,'clusters.peakToTrough.npy'));
 
-    % the ibl format clusters and the curated KS clusters don't match
+    % The ibl format clusters and the curated KS clusters don't match
     % so if they don't match we need to get rid of clusters to keep
     % dimensions consistent
     if numel(cids)~=numel(clusAmps)

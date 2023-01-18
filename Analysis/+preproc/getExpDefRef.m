@@ -1,7 +1,15 @@
 function expDefRef = getExpDefRef(expDef)
-    %%% This function will get the exp def reference file name for each
-    %%% specific expDef.
-    %%% TODO fill in that part with you own expDefs...
+    %% Gets the exp def reference file name for each specific expDef.
+    %
+    % Parameters:
+    % -------------------
+    % expDef: str
+    %   ExpDef name
+    %
+    % Returns: 
+    % -------------------
+    % expDefRef: str
+    %   Associated expDef reference from +expDef package
             
     if contains(expDef,'imageWorld')
         expDefRef = 'imageWorld';

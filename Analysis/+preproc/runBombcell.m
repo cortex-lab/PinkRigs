@@ -1,5 +1,15 @@
 function runBombcell(varargin)
-    %%% This function will run Bombcell on each recording.
+    %% Runs Bombcell on a list of experiments.
+    %
+    % Parameters:
+    % -------------------
+    % Classic PinkRigs inputs (optional).
+    % recompute (optional): bool
+    %   Whether to recompute 
+    % KSversion (optional): str
+    %   Version of kilosort to look at (usually PyKS).
+    % decompressDataLocal (optional): str
+    %   Path to local folder for decompression.
     
     %% Get parameters
     varargin = ['recompute', {false}, varargin];

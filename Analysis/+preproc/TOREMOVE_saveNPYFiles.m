@@ -1,17 +1,22 @@
 function saveNPYFiles(s,savePath)
-    %%% Will save the content of s in the IBL format
-    %%% (object.property.extension)
+    %% Will save the content of s in the ONE format (object.property.extension)
+    %
+    % Parameters:
+    % -------------------
+    % s: struct
+    %   Sound waveform
 
-    % check it's a structure
+    % Check it's a structure
     if ~isstruct(s)
         error('Are you sure this is the right input? It''s a %s', class(s))
     end
     
-    % create path
+    % Create path
     if ~exist(savePath,'dir')
         mkdir(savePath)
     end
         
+    % Loop through all the fields to save them individually
     fieldNamesObjects = fieldnames(s);
     for f = 1:numel(fieldNamesObjects)
         obj = fieldNamesObjects{f};

@@ -1,7 +1,9 @@
 function recLocation(varargin)
-    %%% This function will plot the location of the recordings (behavior)
-    %%% performed across the whole probe(s).
-    %%% I think I should do it with "guidata" but meh for now.
+    %% Plot the location of the recordings (behavior) performed across the whole probe(s).
+    %
+    % Parameters:
+    % -------------------
+    % Classic PinkRigs input.
     
     %% Get parameters
     varargin = ['expDate', {inf}, varargin];

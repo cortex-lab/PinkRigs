@@ -1,10 +1,10 @@
 function recList = getRecordingPathFromExp(varargin)
     %% Fetches the recording location for a list of experiments.
     %
-    % Parameters (optional):
+    % Parameters:
     % -------------------
-    % Classic PinkRigs inputs.
-    % KSversion: str
+    % Classic PinkRigs inputs (optional).
+    % KSversion (optional): str
     %   Version of kilosort to look at (usually PyKS).
     %
     % Returns: 

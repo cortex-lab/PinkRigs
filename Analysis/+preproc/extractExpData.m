@@ -1,7 +1,8 @@
 function extractExpData(varargin)
-    %%% This function will extract all the important information from the
-    %%% experiment's timeline and block, load the spikes, align everything,
-    %%% and save a preprocessed version of the data in the exp folder.
+    %% Extracts all experimental data and saves it in ONE format. 
+    % This function will extract all the important information from the
+    % experiment's timeline and block, load the spikes, align everything,
+    % and save a preprocessed version of the data in the exp folder.
     
     % Parameters
     % ------------------
@@ -155,7 +156,7 @@ function extractExpData(varargin)
                                     initONEFolder(probeONEFolder) %%% will have to see what to do when recomputing the qMetrics only
 
                                     % Get the spike and cluster info
-                                    spkONE = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,KSFolder);
+                                    spkONE = preproc.getSpikeDataONE(KSFolder);
                                     
                                     % Write a json file in target ONE that
                                     % contains the string of the IBL
@@ -215,6 +216,9 @@ function extractExpData(varargin)
                                     saveONEFormat(qMetrics, ...
                                         probeONEFolder,'clusters','_av_qualityMetrics','pqt',stub);
                                 end
+
+                                %%% Need to implement getting the Bombcell
+                                %%% metrics
 
                                 % Remove any error file
                                 if exist(fullfile(probeONEFolder, 'GetSpkError.json'),'file')
