@@ -1,6 +1,12 @@
 function saveErrMess(errorMessage,errorPath)
-    %%% This function will save in the given path a json containing the
-    %%% error message.
+    %% Writes a .json file with a message.
+    %
+    % Parameters:
+    % -------------------
+    % errorMessage: str
+    %   Message to write
+    % errorPath: str
+    %   Path
     
     errorMsge = jsonencode(errorMessage);
     fid = fopen(errorPath, 'w');

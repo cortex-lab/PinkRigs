@@ -1,11 +1,20 @@
 function [flipTimes, flipsUp, flipsDown] = schmittTimes(t, sig, thresh)
-    %%% This function will compute the schmitt times for signal sig.
-    %%% This code is inspired by the code from kilotrode
-    %%% (https://github.com/cortex-lab/kilotrodeRig).
-    
-    % function [flipTimes, flipsUp, flipsDown] = schmittTimes(t, sig, thresh)
+    %% Computes the schmitt times for a signal.
+    % This code is inspired by the code from kilotrode (https://github.com/cortex-lab/kilotrodeRig).
     %
-    % thresh is [low high]
+    % Parameters:
+    % -------------------
+    % t: vector
+    %   Time vector
+    % sig: vector
+    %   Signal
+    % thresh: 2-element vector
+    %   Contains the threshold ([low high]) to compute the schmitt times.
+    %
+    % Returns: 
+    % -------------------
+    % ev: struct
+    %   Structure containing all relevant events information.
     
     t = t(:); % make column
     sig = sig(:);

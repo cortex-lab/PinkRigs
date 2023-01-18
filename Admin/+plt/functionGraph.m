@@ -61,8 +61,11 @@ function functionGraph(selectNode,showOnlySelectedNode)
     G = digraph(connectivityMatrix,nLabels,'omitselfloops');
     D = distances(G);
 
+    idxNode = find(contains(nLabels,selectNode));
+    if isempty(idxNode) && ~isempty(selectNode)
+        error('Function does not exist.')
+    end
     if showOnlySelectedNode
-        idxNode = find(contains(nLabels,selectNode));
         outsideNodes = nLabels(D(idxNode,:) == Inf & D(:,idxNode)' == Inf);
         G = rmnode(G,find(contains(G.Nodes.Name,outsideNodes)));
         nLabels = nLabels(~contains(nLabels,outsideNodes));

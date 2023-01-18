@@ -1,5 +1,20 @@
 function filePath = saveONEFormat(var,savePath,objectName,attributeName,extensionName,stub)
-    %%% Write a file with the ONE format.
+    %% Writes a file in ONE format
+    %
+    % Parameters:
+    % -------------------
+    % var: array, table, etc.
+    %   Variable to save.
+    % savePath: str
+    %   Path
+    % objectName: str
+    %   Name of the object (e.g., 'spikes')
+    % attributeName: str
+    %   Name of the attribute (e.g., 'times')
+    % extensionName: str
+    %   Extension (e.g., '.npy')
+    % stub (optional): str
+    %   Little string to add to the file name
 
     if ~exist('stub','var')
         stub = '';

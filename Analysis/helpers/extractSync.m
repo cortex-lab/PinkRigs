@@ -1,5 +1,13 @@
 function extractSync(AP_filename, nChansTotal)
-    %%% This function will extract the flipper from the ephys data.
+    %% Extracts the flipper from the ephys data.
+    %
+    % Parameters:
+    % -------------------
+    % AP_filename: str
+    %   Name of the AP file
+    % nChansTotal: int
+    %   Total number of channels (usually 385)
+.
     if ~exist('nChansTotal', 'var'); nChansTotal = 385; end
     
     d = dir(AP_filename);
