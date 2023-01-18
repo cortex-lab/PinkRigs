@@ -1,4 +1,14 @@
 function initONEFolder(ONEFolderName,fileStr)
+    %% Initializes the ONE folder.
+    % Will create it if doesn't exist, or remove the files that are in it
+    % (and which can be selected with a specific string 'fileStr')
+    %
+    % Parameters:
+    % -------------------
+    % ONEFolderName: str
+    %   Path where to check the ONE folder.
+    % fileStr: str
+    %   Specific string to select the files to delete.
 
     if ~exist('fileStr','var')
         fileStr = '';

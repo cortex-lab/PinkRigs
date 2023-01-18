@@ -1,13 +1,14 @@
 function [ev]=sparseNoise_func(expPath,RID)
-timeline = getTimeline(expPath);
-block = getBlock(expPath);
+[subject, expDate, expNum] = parseExpPath(expPath);
+load(fullfile(expPath, [expDate '_' expNum '_' subject '_Timeline.mat']),'Timeline');
+load(fullfile(expPath, [expDate '_' expNum '_' subject '_block.mat']),'block');
 
 % Get the appropriate ref for the exp def
 expDef = block.expDef;
 expDefRef = preproc.getExpDefRef(expDef);
 
 % Call specific preprocessing function
-ev = preproc.expDef.(expDefRef)(timeline,block,1);
+ev = preproc.expDef.(expDefRef)(Timeline,block,1);
 
 % align to ephys probe
 params.ephysPath={RID.path(1:end-1)}; 

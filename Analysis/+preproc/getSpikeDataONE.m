@@ -10,6 +10,30 @@ function spk = getSpikeDataONE(KSFolder)
     % -------------------
     % spk: struct
     %   Contains a condensed summary with spikes times & template info.
+    %       Related to spikes:
+    %           times: spike times
+    %           templates: associated template 
+    %           clusters: associated cluster
+    %           amps: amplitude
+    %           depths: depth
+    %           av_xpos: x position
+    %           av_shankIDs: shank ID
+    %
+    %       Related to templates
+    %           amps: amplitude
+    %           waveforms: waveform
+    %           waveformsChannels: associated channels
+    %
+    %       Related to clusters (that can be manually curated)
+    %           av_IDs: IDs
+    %           av_KSLabels: labels given by kilosort
+    %           amps: amplitude
+    %           waveforms: waveform
+    %           waveformsChannels: associated channels
+    %           depths: depth
+    %           av_xpos: x position
+    %           av_shankID: shank ID
+    %           peakToTrough: peak to trough time
 
     %% Parameters
 

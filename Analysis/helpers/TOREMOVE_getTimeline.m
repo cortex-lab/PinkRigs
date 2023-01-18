@@ -1,5 +1,15 @@
 function Timeline = getTimeline(varargin)
-    %%% This function will load timeline.
+    %% Loads the timeline structure.
+    %
+    % Parameters:
+    % -------------------
+    % If 1 argument:
+    %       Expects the path to an experiment
+    %
+    % Returns: 
+    % -------------------
+    % ev: struct
+    %   Structure containing all relevant events information.
     
     switch nargin
         case 1

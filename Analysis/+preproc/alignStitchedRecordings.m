@@ -40,7 +40,8 @@ alignmentFile = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
 alignment = load(fullfile(alignmentFile.folder,alignmentFile.name),'ephys','block');
 
 expPath = expInfo.expFolder{1};
-block = getBlock(expPath);
+[subject, expDate, expNum] = parseExpPath(expPath);
+load(fullfile(expPath, [expDate '_' expNum '_' subject '_block.mat']),'block');
 
 spk = cell(1,numel(alignment.ephys));
 sp = cell(1,numel(alignment.ephys));
@@ -48,7 +49,7 @@ sp = cell(1,numel(alignment.ephys));
 for probeNum = 1:numel(alignment.ephys)
     % Get spikes times & cluster info
     % the KSdir might be different down the line...
-    [spk{probeNum},sp{probeNum}] = preproc.getSpikeData(alignment.ephys(probeNum).ephysPath,paramsKS);
+    [spk{probeNum},sp{probeNum}] = preproc.getSpikeDataONE(alignment.ephys(probeNum).ephysPath,paramsKS);
     
     spk{probeNum}.spikes.time = preproc.align.event2Timeline(spk{probeNum}.spikes.time, ...
         alignment.ephys(probeNum).originTimes,alignment.ephys(probeNum).timelineTimes);
