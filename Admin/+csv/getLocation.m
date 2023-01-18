@@ -1,6 +1,16 @@
 function csvLocation = getLocation(subject)
-    %%% This function will find the location of the CSV for a subject (or
-    %%% the main CSV if input is 'main', or the 'kilosort_queue').
+    %% Find the location of the CSV for a subject. 
+    % Note: can also be used to find the main CSV if input is 'main'
+    %
+    % Parameters:
+    % -------------------
+    % subject: str
+    %   Name of the subject to look for, or 'main'.
+    %
+    % Returns: 
+    % -------------------
+    % csvLocation: str
+    %   Path to the csv.
     
     if iscell(subject); subject = subject{1}; end
     csvPath = '\\zinu.cortexlab.net\Subjects\PinkRigs\';
@@ -8,8 +18,5 @@ function csvLocation = getLocation(subject)
     if strcmp(subject,'main')
         subject = '!MouseList';
     end
-        
-    if strcmp(subject,'kilosort_queue')
-        subject = 'Helpers\kilosort_queue';
-    end
+
     csvLocation = fullfile(csvPath, [subject '.csv']);

@@ -6,6 +6,12 @@ function extractExpData(varargin)
     
     % Parameters
     % ------------------
+    % Classic PinkRigs inputs (optional).
+    % recompute: cell of str
+    %   What to recompute. Can contain:
+    %       'none', 'all', 'ephys', etc.
+    % process: cell of str
+    %   What to process, similarly to 'recompute'. Can contain:
     % KSversion: str
     %    'PyKS' or 'KS2'
    

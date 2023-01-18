@@ -1,9 +1,11 @@
 function errorMessages = fetchErrorMessage(varargin)
     %% This function will return all the error messages.
     %
-    % Parameters (optional):
+    % Parameters:
     % -------------------
-    % Classic PinkRigs inputs.
+    % Classic PinkRigs inputs (optional).
+    % videoNames: cell of str
+    %   Specific list of video names.
     % whichMessage: cell of str
     %   Which messages to look at. Overall, same names as in the csv.
     %   A few general options are:

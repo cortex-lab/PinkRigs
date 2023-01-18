@@ -1,8 +1,17 @@
 function main(varargin)
-    %%% This function will run the main alignment code, and save the
-    %%% results in the expFolder.
-    %%% Inputs can be a set of parameters (input 1) and/or a list of
-    %%% experiments (input 2), given by their paths.
+    %% Will run the main alignment code, and save the results in the expFolder.
+    %
+    % Parameters:
+    % -------------------
+    % Classic PinkRigs inputs (optional).
+    % recompute: cell of str
+    %   What to recompute. Can contain:
+    %       'none', 'all', 'ephys', etc.
+    % videoNames: cell of str
+    %   Specific list of video names.
+    % process: cell of str
+    %   What to process, similarly to 'recompute'. Can contain:
+    %       'none', 'all', 'ephys', etc.
     
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin)
@@ -11,7 +20,6 @@ function main(varargin)
     varargin = ['process', 'all', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);    
-    %% --------------------------------------------------------
 
     %% Will compute the 'alignment' file for each experiment.
     for ee = 1:size(exp2checkList,1)
@@ -230,7 +238,7 @@ function main(varargin)
                 % Align it
                 try
                     fprintf(1, '* Aligning mic... *\n');
-                    % as the mic is sampled v high and we assume even
+                    % As the mic is sampled v high and we assume even
                     % sampling, we only save the linear fit coeffs. 
                     [~,co] = preproc.align.mic(expInfo);
                     mic.slope = co(1); 
