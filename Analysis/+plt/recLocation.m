@@ -3,8 +3,14 @@ function recLocation(varargin)
     %
     % Parameters:
     % -------------------
-    % Classic PinkRigs input.
-    
+    % Classic PinkRigs input (optional).
+    % pltClusters: bool
+    %   Whether to plot clusters location along the probe.
+    % clustersDays: cell of str
+    %   Specifies from which dates to take the aforementioned clusters.
+    % clustersExpDef: str
+    %   Specifies from which expDef to take the clusters.
+
     %% Get parameters
     varargin = ['expDate', {inf}, varargin];
     varargin = [varargin, 'expDef', {'t'}]; % forced

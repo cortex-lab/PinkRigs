@@ -1,6 +1,6 @@
 function protocolColor = getProtocolColor(protocol)
-    
     %% Get protocol color
+
     switch protocol
         case 'imageWorld_AllInOne'
             protocolColor = [0.7 0.0 0.2];

@@ -1,5 +1,5 @@
 function servers = getServersList
-    %%% This function will output the current list of data servers, by priority order.
+    %% Outputs the current list of data servers, by priority order.
     
     servers = { ...
     '\\zaru.cortexlab.net\Subjects\'; ... %1st

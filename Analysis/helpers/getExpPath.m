@@ -1,7 +1,21 @@
 function expPath = getExpPath(subject, expDate, expNum)
-    %%% This function will output the exact path of an experiment.
-    %%% This is intended to be used outside of the .csv, e.g., when 
-    %%% checking if files have been pushed to the server, etc.
+    %% Outputs the exact path of an experiment.
+    % This is intended to be used outside of the .csv, e.g., when checking 
+    % if files have been pushed to the server, etc.
+    %
+    % Parameters:
+    % -------------------
+    % subject: str
+    %   Name of the subject
+    % expDate: str
+    %   Date of the experiment
+    % expNum: str
+    %   Experiment number
+    %
+    % Returns: 
+    % -------------------
+    % expPath: str
+    %   Path of the experiment folder
     
     % get current list of servers
     servers = getServersList;  
@@ -32,3 +46,4 @@ function expPath = getExpPath(subject, expDate, expNum)
         expPath = [];
         warning('Couldn''t find experiment %s for mouse %s and date %s',expNum,subject,expDate')
     end
+end
