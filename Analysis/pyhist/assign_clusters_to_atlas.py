@@ -179,7 +179,7 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         np.save(ibl_format_path / 'clusters.brainLocationAcronyms_ccf_2017.npy',region_acronym_clus)
         np.save(ibl_format_path / 'clusters.mlapdv.npy',allencoords_ccf_mlapdv)	
     else:
-        print('we could not match channels with posititons.')  
+        print('we could not match channels with posititons for %s' % ibl_format_path.__str__())  
 
 def read_probeSN_from_folder(folderpath):
     """
