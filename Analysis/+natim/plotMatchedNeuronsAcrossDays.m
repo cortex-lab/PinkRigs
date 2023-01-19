@@ -1,4 +1,43 @@
 function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,spikeData,XPos,Depth,days,p,neuronIdx)
+    %% Plots the responses of the clusters and correlations matrix across days
+    %
+    % Parameters:
+    % -------------------
+    % dn: vector
+    %   Set of days to look at
+    % BestMatch: cell
+    %   Contains the cell's best matches across days, as outputted by
+    %   function 'natim.getBestMatch'
+    % BestCorr: cell
+    %   Contains the corresponding correlation for each pair, as outputted 
+    %   by function 'natim.getBestMatch'
+    % BestDist: cell
+    %   Contains the corresponding distance for each pair, as outputted
+    %   by function 'natim.getBestDist'
+    % spikeData: cell
+    %   Data array with binned PSTHs for all clusters for each day
+    % XPos: cell
+    %   X-position of the clusters for each day
+    % Depth: cell
+    %   Depth of the clusters for each day
+    % days: cell
+    %   Number of days from implant date
+    % p: vector
+    %   Contains the parameters used in  [isolim corrlim distlim]
+    %     isolim: minimal isolation distance
+    %     corrlim: minimal correlation
+    %     distlim: maximal distance
+    % neuronIdx: int
+    %   Which example neuron to plot
+    %
+    % Returns:
+    % -------------------
+    % pairAcrossAll: cell
+    %   IDs of the paired clusters across days
+    % noiseCorrStructDur: cell
+    %   Noise correlation structure for each day
+    % sigCorrStructDur: cell
+    %   Signal correlation structure for each day
 
     if ~exist('p','var')
         p = [];

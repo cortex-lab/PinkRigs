@@ -1,4 +1,22 @@
 function [BestDist,distPair] = getBestDist(BestMatch, XPos, Depth)
+    %% Get the distances between best matches.
+    %
+    % Parameters:
+    % -------------------
+    % BestMatch: cell
+    %   Contains the cell's best matches across days, as outputted by
+    %   function 'natim.getBestMatch'
+    % XPos: cell
+    %   X-position of the clusters for each day
+    % Depth: cell
+    %   Depth of the clusters for each day
+    %
+    % Returns:
+    % -------------------
+    % BestDist: cell
+    %   Contains the distance between best matched cells across days
+    % distPair: cell
+    %   Contains the distance between all cells across days
 
     distPair = cell(size(BestMatch,1),size(BestMatch,1));
     for d1 = 1:size(BestMatch,1)

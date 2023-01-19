@@ -1,5 +1,14 @@
 function plotCorrelationStability(corrStruct,dur,days)
-
+    %% Plots the number of clusters across days
+    %
+    % Parameters
+    % ------------------
+    % corrStruct: cell
+    %   Correlation structure for each day (noise or signal)
+    % dur: array
+    %   Number of days between days
+    % days: array
+    %   List of dates
 
     idi = unique(dur(~isnan(dur)));
     corrStructDur = nan(1,numel(idi));

@@ -1,5 +1,26 @@
 function [DepthCorrected, drift] = correctDrift(BestMatch,BestCorr,Depth,plt)
-     
+    %% Computes the drift of the recording based on matched clusters.
+    %
+    % Parameters:
+    % -------------------
+    % BestMatch: cell
+    %   Contains the cell's best matches across days, as outputted by
+    %   function 'natim.getBestMatch'
+    % BestCorr: cell
+    %   Contains the corresponding correlation for each pair, as outputted 
+    %   by function 'natim.getBestMatch'
+    % Depth: cell
+    %   Depth of the clusters for each day
+    % plt: bool
+    %   Whether to plot or not
+    %
+    % Returns:
+    % -------------------
+    % DepthCorrected: cell
+    %   Corrected set of depths.
+    % drift: vector
+    %   Overall drift
+
     if ~exist('plt','var')
        plt = 0;
     end

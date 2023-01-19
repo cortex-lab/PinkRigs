@@ -1,6 +1,39 @@
 function [data, proc, recPathUni] = loadData(varargin)
-    %%% This function will get the natural images data (PSTHs).
-    
+    %% This function will get the natural images data (PSTHs).
+    %
+    % Parameters
+    % ------------------
+    % Classic PinkRigs inputs (optional).
+    % proc: struct
+    %   Contains optional processing parameters:
+    %       window: window around which to compute PSTH
+    %       binSize: size of the bins
+    %       smoothSize: smoothing parameter
+    %       smWin: smoothing window
+    %
+    % Returns:
+    % -------------------
+    % data: struct (size number of days)
+    %   Data structure
+    %     spikeData: data array with binned PSTHs for all clusters
+    %       (of size time x stim ID x neurons x repeats)
+    %     C.XPos: clusters' x position
+    %     C.Depth: clusters' depth
+    %     C.CluID: clusters' ID
+    %     C.CluLab: clusters' label
+    %     C.QM: clusters' quality metrics
+    %     goodUnits: list of good units
+    %     days: corresponding days
+    %     recLoc: tag of recording location
+    % proc: struct
+    %   Contains optional processing parameters:
+    %       window: window around which to compute PSTH
+    %       binSize: size of the bins
+    %       smoothSize: smoothing parameter
+    %       smWin: smoothing window
+    % recPathUni: struct
+    %   List of corresponding recording Paths
+
     %% Get parameters
     mice = csv.readTable(csv.getLocation('main'));
 

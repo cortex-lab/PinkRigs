@@ -1,4 +1,27 @@
 function [units2Keep, pairAcrossAll_pairsOfDays, drift] = getMatchedPool(db,plt)
+    %% Gets the pools of matched neurons across days
+    %
+    % Parameters:
+    % -------------------
+    % db: struct
+    %   Structure containing the data:
+    %     spikeData: data array with binned PSTHs for all clusters
+    %       (of size time x stim ID x neurons x repeats)
+    %     C.XPos: clusters' x position
+    %     C.Depth: clusters' depth
+    %     C.CluID: clusters' ID
+    %     C.CluLab: clusters' label
+    % plt: bool
+    %   Whether to plot figures or not
+    %
+    % Returns:
+    % -------------------
+    % units2Keep: cell
+    %   'Good' units to keep for each day
+    % pairAcrossAll_pairsOfDays: cell
+    %   IDs of the pairs of clusters, across days
+    % drift: vector
+    %   Overall drift
 
     if nargin<2
         plt = 0;

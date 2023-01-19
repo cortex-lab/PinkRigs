@@ -1,6 +1,20 @@
 function [sigCorrStruct,noiseCorrStruct] = getCorrelationStability(spikeData,pairs)
-    %%% Get the correlation of the population correlation structure across
-    %%% days
+    %% Computes the stability of the correlation structures across days
+    %
+    % Parameters:
+    % -------------------
+    % spikeData: cell
+    %   Data array with binned PSTHs for all clusters (of size time x
+    %   stim ID x neurons x repeats)
+    % pairs: cells
+    %   IDs of the paired neurons for each pair of day
+    %
+    % Returns:
+    % -------------------
+    % sigCorrStruct: cell
+    %   Correlation of the pop. signal corr. structure across days 
+    % noiseCorrStruct: cell
+    %   Correlation of the pop. noise corr. structure across days 
 
     sigCorrStruct = nan(size(pairs,1),size(pairs,2));
     noiseCorrStruct = nan(size(pairs,1),size(pairs,2));

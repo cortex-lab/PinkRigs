@@ -1,17 +1,24 @@
 function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
-    %%% This script will perform CCA across days and use the CCA weights of
-    %%% each neurons along the first "cc2keep" components to compute a
-    %%% similarity score (correlation) across sessions.
-    %%% Inputs:
-    %%% - spikeData is a cell of dimension the number of animals.
-    %%% Each contains a matrix of size time x stim ID x neurons x repeats
-    %%% - cc2keep is an optional argument to set the number of canonical
-    %%% components to keep in the correlation analysis.
-    %%% Outputs:
-    %%% - corrWCCA is a cell (of size num. of days x num. of days) that
-    %%% contains all the correlation values of CCA weights of the neurons 
-    %%% across days.
-    %%% - M is a cell (of size num. of days) that contains the CCA weights
+    %% Projects neural responses in lower-dimensional space
+    % This script will perform CCA across days and use the CCA weights of
+    % each neurons along the first "cc2keep" components to compute a
+    % similarity score (correlation) across sessions.
+    %
+    % Parameters:
+    % -------------------
+    % spikeData: cell
+    %   Data array with binned PSTHs for all clusters (of size time x
+    %   stim ID x neurons x repeats)
+    % cc2keep (optional): int
+    %   Number of Canonical components to keep
+    %
+    % Returns:
+    % -------------------
+    % corrWCCA: cell
+    %   Contains all the correlation values of CCA weights of the neurons 
+    %   across days.
+    % W: cell
+    %   Contains the CCA weights
 
     if ~exist('cc2keep','var')
         cc2keep = 1:75;
@@ -30,7 +37,7 @@ function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
         Xwall = cat(2,Xwall, Xw);
         idxall = [idxall, ones(1,s(3))*k];
     end
-    [Uall,Sall,Vall] = svd(Xwall-mean(Xwall), 'econ');
+    [Uall,~,~] = svd(Xwall-mean(Xwall), 'econ');
 
     cc2keep = cc2keep(cc2keep<=size(Uall,2));
     

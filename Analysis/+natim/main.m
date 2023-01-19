@@ -1,6 +1,34 @@
 function [dball, res] = main(varargin)
-    %%% This function will plot the number of clusters across days for a
-    %%% the specified subject(s).
+    %% Plots the number of clusters across days
+    %
+    % Parameters
+    % ------------------
+    % Classic PinkRigs inputs (optional).
+    %
+    % Returns:
+    % -------------------
+    % dball: struct
+    %   Data structure (output of 'natim.loadData')
+    % res: struct
+    %   Results structure
+    %     subjectsAll: cell
+    %       List of subjects
+    %     Nstable: array (nDays x nDays)
+    %       Number of stable clusters across days
+    %     Pstable: array (nDays x nDays)
+    %       Proportion of stable clusters across days
+    %     dur: array (nDays x nDays)
+    %       Number of days between days
+    %     NstableDur: vector (n-interday intervals)
+    %       Number of stable clusters for a certain IDI
+    %     PstableDur: vector (n-interday intervals)
+    %       Proportion of stable clusters for a certain IDI
+    %     idi: vector (n-interday intervals)
+    %       Interday intervals
+    %     noiseCorrStructDur: cell
+    %       Noise correlation structure for each day
+    %     sigCorrStructDur: cell
+    %       Signal correlation structure for each day
     
     %% Get parameters
     mice = csv.readTable(csv.getLocation('main'));

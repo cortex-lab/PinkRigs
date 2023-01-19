@@ -1,10 +1,28 @@
 function [goodUnits,corrProg] = CASMatchingAlgo(C,goodUnits,plt)
-    %%% Match ugly and bad neurons by building a fingerprint using a 
-    %%% starting 'good' population, and adding them to the 'good' 
-    %%% population one by one
-    %%% 'good' units: have been matched for sure
-    %%% 'ugly' units: trying to match those
-    %%% 'bad' units: cannot be matched
+    %% Matches unit across days (WIP)
+    % Match ugly and bad neurons by building a fingerprint using a
+    % starting 'good' population, and adding them to the 'good'
+    % population one by one
+    % 'good' units: have been matched for sure
+    % 'ugly' units: trying to match those
+    % 'bad' units: cannot be matched
+    %
+    % Parameters:
+    % -------------------
+    % C: cell
+    %   Correlation matrices across days
+    % goodUnits: cell
+    %   Indices of the good units
+    % plt: bool
+    %   Whether to plot figures
+    %
+    % Returns:
+    % -------------------
+    % goodUnits: cell
+    %   Indices of the good units
+    % corrProg: vector
+    %   'Cost' function (correlation across xcorr matrices)
+
 
     if nargin<3
         plt = 0;

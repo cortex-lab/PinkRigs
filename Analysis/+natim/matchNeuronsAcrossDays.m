@@ -1,4 +1,29 @@
 function pairAcrossAll = matchNeuronsAcrossDays(dn,BestMatch,BestCorr,BestDist,p)
+    %% Loads the ephys data from a KS folder.
+    %
+    % Parameters:
+    % -------------------
+    % dn: vector
+    %   Set of days to look at
+    % BestMatch: cell
+    %   Contains the cell's best matches across days, as outputted by
+    %   function 'natim.getBestMatch'
+    % BestCorr: cell
+    %   Contains the corresponding correlation for each pair, as outputted 
+    %   by function 'natim.getBestMatch'
+    % BestDist: cell
+    %   Contains the corresponding distance for each pair, as outputted
+    %   by function 'natim.getBestDist'
+    % p: vector
+    %   Contains the parameters used in  [isolim corrlim distlim]
+    %     isolim: minimal isolation distance
+    %     corrlim: minimal correlation
+    %     distlim: maximal distance
+    %
+    % Returns:
+    % -------------------
+    % pairAcrossAll: cell
+    %   IDs of the paired clusters across days
 
     if ~exist('p','var') || isempty(p)
         % hardcoded parameters

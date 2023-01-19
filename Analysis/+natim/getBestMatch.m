@@ -1,13 +1,19 @@
 function [BestMatch, BestCorr] = getBestMatch(corr2check,N)
-    %%% Inputs:
-    %%% - corr2check contains the correlations
-    %%% - N is the number of 'best matches' to output (ordered)
-    %%% Ouputs:
-    %%% - BestMatch is a cell (of size num. of days x num. of days) that
-    %%% contains, for each cluster on day n, the N best matching clusters
-    %%% on day m.
-    %%% - BestCorr contains the correlation scores of the cells defined in
-    %%% Bestmatch.
+    %% Gets the best matches for each neurons across days. 
+    %
+    % Parameters:
+    % -------------------
+    % corr2check: cell
+    %   Correlation structure to use to match cells across days
+    % N: int
+    %   Number of best matches to keep
+    %
+    % Returns:
+    % -------------------
+    % BestMatch: cell
+    %   Contains the cell's N best matches across days
+    % BestCorr: cell
+    %   Contains the cell's N best matches' correlation across days
 
     %% get best correlation/distance for each neuron
     

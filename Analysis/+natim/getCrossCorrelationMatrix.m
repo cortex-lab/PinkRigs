@@ -1,4 +1,21 @@
 function [corrd, lags, mdif] = getCrossCorrelationMatrix(spikeData,lagbins)
+    %% Gets the cross-correlation matrix from spike data
+    %
+    % Parameters:
+    % -------------------
+    % spikeData: cell
+    %   Contains the spiking data for each day
+    % lagbins: vector
+    %   Different lags at which to compute the cross-correlation
+    %
+    % Returns:
+    % -------------------
+    % corrd: cell
+    %   Correlation matrix for each day
+    % lags: cell
+    %   Best lag between neurons
+    % mdif: cell
+    %   Correlation at best lag
 
     corrd = cell(numel(spikeData),1);
     lags = cell(numel(spikeData),1);
