@@ -1,5 +1,17 @@
 function commitChanges2PinkRigRepo(updateMessage)
-%% Function to updated PinkRig repo AND commit changes 
+%% Update the PinkRig repo AND commit changes 
+% 
+% NOTE: This function calls "checkAndUpdatePinkRigRepo" to pull the latest
+% version of the PinkRigs repo, but then ADDITIONALLY commits any changes
+% to the PinkRigs repo from the current local version. If there are
+% conflicts, these will have to be manually resolved.
+%
+%
+% Parameters:
+% ------------
+% updateMessage (default='No update message provided')
+%   The message that will be committed with the update to the PinkRig repo
+
 startFolder = cd;
 cd(fileparts(which('zeldaStartup')));
 checkAndUpdatePinkRigRepo;

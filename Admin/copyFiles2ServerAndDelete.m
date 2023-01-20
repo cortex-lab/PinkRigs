@@ -1,4 +1,18 @@
 function copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMissingDirs)
+%% Copies a list of files to the server and then deletes them locally
+% 
+% Parameters:
+% ------------
+% localFilePaths (required): cell array of strings
+%   A list of all files (full paths) that should be copied
+%
+% serverFilePaths (required): cell array of strings
+%   A list of all destinations (full paths) that should be copied to
+%
+% makeMissingDirs (default=0): logical
+%   A logical to indicate whether file directories should be created if
+%   they don't already exist.
+
 if ~exist('makeMissingDirs', 'var'); makeMissingDirs = 0; end
 serverList = getServersList;
 serverList = cellfun(@(x) x(1:10), serverList, 'uni', 0);

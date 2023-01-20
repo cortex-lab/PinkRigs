@@ -1,9 +1,30 @@
 function log = copyEphysData2ServerAndDelete(localFolder,fid)
-    %% This funtion will need to be run at the end of each experiment/day? and
-    if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
+%% Copies the ephys folder to the server and then deletes it locally
+% 
+% NOTE: At time of writing, this function first checkes that the local
+% folder contains both the "sync.mat" and the and the copressed apbin files
+% before copying any of the folder contents to the server. The purpose of
+% this function is to check this, create a list of what should be copied,
+% and pass that on to "copyFiles2ServerAndDelete"
+%
+% Parameters:
+% ------------
+% localFolder (default='D:\ephysData'): string
+%   the folder where ephys data should be copied from
+%
+% fid (default = []): string
+%   This is (I think) the ID of the current log... written by Celian?
+%
+% Returns: 
+% -----------
+% log: string
+%   A log of the various timings and other useful information during run
+
+
+if ~exist('localFolder', 'var'); localFolder = 'D:\ephysData'; end
     if ~exist('fid', 'var'); fid = []; end
     
-    log = '';  % Save log in case in string in case needs to output
+    log = '';  % Save log in string in case needs to output
     
     log = appendAndPrint(log, sprintf('Starting now %s... \n',datestr(now)), fid);
     localEphysFolders = dir([localFolder '\**\*']);

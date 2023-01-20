@@ -1,5 +1,25 @@
-%% funciton to unnest a cell
 function newCell = unnestCell(nestedCell, complete)
+%% Will unnest a nested cell array
+%
+% NOTE: An example of a "nested" cell would be {{{1}}}. If this was
+% completely un-nested, it would become {1} and if it was un-nested by 1
+% "level" it would become {{1}}
+%
+% Parameters:
+% ------------
+% nestedCell (required): Nested (potentially) cell array
+%   A cell array that the user wants to "un-nest"
+%
+% complete (default=1): logical
+%   If 1, will completely un-nest a cell array, but if 0, will only un-nest
+%   by 1 "level"
+%  
+% 
+% Returns: 
+% -----------
+% newCell: cell array
+%   The un-nested cell array (complete, or by 1 "level"
+
 if ~exist('complete', 'var'); complete = 1; end
 if ~iscell(nestedCell); nestedCell = {nestedCell}; end
 

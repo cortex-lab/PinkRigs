@@ -1,5 +1,6 @@
 function checkOrChangePinkRigsFunc(oldName, newName, fileExt)
 %% Checks, and optionally changes, the instances of a string in the respository 
+% 
 % NOTE: if there is only one input, MATLAB will return a list of all
 % functions that contain the named string. 
 % 

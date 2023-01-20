@@ -1,4 +1,38 @@
 function sigResults = findResponsiveCells(spk,eventTimes,tWin)
+%% Returns p-values for cell responses to a set of event times
+%
+% NOTE: This code uses some tricks so that it can test a lot of clusters
+% with relatively little coding time
+%
+% Parameters:
+% ------------
+% spk (required): stuct/cell array of structs
+%   This is the structure that is output from the PinkRigs pipeline. For
+%   this function spk.spikes.times (spike times) and spk.spikes.clusters
+%   (the cluster ID for each spk), and spk.clusters.IDs (the cluster ID for
+%   each cluster) are used.
+%
+% eventTimes (requied): cell or cell array
+%   Each cell of eventTimes should be the eventTimes relative to which the
+%   significance of each cluster (in the corresponding stuct) will be
+%   evaluated. Note, if you want to test multiple sets of event times with
+%   the same cluster, you can just replicated the "spk" input.
+%  
+% tWin (default=[-0.3 -0.01 0.01 0.3]): nx4 vector
+%   These 4 values represent two time windows relative to the eventTimes
+%   (before and after). In these windows, the mean spike rate will be
+%   calculated and a t-test for before vs after will be performed across
+%   trials. Time 0 is the eventTime, and tWin(1:2) is the pre-event window
+%   and tWin(3:4) is the post-event window.
+%
+%
+% Returns: 
+% -----------
+% sigResults: structure array
+%   .clusterID = clusterIDs for each cluster
+%   .pVal = the p value for the t-test for each cluster
+%   .spikeCountsPre = The spike count during each pre-event window;
+%   .spikeCountsPost = The spike count during each post-event window;
 
 if ~iscell(spk); spk  = {spk}; end
 if iscell(eventTimes); eventTimes = eventTimes{1}; end

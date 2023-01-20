@@ -1,5 +1,27 @@
 function plotData = boxPlots(varargin)
-%% Generate box plots for the behaviour of a mouse/mice
+%% Generates box plots for the behaviour of a mouse/mice
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
+%
+% Parameters: 
+% ---------------
+% Classic PinkRigs inputs (optional)
+%
+% sepPlots (default=nan): logical 
+%   If this is a 1, indicates that plots for a single mouse should be shown
+%   separately across sessions (rather than combining into an average)
+%   
+% expDef (default='t'): string
+%   String indicating which experiment types to include (see
+%   csv.inputValidation, but this will usually be "t" indicating
+%   behavioural sessions
+%
+% plotType (default='res'): string 
+% noPlot (default={0}): logical 
+%
+
+
 %% Input validation and default assingment
 varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
