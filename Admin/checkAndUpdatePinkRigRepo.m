@@ -1,5 +1,9 @@
 function checkAndUpdatePinkRigRepo
-    %% Check and update the local copy of the PinkRig repo
+%% Check and update the local copy of the PinkRig repo
+% NOTE: This function updates the repo from the current version on Github.
+% It is usually run at the "startup" of any MATLAB instance on the
+% PinkRigs. The first time it is run on a new rig, Github login details may
+% need to be setup.
 
     % Go to the pink rig repo folder and get git status
     startFolder = cd;
