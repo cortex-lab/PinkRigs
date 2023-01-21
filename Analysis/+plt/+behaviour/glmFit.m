@@ -10,6 +10,7 @@ varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
 varargin = ['onlyPlt', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
+varargin = ['useLaserTrials', {0}, varargin];
 
 params = csv.inputValidation(varargin{:});
 extracted = plt.behaviour.getTrainingData(params);
@@ -36,7 +37,12 @@ if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure; end
 for i = find(extracted.validSubjects)'
     if ~params.onlyPlt{1}
         currBlock = extracted.data{i};
-        keepIdx = currBlock.response_direction & currBlock.is_validTrial;
+
+        if params.useLaserTrials{1}
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        else
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        end
         currBlock = filterStructRows(currBlock, keepIdx);
         glmData{i} = plt.behaviour.GLMmulti(currBlock, params.modelString{i});
     else
