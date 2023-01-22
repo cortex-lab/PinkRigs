@@ -1,6 +1,22 @@
 function glmData = glmFit(varargin)
 %% Generate GLM plots for the behaviour of a mouse/mice
 %% Input validation and default assingment
+% Parameters: 
+% ---------------
+% modelstring: str
+    % model options: 
+    % 'biasOnly'
+    % 'visOnly' 
+    % 'audOnly'
+    % 'simpLog'; 
+    % 'simpLogSplitV';
+    % 'simpLogSplitA';
+    % 'simpLogSplitVSplitA';
+    % 'simpLogSplitVSplitAUnisensory'
+% plotType: str, res/log
+% fitLineStyle: str, None or '-' etc style for the fit line 
+% datDotStyle: str None or 'x' etc style for datapoints
+%%
 varargin = ['modelString', {'simpLogSplitVSplitA'}, varargin];
 varargin = ['cvFolds', {0}, varargin];
 varargin = ['contrastPower', {0}, varargin];
@@ -11,6 +27,8 @@ varargin = ['noPlot', {0}, varargin];
 varargin = ['onlyPlt', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
 varargin = ['useLaserTrials', {0}, varargin];
+varargin = ['fitLineStyle', {'-'}, varargin];
+varargin = ['datDotStyle', {'.'}, varargin];
 
 params = csv.inputValidation(varargin{:});
 extracted = plt.behaviour.getTrainingData(params);
@@ -34,6 +52,8 @@ axesOpt.figureHWRatio = 1.1;
 
 glmData = cell(length(extracted.data), 1);
 if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure; end
+
+
 for i = find(extracted.validSubjects)'
     if ~params.onlyPlt{1}
         currBlock = extracted.data{i};
@@ -65,7 +85,7 @@ for i = find(extracted.validSubjects)'
     [~, gridIdx] = ismember(glmData{i}.evalPoints, [grids.visValues(:), grids.audValues(:)], 'rows');
     plotData = grids.visValues;
     plotData(gridIdx) = pHatCalculated(:,2);
-    plotOpt.lineStyle = '-';
+    plotOpt.lineStyle = params.fitLineStyle{1};
     plotOpt.Marker = 'none';
 
     if strcmp(params.plotType{i}, 'log')
@@ -89,7 +109,7 @@ for i = find(extracted.validSubjects)'
     plt.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
     plotOpt.lineStyle = 'none';
-    plotOpt.Marker = '.';
+    plotOpt.Marker = params.datDotStyle{1};
     
     visDiff = currBlock.stim_visDiff;
     audDiff = currBlock.stim_audDiff;
