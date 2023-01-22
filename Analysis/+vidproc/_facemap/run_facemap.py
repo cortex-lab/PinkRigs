@@ -1666,7 +1666,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
 
             if num_videos_ran == num_videos_to_run_per_call:
-                print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
+                # print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
                 break
 
             if run_video_compression:
@@ -1687,9 +1687,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
             # look for text file that says that the video is processed
             processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
 
-            if len(processed_facemap_txt_path) != 0:
-                processed_date_is_old = np.zeros((len(processed_facemap_txt_path), ))
-                for nfile, processed_txt_path in enumerate(processed_facemap_txt_path):
+            # processed / processing files
+            processed_or_processing_txt_path = processing_facemap_txt_path + processed_facemap_txt_path
+
+            if len(processed_or_processing_txt_path) != 0:
+                porp_date_is_old = np.zeros((len(processed_or_processing_txt_path), ))
+                for nfile, processed_txt_path in enumerate(processed_or_processing_txt_path):
                     processed_date = os.path.basename(processed_txt_path)[0:10]
 
                     if old_date_to_overwrite is not None:
@@ -1697,9 +1700,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
                             old_date_to_overwrite_dt = datetime.datetime.strptime(old_date_to_overwrite, '%Y-%m-%d')
                             processed_date_dt = datetime.datetime.strptime(processed_date, '%Y-%m-%d')
                             if old_date_to_overwrite_dt > processed_date_dt:
-                                processed_date_is_old[nfile] = 1
+                                porp_date_is_old[nfile] = 1
 
-                if np.all(processed_date_is_old):
+                if np.all(porp_date_is_old):
                     # set face proc file path to empty to trigger recomputation and overwrite
                     processed_facemap_path = []
 
@@ -2090,6 +2093,16 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
 
 
 def main(**csv_kwargs):
+    """
+    Main script for running facemap
+    Parameters
+    ----------
+    csv_kwargs :
+        arguments given to the queryCSV() function to determine which video files to process
+    Returns
+    -------
+
+    """
 
     print('run_facemap called')
 
