@@ -8,8 +8,8 @@ function cellRaster(dat)
 %    "n": number of sets of evTimes
 %    "m": number of evTimes within a set
 %    "q": number of distinct trial groupings for each set of event times
-
-
+%
+%
 % INPUTS(default values)
 % spk(Required)-----------[px1] cell of structs: spike info for p probes in the same recording
 %   spk{1}.spikes.time-------------[sx1] matrix: time of each spike
@@ -18,14 +18,14 @@ function cellRaster(dat)
 %   spk{1}.clusters.ID-------------[cx1] matrix: ID for each cluster
 %   spk{1}.clusters.Depth----------[cx1] matrix: Distance form probe tip for each cluster
 %   spk{1}.clusters.XPos-----------[cx1] matrix: x position for each cluster (0 = shank 0)
-
+%
 % evTimes(Required)-------[nx1] cell array of [mx1] matrices: "n" sets event times
 %   ALTERNATIVELY can be "ev" from the preproc file. See "plotOpt.customPipe" below
 %   NOTE: "nans" will be automatically removed
-
+%
 % triGrps(ones(m,1))-----[nx1] cell array of [mxq] matrices: "q" sets of trial labels for events
 %   NOTE: A uniform label (ones(p,1)) will be added to the first column if absent
-
+%
 % plotOpt-------Struct with optional inputs. Each of these will have default values
 %
 %    .paramTag('default')-----string: identifier for param set in combination with "ev" input
@@ -43,9 +43,9 @@ function cellRaster(dat)
 %    .trialTickTimes([])--[nx1] cell array of [mx1] matrices: additional raster ticks (e.g. movements)
 %
 %    .highlight([])-------[nx1] cell array of [cx1] logical matrices: visually highligts indicated clusters
-
-
-%% Controls:
+%
+%
+% CONTROLS:
 % Up/Down arrow keys:             switch between different clusters
 % Left/Right arrow keys:          switch between different groups of trial labels
 % Shift+Left/Right arrow keys:    switch between different sets of event times

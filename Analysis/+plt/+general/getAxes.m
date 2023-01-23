@@ -1,18 +1,24 @@
 function [axesHandle, figureHandle] = getAxes(axesOpt, idx)
 %% A method for to create and/or select figure and axes for an upcoming plot based on some
-% INPUTS(default values)
-% axesOpt('res')--------String indicating the type of data to plot. Options are
-%	.totalNumOfAxes(1)-----------------The total number of axes in the figure
-%	.axesSize([400 400])---------------Size of each axes in pixels [width height]
-%	.gapBetweenAxes(25)----------------Space (in pixels) between the axes
-%	.btlrMargins([50 50 50 50])--------The total number of axes in the figure
-%	.reposition(1)---------------------Whether to position figure at the top-right of the left-most screen
-%	.numOfRows([])---------------------Specify the number of rows to use (for figures with multiple axes)
-%	.numOfCols([])---------------------Specify the number of columns to use (for figures with multiple axes)
+% Parameters: 
+% ---------------
+% axesOpt(required): struct with following optional fields
+%	.totalNumOfAxes(default=1)             Total num of axes in the figure
+%	.axesSize(default=[400 400])           Size of axes in pixels [width height]
+%	.gapBetweenAxes(default=25)            Space (pixels) between the axes
+%	.btlrMargins(default=[50 50 50 50])    Figure edge margins [bottom, top, left, right]
+%	.reposition(default=1)                 Logical-positions at the top-right of the left-most screen
+%	.numOfRows(default=[])                 Specify the num of rows to use (for figures with multiple axes)
+%	.numOfCols(default=[])                 Specify the number of columns to use (for figures with multiple axes)
+%
+% idx (default=1)
+%   Which axis to select in a figure with multiple axes
 
-% OUTPUTS
-% axesHandle-------------handle for genereated axis
-% figureHandle-----------handle for the figure created/used
+% Returns: 
+% -----------
+% axesHandle: handle for the axes in the figure
+%
+% figureHandle: handle for the figure created/used
 
 %% Set defaults etc.
 %Set detault values

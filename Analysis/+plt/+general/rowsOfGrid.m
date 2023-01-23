@@ -1,4 +1,30 @@
 function rowsOfGrid(xData, yData, lineColors, opt)
+%% Plots the rows of a matrix with specified properties
+%
+% Parameters: 
+% ---------------
+%
+% xData (required): vector
+%   The values for the x-axis (one value for each column in yData)
+%   
+% yData (required): matrix
+%   The values for the y-axis (and each row is plotted separately)
+%
+% lineColors (default=[0,0,0]): matrix
+%   RGB values for the colour of each line (i.e. each row of yData)
+%
+% opt(defaults below): struct with following optional fields
+%	.lineStyle(default=-)             LineStyle (MATLAB standard)
+%	.lineWidth(default=3)             LineWidth (MATLAB standard)
+%	.Marker(default='.')              Marker (MATLAB standard)
+%	.MarkerSize(default=15)           MarkerSize (MATLAB standard)
+%	.lineColors(default=[0,0,0])      lineColors (as above)
+%	.FaceAlpha(default=0.3)           Transparency of error band (patch)
+%	.EdgeColor(default='none')        Edge color for error band (patch)
+%	.errorType(default='patch')       Errors band be a 'patch' (or 'none')
+
+
+
 
 numLines = size(yData,1);
 yData = sort(yData,3);

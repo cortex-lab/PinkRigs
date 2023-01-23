@@ -8,19 +8,41 @@ function plotData = boxPlots(varargin)
 % ---------------
 % Classic PinkRigs inputs (optional)
 %
-% sepPlots (default=nan): logical 
+% sepPlots (default=1/0 one/multiple subjects requested): int 
 %   If this is a 1, indicates that plots for a single mouse should be shown
-%   separately across sessions (rather than combining into an average)
+%   separately across sessions (rather than combining into an average).
 %   
 % expDef (default='t'): string
 %   String indicating which experiment types to include (see
 %   csv.inputValidation, but this will usually be "t" indicating
 %   behavioural sessions
-%
+% 
 % plotType (default='res'): string 
-% noPlot (default={0}): logical 
+%   This allows for different types of plots to be created, but at the 
+%   moment, only 'res' (which is the fraction of rightward choices) exits
 %
-
+% noPlot (default={0}): logical 
+%   Indicates whether the actual plotting should be skipped (and retuning just the data)
+%
+% Returns: 
+% -----------
+% plotData: struct. All fields are cell arrays with one cell per plot.
+%   .subject:    subject(s) in the plot
+%   .xyLabel:    labels for the axes
+%   .axisLimits: colorbar axes limits
+%   .colorMap:   colormap used (nx3 matrix)
+%   .extraInf:   additional info appended to plot title
+%   .nExp:       number of experiments
+%   .plotData:   tha actual data values that go into the box plot
+%   .trialCount: number of trials for each stimulus condition in plot
+%   .totTrials:  total number of trials
+%   .xyValues:   values for the axes
+%
+% Examples: 
+% ------------
+% plotData = plt.behaviour.boxPlots('subject', {'AV009'}, 'expDate', 'last5', 'sepPlots', 0)
+% plotData = plt.behaviour.boxPlots('subject', {'AV008'}, 'noPlot', 1, 'expDate', 'last5')
+% plotData = plt.behaviour.boxPlots('subject', {'AV008'; 'AV009'}, 'expDate', 'last5')
 
 %% Input validation and default assingment
 varargin = ['sepPlots', {nan}, varargin];

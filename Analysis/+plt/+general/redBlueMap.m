@@ -1,10 +1,14 @@
 function colorMap = redBlueMap(numberOfColors)
 %% Creates and M-by-3 matrix defining a colormap blue-white-red
-% INPUTS(default values)
-% numberOfColors(gcf colormap length)--------Number of values in colormap
-
-% OUTPUTS
-% colorMap--------------------------[colorMap, 3] colormap
+% Parameters: 
+% ---------------
+% numberOfColors(default=gcf colormap length)
+%   Number of values in colormap
+%
+% Returns: 
+% ---------------
+% colorMap: [numberOfColorsx3] matrix
+%   The blue-white-red colormap with RGB values for each color
 
 if ~exist('numberOfColors', 'var'); numberOfColors = size(get(gcf,'colormap'),1); end
 

@@ -1,8 +1,47 @@
 function extracted = getTrainingData(varargin)
+%% Loads and combines training data from specified sessions
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
+%
+% NOTE: This function is used for Pip's plotting functions. For more
+% general loading of data, use csv.loadData (which is also used in this
+% function)
+%
+% Parameters: 
+% ---------------
+% Classic PinkRigs inputs (optional)
+%
+% sepPlots (default=nan): int 
+%   If 1, indicates that a single mouse should split into separated cells 
+%   in the output (one cell for each session), rather than combining 
+%   sessions from each mouse.
+%   
+% expDef (default='t'): string
+%   String indicating which experiment types to include (see
+%   csv.inputValidation, but this will usually be "t" indicating
+%   behavioural sessions
+% 
+% Returns: 
+% -----------
+% extracted: struct. All fields are cell arrays with one cell per subject. 
+%   .subject:        subject(s)
+%   .blkDates:       experiment dates for each subject
+%   .rigNames:       rig names for each experiment
+%   .AVParams:       list of AV combinations for each subject
+%   .nExp:           number of experiments per subject
+%   .data:           event data loaded through csv.loadData
+%   .validSubjects:  indicates whether data was actually found
+%   NOTE: if sepPlots=1, multiple cells can have the same subject
+%   NOTE: errors if no data is found for any subject (e.g. dates are wrong) 
+%
+% Examples: 
+% ------------
+% extracted = plt.behaviour.getTrainingData('subject', {'AV009'}, 'expDate', 'last10', 'sepPlots', 1)
+% extracted = plt.behaviour.getTrainingData('subject', {'AV008';'AV009'}, 'expDate', 'last10', 'sepPlots', 0)
+
 varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
-varargin = ['plotType', {'res'}, varargin];
-varargin = ['noPlot', {0}, varargin];
 params = csv.inputValidation(varargin{:});
 
 if length(params.subject) > 1 && isnan(params.sepPlots{1})

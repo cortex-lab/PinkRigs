@@ -1,4 +1,49 @@
 function logOddsLR = GLMMultiModels(obj, tag, P)
+%% Interprets the modelString from GLMmulti and fits accordingly
+%
+% NOTE: below is a description of the models. Please add to this as needed
+% The strings operate on a "contains" model. i.e. you could combine
+% different strings like "simpLog" and splitV"--simpLogSplitVSplitA. A full
+% list of accepted strings is at the bottom
+%
+% biasOnly: only a bias term
+%
+% visOnly: only visual terms AND bias term
+% 
+% audOnly: only aud terms terms AND bias term
+%
+% simpLog: standard simple model: log(PR/PL) = p1 +p2*V^p3+p4*A
+%
+% splitV: separate visual parameters for L and R
+%
+% splitA: separate auditory parameters for L and R
+%
+% Unisensory: Only fit with unisensory trials
+%
+% AudDom: Vis params are zero on conflict trials
+%
+% ExtraAudDom: Parameter added to conflict trials
+%
+% SplitT: All multisensory combinations (con/coh and l/r) have params
+%
+% FullEmp: Every condition has a paramter
+%
+% Full list of strings:
+% ---------------------
+% 'biasOnly'
+% 'visOnly'
+% 'audOnly'
+% 'simpLog'
+% 'simpLogSplitV'
+% 'simpLogSplitA'
+% 'simpLogSplitVSplitA'
+% 'simpLogSplitVSplitAUnisensory'
+% 'simpLogSplitVSplitAAudDom'
+% 'simpLogSplitVSplitAAudExtraDom'
+% 'simpLogSplitVSplitASplitT'
+% 'fullEmp'
+
+
 if ~exist('P', 'var'); obj.modelString = tag; end
 [obj.dataBlock.audValues, uniA] = deal(unique(obj.dataBlock.stim_audDiff));
 [obj.dataBlock.visValues, uniV] = deal(unique(obj.dataBlock.stim_visDiff));

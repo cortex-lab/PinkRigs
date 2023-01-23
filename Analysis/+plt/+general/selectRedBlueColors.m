@@ -1,8 +1,24 @@
 function colorChoices = selectRedBlueColors(values, zeroTag)
-%% A function that returns a set of red(max) to blue(min) 
-% INPUTS(default values)
-% values(required)-------------These are the values to get colors for. Positive values will be given red colors, negative will be given blue.
-% zeroTag([0.5 0.5 0.5])-------The color of "zero" values
+%% Returns a set of red(max) to blue(min) RGB color values
+%
+% NOTE: when requesting colours, the colors will be scaled by the absolute
+% of the largest value requested
+%
+%
+% Parameters: 
+% ---------------
+% values(required): vector
+%   These the values to query. +ve will be red colors, -ve will be blue.
+% 
+% zeroTag(default=[0.5 0.5 0.5])
+%   The color of "zero" values
+%
+%
+% Returns: 
+% -----------
+% colorChoices: matrix
+%   An nx3 metrix of RGB values for the color-values requested
+
 
 if ~exist('zeroTag', 'var'); zeroTag = 0.5*ones(1,3); end
 allColors = plt.general.redBlueMap(255);

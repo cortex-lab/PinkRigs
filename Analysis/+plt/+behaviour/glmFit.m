@@ -1,29 +1,87 @@
 function glmData = glmFit(varargin)
-%% Generate GLM plots for the behaviour of a mouse/mice
-%% Input validation and default assingment
+%% Generates GLM plots for the behaviour of a mouse/mice
+% 
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
+% 
+% Parameters: 
+% ---------------
+% Classic PinkRigs inputs (optional)
+%
+% modelString (default={'simpLogSplitVSplitA'}): string 
+%   Indicates which model to fit. Different strings are interpreted in
+%   the script "GLMMultiModels.m" 
+%
+% sepPlots (default=0): int 
+%   If this is a 1, indicates that plots for a single mouse should be shown
+%   separately across sessions (rather than combining into an average).
+%   
+% expDef (default='t'): string
+%   String indicating which experiment types to include (see
+%   csv.inputValidation, but this will usually be "t" indicating
+%   behavioural sessions
+% 
+% plotType (default='res'): string 
+%   If 'log' then log(probR/ProbL) will be plotted on the y-axis
+%
+% noPlot (default={0}): logical 
+%   Indicates whether the actual plotting should be skipped (retuning just data)
+%
+% contrastPower (default={0}): double 
+%   If you want to use a specific contrast power for the 'log' plot. If
+%   this is zero, then power calculated in fitting is usedd for each plot
+%
+% cvFolds (default={0}): int 
+%   Indicates the number of cross-validation folds to use
+%
+% useCurrentAxes (default={0}): logical
+%   If 1, will use the current axes to make the plot, rather than
+%   generating new axes/figure
+%
+% onlyPlt (default={0}): logical 
+%   If 1, will plot data without actually fitting. 
+%   NOTE: this is only for use when plotting GLM data already "extracted"
+%
+% Returns: 
+% -----------
+% glmData: cell array. One cell per plot, contains GLMmulti class object 
+%   .modelString: modelString used
+%   .prmLabels:   labels for the parameters used
+%   .prmFits:     fitted values for paramters used
+%   .prmBounds:   bounds used for fitting (not confidence interval)
+%   .prmInit:     initial values for paramters used
+%   .dataBlock:   behaviour data used for fitting (struct)
+%   .pHat:        fitting information
+%   .logLik:      logliklihood for final fit
+%   .evalPoints:  points at which the curve was evaluated
+%   .initGuess:   inital guess for values
+%
+% Examples: 
+% ------------
+% glmData = plt.behaviour.glmFit('subject', {'AV009'}, 'expDate', 'last5', 'sepPlots', 1)
+% glmData = plt.behaviour.glmFit('subject', {'AV009'}, 'expDate', 'last5', 'modelString', 'visOnly')
+% glmData = plt.behaviour.glmFit('subject', {'AV008'; 'AV009'}, 'expDate', 'last5', 'plotType', 'log')
+% glmData = plt.behaviour.glmFit('subject', {'AV008'; 'AV009'}, 'expDate', 'last5', 'plotType', 'log')
+
+
 varargin = ['modelString', {'simpLogSplitVSplitA'}, varargin];
-varargin = ['cvFolds', {0}, varargin];
-varargin = ['contrastPower', {0}, varargin];
 varargin = ['sepPlots', {0}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
-varargin = ['onlyPlt', {0}, varargin];
+varargin = ['contrastPower', {0}, varargin];
+varargin = ['cvFolds', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
+varargin = ['onlyPlt', {0}, varargin];
+extracted = plt.behaviour.getTrainingData(varargin{:});
+if ~any(extracted.validSubjects)
+    fprintf('WARNING: No data found for requested subjects... Returning \n');
+    return
+end
 
+% Deals with sepPlots=1 where subjects are repliacted in getTrainingData
+varargin = [varargin, 'subject', {extracted.subject}];
 params = csv.inputValidation(varargin{:});
-extracted = plt.behaviour.getTrainingData(params);
-for i = find(extracted.validSubjects)'
-    currBlock = extracted.data{i};
-    keepIdx = currBlock.response_direction & currBlock.is_validTrial;
-    usefulday(i) = sum(keepIdx)>0;
-end
-
-fn = fieldnames(extracted);
-for k=1:numel(fn)
-    extracted.(fn{k})(find(usefulday==0),:)=[];
-        % do stuff
-end
 
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];

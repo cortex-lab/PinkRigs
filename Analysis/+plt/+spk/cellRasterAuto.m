@@ -1,4 +1,31 @@
 function cellRasterAuto(varargin)
+%% Audomatically formats requested mouse experiments for plt.spk.cellRaster
+%
+% NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
+% name-value pairs, including those specific to this function
+% 
+% Parameters: 
+% ---------------
+% Classic PinkRigs inputs (optional)
+%
+% subject (required): string
+%   NOTE: Although csv.inputValidation will run without a "subject" provied
+%   this function will likely error
+%
+% expDef (default = {{{'t'; 'p'}}}): cell of strings
+%   Specifies the experiments to load for each mouse. This default will
+%   load both active and passive sessions
+%
+% paramTag (default='default'): string
+%   This allows the user to "tag" the function that should process the
+%   data. The default is "plt.spk.rasterParams.defaultActivePassive". This
+%   can be any function stored in the "+rasterParams" folder and can be
+%   used to subset or manipulate data before calling cellRaster
+%   
+% checkSpikes (default=1): logical
+%   This is used within csv.queryExp so that only sessions with extracted
+%   spike data are included
+
 varargin = ['expDef', {{{'t'; 'p'}}}, varargin];
 varargin = ['paramTag', 'default', varargin];
 varargin = ['checkSpikes', '1', varargin];
