@@ -256,6 +256,19 @@ def run_facemap(video_fpath):
 
 
 def update_mainwindow(MainWindow, GUIobject, s, prompt):
+    """
+    Facemap GUI function
+    Parameters
+    ----------
+    MainWindow
+    GUIobject
+    s
+    prompt
+
+    Returns
+    -------
+
+    """
     if MainWindow is not None and GUIobject is not None:
         message = s.getvalue().split('\x1b[A\n\r')[0].split('\r')[-1]
         MainWindow.update_status_bar(prompt + message, update_progress=True)
@@ -263,6 +276,19 @@ def update_mainwindow(MainWindow, GUIobject, s, prompt):
 
 
 def spatial_bin(im, sbin, Lyb, Lxb):
+    """
+    Facemap processing function
+    Parameters
+    ----------
+    im
+    sbin
+    Lyb
+    Lxb
+
+    Returns
+    -------
+
+    """
     imbin = im.astype(np.float32)
     if sbin > 1:
         imbin = (np.reshape(im[:, :Lyb * sbin, :Lxb * sbin], (-1, Lyb, sbin, Lxb, sbin))).mean(axis=-1).mean(axis=-2)
@@ -271,6 +297,18 @@ def spatial_bin(im, sbin, Lyb, Lxb):
 
 
 def imall_init(nfr, Ly, Lx):
+    """
+    Facemap processing function
+    Parameters
+    ----------
+    nfr
+    Ly
+    Lx
+
+    Returns
+    -------
+
+    """
     imall = []
     for n in range(len(Ly)):
         imall.append(np.zeros((nfr, Ly[n], Lx[n]), 'uint8'))
@@ -279,6 +317,8 @@ def imall_init(nfr, Ly, Lx):
 
 def compute_SVD(containers, cumframes, Ly, Lx, avgframe, avgmotion, motSVD=True, movSVD=False,
                 ncomps=500, sbin=3, rois=None, fullSVD=True, GUIobject=None, MainWindow=None):
+    """
+    Facemap processing function
     # compute the SVD over frames in chunks, combine the chunks and take a mega-SVD
     # number of components kept from SVD is ncomps
     # the pixels are binned in spatial bins of size sbin
@@ -288,6 +328,28 @@ def compute_SVD(containers, cumframes, Ly, Lx, avgframe, avgmotion, motSVD=True,
     # Return:
     #       U_mot: motSVD
     #       U_mov: movSVD
+    Parameters
+    ----------
+    containers
+    cumframes
+    Ly
+    Lx
+    avgframe
+    avgmotion
+    motSVD
+    movSVD
+    ncomps
+    sbin
+    rois
+    fullSVD
+    GUIobject
+    MainWindow
+
+    Returns
+    -------
+
+    """
+
     sbin = max(1, sbin)
     nframes = cumframes[-1]
 
@@ -440,11 +502,37 @@ def compute_SVD(containers, cumframes, Ly, Lx, avgframe, avgmotion, motSVD=True,
 
 def process_ROIs(containers, cumframes, Ly, Lx, avgframe, avgmotion, U_mot, U_mov, motSVD=True, movSVD=False,
                  sbin=3, tic=None, rois=None, fullSVD=True, GUIobject=None, MainWindow=None):
-    # project U onto each frame in the video and compute the motion energy for motSVD
+    """
+    Facmeap processing function
+        # project U onto each frame in the video and compute the motion energy for motSVD
     # also compute pupil on single frames on non binned data
     # the pixels are binned in spatial bins of size sbin
     # containers is a list of videos loaded with av
     # cumframes are the cumulative frames across videos
+    Parameters
+    ----------
+    containers
+    cumframes
+    Ly
+    Lx
+    avgframe
+    avgmotion
+    U_mot
+    U_mov
+    motSVD
+    movSVD
+    sbin
+    tic
+    rois
+    fullSVD
+    GUIobject
+    MainWindow
+
+    Returns
+    -------
+
+    """
+
     if tic is None:
         tic = time.time()
     nframes = cumframes[-1]
@@ -605,6 +693,7 @@ def process_ROIs(containers, cumframes, Ly, Lx, avgframe, avgmotion, U_mot, U_mo
 def run_facemap_mod(filenames, motSVD=True, movSVD=False, GUIobject=None, parent=None,
                     proc=None, savepath=None, verbose=True):
     '''
+    Modified version of the facemap function so it works without a GUI
     Parameters
     ----------
     filenames : list of names of video(s) to get
@@ -948,7 +1037,18 @@ def update_file_list(all_mouse_info, file_list_csv_path=None, load_from_server=F
 
 
 def get_mouse_info_csv_paths(subset_mice_to_use=None, subset_date_range=None):
+    """
+    Obtains a dataframe with information about each experiment, from the CSVs provided in the
+    pink rig folder
+    Parameters
+    ----------
+    subset_mice_to_use
+    subset_date_range
 
+    Returns
+    -------
+
+    """
     if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
         main_info_folder_in_server = True
         mouse_info_folder = 'smb://zserver.local/code/AVrig/'
@@ -986,6 +1086,12 @@ def get_mouse_info_csv_paths(subset_mice_to_use=None, subset_date_range=None):
 
 
 def update_mouse_csv_record():
+    """
+    Updates information about the csv on the server
+    Returns
+    -------
+
+    """
 
     if socket.gethostname() == 'timothysit-cortexlab':  # Tim's Desktop
         main_info_folder_in_server = True
@@ -1061,7 +1167,7 @@ def update_mouse_csv_record():
 
 def plot_facemap_results():
     """
-
+    Plots the facemap output
     Returns
     -------
 
@@ -1666,7 +1772,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
 
             if num_videos_ran == num_videos_to_run_per_call:
-                print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
+                # print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
                 break
 
             if run_video_compression:
@@ -1687,9 +1793,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
             # look for text file that says that the video is processed
             processed_facemap_txt_path = glob.glob(os.path.join(exp_folder, '*%s_processed.txt' % video_fov))
 
-            if len(processed_facemap_txt_path) != 0:
-                processed_date_is_old = np.zeros((len(processed_facemap_txt_path), ))
-                for nfile, processed_txt_path in enumerate(processed_facemap_txt_path):
+            # processed / processing files
+            processed_or_processing_txt_path = processing_facemap_txt_path + processed_facemap_txt_path
+
+            if len(processed_or_processing_txt_path) != 0:
+                porp_date_is_old = np.zeros((len(processed_or_processing_txt_path), ))
+                for nfile, processed_txt_path in enumerate(processed_or_processing_txt_path):
                     processed_date = os.path.basename(processed_txt_path)[0:10]
 
                     if old_date_to_overwrite is not None:
@@ -1697,9 +1806,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
                             old_date_to_overwrite_dt = datetime.datetime.strptime(old_date_to_overwrite, '%Y-%m-%d')
                             processed_date_dt = datetime.datetime.strptime(processed_date, '%Y-%m-%d')
                             if old_date_to_overwrite_dt > processed_date_dt:
-                                processed_date_is_old[nfile] = 1
+                                porp_date_is_old[nfile] = 1
 
-                if np.all(processed_date_is_old):
+                if np.all(porp_date_is_old):
                     # set face proc file path to empty to trigger recomputation and overwrite
                     processed_facemap_path = []
 
@@ -2090,6 +2199,16 @@ def run_summarize_progress(load_from_server=True, video_ext='.mj2'):
 
 
 def main(**csv_kwargs):
+    """
+    Main script for running facemap
+    Parameters
+    ----------
+    csv_kwargs :
+        arguments given to the queryCSV() function to determine which video files to process
+    Returns
+    -------
+
+    """
 
     print('run_facemap called')
 

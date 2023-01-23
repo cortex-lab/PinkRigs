@@ -24,15 +24,25 @@ def smooth_spikes(spike_train, method='full_gaussian', sigma=2, window_width=50,
     """
     Smooths spike trains.
     Parameters
-    -------------
-    spike_train   : option (1): numpy array of shape (num_time_bin, ) to smooth
-                    option (2): numpy array of shape (num_time_bin, num_trial)
-    method        : method to perform the smoothing
-                   'half_gaussian': causal half-gaussian filter
-                   'full_gaussian': standard gaussian filter
-    sigma : (int)
-    window_width : (int)
+    ----------
+    spike_train : numpy ndarray
+        option (1): numpy array of shape (num_time_bin, ) to smooth
+        option (2): numpy array of shape (num_time_bin, num_trial),
+                    in which case each trial will be smoothed separately
+    method : str
+        method to perform the smoothing
+        'half_gaussian': causal half-gaussian filter
+        'full_gaussian': standard gaussian filter
+    sigma : int
+        standard deviation of the gaussian kernel to smooth with
+    window_width : int
+        width of the smoothing window in time bins
     custom_window : if not None, then convolve the spike train with the provided window
+
+    Returns
+    -------
+    smoothed_spike_train : numpy ndarray
+
     TODO: need to polish handling of edge cases for convolution.
     """
 
@@ -83,17 +93,25 @@ def smooth_spikes(spike_train, method='full_gaussian', sigma=2, window_width=50,
 
 def spike_trains_to_spike_rates(spike_trains, bin_size=2 / 1000, start_time=0, end_time=3000):
     """
-
+    Convert spike trains to spike rates
     Parameters
     ----------
-    spike_trains
-    bin_size
-    start_time
+    spike_trains : list of numpy ndarrays
+        each item of a list is a numpy ndarray of shape (numSpikes, ) corresponding to a neuron
+        within each numpy array are a series of spike times (in seconds)
+    bin_size  : float
+        what is the bin size for counting spikes, in seconds
+    start_time : float
+        when to start counting spikes (eg. at the beginning of the experiment)
     end_time
-
+        when to stop counting spikes (eg. at the end of the experiment)
     Returns
     -------
-
+    spike_matrix : numpy ndarray
+        matrix of shape (num_time_bins, num_neurons)
+        where each element is the spike rate at time t (row) for neuron x (column)
+    bins_used : numpy ndarray
+        1D array of shape (num_time_bins, )
     """
     bins = np.arange(start_time, end_time, bin_size)
     num_neurons = len(spike_trains)
@@ -110,18 +128,24 @@ def spike_trains_to_spike_rates(spike_trains, bin_size=2 / 1000, start_time=0, e
 
 def align_spike_rate(event_times, spike_bin_times, spike_rate, time_before_align=0, time_after_align=0.3):
     """
-
+    Align spike rate to some specified event during an experiment
     Parameters
     ----------
-    event_times
-    spike_bin_times
-    spike_rate
-    time_before_align
-    time_after_align
-
+    event_times : list
+        list of times (in seconds) in which the event occured
+    spike_bin_times : list or numpy ndarray
+        series of spike bin times
+    spike_rate : numpy ndarray
+        matrix of shape (num_time_bins, num_neurons) with the spike rate of each neuron
+    time_before_align : float
+        time before the event (in seconds) to obtain
+    time_after_align : float
+        time after the event (in seconds) to obtain
     Returns
     -------
-
+    aligned_spike_matrix : numpy ndarray
+        matrix of shape (num_time_bins, num_trial, num_neuron) with the spike rate of each neuron,
+        where num_trial is the total number of event occurences
     """
     num_neurons = np.shape(spike_rate)[1]
     num_event = len(event_times)
@@ -145,19 +169,33 @@ def cal_two_cond_max_diff(spike_rate, cond_1_times, cond_2_times, bins_used,
                           time_before_align=0, time_after_align=0.3,
                           ave_method_across_trials='mean'):
     """
-
+    Calculates the maximum difference in spike rate between two conditions - cond_1 and cond_2, averaged across trials
     Parameters
     ----------
-    spike_rate
-    cond_1_times
-    cond_2_times
-    bins_used
-    time_before_align
-    time_after_align
-
+    spike_rate : numpy ndarray
+        matrix of shape (num_time_bins, num_neurons) with the spike rate of each neuron
+    cond_1_times : list
+        list of times (seconds) in which the event corresponding to condition 1 occured
+    cond_2_times : list
+        list of times (seconds) in which the event corresponding to condition 2 occured
+    bins_used : list of numpy ndarray
+        series of times in which the spike_rate was binned
+    time_before_align : float
+        time before the event (in seconds) to obtain
+    time_after_align : float
+        time after the event (in seconds) to obtain
+    ave_method_across_trials : str
+        the method to obtain the average activity across trials for each condition
+        'mean' : takes the mean
+        'median' : takes the median
     Returns
     -------
-
+    max_abs_diff : numpy ndarray
+        matrix of shape (num_neuron, ), where each element is the maximum difference
+    max_sign : int
+        the sign of the difference, if +1, then cond_1 > cond_2, if -1, then cond_1 < cond_2
+    max_abs_diff_idx : int
+        the index of the location of maximum difference
     """
 
     aligned_spike_matrix_1 = align_spike_rate(

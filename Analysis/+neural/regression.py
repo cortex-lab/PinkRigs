@@ -32,23 +32,34 @@ import pdb
 def spike_df_to_xarray(spike_df, time_bin_width=0.005, bin_start=None, bin_end=None,
                        implementation='loop', meta_dict=None, include_cell_w_no_spike=False,
                        neuron_id=None):
-    # TODO: move this to some general spike util script
     """
     Converts spike times in spike_df to spike rates, represented as an xarray object.
     Xarray objects can easily be converted to numpy arrays.
     Parameters
     -----------
-    :param spike_df: (pandas dataframe)
-    :param time_bin_width: length (seconds) to bin spikes
-    :param bin_start     : when to start binning (if None, then start from first spike)
-    :param bin_end       : when to stop binning (if None, then end at last spike)
-    include_cell_w_no_spike : (bool)
+    spike_df: pandas dataframe
+        dataframe with the spike times of each neuron
+        the dataframe should contain two columns:
+            'spikeTime' - time of the spike in seconds
+            'cellId' - the identity of the cell (represented with integers or strings)
+    time_bin_width : float
+        length (seconds) to bin spikes
+    bin_start : float
+        when to start binning (in seconds)
+        (if None, then start from first spike)
+    bin_end : float
+        when to stop binning (if None, then end at last spike)
+    include_cell_w_no_spike : bool
         whether to include cells with no spikes
-    neuron_id : (list)
+    neuron_id : list
         list of unique neuron ids
-    Output
-    ----------
-    binned_spike_ds : (xarray dataset)
+
+    Returns
+    --------
+    binned_spike_ds : xarray dataset
+        dataset with dimensions (cell, bin_start)
+        and attributes time_bin_width and time_bins
+    # TODO: move this to some general spike util script
     """
 
     if bin_start is None:
@@ -103,6 +114,15 @@ def spike_df_to_xarray(spike_df, time_bin_width=0.005, bin_start=None, bin_end=N
 def get_event_times(behave_df, event_name, rounding=None):
     """
     Extract time of event of interest into a vector.
+    Parameters
+    ----------
+    behave_df : pandas dataframe
+        table with information about the experiment times and trial conditions
+    event_name : str
+        name of the event to extract the event times
+    rounding : int
+        decimal place to round the event time (in seconds) to
+        if None, then no rounding occurs
     """
 
     if 'StimPeriodOnOff' in event_name:
@@ -252,6 +272,11 @@ def get_diag_value_vector(behave_df, event_name):
     Obtain the value to fill the diagonal of the toeplitz matrix of each trial.
     This is usually via some rule mapping from left/right to some values.
     Note that the different diagonal values should sum to 1, eg. left=-1, right=+1, no-go:0
+
+    Parameters
+    ----------
+    behave_df : pandas dataframe
+    event_name : str
     """
 
     if event_name == 'audDiff':
@@ -725,6 +750,24 @@ def make_target_matrix(spike_df, bin_width=0.05):
 
 def make_aligned_target_matrix(target_spike_ds, behaviour_df, event_name, event_start_ends,
                                bin_width, method='xarray'):
+    """
+    Makes a target regression matrix Y from dataset with spike activity and event times of interest
+    Parameters
+    ----------
+    target_spike_ds : xarray dataset
+    behaviour_df : pandas dataframe
+    event_name : str
+    event_start_ends : list
+        list with two elements, representing the support of the kernel aligned to event onset in seconds
+        Eg. [-1, 2] will mean the kernel goes from one second before the event onset to two seconds after the onset
+    bin_width : float
+        width of spike time binning used in target_spike_ds
+    method : str
+        whether the input given in target_spike_ds is an xarray dataset ('xarray') or numpy ndarray ('numpy')
+    Returns
+    -------
+    TODO: numpy method not supported yet
+    """
     event_bin_start = event_start_ends[0]
     event_bin_end = event_start_ends[1]
     if method == 'numpy':
@@ -1606,12 +1649,12 @@ def test_kernel_significance(model, X, y, feature_column_dict,
     """
     Test the significance of each kernel in the feature matrix.
     Parameters
-    ----------------
-    model  : (scikit-learn model class)
+    ----------
+    model  : scikit-learn model class
         sklearn model object with set hyperparameters (but not fitted to data yet)
         can also be a sklearn pipeline where hyperparameter tuning is done via cross validation
         within the training set.
-    X : (numpy ndarray)
+    X : numpy ndarray
         feature matrix of shape (num_time_bin, num_neuron)
     y : (numpy ndarray)
         target matrix of shape (num_time_bin, num_neuron)
@@ -1633,8 +1676,8 @@ def test_kernel_significance(model, X, y, feature_column_dict,
         eg. Steinmetz 2018 define a significant kernel as having more than 2% variacne
         explained in the test set (on average)
     Returns
-    --------------
-    kernel_sig_results (pandas dataframe)
+    -------
+    kernel_sig_results pandas dataframe
         dataframe with colummns : (1) kernel name (2) neuron (3) explained variance (4) cv number
     """
 
@@ -2060,6 +2103,24 @@ def combine_variance_explained_and_ANOVA_result(combined_model_var_explained_df,
 
 def single_test_kernel_sig(X, Y, model, feature_column_dict, event, trial_vector,
                            num_cv_folds=10, cv_random_seed=1):
+    """
+    Test for the significance of a particular kernel by comparing the full model with the kernel and a model
+    with the particular kernel of interest removed
+    Parameters
+    ----------
+    X : numpy
+    Y
+    model
+    feature_column_dict
+    event
+    trial_vector
+    num_cv_folds
+    cv_random_seed
+
+    Returns
+    -------
+
+    """
     # model = sklinear.Ridge(alpha=1, fit_intercept=True, solver='auto')
     # model = ReducedRankRegressor(
     #     regressor='Ridge', alpha=1)
@@ -2399,7 +2460,14 @@ def extract_aligned_predictions(fit_result, trial_conds_df, trial_conds_to_plot,
 
 
 def main():
+    """
+    Main script for running regression
 
+    Settings
+    --------
+
+
+    """
     # TODO: simplify below to take in just the exp folder? (need to know how data is stored)
     DATA_FOLDER_PATH = '/media/timsit/Partition 1/data/interim/passive-m2-good-reliable-movement/subset/'
     EPHYS_BEHAVE_FILE = 'ephys_behaviour_df.pkl'
