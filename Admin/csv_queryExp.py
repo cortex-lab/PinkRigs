@@ -14,8 +14,24 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 
-def get_server_location(): 
-    return Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+def get_csv_location(which):
+    """
+    func equivalent to getLocation in matlab
+
+    """
+    server = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+    if 'main' in which: 
+        csvpath = server/'!MouseList.csv'  
+    else
+        csvpath = server / '%s.csv' % which  
+    return csvpath
+
+def get_server_list():
+    [
+        Path(r'\\zinu.cortexlab.net\Subjects'), 
+        Path(r'\\zaru.cortexlab.net\Subjects'),
+        Path(r'\\znas.cortexlab.net\Subjects')
+    ]
 
 def check_date_selection(date_selection,dateList):
     """

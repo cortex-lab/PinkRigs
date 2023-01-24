@@ -14,7 +14,6 @@ def query_and_process_ephys(func=None,funckwargs=None,**kwargs):
 
     """
     # here imports need to be func specific as they are in different environments
-
     recordings = queryCSV(**kwargs)
     for _,r in recordings.iterrows():
     # read corresponding ephys files 

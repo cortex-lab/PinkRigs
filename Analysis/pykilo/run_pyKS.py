@@ -19,7 +19,7 @@ from pykilosort import run, add_default_handler, neuropixel_probe_from_metafile
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_queryExp import get_server_location
+from Admin.csv_queryExp import get_csv_location
 #queue updates and ibl formatter 
 from Analysis.pykilo.check_pyKS_queue import stage_KS_queue
 from Analysis.pykilo.helpers import save_error_message
@@ -112,10 +112,7 @@ def recheck_queue(overwrite=True,my_ephys_name='None',overwrite_value=1):
     overwrite_value: float 
     
     """
-    root = get_server_location()
-    root = root / 'Helpers'
-    queue_csv_file = root / 'pykilosort_queue.csv'
-
+    queue_csv_file = get_csv_location('pyKS_queue')
     queue_csv = pd.read_csv(queue_csv_file)
     if overwrite: 
         rec = queue_csv[queue_csv.ephysName==my_ephys_name]
@@ -142,9 +139,7 @@ def run_pyKS_on_queue(run_for=0.5):
     print('kilo should be running for %.0f hours' % run_for)
     stage_KS_queue(mouse_selection='allActive',date_selection='last7',resort=False)   
  
-    root = get_server_location()
-    root = root / 'Helpers'
-    queue_csv_file = root / 'pykilosort_queue.csv'
+    queue_csv_file = get_csv_location('pyKS_queue')
 
     start_time = time.now()
     check_time = time.now()-start_time

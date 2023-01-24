@@ -8,7 +8,7 @@ import sys
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_queryExp import get_server_location, check_date_selection
+from Admin.csv_queryExp import get_csv_location, check_date_selection
 
 def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
@@ -19,9 +19,8 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     print('dates selected: %s' % date_selection)
 
     # check which mice are active on Master csv
-    root = get_server_location()
+    master_csv = get_csv_location('main')
 
-    master_csv = pd.read_csv(root / '!MouseList.csv')
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject
     elif mouse_selection=='all': 
@@ -33,11 +32,10 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
 
     for mouse in mice_to_check:
         my_dates = pd.DataFrame()
-        subject_csv_name = '%s.csv' % mouse
-        subject_csv_path = root / subject_csv_name
+        subject_csv_path = get_csv_location(mouse)
 
         if subject_csv_path.is_file():
-            subject_csv = pd.read_csv(root / subject_csv_name)
+            subject_csv = pd.read_csv(subject_csv_path)
             my_dates = subject_csv.drop_duplicates('expDate')
             for my_path in my_dates.expFolder:
                 mp = Path(my_path)
@@ -96,7 +94,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     new_recs_to_sort = sum(new_recs_to_sort,[]) 
     print(new_recs_to_sort)
     # clean current queue
-    queue_file = root/ r'Helpers/pykilosort_queue.csv'
+    queue_file = get_csv_location('pyKS_queue')
     old_queue = pd.read_csv(queue_file,index_col=False)
     new_queue = old_queue[old_queue['sortedTag'] != 1]
 
