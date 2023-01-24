@@ -32,11 +32,13 @@ def get_csv_location(which):
     return csvpath
 
 def get_server_list():
-    [
+    server_list = [
         Path(r'\\zinu.cortexlab.net\Subjects'), 
         Path(r'\\zaru.cortexlab.net\Subjects'),
         Path(r'\\znas.cortexlab.net\Subjects')
     ]
+
+    return server_list
 
 def check_date_selection(date_selection,dateList):
     """
