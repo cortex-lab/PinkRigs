@@ -73,16 +73,20 @@ varargin = ['contrastPower', {0}, varargin];
 varargin = ['cvFolds', {0}, varargin];
 varargin = ['useCurrentAxes', {0}, varargin];
 varargin = ['onlyPlt', {0}, varargin];
+varargin = ['fitLineStyle', {'-'}, varargin];
+varargin = ['datDotStyle', {'.'}, varargin];
+varargin = ['useLaserTrials', {0}, varargin];
+
+
+
+% Deals with sepPlots=1 where subjects are repliacted in getTrainingData
+%varargin = [varargin, 'subject', {extracted.subject}];
+params = csv.inputValidation(varargin{:});
 extracted = plt.behaviour.getTrainingData(varargin{:});
 if ~any(extracted.validSubjects)
     fprintf('WARNING: No data found for requested subjects... Returning \n');
     return
 end
-
-% Deals with sepPlots=1 where subjects are repliacted in getTrainingData
-varargin = [varargin, 'subject', {extracted.subject}];
-params = csv.inputValidation(varargin{:});
-
 axesOpt.totalNumOfAxes = sum(extracted.validSubjects);
 axesOpt.btlrMargins = [80 100 80 40];
 axesOpt.gapBetweenAxes = [100 60];
@@ -94,7 +98,12 @@ if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure; end
 for i = find(extracted.validSubjects)'
     if ~params.onlyPlt{1}
         currBlock = extracted.data{i};
-        keepIdx = currBlock.response_direction & currBlock.is_validTrial;
+
+        if params.useLaserTrials{1}
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        else
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        end
         currBlock = filterStructRows(currBlock, keepIdx);
         glmData{i} = plt.behaviour.GLMmulti(currBlock, params.modelString{i});
     else
@@ -117,7 +126,7 @@ for i = find(extracted.validSubjects)'
     [~, gridIdx] = ismember(glmData{i}.evalPoints, [grids.visValues(:), grids.audValues(:)], 'rows');
     plotData = grids.visValues;
     plotData(gridIdx) = pHatCalculated(:,2);
-    plotOpt.lineStyle = '-';
+    plotOpt.lineStyle = params.fitLineStyle{1};
     plotOpt.Marker = 'none';
 
     if strcmp(params.plotType{i}, 'log')
@@ -141,7 +150,7 @@ for i = find(extracted.validSubjects)'
     plt.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
     plotOpt.lineStyle = 'none';
-    plotOpt.Marker = '.';
+    plotOpt.Marker = params.datDotStyle{1};
     
     visDiff = currBlock.stim_visDiff;
     audDiff = currBlock.stim_audDiff;
