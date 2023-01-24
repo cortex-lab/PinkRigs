@@ -113,8 +113,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         concatenated csv of requested experiments and its params 
     """
 
-    root = get_server_location()
-    mainCSVLoc = root / '!MouseList.csv' 
+    mainCSVLoc = get_csv_location('main') 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
     if 'allActive' in subject:
@@ -127,7 +126,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         mouse2checkList = mouseList[mouseList.Subject.isin(subject)]['Subject']
     exp2checkList = []
     for mm in mouse2checkList:
-        mouse_csv = root / (mm  + '.csv')
+        mouse_csv = get_csv_location(mm)
         if mouse_csv.is_file():
             expList = pd.read_csv(mouse_csv,dtype='str')
             expList.expDate=[date.replace('_','-').lower() for date in expList.expDate.values]
