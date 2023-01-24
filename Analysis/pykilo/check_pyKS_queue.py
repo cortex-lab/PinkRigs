@@ -19,7 +19,7 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
     print('dates selected: %s' % date_selection)
 
     # check which mice are active on Master csv
-    master_csv = get_csv_location('main')
+    master_csv = pd.read_csv(get_csv_location('main'))
 
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject

@@ -17,7 +17,7 @@ atlas = AllenAtlas(25) # always register to the 25 um atlas
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Admin.csv_queryExp import get_server_location, check_date_selection
+from Admin.csv_queryExp import get_csv_location, check_date_selection
 from Analysis.pykilo.helpers import save_error_message
 from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
 
@@ -31,8 +31,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     print(date_selection)
 
     # check which mice are active on Master csv
-    root = get_server_location()
-    master_csv = pd.read_csv(root / '!MouseList.csv')
+    master_csv = pd.read_csv(get_csv_location('main'))
     if mouse_selection=='allActive': 
         mice_to_check=master_csv[master_csv['IsActive']==1].Subject
     elif mouse_selection=='all': 
@@ -44,10 +43,9 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
 
     for mouse in mice_to_check:
         my_dates = pd.DataFrame()
-        subject_csv_name = '%s.csv' % mouse
-        subject_csv_path = root / subject_csv_name
+        subject_csv_path = get_csv_location(mouse)
         if subject_csv_path.is_file():
-            subject_csv = pd.read_csv(root / subject_csv_name)
+            subject_csv = pd.read_csv(subject_csv_path)
             my_dates = subject_csv.drop_duplicates('expDate')
 
             for my_path in my_dates.expFolder:
@@ -61,7 +59,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
                 #if some dates have been subselected
                 
                 if check_date_selection(date_selection,[date])[0]:
-                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.bin' % (server,subject,date) 
+                    ephys_files = r'%s\%s\%s\ephys\**\*.ap.cbin' % (server,subject,date) 
                     ephys_files = glob.glob(ephys_files,recursive=True)
 
                     for ephys_file in ephys_files:
@@ -104,7 +102,7 @@ def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
     new_recs_to_convert = sum(new_recs_to_convert,[]) 
     print(new_recs_to_convert)
     # clean current queue
-    queue_file = os.path.join(root,'Helpers','ibl_formatting_queue.csv')
+    queue_file = get_csv_location('ibl_queue')
     old_queue = pd.read_csv(queue_file,index_col=False)
     new_queue = old_queue[old_queue['doneTag'] != 1]
 
@@ -156,8 +154,7 @@ def ks_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=False):
     
 def run_batch_ibl_formatting(run_for=2):
     # get queue
-    root = get_server_location() / 'Helpers'
-    queue_csv_file = root / 'ibl_formatting_queue.csv' 
+    queue_csv_file = get_csv_location('ibl_queue') 
     queue_csv = pd.read_csv(queue_csv_file)
     print('checking the queue...')
 
@@ -254,7 +251,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 if __name__ == "__main__":
    #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   stage_queue(mouse_selection='AV025',ks_folder = 'pyKS', date_selection='2022-11-08')
+   stage_queue(mouse_selection=['FT030','FT031'],ks_folder = 'pyKS', date_selection='last600')
    run_batch_ibl_formatting(run_for=10)
 
 
