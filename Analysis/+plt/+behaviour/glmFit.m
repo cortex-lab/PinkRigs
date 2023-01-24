@@ -100,11 +100,14 @@ for i = find(extracted.validSubjects)'
     if ~params.onlyPlt{refIdx}
         currBlock = extracted.data{i};
 
-%         if params.useLaserTrials{1}
-%             keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
-%         else
+        if params.useLaserTrials{1}
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        elseif (params.useLaserTrials{1}==0) && sum(isnan(currBlock.is_laserTrial))==0
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        else
             keepIdx = currBlock.response_direction & currBlock.is_validTrial & abs(currBlock.stim_audAzimuth)~=30;
-%         end
+
+        end
         currBlock = filterStructRows(currBlock, keepIdx);
         glmData{i} = plt.behaviour.GLMmulti(currBlock, params.modelString{refIdx});
     else
