@@ -21,9 +21,14 @@ def get_csv_location(which):
     """
     server = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
     if 'main' in which: 
-        csvpath = server/'!MouseList.csv'  
-    else
-        csvpath = server / '%s.csv' % which  
+        csvpath = server/ r'!MouseList.csv'  
+    elif 'ibl_queue' in which:
+        csvpath = server/ r'Helpers/ibl_formatting_queue.csv'
+    elif 'pyKS_queue' in which: 
+        csvpath = server / r'Helpers/pykilosort_queue.csv'
+    else:
+        csvpath = server / '%s.csv' % which 
+     
     return csvpath
 
 def get_server_list():
