@@ -27,7 +27,7 @@ def get_csv_location(which):
     elif 'pyKS_queue' in which: 
         csvpath = server / r'Helpers/pykilosort_queue.csv'
     else:
-        csvpath = server / '%s.csv' % which 
+        csvpath = server / ('%s.csv' % which) 
      
     return csvpath
 
