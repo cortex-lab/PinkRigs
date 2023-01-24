@@ -62,6 +62,7 @@ function glmData = glmFit(varargin)
 % glmData = plt.behaviour.glmFit('subject', {'AV009'}, 'expDate', 'last5', 'modelString', 'visOnly')
 % glmData = plt.behaviour.glmFit('subject', {'AV008'; 'AV009'}, 'expDate', 'last5', 'plotType', 'log')
 % glmData = plt.behaviour.glmFit('subject', {'AV008'; 'AV009'}, 'expDate', 'last5', 'plotType', 'log')
+% expList = csv.queryExp(subject='AV008',expDate='last5',expDef='t',sepPlots=1); plt.behaviour.glmFit(expList)
 
 
 varargin = ['modelString', {'simpLogSplitVSplitA'}, varargin];
@@ -80,7 +81,6 @@ varargin = ['useLaserTrials', {0}, varargin];
 
 
 % Deals with sepPlots=1 where subjects are repliacted in getTrainingData
-%varargin = [varargin, 'subject', {extracted.subject}];
 params = csv.inputValidation(varargin{:});
 extracted = plt.behaviour.getTrainingData(varargin{:});
 if ~any(extracted.validSubjects)
@@ -96,27 +96,28 @@ axesOpt.figureHWRatio = 1.1;
 glmData = cell(length(extracted.data), 1);
 if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure; end
 for i = find(extracted.validSubjects)'
-    if ~params.onlyPlt{1}
+    refIdx = min([i length(params.useCurrentAxes)]);
+    if ~params.onlyPlt{refIdx}
         currBlock = extracted.data{i};
 
-        if params.useLaserTrials{1}
-            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
-        else
-            keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
-        end
+%         if params.useLaserTrials{1}
+%             keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+%         else
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & abs(currBlock.stim_audAzimuth)~=30;
+%         end
         currBlock = filterStructRows(currBlock, keepIdx);
-        glmData{i} = plt.behaviour.GLMmulti(currBlock, params.modelString{i});
+        glmData{i} = plt.behaviour.GLMmulti(currBlock, params.modelString{refIdx});
     else
         glmData{i} = extracted.data{i};
     end
 
-    if params.useCurrentAxes{i}; obj.hand.axes = gca; 
-    elseif ~params.noPlot{i}; obj.hand.axes = plt.general.getAxes(axesOpt, i); 
+    if params.useCurrentAxes{refIdx}; obj.hand.axes = gca; 
+    elseif ~params.noPlot{refIdx}; obj.hand.axes = plt.general.getAxes(axesOpt, i); 
     end
     
-    if ~params.onlyPlt{i}
-        if ~params.cvFolds{i}; glmData{i}.fit; end
-        if params.cvFolds{i}; glmData{i}.fitCV(params.cvFolds{i}); end
+    if ~params.onlyPlt{refIdx}
+        if ~params.cvFolds{refIdx}; glmData{i}.fit; end
+        if params.cvFolds{refIdx}; glmData{i}.fitCV(params.cvFolds{refIdx}); end
     end
     if params.noPlot{1}; return; end
     
@@ -129,21 +130,21 @@ for i = find(extracted.validSubjects)'
     plotOpt.lineStyle = params.fitLineStyle{1};
     plotOpt.Marker = 'none';
 
-    if strcmp(params.plotType{i}, 'log')
-        if ~params.contrastPower{i}
-            params.contrastPower{i}  = params2use(strcmp(glmData{i}.prmLabels, 'N'));
+    if strcmp(params.plotType{refIdx}, 'log')
+        if ~params.contrastPower{refIdx}
+            params.contrastPower{refIdx}  = params2use(strcmp(glmData{i}.prmLabels, 'N'));
         end
-        if isempty(params.contrastPower{i})
+        if isempty(params.contrastPower{refIdx})
             tempFit = plt.behaviour.GLMmulti(currBlock, 'simpLogSplitVSplitA');
             tempFit.fit;
             tempParams = mean(tempFit.prmFits,1);
-            params.contrastPower{i}  = tempParams(strcmp(tempFit.prmLabels, 'N'));
+            params.contrastPower{refIdx}  = tempParams(strcmp(tempFit.prmLabels, 'N'));
         end
         plotData = log10(plotData./(1-plotData));
     else
-        params.contrastPower{i} = 1;
+        params.contrastPower{refIdx} = 1;
     end
-    contrastPower = params.contrastPower{i};
+    contrastPower = params.contrastPower{refIdx};
 
     visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
     lineColors = plt.general.selectRedBlueColors(grids.audValues(:,1));
@@ -160,7 +161,7 @@ for i = find(extracted.validSubjects)'
     fracRightTurns = arrayfun(@(x,y) mean(responseDir(ismember([visDiff,audDiff],[x,y],'rows'))==2), visGrid, audGrid);
     
     visValues = abs(visGrid(1,:)).^contrastPower.*sign(visGrid(1,:))./(maxContrast.^contrastPower);
-    if strcmp(params.plotType{i}, 'log')
+    if strcmp(params.plotType{refIdx}, 'log')
         fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
     end
     plt.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
@@ -168,7 +169,7 @@ for i = find(extracted.validSubjects)'
     xlim([-1 1])
     midPoint = 0.5;
     xTickLoc = (-1):(1/8):1;
-    if strcmp(params.plotType{i}, 'log')
+    if strcmp(params.plotType{refIdx}, 'log')
         ylim([-2.6 2.6])
         midPoint = 0;
         xTickLoc = sign(xTickLoc).*abs(xTickLoc).^contrastPower;

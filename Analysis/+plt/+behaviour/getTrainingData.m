@@ -42,6 +42,7 @@ function extracted = getTrainingData(varargin)
 
 varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
+varargin = ['combMice', {1}, varargin];
 params = csv.inputValidation(varargin{:});
 
 if length(params.subject) > 1 && isnan(params.sepPlots{1})
@@ -148,6 +149,35 @@ for i = 1:length(params.subject)
     extracted.blkDates{i} = extracted.blkDates{i}(modeIdx);
     extracted.rigNames{i} = extracted.rigNames{i}(modeIdx);
 end
+% if params.combMice{1}
+%     if ~all(extracted.validSubjects)
+%         error('Requested to combine mice, but data for some mice not found');
+%     end
+%     fprintf('Combining all mice into 1 UBER Mouse...\n')
+%     allFields = cellfun(@(x) fields(x)', extracted.data, 'uni', 0);
+%     uniFields = unique([allFields{:}])';
+% 
+%     commonFields = cellfun(@(x) contains(uniFields,x), allFields, 'uni', 0);
+%     keepIdx = all(cell2mat(commonFields'),2);
+%     remFields = uniFields(~keepIdx);
+%     if ~all(keepIdx)
+%         fprintf('WARNING: Non-shared behaviour fields will be removed...\n')
+%         fprintf('Removing the following fields:\n');
+%         fprintf('%s \n', remFields{:});
+%         pause(0.5);
+%     end
+%     for i = 1:length(extracted.subject)
+%         fields2Remove = allFields{i}(contains(allFields{i}, remFields));
+%         extracted.data{i} = rmfield(extracted.data{i}, fields2Remove);
+%     end
+% 
+%     extracted.subject = [extracted.subject{:}];
+%     for i = fields(extracted.data)
+%         tDat(i) = extracted.data{:}.(i);
+%     end
+%     extracted.data = cat(1,extracted.data{:});
+% end
+
 if all(cellfun(@isempty, extracted.data))
     warning('No sessions match criteria, returning')
     return;
