@@ -159,12 +159,8 @@ end
 % 
 %     commonFields = cellfun(@(x) contains(uniFields,x), allFields, 'uni', 0);
 %     keepIdx = all(cell2mat(commonFields'),2);
-%     remFields = uniFields(~keepIdx);
 %     if ~all(keepIdx)
-%         fprintf('WARNING: Non-shared behaviour fields will be removed...\n')
-%         fprintf('Removing the following fields:\n');
-%         fprintf('%s \n', remFields{:});
-%         pause(0.5);
+%         fprintf('WARNING: Non-shared behaviour fields. Cannot combine...\n')
 %     end
 %     for i = 1:length(extracted.subject)
 %         fields2Remove = allFields{i}(contains(allFields{i}, remFields));

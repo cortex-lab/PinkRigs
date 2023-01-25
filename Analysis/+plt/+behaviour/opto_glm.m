@@ -2,10 +2,10 @@
 % parameters to call are in the metadata so use the manual to read in the
 % metadata
 
-power = '30'; 
-hemi = 'R';
+power = '15'; 
+hemi = 'L';
 %
-params.subject = {['AV029']};
+params.subject = {['AV031']};
 params.expDef = 'm';
 params.checkEvents = 1;
 exp2checkList = csv.queryExp(params);
@@ -25,9 +25,9 @@ plt.behaviour.glmFit(exp2checkList,...
 
 %
 exp2checkList = exp2checkList((cellfun(@(x) strcmp(x,hemi),exp2checkList.inactivatedHemisphere)),:);
-
+%%
 %
-plt.behaviour.glmFit(exp2checkList, ...
+glmData = plt.behaviour.glmFit(exp2checkList, ...
      'modelString','simpLogSplitVSplitA',...
     'useLaserTrials',1, ...
     'useCurrentAxes',1,...
