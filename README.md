@@ -73,11 +73,11 @@ In both cases, please write a few words to explain in the text file. In this way
 
 ## Useful functions
 ### When planning an experiment
-### `plt.recLocation`
-### `+imro` package
+#### `plt.recLocation`
+#### `+imro` package
 
 ### When doing an experiment
-### `changeMouseNameAndExpNum`
+#### `changeMouseNameAndExpNum`
 
 ### Checking the data
 #### Behaviour
