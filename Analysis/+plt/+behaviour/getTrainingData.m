@@ -161,17 +161,17 @@ end
 %     keepIdx = all(cell2mat(commonFields'),2);
 %     if ~all(keepIdx)
 %         fprintf('WARNING: Non-shared behaviour fields. Cannot combine...\n')
-%     end
-%     for i = 1:length(extracted.subject)
-%         fields2Remove = allFields{i}(contains(allFields{i}, remFields));
-%         extracted.data{i} = rmfield(extracted.data{i}, fields2Remove);
-%     end
+%     elseif
+%     else
 % 
-%     extracted.subject = [extracted.subject{:}];
-%     for i = fields(extracted.data)
-%         tDat(i) = extracted.data{:}.(i);
+%         extracted.subject = [extracted.subject{:}];
+%         for fn = fields(extracted.data{1})'
+%             combField = cellfun(@(x) x.(fn{1}), extracted.data, 'uni',0);
+%             tDat.(fn{1}) = vertcat(combField{:});
+%         end
+%         extracted.data = tDat;
+% 
 %     end
-%     extracted.data = cat(1,extracted.data{:});
 % end
 
 if all(cellfun(@isempty, extracted.data))
