@@ -2,7 +2,7 @@ classdef GLMmulti < matlab.mixin.Copyable
 %% Class for multsensory GLM objects
 %
 % NOTE: this was based on earlier unisensory work by Peter Zatka-Haas
-% NOTE: Typically called through "plt.behaviour.glmFit"
+% NOTE: Typically called through "plts.behaviour.glmFit"
 %
 % Parameters: 
 % ---------------
@@ -114,7 +114,7 @@ classdef GLMmulti < matlab.mixin.Copyable
             numRightTurns = prc.makeGrid(obj.dataBlock, obj.dataBlock.response_direction==2, @sum, 1, 0, 1);
 
             audValues = [obj.dataBlock.audValues]./abs(max(obj.dataBlock.audValues));
-            colorChoices = plt.general.selectRedBlueColors(audValues);
+            colorChoices = plts.general.selectRedBlueColors(audValues);
 
             [prob,confInterval] = arrayfun(@(x,z) binofit(x, z, 0.05), numRightTurns, numTrials, 'uni', 0);
             prob = cell2mat(cellfun(@(x) permute(x, [3,1,2]), prob, 'uni', 0));
@@ -144,7 +144,7 @@ classdef GLMmulti < matlab.mixin.Copyable
             if isempty(obj.prmFits); error('Model not fitted (non-crossvalidated) yet'); end
             params2use = mean(obj.prmFits,1);
             hold on;
-            colorChoices = plt.general.selectRedBlueColors(obj.dataBlock.audValues);
+            colorChoices = plts.general.selectRedBlueColors(obj.dataBlock.audValues);
             pHatCalculated = obj.calculatepHat(params2use,'eval');
             for audVal = obj.dataBlock.audValues(:)'
                 plotIdx = obj.evalPoints(:,2)==audVal;

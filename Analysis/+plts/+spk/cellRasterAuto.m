@@ -1,5 +1,5 @@
 function cellRasterAuto(varargin)
-%% Audomatically formats requested mouse experiments for plt.spk.cellRaster
+%% Audomatically formats requested mouse experiments for plts.spk.cellRaster
 %
 % NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
 % name-value pairs, including those specific to this function
@@ -18,7 +18,7 @@ function cellRasterAuto(varargin)
 %
 % paramTag (default='default'): string
 %   This allows the user to "tag" the function that should process the
-%   data. The default is "plt.spk.rasterParams.defaultActivePassive". This
+%   data. The default is "plts.spk.rasterParams.defaultActivePassive". This
 %   can be any function stored in the "+rasterParams" folder and can be
 %   used to subset or manipulate data before calling cellRaster
 %   
@@ -67,7 +67,7 @@ for i = 1:length(uniDates)
         error('Should not be more than 2 experiments by this stage...')
     end
 
-    funcStub = 'plt.spk.rasterParams.';
+    funcStub = 'plts.spk.rasterParams.';
     if strcmpi(currData.paramTag{1}, 'default')
         if any(contains(expDefsUsed, {'Training', 'Passive'}))
             paramFunc = str2func([funcStub 'defaultActivePassive']);
@@ -77,4 +77,4 @@ for i = 1:length(uniDates)
         dat{i,1} = paramFunc(currData);
     end
 end
-plt.spk.cellRaster(dat)
+plts.spk.cellRaster(dat)

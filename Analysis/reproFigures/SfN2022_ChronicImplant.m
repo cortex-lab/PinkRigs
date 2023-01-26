@@ -3,7 +3,7 @@
 %% ------ Stability plots ------
 %% Get data
 
-% [clusterNum, recLocAll, days, qualityMetrics] = plt.spk.clusterCount(pltIndiv=0,getQM=1);
+% [clusterNum, recLocAll, days, qualityMetrics] = plts.spk.clusterCount(pltIndiv=0,getQM=1);
 % save('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'qualityMetrics')
 %%
 load('\\zserver.cortexlab.net\Lab\Share\Celian\dataForSfn2022_ChronicImplant_stability_withQM');

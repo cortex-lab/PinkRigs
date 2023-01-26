@@ -260,7 +260,7 @@ end
 imro.generateIMROProtocol(basePath,imroprop,days)
 
 % Will read and plot it
-plt.plotIMROProtocol(basePath,1,days)
+plts.plotIMROProtocol(basePath,1,days)
 
 % Copy the file that was used to generate this protocol
 FileNameAndLocation = mfilename('fullpath');

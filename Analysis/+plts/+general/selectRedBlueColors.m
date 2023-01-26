@@ -21,7 +21,7 @@ function colorChoices = selectRedBlueColors(values, zeroTag)
 
 
 if ~exist('zeroTag', 'var'); zeroTag = 0.5*ones(1,3); end
-allColors = plt.general.redBlueMap(255);
+allColors = plts.general.redBlueMap(255);
 maxLength = max(abs(values));
 colorChoices = zeros(length(values),3);
 fractionalPosition = values./maxLength;

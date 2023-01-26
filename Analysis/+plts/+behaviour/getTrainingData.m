@@ -37,8 +37,8 @@ function extracted = getTrainingData(varargin)
 %
 % Examples: 
 % ------------
-% extracted = plt.behaviour.getTrainingData('subject', {'AV009'}, 'expDate', 'last10', 'sepPlots', 1)
-% extracted = plt.behaviour.getTrainingData('subject', {'AV008';'AV009'}, 'expDate', 'last10', 'sepPlots', 0)
+% extracted = plts.behaviour.getTrainingData('subject', {'AV009'}, 'expDate', 'last10', 'sepPlots', 1)
+% extracted = plts.behaviour.getTrainingData('subject', {'AV008';'AV009'}, 'expDate', 'last10', 'sepPlots', 0)
 
 varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];

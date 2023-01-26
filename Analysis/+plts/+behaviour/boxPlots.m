@@ -40,16 +40,16 @@ function plotData = boxPlots(varargin)
 %
 % Examples: 
 % ------------
-% plotData = plt.behaviour.boxPlots('subject', {'AV009'}, 'expDate', 'last5', 'sepPlots', 0)
-% plotData = plt.behaviour.boxPlots('subject', {'AV008'}, 'noPlot', 1, 'expDate', 'last5')
-% plotData = plt.behaviour.boxPlots('subject', {'AV008'; 'AV009'}, 'expDate', 'last5')
+% plotData = plts.behaviour.boxPlots('subject', {'AV009'}, 'expDate', 'last5', 'sepPlots', 0)
+% plotData = plts.behaviour.boxPlots('subject', {'AV008'}, 'noPlot', 1, 'expDate', 'last5')
+% plotData = plts.behaviour.boxPlots('subject', {'AV008'; 'AV009'}, 'expDate', 'last5')
 
 %% Input validation and default assingment
 varargin = ['sepPlots', {nan}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
 varargin = ['noPlot', {0}, varargin];
-extracted = plt.behaviour.getTrainingData(varargin{:});
+extracted = plts.behaviour.getTrainingData(varargin{:});
 if ~any(extracted.validSubjects)
     fprintf('WARNING: No data found for requested subjects... Returning \n');
     return
@@ -73,7 +73,7 @@ for i = find(extracted.validSubjects)'
     boxPlot.subject = extracted.subject{i};
     boxPlot.xyLabel = {'AuditoryAzimuth'; 'VisualContrast'};
     boxPlot.axisLimits = [0 1];
-    boxPlot.colorMap = plt.general.redBlueMap(64);
+    boxPlot.colorMap = plts.general.redBlueMap(64);
 
     if isempty(extracted.data{i}) || extracted.nExp{i} == 1 
         boxPlot.extraInf = [blkDates{i}{1} ' on ' rigNames{i}{1}];
@@ -107,7 +107,7 @@ for i = find(extracted.validSubjects)'
         colorBar.colorYTick = {'0'; '1'};
     end
     if ~params.noPlot{1}
-        plt.general.getAxes(axesOpt, find(find(extracted.validSubjects)'==i));
+        plts.general.getAxes(axesOpt, find(find(extracted.validSubjects)'==i));
         makePlot(boxPlot);
     end
     plotData{i,1} = boxPlot;
