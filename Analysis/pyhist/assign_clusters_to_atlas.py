@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from ibllib.atlas import AllenAtlas
+from shutil import copyfile
 atlas = AllenAtlas(25)
 
 # PinkRig specific imports 
@@ -108,6 +109,16 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
                             #print(x,y)
 
     return chan_idx   
+
+def save_to_common_anatmap(ibl_format_path,probe,shank,botrow,date):
+    chanfile = (ibl_format_path / 'channel_locations.json')
+    if chanfile.is_file(): 
+
+        #redump to parent histology
+        output_folder = ibl_format_path.parents[6] / ('histology/registered_anatmaps/%s' % date)            
+        output_folder.mkdir(parents=True,exist_ok=True)         
+        stub = 'channel_locations_%s_shank%.0d_botrow%.0d.json' % (probe,shank,botrow)
+        copyfile(chanfile,(output_folder / stub))
 
 def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
     """
@@ -219,7 +230,7 @@ def get_anatmap_path_same_day(ibl_format_path):
 
     return anatmap_paths
 
-def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,check_processed=False): 
+def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,depth_selection = 'auto'): 
     """
     function to call which recordings should be used for anatomy
     basically this function searches for single shank recordings
@@ -233,9 +244,10 @@ def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,ch
         'probe0' or 'probe1'
     near_date: None/str
         a string of a date. in this case the algorithm will look for the nearest date before date given by near_date
-    check_processed: bool 
-        not implemented 
-        filter recordings by which one already has clusters.mlapdv.npy
+    depth selection: str
+        specific modes of depth selection for single shanks. Options:
+        auto - searches exclusively for botrow 0 and 192 single shanks. 
+
     """
     data_dict = {
     ('%s_raw' % probe):{'channels':'all'}
@@ -254,25 +266,32 @@ def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,ch
         depth_range = depth_range
     )
 
-    if check_processed: 
-        pass
-
     recdat = recdat.dropna(subset=['shank_range','depth_range'])
 
     is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<35 for _,rec in recdat.iterrows()]
     recdat = recdat[is_single_shank]
     recdat = recdat.assign(
-        shank = [int(sh[0]/200) for sh in recdat.shank_range]
+        shank = [int(sh[0]/200) for sh in recdat.shank_range],
+        botrow = [int(site[0]/15) for site in recdat.depth_range]
     )
+
+
+
     # and contain all unique depths for each shank
 
     out_dat = pd.DataFrame(columns=recdat.columns)
     shanks = np.unique(recdat.shank)
     for sh in shanks: 
         recdat_shank = recdat[recdat.shank==sh]
-        unique_depths = np.unique(recdat_shank.depth_range)
+
+        if 'auto' in depth_selection:
+            unique_depths = [0,192]
+        else:    
+            unique_depths = np.unique(recdat_shank.botrow)
+
+
         for my_d in unique_depths:
-            recdat_shank_d = (recdat_shank[recdat_shank.depth_range==my_d]).copy()
+            recdat_shank_d = (recdat_shank[recdat_shank.botrow==my_d]).copy()
             # and select either the nerest to an asked date all the 1st post Implant
             all_dates = [datetime.datetime.strptime(d,'%Y-%m-%d') for d in recdat_shank_d.expDate]
             if near_date:
