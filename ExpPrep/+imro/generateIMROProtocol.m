@@ -56,7 +56,7 @@ function generateIMROProtocol(basePath,imroprop,days)
             for probeNum = 1:numel(imroprop{d}{p}.probe)
                 probeProp = imroprop{d}{p}.probe(probeNum);
                 prefix = sprintf('Probe%d_%d_%s_SN%d_',probeNum-1,d,protocol,serialsFromCSV(probeNum));
-                fileName = generateIMRO_P24(probeProp.patternTag, probeProp.botRow, probeProp.shankChoice, probeProp.refElec, savePath);
+                fileName = imro.generateIMRO_P24(probeProp.patternTag, probeProp.botRow, probeProp.shankChoice, probeProp.refElec, savePath);
                 [path,file,ext] = fileparts(fileName);
                 movefile(fileName,fullfile(path,[prefix file ext]))
             end

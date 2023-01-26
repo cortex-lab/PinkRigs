@@ -118,10 +118,10 @@ function [dball, res] = main(varargin)
 
         %%% Other optional plotting functions
         % Plot the correlation
-        % natim.plotCorrelationStability(sigCorrStruct,dur,[db.days]); 
+        % plt.CorrelationStability(sigCorrStruct,dur,[db.days]); 
 
         % Plot matched neurons across some days
-        % [pairAcrossAll_fewDays,sigCorr,noiseCorr] = natim.plotMatchedNeuronsAcrossDays(1:5, BestMatch, BestCorr, BestDist, ...
+        % [pairAcrossAll_fewDays,sigCorr,noiseCorr] = plt.matchedNeuronsAcrossDays(1:5, BestMatch, BestCorr, BestDist, ...
         %     {db.spikeData}, XPos, DepthCorrected, [db.days],[0.05 0.5 150]);
 
     end
