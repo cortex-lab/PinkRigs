@@ -433,6 +433,9 @@ end
 nDat.extractSpikes(isnan(nDat.issortedPyKS) & isnan(nDat.issortedKS2)) = nan;
 nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedKS2,[0 2])) = 0; % shouldn't be needed?
 
+% Add ephys paths
+
+
 %% This section is a final cleanup and dealing with some edge cases
 
 % If a file called "AllErrorsValidated.txt" is detected in the exp folder,
