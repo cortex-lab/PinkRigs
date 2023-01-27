@@ -101,10 +101,6 @@ def postactive(ev):
 
         return timepoints_blanks,timepoints_visual,timepoints_audio,timepoints_MS
 
-def sparseNoise(ev):
-        ev['xy'] = np.flip(ev['stimPositions'],axis=1)
-        return dot_index(ev)
-
 def index_trialtype_perazimuth(a,v):
     """
     function to index into dictionnary of trial types sorted by arrange_trials based on azimuth
