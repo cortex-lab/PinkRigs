@@ -1,21 +1,14 @@
 
 import sys,itertools, re
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_github_paths
-add_github_paths()
-
 import pandas as pd 
 import numpy as np 
 
-from Analysis.helpers.queryExp import load_data
+from Admin.csv_queryExp import load_data
 from utils.data_manager import simplify_recdat
 from utils.ev_dat import postactive
 from utils.spike_dat import get_binned_rasters
 
 # load data
-
-
-
 class azimuthal_tuning():
     def __init__(self,rec_info):
         self.raster_kwargs = {
