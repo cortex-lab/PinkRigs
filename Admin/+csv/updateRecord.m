@@ -100,11 +100,12 @@ nDat.alignEphys = {}; % alignment status for ephys
 nDat.fMapFrontCam = {}; % facemap status for front cam
 nDat.fMapSideCam = {}; % facemap status for side cam
 nDat.fMapEyeCam = {}; % facemap status for eye cam
-nDat.issortedKS2 = {}; % logical--is there a Kilosort output yet
 nDat.issortedPyKS = {}; % logical--is there a PyKilosort output yet
 nDat.extractSpikes = {}; % extraction status for spikes
 nDat.extractEvents = {}; % extraction status for events
 nDat.expFolder = {}; % the experiment folder
+nDat.ephysPathProbe0 = {}; % the experiment folder
+nDat.ephysPathProbe1 = {}; % the experiment folder
 
 % If a mouse csv doesn't exist, write empty data to a csv and create it
 if ~exist(csvPathMouse, 'file') && saveData
@@ -181,15 +182,8 @@ nDat.existEphys = num2str(exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0)
 nDat.expFolder = {fileparts(blockPath)};
 
 %% This section deals with the "alignment" and "facemap" status
-% alignBlkFrontSideEyeMicEphys is a string with 6 comma-separated
-% entries to indicate the alignment status of the block, front/side/eye
-% cameras, ephys, and microphone. Note that this begins as a vector of 6
-% values and is converted to a string later
-
 % Get the path of the alignment file. If so, check the alignment status
 alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
-
-%%%%%
 
 probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
 
@@ -205,7 +199,6 @@ end
 
 
 % Initialize "issorted" with zeros
-nDat.issortedKS2 = zeros(1, potentialProbes);
 nDat.issortedPyKS = zeros(1, potentialProbes);
 
 
@@ -269,6 +262,15 @@ else
     else
         nDat.alignEphys = zeros(1, potentialProbes);
     end
+end
+
+nDat.ephysPathProbe0 = 'NaN';
+nDat.ephysPathProbe1 = 'NaN';
+if nDat.alignEphys(1) == 1
+    nDat.ephysPathProbe0 = alignment.ephys(1).ephysPath;    
+end
+if numel(nDat.alignEphys) == 2 && nDat.alignEphys(2) == 1
+    nDat.ephysPathProbe1 = alignment.ephys(2).ephysPath;    
 end
 
 %Populate alignCamera entries
@@ -336,28 +338,6 @@ end
 
 
 %% This section deals with "sorted" status
-% This loop checks the issortedKS2 fields if ephys alignment is good ("1")
-nDat.issortedKS2 = zeros(1, potentialProbes);
-for pIdx = find(nDat.alignEphys == 1)
-    % If ephys alignment is "good" check if sorting files exist. If
-    % they do, then give a "1" to issortedKS2 or issortedPyKS.
-    ephysPath = alignment.ephys(pIdx).ephysPath;
-    if ~isempty(dir([ephysPath '\**\*rez.mat']))
-        % Issue a "1" if "results" file for KS2 exists
-        nDat.issortedKS2(pIdx) = 1;
-    elseif ~isempty(dir([ephysPath '\KSerror.json']))
-        % Issue a "2" if error file is in folder
-        nDat.issortedKS2(pIdx) = 2;
-    else
-        % Issue a "0" if no error, but sorting doesn't exist yet
-        nDat.issortedKS2(pIdx) = 0;
-    end
-end
-% Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.issortedKS2(isnan(nDat.alignEphys)) = nan;
-nDat.issortedKS2(nDat.alignEphys == 0) = 0;
-nDat.issortedKS2(nDat.alignEphys == 2) = 0;
-
 % This loop checks the issortedPyKS fields if ephys alignment is good ("1")
 nDat.issortedPyKS = zeros(1, potentialProbes);
 for pIdx = find(nDat.alignEphys == 1)
@@ -380,10 +360,7 @@ nDat.issortedPyKS(isnan(nDat.alignEphys)) = nan;
 nDat.issortedPyKS(nDat.alignEphys == 0) = 0;
 nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 
-%% This section deals with the "preProcSpkEV" status
-% preProcSpkEV is a string with 2 comma-separated entries to indicate the
-% preproc statuse for "ev" (which are the events extracted from the block
-% and timelines) and "spk" which is the spike output from the sorting
+%% This section deals with the event and spike extraction status
 
 % Assign status for events extraction
 if strcmpi(nDat.alignBlock, '1')
@@ -413,7 +390,7 @@ end
 
 % Assign status for spike extraction.
 nDat.extractSpikes = zeros(1, potentialProbes);
-for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
+for pIdx = find(nDat.issortedPyKS == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
     probeStr = ['probe' num2str(pIdx-1)];
@@ -430,11 +407,7 @@ for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.extractSpikes(isnan(nDat.issortedPyKS) & isnan(nDat.issortedKS2)) = nan;
-nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedKS2,[0 2])) = 0; % shouldn't be needed?
-
-% Add ephys paths
-
+nDat.extractSpikes(isnan(nDat.issortedPyKS)) = nan;
 
 %% This section is a final cleanup and dealing with some edge cases
 
@@ -449,7 +422,6 @@ end
 
 % % Change probe-related fields from vectors to comma-separated strings
 nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedKS2 = regexprep(num2str(nDat.issortedKS2),'\s+',',');
 nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
 nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
