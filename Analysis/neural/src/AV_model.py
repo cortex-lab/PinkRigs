@@ -1,17 +1,14 @@
 import sys,os,pickle
 import numpy as np
 import pandas as pd
-from utils.io import Bunch, load_single_sess,format_spike_data
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 
 import warnings # just because varance explained van be zero divisor (that's ok with no spike neuron etc)
 warnings.filterwarnings("ignore")
 
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_github_paths
-add_github_paths()
-from Analysis.helpers.queryExp import load_data
+
+from Admin.csv_queryExp import load_data,Bunch
 
 import utils.spike_dat as su 
 from utils.ev_dat import postactive
@@ -578,86 +575,6 @@ def get_meanscore(scores):
     meanVE  = np.array([scores_all_reps[m].mean(axis=0) for m in model_names])
     WinnerModel = np.array([model_names[np.argmax(meanVE,axis=0)[i]] for i in range(meanVE.shape[1])])
     return meanVE, WinnerModel
-
-def  read_in_batch_results(recordings,add_winner=True,add_SC_pos=True): 
-    """
-    can add any list of queryexp pandas Dataframe and spits out info on clusters
-    optional inputs as to what other columns to add ]
-
-
-    """
-
-    columns_to_add = ['Subject','expDate','expNum','probe']
-    if add_winner: 
-        columns_to_add = columns_to_add + ['winner_model']
-    if add_SC_pos: 
-        columns_to_add = columns_to_add + ['shank_vis_azimuth','shank_vis_elevation','shank_SC_surface']
-
-
-    for _,myrec in recordings.iterrows(): 
-
-        mname = myrec.Subject
-        date = myrec.expDate
-        expDef = myrec.expDef
-        expnum = myrec.expNum
-
-        _,clusInfo = format_spike_data(load_single_sess(mname=mname,day=date,expdef=expDef,expnum=expnum))
-
-        # create main cluster based table in the first instance 
-        try: 
-            clus_data
-        except:
-            print('creating table...')
-            clus_data_columns = np.append(clusInfo['imec0'].columns.values,columns_to_add)
-            clus_data = pd.DataFrame(columns=clus_data_columns)
-
-
-
-        for probe in clusInfo['good_probes']: 
-            curr_dat = clusInfo[probe]
-            curr_dat['probe'] = probe   
-            curr_dat['Subject'] = mname
-            curr_dat['expDate'] = date
-            curr_dat['expNum'] = expnum
-
-            if  'winner_model' in columns_to_add: 
-                try:
-                    saveroot = r'C:\Users\Flora\Documents\Processed data\Audiovisual'
-                    savepath = '%s\%s\%s\%s\%s\AV_psth_model\Linear' % (saveroot,mname,date,expnum,probe) 
-
-                    winnermodel = np.load(r'%s\clusters.winner_took_it_all.npy' % (savepath))
-
-
-                    curr_dat['winner_model'] = winnermodel
-                except: 
-                    print(' winner model could not be loaded: %s, %s, %s' % (mname, date, expnum))
-
-
-            if 'shank_SC_surface' in columns_to_add:
-                try: 
-                    # for now read in the data from the pervious outputs
-                    oldroot = r'C:\Users\Flora\Documents\Processed data\passiveAV_project'
-                    shankregistration_root = r'%s\%s\%s\alf\%s' % (oldroot,mname,date,probe)
-                    shankpos = {}
-                    for i in np.unique(curr_dat.Shank.values).astype('int'): 
-                        shankpos[i] = np.load(r'%s\SC_surfaceregistration_coords.shank%.0f.npy' % (shankregistration_root,i))
-
-                    azimuth = [shankpos[sh][0] for sh in curr_dat.Shank.values.astype('int')]
-                    elevation = [shankpos[sh][1] for sh in curr_dat.Shank.values.astype('int')]
-                    surface = [shankpos[sh][2] for sh in curr_dat.Shank.values.astype('int')]
-
-
-                    curr_dat['shank_vis_azimuth'] = azimuth
-                    curr_dat['shank_vis_elevation'] = elevation
-                    curr_dat['shank_SC_surface'] = surface
-                except: 
-                    print(' SC RF coordinates could not be loaded: %s, %s, %s' % (mname, date, expnum))
-
-
-            clus_data = pd.concat([clus_data,curr_dat])
-
-    return clus_data
-
 
 
 def default_fitting(rec_info,repeats=1):

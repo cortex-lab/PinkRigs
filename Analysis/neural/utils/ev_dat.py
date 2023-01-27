@@ -1,6 +1,5 @@
 import numpy as np
 import xarray as xr 
-from utils.io import dot_index
 from utils.spike_dat import bincount2D
 
 def postactive(ev):        

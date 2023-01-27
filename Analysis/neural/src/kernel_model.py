@@ -3,14 +3,12 @@
 import numpy as np 
 import pandas as pd
 import collections,itertools
-from utils.io import Bunch,add_github_paths
 from utils.spike_dat import bincount2D
 from utils.video_dat import digitise_motion_energy
 from utils.plotting import off_axes
 
 # import PinkRig utilities 
-add_github_paths()
-from Analysis.helpers.queryExp import load_data
+from Admin.csv_queryExp import load_data
 
 # Machine learning / statistics
 from sklearn.kernel_ridge import KernelRidge

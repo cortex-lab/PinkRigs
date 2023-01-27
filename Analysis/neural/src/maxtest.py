@@ -18,12 +18,16 @@ were discarded) # maybe don't do that (?)
 7. get p-value (Bonferroni correct if necessary). 
 
 """
+import itertools
 import numpy as np
 import pandas as pd
-from utils.spike_dat import get_binned_rasters
 import matplotlib.pyplot as plt
+
+from utils.spike_dat import get_binned_rasters
+from utils.ev_dat import postactive
 from utils.plotting import off_axes
-#
+
+from Admin.csv_queryExp import load_data, simplify_recdat
 
 # get all the unique trial types 
 
@@ -70,8 +74,27 @@ class maxtest():
                 'baseline_subtract': True, 
             }
             
+    def call_default_test_set(self,rec_info):
+        recordings = load_data(data_name_dict=maxtest._av_required_data,**rec_info)
+        events,spikes,_,_ = simplify_recdat(recordings.iloc[0])
+        blanks,vis,aud,_ = postactive(events)
+        event_dict = {}
+        # to redo the previous tests
+        checked_spl = np.max(aud.SPL.values)
+        for (azimuth,d_power) in itertools.product(aud.azimuths.values,[checked_spl]):
+            stub = 'aud_azimuth_%.0d_dpower_%.2f' % (azimuth,d_power)
+            event_dict[stub] = aud.sel(azimuths=azimuth,SPL=d_power,timeID='ontimes').values
+        for (azimuth,d_power) in itertools.product(vis.azimuths.values,vis.contrast.values):
+            stub = 'vis_azimuth_%.0d_dpower_%.2f' % (azimuth,d_power)
+            event_dict[stub] = vis.sel(azimuths=azimuth,contrast=d_power,timeID='ontimes').values 
 
-    def run(self,spikes,event_times_dict,blank_times,subselect_neurons=None,plotting=False,n_shuffles=2000):
+        self.event_times_dict = event_dict 
+        self.spikes = spikes
+        self.blank_times = blanks.sel(timeID='ontimes').values 
+
+
+
+    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,n_shuffles=2000):
         """
         Parameters:
         -----------
@@ -88,6 +111,14 @@ class maxtest():
         -------
             : pd.DataFrame
         """
+
+        if not spikes:
+            spikes = self.spikes
+        if not event_times_dict: 
+            event_times_dict = self.event_times_dict
+        if not blank_times:
+            blank_times = self.blank_times
+
         if not subselect_neurons:
             clus_ids = np.unique(spikes.clusters)    
         else:
