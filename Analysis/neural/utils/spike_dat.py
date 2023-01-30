@@ -4,8 +4,6 @@ from scipy.stats import zscore
 import warnings # just because of some pandas thing in 
 warnings.filterwarnings("ignore")
 
-from .io import add_PinkRigs_to_path
-add_PinkRigs_to_path()
 from Admin.csv_queryExp import Bunch
 
 def get_binned_rasters(spike_times, spike_clusters, cluster_ids, align_times, tscale=[None],
@@ -232,7 +230,6 @@ def bombcell_sort_units(clusdat,max_peaks,max_throughs,
 
 
     return clusdat
-
 
 def bincount2D(x, y, xbin=0, ybin=0, xlim=None, ylim=None, weights=None,xsmoothing=0):
     """

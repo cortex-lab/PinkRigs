@@ -3,11 +3,9 @@ import pandas as pd
 from pathlib import Path
 from scipy.stats import median_abs_deviation as mad
 
-from utils.io import add_PinkRigs_to_path
-from utils.video_dat import get_move_raster
+from Analysis.neural.utils.video_dat import get_move_raster
 
 # ONE loader from the PinkRig Pipeline
-add_PinkRigs_to_path()
 from Admin.csv_queryExp import get_csv_location,load_data
 
 

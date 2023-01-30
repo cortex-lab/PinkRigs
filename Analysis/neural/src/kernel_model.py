@@ -8,7 +8,7 @@ from utils.video_dat import digitise_motion_energy
 from utils.plotting import off_axes
 
 # import PinkRig utilities 
-from Admin.csv_queryExp import load_data
+from Admin.csv_queryExp import load_data,Bunch
 
 # Machine learning / statistics
 from sklearn.kernel_ridge import KernelRidge

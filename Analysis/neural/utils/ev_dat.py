@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr 
-from utils.spike_dat import bincount2D
+from Analysis.neural.utils.spike_dat import bincount2D
 
 def postactive(ev):        
         blank_times = ev.block_stimOn[ev.is_blankTrial==1]

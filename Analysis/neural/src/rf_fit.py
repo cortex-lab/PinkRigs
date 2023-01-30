@@ -31,7 +31,7 @@ def get_VE(actual,predicted):
 
     return VE
 
-class RF_model(): 
+class rf_fit(): 
     def __init__(self): # maybe sparseNoise needs to go from init
         self.azimuth_idx=np.arange(0,36)
         self.elevation_idx=np.arange(0,10)

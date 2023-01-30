@@ -1,6 +1,6 @@
 
 import numpy as np 
-from utils.spike_dat import get_binned_rasters
+from Analysis.neural.utils.spike_dat import get_binned_rasters
 import matplotlib.pyplot as plt
 
 

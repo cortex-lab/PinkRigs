@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LogNorm
 from pylab import cm
-from utils.plotting import off_axes
+from Analysis.neural.utils.plotting import off_axes
 
 # for the digitisation
 import scipy.signal as signal
