@@ -1,12 +1,12 @@
 % glm fit for the opto data round #2
 % 
-% subject_list = {'AV029';'AV033';'AV033';'AV031';'AV031'}; 
-% hemis = ['R','R','L','L','L'];
-% powers = {'30';'30';'30';'30';'15'};
+subject_list = {'AV029';'AV033';'AV033';'AV031';'AV031'}; 
+hemis = ['R','R','L','L','L'];
+powers = {'30';'30';'30';'30';'15'};
 
-subject_list = {'AV033'}; 
-hemis = ['R'];
-powers = {'30'};
+% subject_list = {'AV033'}; 
+% hemis = ['R'];
+% powers = {'30'};
 
 
 for s=1:numel(subject_list)
@@ -23,7 +23,7 @@ for s=1:numel(subject_list)
 
     
     figure;
-    controlfit = plt.behaviour.glmFit(exp2checkList,...
+    controlfit = plts.behaviour.glmFit(exp2checkList,...
         'modelString','simpLogSplitVSplitA',...
         'useLaserTrials',0, ...
         'plotType','res',...
@@ -42,28 +42,36 @@ for s=1:numel(subject_list)
     %
     
     params = csv.inputValidation(exp2checkList);
-    extracted = plt.behaviour.getTrainingData(exp2checkList);
+    extracted = plts.behaviour.getTrainingData(exp2checkList);
     currBlock = extracted.data{1};
     keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
     optoBlock = filterStructRows(currBlock, keepIdx); 
-    optoBlock.freeP  = logical([1,0,0,0,0,0]);
+
     
+    optoBlock.freeP  = logical([0,0,0,0,0,0]); 
+    orifit = plts.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA');
+    orifit.prmInit = controlfit.prmFits;
+    orifit.fit; 
+    figure; plot_optofit(orifit,'res');
+    nochange_fit(s) = orifit.logLik;
     
-    optofit = plt.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA');
+
+    optoBlock.freeP  = logical([1,0,0,0,0,0]); 
+    optofit = plts.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA');
     optofit.prmInit = controlfit.prmFits;
     optofit.fit; 
     figure; plot_optofit(optofit,'res');
     bias_fit(s) = optofit.logLik;
     
     optoBlock.freeP  = logical([1,1,1,1,1,1]);
-    optofit_additive = plt.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA'); 
+    optofit_additive = plts.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA'); 
     optofit_additive.prmInit = controlfit.prmFits;
     optofit_additive.fit;
     plot_optofit(optofit_additive,'res');
     additive_fit(s) = optofit_additive.logLik;
 
 
-    uninitialised_additive = plt.behaviour.glmFit(exp2checkList,...
+    uninitialised_additive = plts.behaviour.glmFit(exp2checkList,...
     'modelString','simpLogSplitVSplitA',...
     'useLaserTrials',1, ...
     'plotType','res',...
@@ -77,23 +85,29 @@ for s=1:numel(subject_list)
 end
 %%
 figure; 
-plot(bias_fit,uninitialised_additive_fit,'ro')
+plot(bias_fit,additive_fit,'r.','MarkerSize',24)
 hold on
-plot(nochange_fit,uninitialised_additive_fit,'bo')
+plot(nochange_fit,additive_fit,'b.','MarkerSize',24)
 
 hold on 
 plot([0,2],[0,2],'k--')
 xlabel('bias')
-
+for i=1:numel(subject_list)
+    x = [bias_fit(i) nochange_fit(i)]; 
+    y = [additive_fit(i) additive_fit(i)]; 
+    plot(x,y,'b'); 
+end
 ylabel('all')
 %newfit.fit; 
 
 %%
-nochange_fit = bias_fit;
-
-
-%%
-(bias_fit-nochange_fit)./additive_fit
+fits = [nochange_fit./additive_fit;bias_fit./additive_fit];
+figure; 
+hold all;
+for i=1:numel(subject_list)
+    plot(fits(:,i));
+end
+%plot(mean(fits))
 
 %%
 function [power,hemisphere] = readOptoMeta(expFolder)
@@ -127,8 +141,8 @@ else
 end
 
 visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
-lineColors = plt.general.selectRedBlueColors(grids.audValues(:,1));
-plt.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
+lineColors = plts.general.selectRedBlueColors(grids.audValues(:,1));
+plts.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
 plotOpt.lineStyle = 'none';
 plotOpt.Marker = 'x';
@@ -145,7 +159,7 @@ visValues = abs(visGrid(1,:)).^contrastPower.*sign(visGrid(1,:))./(maxContrast.^
 if strcmp(plottype, 'log')
     fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
 end
-plt.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
+plts.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
 
 xlim([-1 1])
 midPoint = 0.5;
