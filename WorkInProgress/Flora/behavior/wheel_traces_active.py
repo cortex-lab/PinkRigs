@@ -1,21 +1,20 @@
 # %%
 import sys,glob
 from pathlib import Path
-
-pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\Audiovisual')
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
+
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils.io import add_github_paths
-add_github_paths()
 
-from Analysis.helpers.queryExp import load_data
-subject = 'FT030'
+from Admin.csv_queryExp import load_data
+subject = 'AV034'
 data_dict = {
             'events':{'_av_trials':'all'}
                 }
-recordings = load_data(subject = subject, expDate = '2021-12-03',expDef = 'multiSpace',data_name_dict=data_dict)
+recordings = load_data(subject = subject, expDate = '2022-12-12',expDef = 'multiSpace',data_name_dict=data_dict)
 # 
 ev = recordings.iloc[0].events['_av_trials']
 # %%
@@ -40,6 +39,7 @@ selected = np.where(is_go & (reaction_times>.05) & (ev.timeline_choiceMoveDir==2
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
 def plot_bl_subtracted_trace_singe(ev,i,ax,**kwargs):
+    
     choice_move_idx = np.where(ev.timeline_wheelTime[i]==ev.timeline_choiceMoveOn[i])[0][0]
     ax.plot(ev.timeline_wheelTime[i][choice_move_idx:]-ev.timeline_audPeriodOn[i],ev.timeline_wheelValue[i][choice_move_idx:]-ev.timeline_wheelValue[i][choice_move_idx],**kwargs) 
 

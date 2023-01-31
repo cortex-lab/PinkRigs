@@ -2,6 +2,8 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+from Admin.csv_queryExp import queryCSV,load_data
+
 def select_opto_sessions(recdat): 
     print('loading opto metadata ...')
     laser_powers = []
@@ -24,4 +26,16 @@ def select_opto_sessions(recdat):
     
     return recdat
 
+def query_opto(power=30,hemi='L',data_dict = None, **kwargs):
+    """
+    function that imports the opto metadata and allows to load the rest of the data on those sessions 
     
+    """
+
+    recordings = queryCSV(**kwargs)
+    recordings = select_opto_sessions(recordings)
+    recordings = recordings[(recordings.laser_power==power) & (recordings.stimulated_hemisphere == hemi)]
+    optodata_list  = [load_data(subject = rec.Subject,expDate = rec.expDate,expNum = rec.expNum,data_name_dict=data_dict)for _,rec in recordings.iterrows()]
+    optodata_list = pd.concat(optodata_list)
+
+    return optodata_list
