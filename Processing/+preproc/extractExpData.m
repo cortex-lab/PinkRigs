@@ -127,7 +127,7 @@ function extractExpData(varargin)
                     
                 %% Extract spikes and clusters info (depth, etc.)
                 
-                if shouldProcess('spikes') || contains(recompute,'BombcellQM')
+                if shouldProcess('spikes') || contains(recompute,'BombcellQM') || contains(recompute,'IBLQM')
                     if contains(expInfo.alignEphys, '1') && contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
@@ -199,9 +199,9 @@ function extractExpData(varargin)
                                 end
                                 
                                 % Get IBL qmetrics
-                                IBLFormatQMetricsFile = fullfile(KSFolder,'ibl_format');    
-                                if exist(IBLFormatQMetricsFile,"file")
-                                    qMetrics = preproc.getIBLQMetrics(KSFolder);
+                                IBLFormatQMetricsFile = dir(fullfile(probeONEFolder,'*_av_qualityMetrics*'));    
+                                if isempty(IBLFormatQMetricsFile) || contains(recompute,'IBLQM')
+                                    qMetrics = preproc.getQMetrics(KSFolder,'IBL');
                                     % The qMetrics don't get calculated for
                                     % some trash units, but we need to keep
                                     % the dimensions consistent of
@@ -223,8 +223,13 @@ function extractExpData(varargin)
                                         probeONEFolder,'clusters','_av_qualityMetrics','pqt',stub);
                                 end
 
-                                %%% Need to implement getting the Bombcell
-                                %%% metrics
+                                % Get Bombcell metrics
+                                bombcellQMetricsFile = dir(fullfile(probeONEFolder,'*bc_qMetrics*'));   
+                                if isempty(bombcellQMetricsFile) || contains(recompute,'BombcellQM')
+                                    qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
+                                    saveONEFormat(qMetrics, ...
+                                        probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
+                                end
 
                                 % Remove any error file
                                 if exist(fullfile(probeONEFolder, 'GetSpkError.json'),'file')

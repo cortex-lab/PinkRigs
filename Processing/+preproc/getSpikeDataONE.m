@@ -19,12 +19,12 @@ function spk = getSpikeDataONE(KSFolder)
     %           av_xpos: x position
     %           av_shankIDs: shank ID
     %
-    %       Related to templates
+    %       Related to templates:
     %           amps: amplitude
     %           waveforms: waveform
     %           waveformsChannels: associated channels
     %
-    %       Related to clusters (that can be manually curated)
+    %       Related to clusters (that can be manually curated):
     %           av_IDs: IDs
     %           av_KSLabels: labels given by kilosort
     %           amps: amplitude
