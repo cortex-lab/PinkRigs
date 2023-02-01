@@ -224,11 +224,13 @@ function extractExpData(varargin)
                                 end
 
                                 % Get Bombcell metrics
-                                bombcellQMetricsFile = dir(fullfile(probeONEFolder,'*bc_qMetrics*'));   
+                                bombcellQMetricsFile = dir(fullfile(probeONEFolder,'*bc_qMetrics*'));
                                 if isempty(bombcellQMetricsFile) || contains(recompute,'BombcellQM')
-                                    qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
-                                    saveONEFormat(qMetrics, ...
-                                        probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
+                                    if exist(fullfile(KSFolder,'qMetrics','templates._bc_qMetrics.parquet'),'file')
+                                        qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
+                                        saveONEFormat(qMetrics, ...
+                                            probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
+                                    end
                                 end
 
                                 % Remove any error file
