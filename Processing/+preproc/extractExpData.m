@@ -64,7 +64,7 @@ function extractExpData(varargin)
             % monitors if anything has changed
             change = 0;
             
-            fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
+            fprintf(1, '*** Preprocessing experiment %s (%d/%d)... ***\n', expFolder,ee,size(exp2checkList,1));
 
             if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
@@ -224,11 +224,13 @@ function extractExpData(varargin)
                                 end
 
                                 % Get Bombcell metrics
-                                bombcellQMetricsFile = dir(fullfile(probeONEFolder,'*bc_qMetrics*'));   
+                                bombcellQMetricsFile = dir(fullfile(probeONEFolder,'*bc_qMetrics*'));
                                 if isempty(bombcellQMetricsFile) || contains(recompute,'BombcellQM')
-                                    qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
-                                    saveONEFormat(qMetrics, ...
-                                        probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
+                                    if exist(fullfile(KSFolder,'qMetrics','templates._bc_qMetrics.parquet'),'file')
+                                        qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
+                                        saveONEFormat(qMetrics, ...
+                                            probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
+                                    end
                                 end
 
                                 % Remove any error file
