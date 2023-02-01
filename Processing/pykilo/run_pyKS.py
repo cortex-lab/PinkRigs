@@ -21,8 +21,8 @@ pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Admin.csv_queryExp import get_csv_location
 #queue updates and ibl formatter 
-from Analysis.pykilo.check_pyKS_queue import stage_KS_queue
-from Analysis.pykilo.helpers import save_error_message
+from Processing.pykilo.check_pyKS_queue import stage_KS_queue
+from Processing.pykilo.helpers import save_error_message
 
 KS_workpath = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
 
