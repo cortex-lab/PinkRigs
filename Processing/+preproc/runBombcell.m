@@ -16,6 +16,8 @@ function runBombcell(varargin)
     varargin = ['KSversion', 'PyKS', varargin];
     varargin = ['decompressDataLocal', 'C:\Users\Experiment\Documents\KSworkfolder', varargin];
     params = csv.inputValidation(varargin{:});
+
+    recompute = params.recompute{1};
     
     %% Get exp list
 
@@ -40,30 +42,26 @@ function runBombcell(varargin)
         ephysMetaDir = dir(fullfile(ephysDirPath,'*.meta')); % used in bc_qualityParamValues
         savePath = fullfile(ephysKilosortPath,'qMetrics');
 
-        % Load data
-        [spikeTimes_samples, spikeTemplates, ...
-            templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ephysKilosortPath);
-
-        % Detect whether data is compressed, decompress locally if necessary
-        rawFile = bc_manageDataCompression(ephysRawDir, decompressDataLocal);
-
-        % Which quality metric parameters to extract and thresholds
-        param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
-        
-        % Compute quality metrics
-        rerun = 0;
         qMetricsExist = ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
 
-        if qMetricsExist == 0 || rerun
-            [qMetric, unitType] = bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
-                templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, savePath);
-        else
-            [param, qMetric] = bc_loadSavedMetrics(savePath);
-            unitType = bc_getQualityUnitType(param, qMetric);
-        end
+        if qMetricsExist == 0 || recompute
+            % Load data
+            [spikeTimes_samples, spikeTemplates, ...
+                templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ephysKilosortPath);
 
-        % Delete local file if ran fine
-        delete(rawFile);
+            % Detect whether data is compressed, decompress locally if necessary
+            rawFile = bc_manageDataCompression(ephysRawDir, decompressDataLocal);
+
+            % Which quality metric parameters to extract and thresholds
+            param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
+
+            % Compute quality metrics
+            bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
+                templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, savePath);
+
+            % Delete local file if ran fine
+            delete(rawFile);
+        end
     end
 
 end
