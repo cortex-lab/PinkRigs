@@ -228,6 +228,7 @@ function extractExpData(varargin)
                                 if isempty(bombcellQMetricsFile) || contains(recompute,'BombcellQM')
                                     if exist(fullfile(KSFolder,'qMetrics','templates._bc_qMetrics.parquet'),'file')
                                         qMetrics = preproc.getQMetrics(KSFolder,'bombcell');
+                                        qMetrics.clusterID = qMetrics.clusterID - 1; % base 0 indexing
                                         saveONEFormat(qMetrics, ...
                                             probeONEFolder,'clusters','_bc_qualityMetrics','pqt',stub);
                                     end

@@ -26,19 +26,21 @@ function runBombcell(varargin)
     recList = unique(recList);
     recList(strcmp(recList,'NaN')) = [];
 
+    %% Run Bombcell on all exp
+    decompressDataLocal = params.decompressDataLocal{1};
+    if ~exist(decompressDataLocal, 'dir')
+        mkdir(decompressDataLocal)
+    end
+
     for rec = 1:numel(recList)
         % Set paths
         ephysKilosortPath = fullfile(recList{rec},'PyKS','output');
         ephysDirPath = recList{rec};
         ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
         ephysMetaDir = dir(fullfile(ephysDirPath,'*.meta')); % used in bc_qualityParamValues
-        decompressDataLocal = params.decompressDataLocal{1};
-        if ~exist(decompressDataLocal, 'dir')
-            mkdir(decompressDataLocal)
-        end
         savePath = fullfile(ephysKilosortPath,'qMetrics');
 
-        %% load data
+        % Load data
         [spikeTimes_samples, spikeTemplates, ...
             templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ephysKilosortPath);
 
@@ -46,11 +48,11 @@ function runBombcell(varargin)
         rawFile = bc_manageDataCompression(ephysRawDir, decompressDataLocal);
 
         % Which quality metric parameters to extract and thresholds
-        param = bc_qualityParamValues(ephysMetaDir, rawFile);
-
+        param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
+        
         % Compute quality metrics
         rerun = 0;
-        qMetricsExist = ~isempty(dir(fullfile(savePath, 'qMetric*.mat'))) || ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
+        qMetricsExist = ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
 
         if qMetricsExist == 0 || rerun
             [qMetric, unitType] = bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
