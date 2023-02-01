@@ -64,7 +64,7 @@ function extractExpData(varargin)
             % monitors if anything has changed
             change = 0;
             
-            fprintf(1, '*** Preprocessing experiment %s... ***\n', expFolder);
+            fprintf(1, '*** Preprocessing experiment %s (%d/%d)... ***\n', expFolder,ee,size(exp2checkList,1));
 
             if exist(alignmentFile, 'file')
                 %% Extract important info from timeline or block
