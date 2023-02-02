@@ -77,7 +77,7 @@ class maxtest():
             }
 
         recordings = load_data(data_name_dict = data_dict,**kwargs)   
-        events,spikes,_,_ = simplify_recdat(recordings.iloc[0])
+        events,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
         blanks,vis,aud,_ = postactive(events)
         event_dict = {}
         # to redo the previous tests

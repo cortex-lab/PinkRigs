@@ -14,18 +14,17 @@ rerun_sig_test=False
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 # %%
 
-from Admin.csv_queryExp import load_data
-load_data(
-    
-)
+from Admin.csv_queryExp import load_ephys_independent_probes
+
 
 # %%
-for session in dat_keys.iterrows():
-    interim_data_sess = interim_data_folder / '%s/%s/%s/%s/sig_test' % tuple(session)
-    interim_data_sess = interim_data_sess / '%s_%s_%s_%s_maxtest.csv' % tuple(session)
+for _,session in dat_keys.iterrows():
+    r = load_ephys_independent_probes(ephys_dict={'spikes':'all','clusters':'all'},**session)
+    interim_data_sess = interim_data_folder / ('%s/%s/%.0f/%s/sig_test' % tuple(session))
+    interim_data_sess.mkdir(parents=True,exist_ok=True)
+    interim_data_sess = interim_data_sess / ('%s_%s_%.0f_%s_maxtest.csv' % tuple(session))
     # get significance
-
-    if rerun_sig_test or ~interim_data_sess.isfile():
+    if rerun_sig_test or not interim_data_sess.is_file():
         print('running sig test for %s' % interim_data_sess.__str__())
         from Analysis.neural.src.maxtest import maxtest
         sig_test = maxtest()
@@ -53,3 +52,5 @@ for session in dat_keys.iterrows():
     # load cluster location in allen ccf and unit quality metrics
 
 
+
+# %%
