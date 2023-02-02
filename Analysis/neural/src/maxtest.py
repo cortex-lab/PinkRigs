@@ -23,9 +23,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from utils.spike_dat import get_binned_rasters
-from utils.ev_dat import postactive
-from utils.plotting import off_axes
+from Analysis.neural.utils.spike_dat import get_binned_rasters
+from Analysis.neural.utils.ev_dat import postactive
+from Analysis.neural.utils.plotting import off_axes
 
 from Admin.csv_queryExp import load_data, simplify_recdat
 
@@ -59,11 +59,7 @@ def get_test_statistic(test_raster,blank_raster,permute_seed = None):
     return Rmax_stim-Rmax_blank
 
 class maxtest(): 
-    def __init__(self,probe='probe0'):
-        self._av_required_data = {
-                'events':{'_av_trials':'table'},
-                probe:{'spikes':['times','clusters']}
-                }
+    def __init__(self):
 
         self.raster_kwargs = { 
                 'pre_time':0.6,
@@ -74,8 +70,13 @@ class maxtest():
                 'baseline_subtract': True, 
             }
             
-    def call_default_test_set(self,rec_info):
-        recordings = load_data(data_name_dict=maxtest._av_required_data,**rec_info)
+    def load_and_format_data(self,probe='probe0',**kwargs):
+        data_dict = {
+            'events':{'_av_trials':'table'},
+            probe:{'spikes':['times','clusters']}
+            }
+
+        recordings = load_data(data_name_dict = data_dict,**kwargs)   
         events,spikes,_,_ = simplify_recdat(recordings.iloc[0])
         blanks,vis,aud,_ = postactive(events)
         event_dict = {}
