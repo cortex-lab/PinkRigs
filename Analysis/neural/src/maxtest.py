@@ -95,7 +95,7 @@ class maxtest():
 
 
 
-    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,n_shuffles=2000):
+    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,savepath = None,n_shuffles=2000):
         """
         Parameters:
         -----------
@@ -166,6 +166,9 @@ class maxtest():
         p_value_per_event = np.concatenate(p_value_per_event,axis=1)
         
         p_value_per_event = pd.DataFrame(p_value_per_event,columns=list(event_times_dict.keys()))
+
+        if savepath:
+            p_value_per_event.to_csv(savepath)
 
         return p_value_per_event
 
