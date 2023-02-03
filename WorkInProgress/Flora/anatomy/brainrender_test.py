@@ -71,8 +71,8 @@ colors = [
  #    'orange' 
     ]
 
-# for s,p,c in zip(subjects,probes,colors):
-#     add_tracks_to_scene(scene,s,probe=p,mycolor=c)
+for s,p,c in zip(subjects,probes,colors):
+    add_tracks_to_scene(scene,s,probe=p,mycolor=c)
 
 scene.render()
 
