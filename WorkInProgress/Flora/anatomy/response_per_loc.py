@@ -1,5 +1,7 @@
 # this code aims to produce an average psth per depth for active and passive to see the kind of sensory responses everywhere
+# %%
 
+from ibllib.atlas import AllenAtlas
 # %%
 import sys
 import numpy as np

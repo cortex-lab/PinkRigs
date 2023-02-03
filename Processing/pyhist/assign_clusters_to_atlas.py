@@ -2,7 +2,7 @@ import json,re,glob,sys,datetime
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from ibllib.atlas import AllenAtlas
+from helpers.atlas import AllenAtlas
 from shutil import copyfile
 atlas = AllenAtlas(25)
 
@@ -10,7 +10,7 @@ atlas = AllenAtlas(25)
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
+from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 from Admin.csv_queryExp import load_data,get_recorded_channel_position
 
 def get_chan_coordinates(root):
@@ -120,7 +120,7 @@ def save_to_common_anatmap(ibl_format_path,probe,shank,botrow,date):
         stub = 'channel_locations_%s_shank%.0d_botrow%.0d.json' % (probe,shank,botrow)
         copyfile(chanfile,(output_folder / stub))
 
-def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
+def save_out_cluster_location(rec,anatmap_paths=None):
     """
     function to save out anatomical location of clusters after the data has been alinged to the atlas using Mayo's tool
 
@@ -135,9 +135,12 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
     anatmap_paths: list of pathlib.Path
         of the ibl_format folders of the anatmap 
     """
+    # ibl_format_path
+        
     # check if the channel_location.json exists
     matchable=False
-    # if the current ibl format file is there, do the aligment with that
+    # if the current ibl format file is there, do the aligment with that   
+    
     if (ibl_format_path / 'channel_locations.json').is_file(): 
         chan_pos, allen_xyz, region_ID, region_acronym = get_chan_coordinates(ibl_format_path)
         anatmap_paths = None
