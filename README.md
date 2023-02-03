@@ -26,6 +26,10 @@ Most scripts in Matlab use a standard input format.
 If you added new packages to the environment, overwrite the current `environment.yml` by running the following before you git add/commit: 
 `conda env export -f environment.yml`
 
+#### installing FFmpeg on Windows 
+the PinkRig environment is dependent `FFmpeg` which needs to be installed manually and added to system varaibles in Windows. [Here is an installation guide that worked.](https://phoenixnap.com/kb/ffmpeg-windows)
+
+
 ## Regular automated scripts 
 The pipeline runs automatically, mostly at night. It deals with the data that is on the experimental computers, to produce a standardized output for each experiment.
 
