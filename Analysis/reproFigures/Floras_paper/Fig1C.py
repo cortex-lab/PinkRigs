@@ -22,7 +22,7 @@ is_aud_sig, is_vis_sig = [],[]
 
 for _,session in dat_keys.iterrows():
     r = load_ephys_independent_probes(ephys_dict={'clusters':'all'},**session)
-    allen_pos_mlapdv.append(r.iloc[0].ibl.clusters.mlapdv)
+    allen_pos_mlapdv.append(r.iloc[0].probe.clusters.mlapdv)
     curated_label.append(r.iloc[0].probe.clusters._av_KSLabels)
     
     interim_data_sess = interim_data_folder / ('%s/%s/%.0f/%s/sig_test' % tuple(session))
@@ -47,7 +47,7 @@ for _,session in dat_keys.iterrows():
     vis_keys = [k for k in p.keys() if 'vis' in k]
     print(p.shape)
     print(r.iloc[0].probe.clusters._av_KSLabels.shape)
-    print(r.iloc[0].ibl.clusters.mlapdv.shape)
+    print(r.iloc[0].probe.clusters.mlapdv.shape)
     is_aud_sig.append(is_signifiant_per_cond[aud_keys].any(axis=1).to_numpy())
     is_vis_sig.append(is_signifiant_per_cond[vis_keys].any(axis=1).to_numpy())
 

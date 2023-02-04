@@ -251,7 +251,7 @@ def get_anatmap_path_same_day(one_path):
         :list[pathlib.Path]
     """
 
-    anatmap_list = list(one_path.parents[2].glob("**/ibl_format/channel_locations.json")) 
+    anatmap_list = list(one_path.parents[2].glob("**/kilosort2/ibl_format/channel_locations.json")) 
     anatmap_paths = [p.parent for p in anatmap_list]
     # check if the serial number is matching
     target_SN = read_probeSN_from_one_folder(one_path)
