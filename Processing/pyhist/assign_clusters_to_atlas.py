@@ -52,7 +52,8 @@ def get_chan_coordinates(root):
     allencoords_xyz=np.array([allenx,alleny,allenz]).T
 
 
-    return chan_pos,allencoords_xyz,regionID,region_acronym
+
+    return chan_pos,allencoords_xyz,np.array(regionID),np.array(region_acronym)
 
 
 def coordinate_matching(local_coordinate_array,target_coordinate_array):
@@ -110,10 +111,11 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
 
     return chan_idx   
 
-def save_to_common_anatmap(ibl_format_path,probe,shank,botrow,date):
+def save_to_common_anatmap(one_path,probe,shank,botrow,date):
+    ibl_format_path = open(list(one_path.glob('*.path.*.json'))[0],)
+    ibl_format_path = Path(json.load(ibl_format_path))        
     chanfile = (ibl_format_path / 'channel_locations.json')
     if chanfile.is_file(): 
-
         #redump to parent histology
         output_folder = ibl_format_path.parents[6] / ('histology/registered_anatmaps/%s' % date)            
         output_folder.mkdir(parents=True,exist_ok=True)         
