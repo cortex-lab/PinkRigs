@@ -64,7 +64,7 @@ is_good = curated_label==2
 is_SC = ['SC'in loc for loc in loc_name]
 
 
-# %%
+# plotting in brainrender 
 from brainrender import Scene
 from brainrender.actors import Points
 
