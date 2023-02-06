@@ -34,6 +34,7 @@ function spk = getSpikeDataONE(KSFolder)
     %           av_xpos: x position
     %           av_shankID: shank ID
     %           peakToTrough: peak to trough time
+    %           channels: which channel the cluster had its peak amp on
 
     %% Parameters
 
@@ -121,7 +122,8 @@ function spk = getSpikeDataONE(KSFolder)
     clusWavChan = single(tempWavChan);
     clusAmps = readNPY(fullfile(IBLFormatFolder,'clusters.amps.npy'));
     clusPeakToTrough = readNPY(fullfile(IBLFormatFolder,'clusters.peakToTrough.npy'));
-
+    clusChannel = readNPY(fullfile(IBLFormatFolder,'clusters.channels.npy'));
+        
     % The ibl format clusters and the curated KS clusters don't match
     % so if they don't match we need to get rid of clusters to keep
     % dimensions consistent
@@ -132,7 +134,8 @@ function spk = getSpikeDataONE(KSFolder)
         clusWav = clusWav(cids+1,:,:);
         clusWavChan = clusWavChan(cids+1,:);
         clusAmps = clusAmps(cids+1);
-        clusPeakToTrough = clusPeakToTrough(cids+1);        
+        clusPeakToTrough = clusPeakToTrough(cids+1);  
+        clusChannel = clusChannel(cids+1); 
     end
 
 
@@ -162,6 +165,7 @@ function spk = getSpikeDataONE(KSFolder)
     spk.clusters.av_xpos = clusXpos';
     spk.clusters.av_shankID = clusShankIDs';
     spk.clusters.peakToTrough = clusPeakToTrough;
+    spk.clusters.channels = clusChannel; 
 
 end
     

@@ -2,7 +2,7 @@ import json,re,glob,sys,datetime
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from ibllib.atlas import AllenAtlas
+from helpers.atlas import AllenAtlas
 from shutil import copyfile
 atlas = AllenAtlas(25)
 
@@ -10,7 +10,7 @@ atlas = AllenAtlas(25)
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
-from Analysis.pykilo.ReadSGLXData.readSGLX import readMeta
+from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 from Admin.csv_queryExp import load_data,get_recorded_channel_position
 
 def get_chan_coordinates(root):
@@ -52,7 +52,8 @@ def get_chan_coordinates(root):
     allencoords_xyz=np.array([allenx,alleny,allenz]).T
 
 
-    return chan_pos,allencoords_xyz,regionID,region_acronym
+
+    return chan_pos,allencoords_xyz,np.array(regionID),np.array(region_acronym)
 
 
 def coordinate_matching(local_coordinate_array,target_coordinate_array):
@@ -110,17 +111,18 @@ def coordinate_matching(local_coordinate_array,target_coordinate_array):
 
     return chan_idx   
 
-def save_to_common_anatmap(ibl_format_path,probe,shank,botrow,date):
+def save_to_common_anatmap(one_path,probe,shank,botrow,date):
+    ibl_format_path = open(list(one_path.glob('*.path.*.json'))[0],)
+    ibl_format_path = Path(json.load(ibl_format_path))        
     chanfile = (ibl_format_path / 'channel_locations.json')
     if chanfile.is_file(): 
-
         #redump to parent histology
         output_folder = ibl_format_path.parents[6] / ('histology/registered_anatmaps/%s' % date)            
         output_folder.mkdir(parents=True,exist_ok=True)         
         stub = 'channel_locations_%s_shank%.0d_botrow%.0d.json' % (probe,shank,botrow)
         copyfile(chanfile,(output_folder / stub))
 
-def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
+def save_out_cluster_location(one_path,anatmap_paths=None):
     """
     function to save out anatomical location of clusters after the data has been alinged to the atlas using Mayo's tool
 
@@ -135,9 +137,15 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
     anatmap_paths: list of pathlib.Path
         of the ibl_format folders of the anatmap 
     """
+    # ibl_format_path
+
+    ibl_format_path = open(list(one_path.glob('*.path.*.json'))[0],)
+    ibl_format_path = Path(json.load(ibl_format_path))
+        
     # check if the channel_location.json exists
     matchable=False
-    # if the current ibl format file is there, do the aligment with that
+    # if the current ibl format file is there, do the aligment with that  
+    
     if (ibl_format_path / 'channel_locations.json').is_file(): 
         chan_pos, allen_xyz, region_ID, region_acronym = get_chan_coordinates(ibl_format_path)
         anatmap_paths = None
@@ -154,14 +162,18 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
 
         # get the channels of interest and subselect
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
-        sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
 
-        if np.max(sel_idx)==chan_pos.shape[0]: 
-            check_which = (sel_idx==np.max(sel_idx))
-            print('%.0f/%.0f clusters could not be assigned.' % (check_which.sum(),check_which.size))
-            # concatenate a nan array to allen_xyz,acronyms and ID.
-            allen_xyz = np.vstack((allen_xyz,np.ones(3)*np.nan))
-            region_ID, region_acronym  = np.hstack((region_ID,np.nan)),np.hstack((region_acronym,np.nan))
+        if channel_localCoordinates.shape[0]==384:
+            pass
+        else:
+            sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
+
+            if np.max(sel_idx)==chan_pos.shape[0]: 
+                check_which = (sel_idx==np.max(sel_idx))
+                print('%.0f/%.0f clusters could not be assigned.' % (check_which.sum(),check_which.size))
+                # concatenate a nan array to allen_xyz,acronyms and ID.
+                allen_xyz = np.vstack((allen_xyz,np.ones(3)*np.nan))
+                region_ID, region_acronym  = np.hstack((region_ID,np.nan)),np.hstack((region_acronym,np.nan))
 
 
         allen_xyz = allen_xyz[sel_idx]
@@ -172,7 +184,9 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
     # if the channels in ibl_format_path have been idenfied with some atlas correspondence
     # go ahead, and match the units and save 
     if matchable: 
-        clus_channels = np.load(ibl_format_path / 'clusters.channels.npy')
+        a = list(one_path.glob('*path.*.json'))[0]
+        stub = re.split('[.]',a.__str__())[-2]
+        clus_channels = np.load(one_path / ('clusters.channels.%s.npy' % stub))
         # get corresponding values for each cluster. 
         allen_xyz_clus = np.array([allen_xyz[clus_ch,:][:,np.newaxis] for clus_ch in clus_channels])	
         region_ID_clus = np.array([region_ID[clus_ch] for clus_ch in clus_channels])
@@ -184,13 +198,13 @@ def save_out_cluster_location(ibl_format_path,anatmap_paths=None):
         allen_xyz_clus[region_ID_clus==0] = np.nan
 
         allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus/1e6,ccf_order='apdvml') 
-        allencoords_ccf_mlapdv = allencoords_ccf_apdvml[:,[2,0,1]]                  
+        allencoords_ccf_mlapdv = allencoords_ccf_apdvml[:,0,[2,0,1]]                  
     # save the output
-        np.save(ibl_format_path / 'clusters.brainLocationIds_ccf_2017.npy',region_ID_clus)
-        np.save(ibl_format_path / 'clusters.brainLocationAcronyms_ccf_2017.npy',region_acronym_clus)
-        np.save(ibl_format_path / 'clusters.mlapdv.npy',allencoords_ccf_mlapdv)	
+        np.save(one_path / ('clusters.brainLocationIds_ccf_2017.%s.npy' % stub),region_ID_clus)
+        np.save(one_path / ('clusters.brainLocationAcronyms_ccf_2017.%s.npy' % stub),region_acronym_clus)
+        np.save(one_path / ('clusters.mlapdv.%s.npy' % stub),allencoords_ccf_mlapdv)	
     else:
-        print('we could not match channels with posititons for %s' % ibl_format_path.__str__())  
+        print('we could not match channels with posititons for %s' % one_path.__str__())  
 
 def read_probeSN_from_folder(folderpath):
     """
@@ -209,7 +223,25 @@ def read_probeSN_from_folder(folderpath):
 
     return probe_sn 
 
-def get_anatmap_path_same_day(ibl_format_path):
+def read_probeSN_from_one_folder(one_path):
+    """
+    read the probe serial number from the one path
+    Parameters: 
+    -------------
+    one_path: pathlib.Path
+
+    Returns: 
+    ---------
+        :str
+
+    """
+
+    a = list(one_path.glob('*path.*.json'))[0]
+    a = a.__str__()
+    probeSN = a[-16:-5]
+    return probeSN
+
+def get_anatmap_path_same_day(one_path):
     """
     function to get ibl_format_paths that already contain the channel_locations.json files and match the probe serial number of the input puath
     Parameters: 
@@ -221,10 +253,10 @@ def get_anatmap_path_same_day(ibl_format_path):
         :list[pathlib.Path]
     """
 
-    anatmap_list = glob.glob((ibl_format_path.parents[3] / '**/kilosort2/ibl_format/channel_locations.json').__str__(),recursive=True)
-    anatmap_paths = [(Path(p)).parent for p in anatmap_list]
+    anatmap_list = list(one_path.parents[2].glob("**/kilosort2/ibl_format/channel_locations.json")) 
+    anatmap_paths = [p.parent for p in anatmap_list]
     # check if the serial number is matching
-    target_SN = read_probeSN_from_folder(ibl_format_path.parents[1])
+    target_SN = read_probeSN_from_one_folder(one_path)
     is_SN_match = [read_probeSN_from_folder(p.parents[1])==target_SN for p in anatmap_paths]
     anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
 

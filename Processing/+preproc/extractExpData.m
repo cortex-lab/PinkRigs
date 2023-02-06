@@ -200,7 +200,7 @@ function extractExpData(varargin)
                                 
                                 % Get IBL qmetrics
                                 IBLFormatQMetricsFile = dir(fullfile(probeONEFolder,'*_av_qualityMetrics*'));    
-                                if isempty(IBLFormatQMetricsFile) || contains(recompute,'IBLQM')
+                                if (isempty(IBLFormatQMetricsFile) || contains(recompute,'IBLQM')) && exist(IBLFormatFolder,'dir')
                                     qMetrics = preproc.getQMetrics(KSFolder,'IBL');
                                     % The qMetrics don't get calculated for
                                     % some trash units, but we need to keep

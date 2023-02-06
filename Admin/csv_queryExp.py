@@ -330,7 +330,27 @@ def load_data(data_name_dict=None,**kwargs):
                 objects = Bunch(objects)
                 recordings.loc[idx][collection] = objects
 
+    # merge probes 
+    # an optional argument for when there are numerous datasets available for probes, we just merge the data
+
+
     return recordings
+
+def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},**kwargs):
+    """
+    This is a helper function to single probe data
+
+    """
+    d = {
+        probe:ephys_dict,
+        ('%s_raw' % probe):{'clusters':'all'}
+    }
+    r=load_data(data_name_dict=d,**kwargs)
+
+    r=r.rename(columns={probe:'probe'})
+    r=r.rename(columns={('%s_raw' % probe):'ibl'})
+
+    return r
 
 def simplify_recdat(recording,probe='probe0'): 
     """

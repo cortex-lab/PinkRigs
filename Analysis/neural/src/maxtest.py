@@ -23,9 +23,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from utils.spike_dat import get_binned_rasters
-from utils.ev_dat import postactive
-from utils.plotting import off_axes
+from Analysis.neural.utils.spike_dat import get_binned_rasters
+from Analysis.neural.utils.ev_dat import postactive
+from Analysis.neural.utils.plotting import off_axes
 
 from Admin.csv_queryExp import load_data, simplify_recdat
 
@@ -59,11 +59,7 @@ def get_test_statistic(test_raster,blank_raster,permute_seed = None):
     return Rmax_stim-Rmax_blank
 
 class maxtest(): 
-    def __init__(self,probe='probe0'):
-        self._av_required_data = {
-                'events':{'_av_trials':'table'},
-                probe:{'spikes':['times','clusters']}
-                }
+    def __init__(self):
 
         self.raster_kwargs = { 
                 'pre_time':0.6,
@@ -74,9 +70,14 @@ class maxtest():
                 'baseline_subtract': True, 
             }
             
-    def call_default_test_set(self,rec_info):
-        recordings = load_data(data_name_dict=maxtest._av_required_data,**rec_info)
-        events,spikes,_,_ = simplify_recdat(recordings.iloc[0])
+    def load_and_format_data(self,probe='probe0',**kwargs):
+        data_dict = {
+            'events':{'_av_trials':'table'},
+            probe:{'spikes':['times','clusters']}
+            }
+
+        recordings = load_data(data_name_dict = data_dict,**kwargs)   
+        events,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
         blanks,vis,aud,_ = postactive(events)
         event_dict = {}
         # to redo the previous tests
@@ -94,7 +95,7 @@ class maxtest():
 
 
 
-    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,n_shuffles=2000):
+    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,savepath = None,n_shuffles=2000):
         """
         Parameters:
         -----------
@@ -165,6 +166,9 @@ class maxtest():
         p_value_per_event = np.concatenate(p_value_per_event,axis=1)
         
         p_value_per_event = pd.DataFrame(p_value_per_event,columns=list(event_times_dict.keys()))
+
+        if savepath:
+            p_value_per_event.to_csv(savepath)
 
         return p_value_per_event
 
