@@ -191,7 +191,7 @@ probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
 if strcmpi(probeInfo.probeType{1}, 'Acute')
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
     if isfield(alignment,'ephys') 
-        potentialProbes = length(alignment.ephys);
+        potentialProbes = max([2, length(alignment.ephys)]);
     else
         potentialProbes = 0;
     end
