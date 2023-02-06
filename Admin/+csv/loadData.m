@@ -236,6 +236,7 @@ for j = 1:length(objects)
     loadExt = splitNames(matchedObj & matchedAttr,4);
     for i = 1:size(loadPaths,1)
         loadAttr{i} = strrep(loadAttr{i}, '_av_', '');
+        loadAttr{i} = strrep(loadAttr{i}, '_bc_', 'bc_');
         if contains(loadExt{i},{'npy'})
             outData.(loadObj{i}).(loadAttr{i}) = readNPY(loadPaths{i});
         elseif contains(loadExt{i},{'pqt','parquet'})
