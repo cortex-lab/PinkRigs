@@ -329,5 +329,5 @@ BestDist = natim.getBestDist(BestMatch, XPos, DepthCorrected);
 figure; 
 plot(dur,Nstable)
 
-[pairAcrossAll_fewDays,sigCorr,noiseCorr] = natim.plotMatchedNeuronsAcrossDays(1:7, BestMatch, BestCorr, BestDist, ...
+[pairAcrossAll_fewDays,sigCorr,noiseCorr] = plts.matchedNeuronsAcrossDays(1:7, BestMatch, BestCorr, BestDist, ...
         {db.spikeData}, XPos, DepthCorrected, [db.days],[0.05 0.5 150],9);

@@ -94,6 +94,7 @@ function [pairAcrossAll,sigCorr,noiseCorr] = plotMatchedNeuronsAcrossDays(dn,Bes
     for d = 1:numel(dn)
         subplot(3,numel(dn),2*numel(dn)+d)
         noiseCorr(d) = natim.getCorrelationMatrix({spikeData{dn(d)}(:,:,pairAcrossAll(d,neurSort),:)},'noise');
+        noiseCorr{d}(logical(eye(size(noiseCorr{d})))) = 0; % just for display
         imagesc(noiseCorr{d})
         caxis([-0.3,0.3])
         colormap('RedBlue')

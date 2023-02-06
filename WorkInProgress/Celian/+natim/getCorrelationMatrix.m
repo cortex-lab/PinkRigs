@@ -35,9 +35,9 @@ function corrd = getCorrelationMatrix(spikeData,type)
         Md1 = Md1(~nanidx,:);
         Md2 = Md2(~nanidx,:);
         corrd_tmp = corr(Md1,Md2);
-        % if strcmp(type,'noise')
-        %     corrd_tmp(eye(corrd_tmp)) = 0;
-        % end
+        if strcmp(type,'noise')
+            corrd_tmp(logical(eye(size(corrd_tmp)))) = nan;
+        end
         corrd{dd} = corrd_tmp;
     end
 
