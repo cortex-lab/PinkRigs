@@ -13,13 +13,13 @@ sys.path.insert(0, (pinkRig_path.__str__()))
 from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 from Admin.csv_queryExp import load_data,get_recorded_channel_position
 
-def get_chan_coordinates(root):
+def get_chan_coordinates(jsonFilePath):
     """
     function to get coordinates on npix and allen atlas for a given channel 
     Parameters: 
     -----------
-    root: Pathlib.path
-        directory of ibl_format file 
+    jsonFilePath: Pathlib.path
+        directory to channellocations.json file 
 
     Returns: 
     --------
@@ -35,7 +35,7 @@ def get_chan_coordinates(root):
         region name that the channel is in. 
 
     """
-    channel_locations = open(root / 'channel_locations.json',)
+    channel_locations = open(jsonFilePath)
     channel_locations = json.load(channel_locations)
     chan_names = np.array(list(channel_locations.keys()))
     chan_names = chan_names[['channel' in ch for ch in chan_names]] #get the channels only
@@ -145,9 +145,9 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
     # check if the channel_location.json exists
     matchable=False
     # if the current ibl format file is there, do the aligment with that  
-    
-    if (ibl_format_path / 'channel_locations.json').is_file(): 
-        chan_pos, allen_xyz, region_ID, region_acronym = get_chan_coordinates(ibl_format_path)
+    chanLoc_json_curr_exp = (ibl_format_path / 'channel_locations.json')
+    if chanLoc_json_curr_exp.is_file(): 
+        chan_pos, allen_xyz, region_ID, region_acronym = get_chan_coordinates(chanLoc_json_curr_exp)
         anatmap_paths = None
         matchable=True
 
@@ -174,10 +174,8 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
                 # concatenate a nan array to allen_xyz,acronyms and ID.
                 allen_xyz = np.vstack((allen_xyz,np.ones(3)*np.nan))
                 region_ID, region_acronym  = np.hstack((region_ID,np.nan)),np.hstack((region_acronym,np.nan))
-
-
-        allen_xyz = allen_xyz[sel_idx]
-        region_ID, region_acronym = region_ID[sel_idx], region_acronym[sel_idx]
+            allen_xyz = allen_xyz[sel_idx]
+            region_ID, region_acronym = region_ID[sel_idx], region_acronym[sel_idx]
 
         matchable = True
 
@@ -259,7 +257,6 @@ def get_anatmap_path_same_day(one_path):
     target_SN = read_probeSN_from_one_folder(one_path)
     is_SN_match = [read_probeSN_from_folder(p.parents[1])==target_SN for p in anatmap_paths]
     anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
-
     return anatmap_paths
 
 def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,depth_selection = 'auto'): 
