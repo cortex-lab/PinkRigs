@@ -1,3 +1,7 @@
+prompt = {'power, LED1:','power LED2:','LED1 hemisphere:','LED2 hemisphere:'};
+answer = inputdlg(prompt);
+
+%%
 s = daq.createSession('ni');
 s.addAnalogOutputChannel('Dev1', 'ao0', 'Voltage');
 % make the AO 'listen' to TTL on Dev1/PFI0 ('RisingEdge' by default)
