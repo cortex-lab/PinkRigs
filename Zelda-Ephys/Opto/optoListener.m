@@ -5,7 +5,7 @@
 
 %%
 
-uOpto = udp('0.0.0.0', 1111, 'LocalPort', 1003);
+uOpto = udp('0.0.0.0', 1111, 'LocalPort', 1006);
 set(uOpto, 'DatagramReceivedFcn', @optoUDPCallback);
 % set(u, 'DatagramReceivedFcn', 'start(t);');
 fopen(uOpto);
