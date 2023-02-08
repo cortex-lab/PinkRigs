@@ -329,7 +329,7 @@ if ~strcmpi(nDat.existMic, '1') && round(now-blk.endDateTime)<7 && nDat.existTim
     nDat.alignMic = '0';
 elseif ~strcmpi(nDat.existMic, '1') || ~strcmpi(nDat.existTimeline, '1')
     % Issue a "NaN" if corresponding file or timeline doesn't exist
-    nDat.alignMic = NaN;
+    nDat.alignMic = 'NaN';
 elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
     % Issue a "1" if an ONE file is detected
     nDat.alignMic = '1';
@@ -413,7 +413,11 @@ end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
 nDat.extractSpikes(isnan(nDat.issortedPyKS)) = nan;
 
-%% This section is a final cleanup and dealing with some edge cases
+
+% % Change probe-related fields from vectors to comma-separated strings
+nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If a file called "AllErrorsValidated.txt" is detected in the exp folder,
 % or the parent folder, then replace all cases of "2" with a "NaN" as the
@@ -421,13 +425,12 @@ nDat.extractSpikes(isnan(nDat.issortedPyKS)) = nan;
 % could not be resolved.
 if any(strcmpi('AllErrorsValidated.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Errors have been validated for %s \n', expFoldContents(1).folder)
-    %%% NEED TO DO THIS %%%%%
+    allFields = fields(nDat);
+    errorFields = allFields(contains(allFields, {'align'; 'issorted'; 'extract'; 'fMap'}));
+    for i = 1:length(errorFields)
+        nDat.(errorFields{i}) = strrep(nDat.(errorFields{i}), '2', 'NaN');
+    end
 end
-
-% % Change probe-related fields from vectors to comma-separated strings
-nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
-nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);
