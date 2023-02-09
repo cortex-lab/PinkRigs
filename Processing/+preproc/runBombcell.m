@@ -57,6 +57,7 @@ function runBombcell(varargin)
             param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
 
             % Compute quality metrics
+            param.plotGlobal = 0;
             bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
                 templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, savePath);
 
