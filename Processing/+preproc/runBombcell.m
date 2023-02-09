@@ -43,8 +43,9 @@ function runBombcell(varargin)
         savePath = fullfile(ephysKilosortPath,'qMetrics');
 
         qMetricsExist = ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
+        sortingExist = ~isempty(dir(fullfile(ephysKilosortPath,'spike_templates.npy')));
 
-        if qMetricsExist == 0 || recompute
+        if sortingExist && (qMetricsExist == 0 || recompute)
             % Load data
             [spikeTimes_samples, spikeTemplates, ...
                 templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(ephysKilosortPath);
