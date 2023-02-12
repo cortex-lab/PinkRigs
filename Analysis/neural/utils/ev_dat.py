@@ -101,25 +101,43 @@ def postactive(ev):
 
         return timepoints_blanks,timepoints_visual,timepoints_audio,timepoints_MS
 
-def index_trialtype_perazimuth(a,v):
+def index_trialtype_perazimuth(a,v,expType='active'):
     """
     function to index into dictionnary of trial types sorted by arrange_trials based on azimuth
     a: auditory azimuth
     v: visual azimuth
 
     returns the type of trial: blank/vis/aud/coh/conf, string    """     
-            
-    if (a==0) & (v==0):
-        trialtype = 'is_blankTrial'
-    elif (a==0) & (v!=0):
-        trialtype = 'is_visualTrial'
-    elif (a!=0) & (v==0):
-        trialtype = 'is_auditoryTrial'
-    elif (a!=0) & (v!=0) & (v==a):
-        trialtype = 'is_coherentTrial'
-    elif (a!=0) & (v!=0) & (v!=a):
-        trialtype = 'is_conflictTrial'
-    
+
+    if expType=='active':  
+        if (a==0) & (v==0):
+                trialtype = 'is_blankTrial'
+        elif (a==0) & (v!=0):
+                trialtype = 'is_visualTrial'
+        elif (a!=0) & (v==0):
+                trialtype = 'is_auditoryTrial'
+        elif (a!=0) & (v!=0) & (v==a):
+                trialtype = 'is_coherentTrial'
+        elif (a!=0) & (v!=0) & (v!=a):
+                trialtype = 'is_conflictTrial'
+    elif expType=='passive': 
+        # basically we just replace nans with uncrealistic numbers.
+        if np.isnan(a):
+                a=-1000
+        if np.isnan(v):
+                v=-1000
+
+        if (a==-1000) & (v==-1000):
+                trialtype = 'is_blankTrial'
+        elif (a==-1000) & (v!=-1000):
+                trialtype = 'is_visualTrial'
+        elif (a!=-1000) & (v==-1000):
+                trialtype = 'is_auditoryTrial'
+        elif (a!=-1000) & (v!=-1000) & (v==a):
+                trialtype = 'is_coherentTrial'
+        elif (a!=-1000) & (v!=-1000) & (v!=a):
+                trialtype = 'is_conflictTrial'
+
     return trialtype
 
 def digitise_event_onsets(ev_times,bin_range = None,**binkwargs): 

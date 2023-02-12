@@ -3,12 +3,14 @@
 import numpy as np 
 import pandas as pd
 import collections,itertools
-from utils.spike_dat import bincount2D
-from utils.video_dat import digitise_motion_energy
-from utils.plotting import off_axes
+
 
 # import PinkRig utilities 
 from Admin.csv_queryExp import load_data,Bunch
+from Analysis.neural.utils.spike_dat import bincount2D
+from Analysis.neural.utils.video_dat import digitise_motion_energy
+from Analysis.neural.utils.plotting import off_axes
+
 
 # Machine learning / statistics
 from sklearn.kernel_ridge import KernelRidge
@@ -26,8 +28,8 @@ from scipy.stats import zscore,median_abs_deviation
 # for plotting default plots 
 import matplotlib.pyplot as plt 
 import matplotlib.gridspec as gridspec
-from utils.ev_dat import index_trialtype_perazimuth
-import utils.plotting as pFT
+from Analysis.neural.utils.ev_dat import index_trialtype_perazimuth
+import Analysis.neural.utils.plotting as pFT
 from pylab import cm
 from matplotlib.colors import LogNorm
 
@@ -818,6 +820,15 @@ def test_kernel_significance(model, X, y, feature_column_dict,original_feature_c
                              check_neg_features=False):
     """
     Test the significance of each kernel in the feature matrix.
+
+    methods: leave-one-out
+        here, it does not matter too much which model you input, as the model will be refitte
+        steps: 
+            1. fit model with everything but the tested kernel on training set. (model 1)
+            2. Fit tested kernel on the residuals for training set (model 2)
+            3. Calculate the residuals if model 1 on test set
+            4. Calculate VE by model 2 on the residuals of test set. 
+
     Parameters
     ----------------
     model  : (scikit-learn model class)
@@ -971,6 +982,7 @@ def test_kernel_significance(model, X, y, feature_column_dict,original_feature_c
         if split_group_vector is not None:
             cv_splitter = groupKFoldRandom(groups=split_group_vector,
                                            n=num_cv_folds, seed=cv_random_seed)
+                                           
         for fold_n, (train_idx, test_idx) in enumerate(cv_splitter):
             X_train = X[train_idx, :]
             X_test = X[test_idx, :]
@@ -1066,16 +1078,34 @@ def get_subselected_trials(events,trialtype,rt_min=None,rt_max=None,spl = None, 
         if rt_max:
             is_selected = is_selected & (rt<=rt_max)
         
-    if contrast:
-        is_selected = is_selected & ((events.stim_visContrast*100).astype('int')==contrast*100) 
+    if contrast!=None:
+        if type(contrast) is not list:
+            contrast = [contrast]
+        is_selected_contrast = [
+            ((events.stim_visContrast*100).astype('int')==c*100) 
+            for c in contrast
+        ]
+        is_selected_contrast = np.sum(np.array(is_selected_contrast),axis=0).astype('bool')
+
+        is_selected = is_selected & is_selected_contrast
     
-    if spl:
-        is_selected = is_selected & (np.round((events.stim_audAmplitude*100)).astype('int')==spl*100) 
+    if spl!=None:
+        if type(spl) is not list:
+            spl = [spl]
+
+        is_selected_spl = [
+            (np.round((events.stim_audAmplitude*100)).astype('int')==s*100)
+            for s in spl
+            ]
+
+        is_selected_spl = np.sum(np.array(is_selected_spl),axis=0).astype('bool')
+        is_selected = is_selected &  is_selected_spl
+        
     
-    if vis_azimuth: 
+    if vis_azimuth!=None: 
         is_selected  = is_selected & (events.stim_visAzimuth==vis_azimuth)
     
-    if aud_azimuth: 
+    if aud_azimuth!=None: 
         is_selected = is_selected & (events.stim_audAzimuth==aud_azimuth)
 
     return is_selected    
@@ -1187,11 +1217,17 @@ class kernel_model():
 
             if 'postactive' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
+                self.sess_type = 'passive'
             elif 'spatialIntegrationFlora' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
+                self.sess_type = 'passive'
             elif 'ckeckerboard_updatechecker' in recdat.expDef.iloc[0]:
-                ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)   
+                ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
+                self.sess_type = 'passive'
+            else: 
+                self.sess_type = 'active'   
 
+            # extract point events and make a temporal kernel for them
             extracted_ev = events_list()
             if 'vis' in event_types:   
                 #onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
@@ -1201,14 +1237,16 @@ class kernel_model():
                     print('contrast is not passed. setting highest contrast only.')
                     contrasts = [np.max(ev.stim_visContrast)]     
 
-                if not azimuths or 'dir' in azimuths: 
+                if not azimuths or 'dir' in azimuths: # if the kernel is just directional, we don't add azimuths specifically
                     azimuths = [None]
 
                 for my_contrast,my_azimuth in itertools.product(contrasts, azimuths): 
-                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,vis_azimuth=my_azimuth,**rt_params)        
+                    possible_spls_vis = spls.copy()
+                    possible_spls_vis.append(0)
+                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = possible_spls_vis, vis_azimuth=my_azimuth,**rt_params)        
                     
                     feature_name_string = 'vis_kernel' + '_contrast_%.2f' % my_contrast
-                    if my_azimuth:
+                    if my_azimuth!=None:
                         feature_name_string += '_azimuth_%.0f' % my_azimuth
 
                     extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)
@@ -1228,10 +1266,12 @@ class kernel_model():
                     azimuths = [None]
 
                 for my_spl,my_azimuth in itertools.product(spls,azimuths): 
-                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=None,spl = my_spl, aud_azimuth=my_azimuth,**rt_params)        
+                    possible_contrasts = contrasts.copy()
+                    possible_contrasts.append(0)
+                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=possible_contrasts,spl = my_spl, aud_azimuth=my_azimuth,**rt_params)        
                     
                     feature_name_string = 'aud_kernel' + '_spl_%.2f' % my_spl
-                    if my_azimuth:
+                    if my_azimuth!=None:
                         feature_name_string += '_azimuth_%.0f' % my_azimuth
 
                     extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)
@@ -1241,6 +1281,41 @@ class kernel_model():
                             diag_value_vector = np.sign(ev.stim_audAzimuth[is_selected])
                             feature_name_string = feature_name_string + '_dir'
                             extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector)
+
+            if 'coherent-non-linearity' in event_types:
+                onset_sel_key  = 'block_stimOn'
+                azimuths = aud_azimuths
+
+                if not azimuths or 'dir' in azimuths:
+                    print('coherent non-linearity is not sensible, please reinstate param sets..') 
+                     
+                    
+                for my_spl,my_azimuth,my_contrast in itertools.product(spls,azimuths,contrasts):
+                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = my_spl, vis_azimuth=my_azimuth, aud_azimuth=my_azimuth,**rt_params)
+                    
+                    feature_name_string = 'coherent-non-linear_kernel' + '_contrast_%.2f' % my_contrast + '_spl_%.2f' % my_spl 
+                    if my_azimuth!=None:
+                        feature_name_string += '_azimuth_%.0f' % my_azimuth
+
+                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string) 
+
+            if 'conflict-non-linearity' in event_types:
+                # this takes only the most extreme azimuth differeces
+                onset_sel_key  = 'block_stimOn'
+                extreme_aud_azimuths = [min(aud_azimuths), max(aud_azimuths)] # for now we need to take only one of these
+                extreme_vis_azimuths = [max(vis_azimuths), min(aud_azimuths)]
+                azimuths = list(zip(extreme_aud_azimuths,extreme_vis_azimuths))
+                if not azimuths or 'dir' in azimuths:
+                    print('conflict non-linearity is not sensible, please reinstate param sets..')                      
+                    
+                for my_spl,my_azimuth,my_contrast in itertools.product(spls,azimuths,contrasts):
+                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = my_spl, vis_azimuth=my_azimuth[1], aud_azimuth=my_azimuth[0],**rt_params)
+                    
+                    feature_name_string = 'confictt-non-linear_kernel' + '_contrast_%.2f' % my_contrast + '_spl_%.2f' % my_spl 
+                    if my_azimuth!=None:
+                        feature_name_string += '_aud_azimuth_%.0f_vis_azimuth_%.0f' % my_azimuth
+
+                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)         
 
             if 'move' in event_types: 
                 onset_sel_key = 'timeline_choiceMoveOn'  # timing info taken for this  
@@ -1294,7 +1369,6 @@ class kernel_model():
                 self.feature_column_dict[ev_name] = np.array(range(kernel_end_idx[ix],kernel_end_idx[ix+1]))
 
 
-            # add any kernels that are not fitted over time (baseline and camera)
             if 'move' not in event_types:
                 trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)]
             else: 
@@ -1303,6 +1377,8 @@ class kernel_model():
             trial_indices = np.concatenate(trial_indices).reshape((-1,self.tscale.size))
             fitted_trial_idxs = np.unique(extracted_ev.fitted_trials_idx)
 
+
+            # add any kernels that are not fitted over time (baseline and camera)
             if 'baseline' in event_types:
                 # add blank trials to bl kernel if requested?
                 if 'blank' in event_types: 
@@ -1408,9 +1484,15 @@ class kernel_model():
             kernel_names = list(self.feature_column_dict.keys())
             # merge all aud or vis groups 
             new_feature_column_dict = {}
-            new_feature_column_dict['aud'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'aud' in k])
-            new_feature_column_dict['vis'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'vis' in k])  
-            remaining_kernels = [k for k in kernel_names if ('aud' not in k) and ('vis' not in k)]            
+
+            if any(['aud' in k for k in kernel_names]):
+                new_feature_column_dict['aud'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'aud' in k])
+            if any(['vis' in k for k in kernel_names]):
+                new_feature_column_dict['vis'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'vis' in k])  
+            if any(['non-linear' in k for k in kernel_names]):
+                new_feature_column_dict['non-linearity'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'non-linear' in k])
+
+            remaining_kernels = [k for k in kernel_names if ('aud' not in k) and ('vis' not in k) and ('non-linear' not in k)]            
             for k in remaining_kernels: 
                 new_feature_column_dict[k] = self.feature_column_dict[k]
 
@@ -1435,6 +1517,13 @@ class kernel_model():
         print('kernel_signifiance_is_ready')
 
         return kernel_significance   
+
+    def predict(self): 
+        """
+        do the prediction after things were fitted with fit. Fit evalute seems a bit obsolete... 
+        """
+        predict_all = self.fit_results['dev_model'].predict(self.feature_matrix)
+        self.prediction = predict_all.T
 
     def fit_evaluate(self,get_prediciton=True,**fit_kwargs): 
         """
@@ -1579,18 +1668,36 @@ class kernel_model():
                 ax.plot(bin_range,pred.mean(axis=0),color=c)
 
 
-    def plot_prediction(self,nrnID,plot_stim = True, plot_move=False, sep_choice=True, **plot_cond_kwargs):
+    def plot_prediction(
+        self,nrnID,plot_stim = True, 
+        plot_move=False, sep_choice=True,
+        plotted_vis_azimuth=None,plotted_aud_azimuth=None, 
+        **plot_cond_kwargs):
         
+        stim_aud_azimuth = self.events.stim_audAzimuth
+        stim_vis_azimuth = self.events.stim_visAzimuth
+
+        stim_aud_azimuth[np.isnan(stim_aud_azimuth)] =-1000
+        stim_vis_azimuth[np.isnan(stim_vis_azimuth)] =-1000
+        
+        if plotted_aud_azimuth is None: 
+            plotted_aud_azimuth = np.unique(stim_aud_azimuth)
+        if plotted_vis_azimuth is None: 
+            plotted_vis_azimuth = np.unique(stim_vis_azimuth)
+
+        n_aud_pos = plotted_aud_azimuth.size
+        n_vis_pos = plotted_vis_azimuth.size
+
         if plot_stim & plot_move: 
-            fig,ax=plt.subplots(3,6,figsize=(20,10),sharex=True,sharey=True) 
-            stim_plot_inds = np.array([0,2,4])
-            move_plot_inds = np.array([1,3,5])
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos*2,figsize=(20,10),sharex=True,sharey=True) 
+            stim_plot_inds = np.arange(0,n_vis_pos+1,2)
+            move_plot_inds = np.arange(0,n_vis_pos+1,2)+1
         elif plot_stim and not plot_move:
-            fig,ax=plt.subplots(3,3,figsize=(10,10),sharex=True,sharey=True)    
-            stim_plot_inds = np.array([0,1,2])   
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos,figsize=(10,10),sharex=True,sharey=True)    
+            stim_plot_inds = np.arange(0,n_vis_pos+1,1)  
         elif plot_move and not plot_stim:
-            fig,ax=plt.subplots(3,3,figsize=(10,10),sharex=True,sharey=True)    
-            move_plot_inds = np.array([0,1,2])     
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos,figsize=(10,10),sharex=True,sharey=True)    
+            move_plot_inds = np.arange(0,n_vis_pos+1,1)        
 
         fig.patch.set_facecolor('xkcd:white')
 
@@ -1599,21 +1706,20 @@ class kernel_model():
             print('neuron not fitted or not found')
 
         mycolors = ['blue','red']        
-        plotted_vis_azimuth = [-60,0,60]
-        plotted_aud_azimuth = [60,0,-60]
         vazi,aazi=np.meshgrid(plotted_vis_azimuth,plotted_aud_azimuth)
+
         for i,m in enumerate(vazi):
             for j,_ in enumerate(m):
                 v = vazi[i,j]
                 a = aazi[i,j]
-                trialtype=index_trialtype_perazimuth(a,v)
+                trialtype=index_trialtype_perazimuth(a,v,self.sess_type)
 
-                if 'aud' in trialtype:
-                    visazimcheck =np.isnan(self.events.stim_visAzimuth)
-                elif 'blank' in trialtype:
-                    visazimcheck =np.isnan(self.events.stim_visAzimuth)
-                else:
-                    visazimcheck = (self.events.stim_visAzimuth==v)
+                # if 'aud' in trialtype:
+                #     visazimcheck =np.isnan(self.events.stim_visAzimuth)
+                # elif 'blank' in trialtype:
+                #     visazimcheck =np.isnan(self.events.stim_visAzimuth)
+                # else:
+                #     visazimcheck = (self.events.stim_visAzimuth==v)
 
                 if sep_choice:
                     n_lines = 2
@@ -1622,22 +1728,38 @@ class kernel_model():
 
                 for mydir in range(n_lines):                  
 
-                    is_selected_trial = (self.events[trialtype]==1) & (self.events.stim_audAzimuth==a)  & visazimcheck 
+                    is_selected_trial = (self.events[trialtype]==1) & (stim_aud_azimuth==a)  & (stim_vis_azimuth==v) 
                     
                     if sep_choice:
                         is_selected_trial = is_selected_trial & (self.events.timeline_choiceMoveDir==mydir+1)
 
                     if plot_stim:                        
-                        myax = ax[i,stim_plot_inds[j]]
+                        myax = ax[n_vis_pos - 1 - i,stim_plot_inds[j]]
+                        if (self.sess_type=='passive') & ('vis' in trialtype):
+                            # we align to the fake auditory onset 
+                            AVdiff=self.events.timeline_audPeriodOn-self.events.timeline_visPeriodOn
+                            average_diff = np.nanmean(AVdiff)                            
+                            stimOnset_time = self.events.timeline_visPeriodOn + average_diff
+
+                        elif (self.sess_type=='passive') & ('blank' in trialtype):
+                            blockstimdiff =  self.events.timeline_audPeriodOn - self.events.block_stimOn
+                            average_diff = np.nanmean(blockstimdiff)                            
+                            stimOnset_time = self.events.block_stimOn + average_diff
+                        else: 
+                            stimOnset_time = self.events.timeline_audPeriodOn
+
                         rkw = {'t_before': 0.05,'t_after': 0.8,'sort_idx': None}
-                        self.plot_pred_helper(self.events.timeline_audPeriodOn,is_selected_trial,nrnID_idx,myax,
+                        self.plot_pred_helper(stimOnset_time,is_selected_trial,nrnID_idx,myax,
                                             c=mycolors[mydir],raster_kwargs= rkw,
                                             **plot_cond_kwargs)
-                        myax.axvline(0, color ='k',alpha=0.7,linestyle='dashed')
+                        if is_selected_trial.sum()>0:
+                            myax.axvline(0, color ='k',alpha=0.7,linestyle='dashed')
 
                         pFT.off_axes(myax)
-                        myax.set_ylabel(a)
-                        myax.set_xlabel(v)       
+                        if i==0:
+                            myax.set_xlabel(a)
+                        if j==0:
+                            myax.set_ylabel(v)       
 
                     if plot_move:
                         myax = ax[i,move_plot_inds[j]]
@@ -1726,7 +1848,6 @@ class kernel_model():
 
 
                 if plot_cam:
-
                     for n_cam_idx,camname in enumerate(self.cam_values.keys()):                        
                         if n_cam_idx==0:
                             raster_kwargs['sort_idx'] = None
@@ -1750,7 +1871,9 @@ class kernel_model():
                 pred = self.get_raster(on_time,spike_type = 'pred', **raster_kwargs)
 
                 ax[-2,idx].matshow(dat.raster[nrnID_idx,:,:], cmap = 'Blues',vmin = np.min(dat.raster), vmax=np.max(dat.raster)/4)
-                ax[-2,idx].set_title('vis: %.0f, aud %.0f' % (v,a))
+                
+                ax[-2,idx].set_title('vis: %.0f, aud %.0f' % (v,a))      
+
                 ax[-1,idx].matshow(pred.raster[nrnID_idx,:,:], cmap = 'Blues',vmin = np.min(dat.raster), vmax=np.max(dat.raster)/4)
                 off_axes(ax[-2,idx])
                 off_axes(ax[-1,idx])
