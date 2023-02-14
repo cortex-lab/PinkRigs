@@ -61,6 +61,7 @@ function [dball, res] = main(varargin)
     NstableDur = cell(numel(recLocUni),1);
     PstableDur = cell(numel(recLocUni),1);
     idi = cell(numel(recLocUni),1);
+    pairAcrossAll_pairsOfDays = cell(numel(recLocUni),1);
     sigCorrStructDur = cell(numel(recLocUni),1);
     noiseCorrStructDur = cell(numel(recLocUni),1);
 
@@ -103,10 +104,10 @@ function [dball, res] = main(varargin)
         BestDist = natim.getBestDist(BestMatch, XPos, DepthCorrected);
 
         % Match neurons across pairs of days
-        [Nstable{rr}, Pstable{rr}, dur{rr}, NstableDur{rr}, PstableDur{rr}, idi{rr}, pairAcrossAll_pairsOfDays] = natim.getMatchingStability(BestMatch,BestCorr,BestDist,[db.days],[0.05 0.5 150],1);
+        [Nstable{rr}, Pstable{rr}, dur{rr}, NstableDur{rr}, PstableDur{rr}, idi{rr}, pairAcrossAll_pairsOfDays{rr}] = natim.getMatchingStability(BestMatch,BestCorr,BestDist,[db.days],[0.05 0.5 150],1);
 
         % Get correlation
-        [sigCorrStruct,noiseCorrStruct] = natim.getCorrelationStability({db.spikeData},pairAcrossAll_pairsOfDays);
+        [sigCorrStruct,noiseCorrStruct] = natim.getCorrelationStability({db.spikeData},pairAcrossAll_pairsOfDays{rr});
         sigCorrStructDur{rr} = nan(1,numel(idi{rr}));
         noiseCorrStructDur{rr} = nan(1,numel(idi{rr}));
         for ididx = 1:numel(idi{rr})
@@ -213,5 +214,6 @@ function [dball, res] = main(varargin)
     res.NstableDur = NstableDur;
     res.PstableDur = PstableDur;
     res.idi = idi;
+    res.pairAcrossAll_pairsOfDays = pairAcrossAll_pairsOfDays;
     res.noiseCorrStructDur = noiseCorrStructDur;
     res.sigCorrStructDur = sigCorrStructDur;
