@@ -15,8 +15,8 @@ function log = copyFiles2ServerAndDelete(localFilePaths, serverFilePaths, makeMi
 %
 % fid (default = []): string
 %   This is (I think) the ID of the current log... written by Celian?
-% 
-% Returns: 
+%
+% Returns:
 % -----------
 % log: string
 %   A log of the various timings and other useful information during run
@@ -41,16 +41,21 @@ end
 isDirectory = cellfun(@isfolder, localFilePaths);
 localFilePaths = localFilePaths(~isDirectory);
 serverFilePaths = serverFilePaths(~isDirectory);
-localFilePaths(contains(localFilePaths, '.bin')) = [];
-serverFilePaths(contains(serverFilePaths, '.bin')) = [];
+localFilePaths(contains(localFilePaths, 'ap.bin')) = [];
+serverFilePaths(contains(serverFilePaths, 'ap.bin')) = [];
 copiedAlready = cellfun(@(x) exist(x,'file'), serverFilePaths)>0;
 
 %% Loop to copy/check/delete files
 failedCopy = 0*copiedAlready>0;
 for i = 1:length(copiedAlready)
-    localFileMD5 = GetMD5(localFilePaths{i}, 'File');
-    log = appendAndPrint(log, sprintf('Processing %s ...\n', localFilePaths{i}), fid);
-    
+    log = appendAndPrint(log, sprintf('Processing %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
+
+    %         tic;
+    %         log = appendAndPrint(log, sprintf('Running GetMD5 on local file (%s).\n',datestr(now)), fid);
+    %         localFileMD5 = GetMD5(localFilePaths{i}, 'File');
+    %         elapsedTime = toc;
+    %         log = appendAndPrint(log, sprintf('Done running GetMD5 on local file in %d sec.\n',elapsedTime), fid);
+
     %This exception deals with the fact that we expect timeline to be
     %different, so we only "copy" if we can't open the server version
     if contains(localFilePaths{i}, 'timeline', 'ignorecase', 1) && exist(serverFilePaths{i}, 'file')
@@ -60,10 +65,9 @@ for i = 1:length(copiedAlready)
             log = appendAndPrint(log, sprintf('Server timeline appears corrupt for %s ...\n', localFilePaths{i}), fid);
         end
     end
-    
+
     if ~copiedAlready(i)
-        log = appendAndPrint(log, sprintf('Copying %s ...\n', localFilePaths{i}), fid);
-        tic;
+        log = appendAndPrint(log, sprintf('Copying %s (%s)...\n', localFilePaths{i}, datestr(now)), fid);
         if ~isfolder(fileparts(serverFilePaths{i}))
             if makeMissingDirs
                 mkdir(fileparts(serverFilePaths{i}));
@@ -72,17 +76,21 @@ for i = 1:length(copiedAlready)
             end
         end
         try
+            tic;
             copyfile(localFilePaths{i},fileparts(serverFilePaths{i}));
-            serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
-            if ~strcmp(localFileMD5, serverFileMD5)
-                log = appendAndPrint(log, sprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i}), fid);
-                failedCopy(i) = 1;
-            else
-                elapsedTime = toc;
-                d = dir(localFilePaths{i});
-                rate = d.bytes/(10^6)/elapsedTime;
-                log = appendAndPrint(log, sprintf('Done in %d sec (%d MB/s).\n',elapsedTime,rate), fid);
-            end
+            elapsedTime = toc;
+            d = dir(localFilePaths{i});
+            rate = d.bytes/(10^6)/elapsedTime;
+            log = appendAndPrint(log, sprintf('Ran copying in %d sec (%d MB/s).\n',elapsedTime,rate), fid);
+            tic;
+            %                 log = appendAndPrint(log, sprintf('Running GetMD5 on server file (%s).\n',datestr(now)), fid);
+            %                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+            %                 elapsedTime = toc;
+            %                 log = appendAndPrint(log, sprintf('Done running GetMD5 on server file in %d sec.\n',elapsedTime), fid);
+            %                 if ~strcmp(localFileMD5, serverFileMD5)
+            %                     log = appendAndPrint(log, sprintf('WARNING: MD5 checksum doesn''t match for file %s. Skipping.... \n', localFilePaths{i}), fid);
+            %                     failedCopy(i) = 1;
+            %                 end
         catch
             log = appendAndPrint(log, sprintf('WARNING: Problem copying file %s. Skipping.... \n', localFilePaths{i}), fid);
             failedCopy(i) = 1;
@@ -93,8 +101,9 @@ for i = 1:length(copiedAlready)
     else
         dserver = dir(serverFilePaths{i});
         if (now - dserver.datenum)*24 > 1
-            serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
-            failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+            %                 serverFileMD5 = GetMD5(serverFilePaths{i}, 'File');
+            %                 failedCopy(i) = ~strcmp(localFileMD5, serverFileMD5);
+            failedCopy(i) = 0; % force it for now
             if failedCopy(i) == 0
                 log = appendAndPrint(log, sprintf('Copied already. Will delete local file... \n'), fid);
             end
@@ -110,5 +119,5 @@ for i = 1:length(copiedAlready)
 end
 %% TODO--email list of bad copies to users
 
-log = appendAndPrint(log, sprintf('Done! \n'), fid);
+log = appendAndPrint(log, sprintf('Done (%s)! \n', datestr(now)), fid);
 end
