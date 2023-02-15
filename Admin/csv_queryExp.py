@@ -26,6 +26,8 @@ def get_csv_location(which):
         csvpath = server/ r'Helpers/ibl_formatting_queue.csv'
     elif 'pyKS_queue' in which: 
         csvpath = server / r'Helpers/pykilosort_queue.csv'
+    elif 'training_email' in which:
+        csvpath = server / r'Helpers\AVrigEmail.txt'
     else:
         csvpath = server / ('%s.csv' % which) 
      

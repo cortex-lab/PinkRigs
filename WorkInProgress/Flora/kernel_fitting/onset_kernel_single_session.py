@@ -1,15 +1,13 @@
 # %% 
 import sys
 import numpy as np
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_github_paths
-from utils.plotting import off_topspines,off_axes
-add_github_paths()
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Analysis.neural.utils.plotting import off_topspines,off_axes
 
-from src.kernel_regression import kernel_model
+from Analysis.neural.src.kernel_model import kernel_model
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
 
-nrn_list = [50,34,156,325]
+nrn_list = [22,25,50,71,80,207,34,156,325]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
     subject = 'FT009',
@@ -17,18 +15,20 @@ kernels.load_and_format_data(
     expDef = 'all',
     expNum = 8,
     probe = 'probe0',
-    subselect_neurons=None,
+    subselect_neurons=nrn_list,
     t_support_stim = [-0.05,0.6],
     t_support_movement =[-.6,0.4],
     rt_params = {'rt_min': None, 'rt_max': None},
-    event_types = ['aud','vis','baseline','motionEnergy'],
+    event_types = ['aud','vis','baseline','coherent-non-linearity'],
     contrasts = [1],
     spls = [0.02,.1],
-    vis_azimuths = [-90,-60,60,90],
-    aud_azimuths = [-90,-60,60,90],
+    vis_azimuths = [-90,-60,-30,0,30,60,90],
+    aud_azimuths = [-90,-60,-30,0,30,60,90],
     digitise_cam = False,
     zscore_cam= 'mad' 
 )
+
+
 # %%
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.family':'Verdana'})
@@ -41,17 +41,18 @@ kernels.fit_evaluate(get_prediciton=True,method='Ridge',ridge_alpha=1,tune_hyper
 
 # %%
 import matplotlib.pyplot as plt
-n = 34
+n = 80
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
 color_dict = {
     'aud': 'magenta',
     'vis': 'blue',
-    'motionEnergy': 'black'
+    'motionEnergy': 'black',
+    'non-linearity':'green'
 }
 
-ve_n = variance_explained[(variance_explained.cv_number==1) & (variance_explained.clusID==n)]
+ve_n = variance_explained[(variance_explained.cv_number==0) & (variance_explained.clusID==n)]
 fig,ax = plt.subplots(1,1,figsize=(7,4))
 stim_bin_range = np.arange(-0.05,0.6,kernels.t_bin)
 [ax.plot(stim_bin_range,r.VE_trial,color=color_dict[r.event],lw=6) for _,r in ve_n.iterrows() if 'baseline' not in r.event]

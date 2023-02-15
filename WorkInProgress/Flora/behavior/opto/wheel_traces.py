@@ -17,7 +17,11 @@ data_dict = {
             'events':{'_av_trials':'all'}
                 }
 
-recordings = query_opto(power=30,hemi = 'R',subject='AV033',expDate = 'all',expDef='multiSpace',data_dict=data_dict)
+selected_power = 30
+hemisphere = 'L'
+subject = 'AV031'
+
+recordings = query_opto(power=selected_power,hemi = hemisphere,subject=subject,expDate = 'all',expDef='multiSpace',data_dict=data_dict)
 recordings = recordings[recordings.extractEvents=='1']
 
 
@@ -45,5 +49,8 @@ r,td = zip(*[batch_rasters(rec.events._av_trials) for _,rec in recordings.iterro
 rasters = np.concatenate(r)
 td = np.concatenate(td)
 # %%
-plt.imshow(np.abs(rasters[np.argsort(td),:]),aspect='auto',vmin=0,vmax=5)
+fig,ax = plt.subplots(1,1)
+ax.imshow(np.abs(rasters[np.argsort(td),:]),aspect='auto',vmin=0,vmax=5)
+ax.axvline(100,color='r')
+ax.set_title('%s,inactivated_side=%s,%.0fmW,align:laser,sort:audOn-laserOn' % (subject,hemisphere,selected_power))
 # %%

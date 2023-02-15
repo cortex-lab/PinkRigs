@@ -19,7 +19,6 @@ function log = copyLocalData2ServerAndDelete(localFolder,fid)
 % log: string
 %   A log of the various timings and other useful information during run
 
-
 if ~exist('localFolder', 'var'); localFolder = 'D:\LocalExpData'; end
 if ~exist('fid', 'var'); fid = []; end
 
@@ -32,6 +31,7 @@ localDat(strcmp({localDat.folder}, localFolder)) = [];
 %% push the data to server
 % check whether it has already been copied
 localFolders = unique({localDat.folder})';
+localFolders = localFolders(~contains(localFolders, '\default\'));
 
 splitFolders = cellfun(@(x) regexp(x,'\','split'), localFolders, 'uni', 0)';
 subjects = cellfun(@(x) x{end-2}, splitFolders, 'uni', 0)';
