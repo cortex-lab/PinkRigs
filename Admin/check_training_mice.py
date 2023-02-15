@@ -28,7 +28,7 @@ def send_email(email_text):
     # Get sender and receiver emails.    
     with open(email_path.__str__()) as f:
         sender_email,pwd = f.read().splitlines()
-    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','c.bimbard@ucl.ac.uk']
+    receivers_email = ['takacsflora@gmail.com','pipcoen@gmail.com ','c.bimbard@ucl.ac.uk','george.booth@ucl.ac.uk']
 
     msg = MIMEMultipart()
     msg['Subject'] = 'Mouse training completed'
