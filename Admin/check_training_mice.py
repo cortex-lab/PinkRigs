@@ -12,9 +12,8 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 # import PinkRig utils
-from csv_pyhandlers import get_server_location
-pinkRig_csv_path = get_server_location()
-email_path = pinkRig_csv_path / r'Helpers\AVrigEmail.txt'
+from csv_queryExp import get_csv_location
+email_path = get_csv_location('training_email')
 
 def send_email(email_text):  
     """
