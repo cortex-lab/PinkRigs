@@ -60,8 +60,7 @@ def send_email(email_text):
 
 
 
-basepath = pinkRig_csv_path.__str__()
-mouseList = pd.read_csv(r'%s\!MouseList.csv' % basepath)
+mouseList = pd.read_csv(get_csv_location('main'))
 activeMice = mouseList['Subject'][mouseList['IsActive']==1].values
 
 deltaDays2Check = 7;
@@ -69,7 +68,7 @@ deltaDays2Check = 7;
 # list of strings with the mice with their training stage
 readyMice = []
 for mname in activeMice:
-    expinfo = pd.read_csv(r'%s\%s.csv' % (basepath,mname))
+    expinfo = pd.read_csv(get_csv_location(mname))
 
     # check whether the mouse is trained on the task
     sess2check = expinfo[(expinfo['expDef']=='multiSpaceWorld_checker_training') & (expinfo['expDuration']>600)][-1:]
