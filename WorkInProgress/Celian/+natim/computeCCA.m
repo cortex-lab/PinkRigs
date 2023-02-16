@@ -1,4 +1,4 @@
-function [corrWCCA, W] = computeCCA(spikeData,cc2keep)
+function [corrWCCA, W, pUall] = computeCCA(spikeData,cc2keep)
     %% Projects neural responses in lower-dimensional space
     % This script will perform CCA across days and use the CCA weights of
     % each neurons along the first "cc2keep" components to compute a
