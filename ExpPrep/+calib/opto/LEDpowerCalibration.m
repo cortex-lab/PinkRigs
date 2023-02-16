@@ -36,4 +36,3 @@ sv.laserChannel = laserChannel;
 sv.laserID = laserID;
 [file,path] = uiputfile('*.mat'); %select file name
 save(fullfile(path, file), '-struct', 'sv');
-
