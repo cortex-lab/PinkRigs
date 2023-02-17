@@ -26,5 +26,5 @@ removeRef = strcat(expDate, expNum);
 
 % Remove the row corresponding to function inputs and overwrite the csv
 csvData(contains(csvRef,removeRef),:) = [];
-csv.writeClean(csvData, csvPathMouse);
+csv.writeTable(csvData, csvPathMouse);
 end
