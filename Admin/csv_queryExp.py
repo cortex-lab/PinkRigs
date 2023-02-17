@@ -21,7 +21,9 @@ def get_csv_location(which):
     """
     server = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
     if 'main' in which: 
-        csvpath = server/ r'!MouseList.csv'  
+        SHEET_ID = '1NKPxYThbLy97iPQG8Wk2w3KJXC6ys7PesHp_08by3sg'
+        SHEET_NAME = 'Sheet1'
+        csvpath = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
     elif 'ibl_queue' in which:
         csvpath = server/ r'Helpers/ibl_formatting_queue.csv'
     elif 'pyKS_queue' in which: 
