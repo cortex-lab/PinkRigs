@@ -164,5 +164,5 @@ for i = 1:length(mice2Update)
     % Concatenate the new records with the current subjects existing csv
     combinedData = csv.insertNewData(newRecords, currSub);    
     % Overwrite the old csv with the combined data
-    csv.writeTable(combinedData, csvPathMouse, 0);
+    csv.writeTable(combinedData, csvPathMouse);
 end
