@@ -36,12 +36,6 @@ csvData = params.mainCSV{1};
 % Sorts mice alphabetically. Any changes are saved.
 activeMice = cellfun(@(x) x==1 || strcmp(x, '1'),csvData.IsActive);
 csvData.IsActive = num2cell(num2str(activeMice));
-csvDataSort = sortrows(csvData, 'Subject', 'ascend');
-csvDataSort = sortrows(csvDataSort, 'IsActive', 'descend');
-if any(~strcmp(csvDataSort.Subject, csvData.Subject))
-    csvLocation = csv.getLocation('main');
-    csv.writeClean(csvDataSort, csvLocation, 1)
-end
 
 % For each mouse that needs to be updated (default is 'active' mice),
 % generate a list of folders to check. 
@@ -170,5 +164,5 @@ for i = 1:length(mice2Update)
     % Concatenate the new records with the current subjects existing csv
     combinedData = csv.insertNewData(newRecords, currSub);    
     % Overwrite the old csv with the combined data
-    csv.writeClean(combinedData, csvPathMouse, 0);
+    csv.writeTable(combinedData, csvPathMouse, 0);
 end

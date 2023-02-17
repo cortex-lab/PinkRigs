@@ -436,6 +436,6 @@ end
 csvData = struct2table(nDat, 'AsArray', 1);
 if saveData
     combinedData = csv.insertNewData(csvData, subject);
-    csv.writeClean(combinedData, csvPathMouse, 0);
+    csv.writeTable(combinedData, csvPathMouse, 0);
 end
 end
