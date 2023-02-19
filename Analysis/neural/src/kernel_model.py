@@ -1100,7 +1100,7 @@ def get_subselected_trials(events,trialtype,rt_min=None,rt_max=None,spl = None, 
 
         is_selected_spl = np.sum(np.array(is_selected_spl),axis=0).astype('bool')
         is_selected = is_selected &  is_selected_spl
-        
+
     
     if vis_azimuth!=None: 
         is_selected  = is_selected & (events.stim_visAzimuth==vis_azimuth)
@@ -1465,6 +1465,11 @@ class kernel_model():
             evaluation_method='train-cv-test',cv_split=2,
             split_group_vector=split_group_vector_,**fit_kwargs
             ) 
+        
+
+        # somehow try to compute the actual train-test set here..
+      
+
 
     def evaluate(self,kernel_selection = 'independent',sig_metric = ['explained-varaince']):
         """
@@ -1635,7 +1640,10 @@ class kernel_model():
         return Bunch({'raster': raster,'tscale': bin_range*self.t_bin,'sort_idx': sort_idx}) 
 
 
-    def plot_pred_helper(self,on_times,is_sel,nrnID_idx,ax,raster_kwargs=None,c='k',plot_train = True, plot_test= False, plot_pred = True):
+    def plot_pred_helper(self,on_times,is_sel,nrnID_idx,
+        ax,raster_kwargs=None,c='k',
+        plot_train = True, plot_test= False, 
+        plot_pred_train = True,plot_pred_test = False):
 
         if not raster_kwargs: 
             raster_kwargs = {
@@ -1644,35 +1652,71 @@ class kernel_model():
                 'sort_idx': None
             } 
 
-        if plot_train or plot_pred: 
-            trial_set = self.is_training_set
-        elif plot_test: 
-            trial_set = self.is_test_set 
-        
-        on_time = on_times[(trial_set & is_sel)]
+        if plot_train or plot_pred_train:
+            trial_set = self.is_training_set            
+            on_time = on_times[(trial_set & is_sel)]
 
-        if on_time.size>2:
-            if plot_train or plot_test:
-                dat = self.get_raster(on_time,spike_type = 'data',**raster_kwargs)
-                bin_range = dat.tscale
-                dat = dat.raster[nrnID_idx,:,:]                      
+            if on_time.size>2:
+                if plot_train:
+                    dat = self.get_raster(on_time,spike_type = 'data',**raster_kwargs)
+                    bin_range = dat.tscale
+                    dat = dat.raster[nrnID_idx,:,:]                      
 
-                mean = dat.mean(axis=0)
-                bars = dat.std(axis=0)/dat.shape[0]
-                ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+                    mean = dat.mean(axis=0)
+                    bars = dat.std(axis=0)/dat.shape[0]
+                    ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
 
-            if plot_pred: 
-                pred = self.get_raster(on_time,spike_type = 'pred',**raster_kwargs)
-                bin_range = pred.tscale
-                pred = pred.raster[nrnID_idx,:,:]
-                ax.plot(bin_range,pred.mean(axis=0),color=c)
+                if plot_pred_train: 
+                    pred = self.get_raster(on_time,spike_type = 'pred',**raster_kwargs)
+                    bin_range = pred.tscale
+                    pred = pred.raster[nrnID_idx,:,:]
+                    ax.plot(bin_range,pred.mean(axis=0),color=c,linestyle='dashed')      
+
+
+        if plot_test or plot_pred_test:
+            trial_set = self.is_test_set            
+            on_time = on_times[(trial_set & is_sel)]
+
+            if on_time.size>2:
+                if plot_test:
+                    dat = self.get_raster(on_time,spike_type = 'data',**raster_kwargs)
+                    bin_range = dat.tscale
+                    dat = dat.raster[nrnID_idx,:,:]                      
+
+                    mean = dat.mean(axis=0)
+                    bars = dat.std(axis=0)/dat.shape[0]
+                    ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+
+                if plot_pred_test: 
+                    pred = self.get_raster(on_time,spike_type = 'pred',**raster_kwargs)
+                    bin_range = pred.tscale
+                    pred = pred.raster[nrnID_idx,:,:]
+                    ax.plot(bin_range,np.ravel(pred.mean(axis=0)),color=c,linestyle='dashed')      
 
 
     def plot_prediction(
         self,nrnID,plot_stim = True, 
         plot_move=False, sep_choice=True,
-        plotted_vis_azimuth=None,plotted_aud_azimuth=None, 
+        plotted_vis_azimuth=None,plotted_aud_azimuth=None,
+        plot_colors=None, 
         **plot_cond_kwargs):
+
+        """
+        function to plot average predictions of the data
+        Params: 
+        -------
+        nrnID: float
+        plot_stim:bool 
+        plot_move: bool
+        sep_choice: bool
+        plotted_vis_azimuth: list
+        plotted_aud_azimuth:list
+        plot_colors: list of stim and movement plot colors
+        plot_train:bool
+        plot_test:bool
+        plot_pred:bool
+        """
+        # set up figure layout based on azimuths
         
         stim_aud_azimuth = self.events.stim_audAzimuth
         stim_vis_azimuth = self.events.stim_visAzimuth
@@ -1705,7 +1749,9 @@ class kernel_model():
         if nrnID_idx.size!=1: 
             print('neuron not fitted or not found')
 
-        mycolors = ['blue','red']        
+        if plot_colors is None:
+            plot_colors = ['blue','red'] 
+
         vazi,aazi=np.meshgrid(plotted_vis_azimuth,plotted_aud_azimuth)
 
         for i,m in enumerate(vazi):
@@ -1750,29 +1796,29 @@ class kernel_model():
 
                         rkw = {'t_before': 0.05,'t_after': 0.8,'sort_idx': None}
                         self.plot_pred_helper(stimOnset_time,is_selected_trial,nrnID_idx,myax,
-                                            c=mycolors[mydir],raster_kwargs= rkw,
+                                            c=plot_colors[mydir],raster_kwargs= rkw,
                                             **plot_cond_kwargs)
                         if is_selected_trial.sum()>0:
                             myax.axvline(0, color ='k',alpha=0.7,linestyle='dashed')
 
                         pFT.off_axes(myax)
                         if i==0:
-                            myax.set_xlabel(a)
+                            myax.set_xlabel(v)
                         if j==0:
-                            myax.set_ylabel(v)       
+                            myax.set_ylabel(a)       
 
                     if plot_move:
                         myax = ax[i,move_plot_inds[j]]
                         rkw = {'t_before': 0.05,'t_after': 0.8,'sort_idx': None}
                         self.plot_pred_helper(self.events.timeline_choiceMoveOn,is_selected_trial,nrnID_idx,myax,
-                                            c=mycolors[mydir],raster_kwargs=rkw,
+                                            c=plot_colors[mydir],raster_kwargs=rkw,
                                             **plot_cond_kwargs)
 
                         myax.axvline(0, color ='k',alpha=0.7,linestyle='dashed')
                         pFT.off_axes(myax)              
                     
 
-                    ax[2,-1].hlines(-0.1,0.25,0.35,'k')
+                    ax[-1,-1].hlines(-0.1,0.25,0.35,'k')
 
     def plot_prediction_rasters(self,nrnID,raster_kwargs = None ,visual_azimuth = None, auditory_azimuth = None, contrast = 1, spl = .1): 
         """

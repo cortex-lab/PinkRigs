@@ -128,7 +128,7 @@ function extractExpData(varargin)
                 %% Extract spikes and clusters info (depth, etc.)
                 
                 if shouldProcess('spikes') || contains(recompute,'BombcellQM') || contains(recompute,'IBLQM')
-                    if contains(expInfo.alignEphys, '1') && contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
+                    if contains(expInfo.alignEphys, '1') %&& contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');

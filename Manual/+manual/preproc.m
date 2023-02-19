@@ -1,7 +1,9 @@
 close all
 
 clear params
-params.subject = {'FT008','FT009','FT010'};
+params.subject = {'all'};
+%params.expDate = {'2021-03-16'}; 
+params.expDate = 'postImplant';
 
 exp2checkList = csv.queryExp(params);
 

@@ -3,18 +3,22 @@ import sys
 from turtle import color
 import pandas as pd
 import numpy as np
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.data_manager import get_data_bunch
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Analysis.pyutils.batch_data import get_data_bunch
 from pathlib import Path
-from Analysis.helpers.queryExp import load_data
+from Admin.csv_queryExp import load_data
 
 # visualisations
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 save_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
-dataset = 'naive'
-save_path = save_path / dataset / 'kernel_model'
+
+dataset = 'naive-all'
+fit_tag = 'coherent-nl-fit'
+
+interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
 
 sc_probeloc_path = Path(r'C:\Users\Flora\Documents\Processed data\passiveAV_project')
 
@@ -73,7 +77,8 @@ cluster_info_test = cluster_info[(cluster_info.cv_number==1) & (cluster_info._av
 df = cluster_info_test[['VE','neuron','event','session_ID']]
 df = df.reset_index(drop=True)
 df = df.pivot(index=['neuron','session_ID'],columns='event')
-sns.pairplot(df.VE[['aud','vis','motionEnergy']],plot_kws=dict(marker="o",alpha=.7))
+# %%
+sns.pairplot(df.VE[['aud','vis','non-linearity']],plot_kws=dict(marker="o",alpha=.7))
 # %%
 def get_my_acronym(allen_acronym):    
     if ('SCs' in allen_acronym) or ('SCo' in allen_acronym) or ('SCzo' in allen_acronym):
@@ -98,7 +103,7 @@ anat_done=anat_done.VE
 anat_done = anat_done.reset_index()
 # %%
 sns.pairplot(
-    anat_done,vars=['vis','aud','motionEnergy'],hue='location',
+    anat_done,vars=['vis','aud','non-linearity'],hue='location',
     kind='scatter',plot_kws=dict(marker="o", alpha=.7,s=24)
     )
 
@@ -120,15 +125,25 @@ thr = .02
 
 pp=sns.histplot(sc_done,x='vis',y='d_from_sc_surface',ax=ax[0],color='blue',bins=20)
 sns.histplot(sc_done,x='aud',y='d_from_sc_surface',ax=ax[1],color='magenta',bins=20)
-sns.histplot(sc_done,x='motionEnergy',y='d_from_sc_surface',ax=ax[2],color='black',bins=20)
+sns.histplot(sc_done,x='non-linearity',y='d_from_sc_surface',ax=ax[2],color='green',bins=20)
 
 ax[0].set_ylim([-1500,100])
-from utils.plotting import off_exceptx, off_topspines
+from Analysis.neural.utils.plotting import off_exceptx, off_topspines
 off_exceptx(ax[1])
 off_exceptx(ax[2])
 off_exceptx(ax[0])
-plt.savefig("C:\\Users\\Flora\\Pictures\\depthplots.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+plt.savefig("C:\\Users\\Flora\\Pictures\\depthplots_nl.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
+# %%
+
+plt.scatter(sc_done.aud,sc_done.d_from_sc_surface,color='m')
+plt.scatter(sc_done.vis,sc_done.d_from_sc_surface,color='b')
+# %%
+plt.scatter(sc_done['non-linearity'],sc_done.d_from_sc_surface,color='g')
+plt.scatter(sc_done['baseline'],sc_done.d_from_sc_surface,color='k')
+
+# %%
+ 
 
 # %%
 sc_ = sc_done[(sc_done.d_from_sc_surface<0) & (sc_done.d_from_sc_surface>-1400)]
@@ -139,7 +154,7 @@ ax[0].plot(sc_.vis.values,sc_.aud.values,'o',alpha=0.2,color='k')
 ax[1].plot(sc_.motionEnergy.values,sc_.aud.values,'o',alpha=0.2,color='k')
 off_topspines(ax[0])
 off_topspines(ax[1])
-plt.savefig("C:\\Users\\Flora\\Pictures\\VEkernels.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+plt.savefig("C:\\Users\\Flora\\Pictures\\VEkernels_nl.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 # %%
 # are there some ephys quality metrics that could distinguish the auditory vs the movement populations 

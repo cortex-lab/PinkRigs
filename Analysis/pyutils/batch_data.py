@@ -17,7 +17,7 @@ def get_data_bunch(namekey):
 
     """
 
-    if namekey == 'naive': 
+    if namekey == 'naive-all': 
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
             ('FT008','2021-01-15',5,'probe0'),
@@ -36,7 +36,7 @@ def get_data_bunch(namekey):
             ('FT011','2021-03-24',7,'probe0'),
         ]
 
-    if namekey == 'naive-allen':
+    elif namekey == 'naive-allen':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
            ('FT008','2021-01-15',5,'probe0'),
@@ -94,7 +94,7 @@ def get_data_bunch(namekey):
 
     else: 
         recordings = []
-        print('this namekey is not implemented')    
+        print('this data calling method is not implemented')    
 
     recordings = pd.DataFrame(recordings,
         columns= column_names
