@@ -3,10 +3,9 @@ import sys,itertools, re
 import pandas as pd 
 import numpy as np 
 
-from Admin.csv_queryExp import load_data
-from utils.data_manager import simplify_recdat
-from utils.ev_dat import postactive
-from utils.spike_dat import get_binned_rasters
+from Admin.csv_queryExp import load_ephys_independent_probes,simplify_recdat
+from Analysis.neural.utils.ev_dat import postactive
+from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
 class azimuthal_tuning():
@@ -22,13 +21,17 @@ class azimuthal_tuning():
 
         self.load(**rec_info)
 
-    def load(self,probe = 'probe0', **rec_info):
+    def load(self, **rec_info):
 
-        data_dict = {'events': {'_av_trials': 'table'},
-            probe: {'spikes': ['times', 'clusters']}
-        }
-        recordings = load_data(data_name_dict=data_dict,**rec_info)
-        events,self.spikes,_,_ = simplify_recdat(recordings.iloc[0],probe_dat_type=probe)
+        ephys_dict =  {'spikes': ['times', 'clusters']}
+        other_ = {'events': {'_av_trials': 'table'}}
+
+        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**rec_info)
+        if recordings.shape[0] == 1:            
+            recordings =  recordings.iloc[0]
+        else:
+            print('recordings are ambiguously defined. Please recall.')
+        events,self.spikes = recordings.events._av_trials,recordings.probe.spikes
         _,self.vis,self.aud,_ = postactive(events)
 
 

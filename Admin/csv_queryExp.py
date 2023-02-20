@@ -340,15 +340,29 @@ def load_data(data_name_dict=None,**kwargs):
 
     return recordings
 
-def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},**kwargs):
+def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},add_dict = None,raw_ephys_dict = None,**kwargs):
     """
-    This is a helper function to single probe data
+    This is a helper function to single probe data. 
+    Parameters:
+    -----------
+    probe: str
+        probe ID: either probe0 or probe1
+    ephys_dict: dict -- a must
+        what you want to call from probe from the ONE folder
+    raw_ephys_dict: None/dict
+        what you want to call from the raw IBL folder 
+    add_dict: None/dict
+        anything else (ONE) you want to call -- events/camera etc.
+    additional kwargs: usual input of load data/queryCSV
+        such as subject,expDate,expNum
+    """
+    d = {probe:ephys_dict} # requirement to call some ephys
+    # add any additional dicts
+    if raw_ephys_dict: 
+        d.update({('%s_raw' % probe):raw_ephys_dict})
+    if add_dict:
+        d.update(add_dict)
 
-    """
-    d = {
-        probe:ephys_dict,
-        ('%s_raw' % probe):{'clusters':'all'}
-    }
     r=load_data(data_name_dict=d,**kwargs)
 
     r=r.rename(columns={probe:'probe'})

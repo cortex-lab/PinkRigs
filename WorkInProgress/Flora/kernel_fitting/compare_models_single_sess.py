@@ -64,14 +64,14 @@ kernels.predict()
 # %%
 
 kernels.plot_prediction(
-    nrnID=kernels.clusIDs[cidx][0],
+    nrnID=kernels.clusIDs[cidx][43],
     plot_stim = True, 
     plot_move=False, 
     sep_choice=False,
     plotted_vis_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
     plotted_aud_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
     plot_train =True,
-    plot_test = True,
+    plot_test = False,
     plot_pred_train = False,
     plot_pred_test = True,
     )
