@@ -2,12 +2,34 @@
 import sys,itertools, re
 import pandas as pd 
 import numpy as np 
+import xarray as xr
 
 from Admin.csv_queryExp import load_ephys_independent_probes,simplify_recdat
 from Analysis.neural.utils.ev_dat import postactive
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
+
+def get_test_statistic(tuning_curves,tuning_type = None):
+    """
+    utility function to get test statistic from the tuning curve table outputted by the class 
+    this is is specific for the permuation test I am doing and thus requires the tuning 
+    curve table to be called as above 
+
+    """ 
+    if not tuning_type:
+        tuning_type = tuning_curves.columns[0][:3]
+                   
+    train = tuning_curves[(tuning_curves.cv_number == 0)]
+    train = train[('preferred_%s_tuning' % tuning_type)]
+    test = tuning_curves[(tuning_curves.cv_number == 1)]
+    test = test[('preferred_%s_tuning' % tuning_type)]
+
+    statistic = np.abs(train.values.astype('float')-test.values.astype('float'))
+
+    return statistic
+
+
 class azimuthal_tuning():
     def __init__(self,rec_info):
         self.raster_kwargs = {
@@ -35,7 +57,7 @@ class azimuthal_tuning():
         _,self.vis,self.aud,_ = postactive(events)
 
 
-    def get_tuning_curves(self,contrast = None, spl = None, which = 'vis', subselect_neurons = None,cv_split = 1):
+    def get_tuning_curves(self,contrast = None, spl = None, which = 'vis', subselect_neurons = None,cv_split = 1,azimuth_shuffle=None):
         """
         get tuning curves for the loaded data
 
@@ -62,8 +84,7 @@ class azimuthal_tuning():
             spl = np.min(self.aud.SPL.values) 
         
         if not subselect_neurons: 
-            clus_ids = np.unique(self.spikes.clusters)
-
+            clus_ids = np.unique(self.spikes.clusters)    
 
         # create indices for cross-validation
         trials_idx = self.aud.trials.values
@@ -72,20 +93,31 @@ class azimuthal_tuning():
         split_edges = list(itertools.accumulate(itertools.repeat(int(trials_idx.size/cv_split),cv_split)))
         split_edges.insert(0,0)
 
+        if 'vis' in which:
+            azimuth_options = sorted(self.vis.azimuths.values)
+            onset_matrix = self.vis.sel(contrast=contrast,timeID='ontimes')
+        elif 'aud' in which:
+            azimuth_options = sorted(self.aud.azimuths.values)
+            onset_matrix = self.aud.sel(SPL=spl,timeID='ontimes')      
+
+        if azimuth_shuffle:
+            # shuffle the onset matrix. (eqivalent to shuffling azimuth labels)   
+            np.random.seed(azimuth_shuffle)  # seed ID of the azimuthal shuffing
+            permuted_onset_index = np.random.permutation(np.ravel(onset_matrix))
+            onset_matrix = xr.DataArray(permuted_onset_index.reshape(onset_matrix.shape),
+                                dims=('azimuths','trials'),
+                                coords={'azimuths':azimuth_options})
+
+            
+
         tuning_curves = []
         for cv in range(cv_split):
             azimuth_times_dict = {}
-            if 'vis' in which:
-                for (azimuth,d_power) in itertools.product(sorted(self.vis.azimuths.values),[contrast]):
-                    azimuth_times_dict[('vis_%.0f' % azimuth)] = self.vis.sel(
-                        azimuths=azimuth,contrast=d_power,
-                        timeID='ontimes',trials=trials_idx[split_edges[cv]:split_edges[cv+1]]).values 
-            
-            elif 'aud' in which: 
-                for (azimuth,d_power) in itertools.product(sorted(self.aud.azimuths.values),[spl]):
-                    azimuth_times_dict[('aud_%.0f' % azimuth)] = self.aud.sel(
-                        azimuths=azimuth,SPL=d_power,
-                        timeID='ontimes',trials=trials_idx[split_edges[cv]:split_edges[cv+1]]).values
+            for azimuth in azimuth_options:
+                azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
+                    azimuths = azimuth,
+                    trials=trials_idx[split_edges[cv]:split_edges[cv+1]]
+                ).values
 
             responses = {}
             for k in azimuth_times_dict.keys():
@@ -108,7 +140,9 @@ class azimuthal_tuning():
         tuning_curves = pd.concat(tuning_curves)
 
         return tuning_curves
-                
+
+
+
 
 
             
