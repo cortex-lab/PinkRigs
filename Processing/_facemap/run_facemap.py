@@ -1864,27 +1864,32 @@ def batch_process_facemap(output_format='flat', sessions=None,
             # check whether file was already marked as corrupted
             vid_corrupted = check_file_corrupted(vid_path=video_fpath)
 
-            """
+            if output_format == 'ONE':
+                if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc')):
+                    os.makedirs(os.path.join(exp_folder, 'ONE_preprc'))
+                if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc',
+                                                  video_fov)):
+                    os.makedirs(os.path.join(exp_folder, 'ONE_preproc',
+                                             video_fov))
+
+                corrupted_json_file = os.path.join(exp_folder, 'ONE_preproc',
+                                                   video_fov, '%s_corrupted.json' % video_fov)
+
             if vid_corrupted:
                 if output_format == 'ONE':
-
-                    if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc')):
-                        os.makedirs(os.path.join(exp_folder, 'ONE_preprc'))
-                    if not os.path.isdir(os.path.join(exp_folder, 'ONE_preproc',
-                                                       video_fov)):
-                        os.makedirs(os.path.join(exp_folder, 'ONE_preproc',
-                                                       video_fov))
-
-                    corrupted_json_file = os.path.join(exp_folder, 'ONE_preproc',
-                                                       video_fov, '%s_corrupted.json' % video_fov)
                     open(corrupted_json_file, 'a').close()
-            """
-            
+
             corrupted_txt_file = os.path.join(exp_folder, '%s_corrupted.txt' % video_fov)
             corrupted_txt_file_not_found = len(glob.glob(corrupted_txt_file)) == 0
             if (not corrupted_txt_file_not_found) & (not vid_corrupted):
                 # false alarm, delete the corruption files
                 os.remove(corrupted_txt_file)
+
+            if output_format == 'ONE':
+                # check for false alarm JSON files, and delete them
+                corrupted_json_file_found = (len(glob.glob(corrupted_json_file)) >= 1)
+                if corrupted_json_file_found & (not vid_corrupted):
+                    os.remove(corrupted_json_file)
 
             if recompute_facemap:
                 if len(processed_facemap_path) != 0:
@@ -2293,7 +2298,7 @@ def main(**csv_kwargs):
 
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
-    override_limit = 200  # how many times to override time checking before stopping
+    override_limit = 20  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
