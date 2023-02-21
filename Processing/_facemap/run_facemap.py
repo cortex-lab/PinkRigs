@@ -1383,6 +1383,7 @@ def get_dlc_roi_window(vid_path, projectName):
         body_parts = ['eyeL', 'snoutF', 'spout', 'pawL', 'earL', 'earR', 'earU', 'earD']
 
     body_part_mean_xy = {}
+    body_part_median_xy = {}
     body_part_xy = {}
 
     for b_part in body_parts:
@@ -1402,6 +1403,10 @@ def get_dlc_roi_window(vid_path, projectName):
         body_part_mean_xy[b_part + '_y'] = yvals_mean
         body_part_mean_xy[b_part + '_x'] = xvals_mean
 
+        # more robust to outliers, I think can replace mean
+        body_part_median_xy[b_part + '_y'] = np.nanmedian(body_part_yvals)
+        body_part_median_xy[b_part + '_x'] = np.nanmedian(body_part_xvals)
+
     # Defining roi_window
     roi_window = dict()
 
@@ -1411,41 +1416,83 @@ def get_dlc_roi_window(vid_path, projectName):
         eyeR_xvals_mean = body_part_mean_xy['eyeR_x']
         eyeR_yvals_mean = body_part_mean_xy['eyeR_y']
 
-        roi_window['mpl_obj'] = mpl.patches.Rectangle(
-            (eyeR_xvals_mean - 300, eyeR_yvals_mean),
-            rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
-        )
+        if eyeR_yvals_mean > 150:  # threhsold for eye being not too "up"
+            roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                (eyeR_xvals_mean - 300, eyeR_yvals_mean),
+                rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
+            )
 
-        x_start = eyeR_xvals_mean - 300
-        x_end = x_start + rectangle_width
-        y_start = eyeR_yvals_mean
-        y_end = y_start + 150
+            x_start = eyeR_xvals_mean - 300
+            x_end = x_start + rectangle_width
+            y_start = eyeR_yvals_mean
+            y_end = y_start + 150
+        else:
+            print('Eye camera flipped, implementing fix')
+            roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                (eyeR_xvals_mean - 120, eyeR_yvals_mean + 150),
+                rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
+            )
+            x_start = eyeR_xvals_mean - 120
+            y_start = eyeR_yvals_mean + 150
+            x_end = x_start + rectangle_width
+            y_end = y_start + 150
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
         roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+
+        # moving to the median, seems more stable
+        roi_window['eyeR_x_mean'] = eyeR_xvals_mean
+        roi_window['eyeR_y_mean'] = eyeR_yvals_mean
 
     elif projectName == 'pinkrigsFrontCam':
 
         rectangle_width = 50
         # rectangle_height = eyeL_yvals_mean - eyeR_yvals_mean
-        rectangle_height = body_part_mean_xy['eyeL_y'] - body_part_mean_xy['eyeR_y']
+        rectangle_height = body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']
 
-        roi_window['mpl_obj'] = mpl.patches.Rectangle(
-            (body_part_mean_xy['eyeR_x'] + 25, body_part_mean_xy['eyeR_y']),
-            rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
-        )
+        eye_x_big_diff = np.abs(body_part_median_xy['eyeL_x'] - body_part_median_xy['eyeR_x']) > 100
+        eye_y_small_diff = np.abs(body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']) < 100
 
-        x_start = body_part_mean_xy['eyeR_x'] + 25
-        x_end = x_start + rectangle_width
-        y_start = body_part_mean_xy['eyeR_y']
-        y_end = y_start + rectangle_height
+        if eye_x_big_diff or eye_y_small_diff:
+            # something is wrong (likely video flipped), implementing some hack
+            print('FrontCam flipped, using fix')
+            rectangle_height = 120
+            roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                (body_part_median_xy['eyeL_x'] - 60, body_part_median_xy['eyeL_y']),
+                rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+            )
 
-        # this is when rectangle_height is negative
-        if y_end < y_start:
-            y_start, y_end = y_end, y_start
+            x_start = body_part_median_xy['eyeL_x'] - 60
+            x_end = x_start + rectangle_width
+            y_start = body_part_median_xy['eyeL_y'] - rectangle_height
+            y_end = y_start + rectangle_height
+
+        else:
+            roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                (body_part_median_xy['eyeR_x'] + 25, body_part_median_xy['eyeR_y']),
+                rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+            )
+
+            x_start = body_part_median_xy['eyeR_x'] + 25
+            x_end = x_start + rectangle_width
+            y_start = body_part_median_xy['eyeR_y']
+            y_end = y_start + rectangle_height
+
+            # this is when rectangle_height is negative
+            # which means left and right eye positions are switched
+            if y_end < y_start:
+                y_start, y_end = y_end, y_start
+
+                # this is to do with frontCam being mirrored
+                x_start = body_part_median_xy['eyeR_x'] - 25 - rectangle_width
+                x_end = x_start + rectangle_width
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
         roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+        roi_window['eyeL_x_mean'] = body_part_median_xy['eyeL_x']
+        roi_window['eyeL_y_mean'] = body_part_median_xy['eyeL_y']
+        roi_window['eyeR_x_mean'] = body_part_median_xy['eyeR_x']
+        roi_window['eyeR_y_mean'] = body_part_median_xy['eyeR_y']
 
     elif projectName == 'pinkrigsSideCam':
 
@@ -1463,6 +1510,8 @@ def get_dlc_roi_window(vid_path, projectName):
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
         roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
+        roi_window['eyeL_x_mean'] = body_part_mean_xy['eyeL_x']
+        roi_window['eyeL_y_mean'] = body_part_mean_xy['eyeL_y']
 
     return roi_window
 
@@ -1897,8 +1946,25 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
                     # modify the crop window settings to give to facemap
                     # currently assume just a single ROI
+
+                    # temp fix for negative ranges (and remove zero for now as well)
+                    # this is to do with eyeCam flipped
+                    """
+                    if 'eyeCam' in video_fpath:
+                        pdb.set_trace()
+                        if np.min(roi_window['xrange']) <= 0:
+                            roi_window['xrange'] = roi_window['xrange'][roi_window['xrange'] > 0]
+                            roi_window_xrange_width = roi_window['xrange'][-1] - roi_window['xrange'][0]
+                            roi_window['xrange'] = roi_window['xrange'] + roi_window_xrange_width
+
+                            roi_window['yrange'] = roi_window['yrange'][roi_window['yrange'] > 0]
+                            roi_window_yrange_height = roi_window['yrange'][-1] - roi_window['yrange'][0]
+                            roi_window['yrange'] = roi_window['yrange'] + roi_window_yrange_height
+                    """
+
                     proc['rois'][0]['xrange'] = roi_window['xrange']
                     proc['rois'][0]['yrange'] = roi_window['yrange']
+                    print(proc['rois'][0]['xrange'])
 
                     # if plot_results:
                     #     # plot the ROI locations and window just to check
@@ -1952,7 +2018,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     plt.close(fig)
 
 
-                    # Plot average frame + ROI window + top motion SVDs
+                    # Plot average frame + ROI window + top motion SVDs + DLC anchor points
                     motmask_reshape = facemap_output['motMask_reshape'][1]
 
                     roi_y_idx = facemap_output['rois'][0]['yrange']
@@ -1976,6 +2042,17 @@ def batch_process_facemap(output_format='flat', sessions=None,
                         )
 
                         axs[0].add_patch(roi_rect)
+
+                        # Detected body locations
+                        if 'frontCam' in video_fpath:
+                            axs[0].scatter(roi_window['eyeL_x_mean'],
+                                            roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
+                            axs[0].scatter(roi_window['eyeR_x_mean'],
+                                           roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
+                        elif 'eyeCam' in video_fpath:
+                            axs[0].scatter(roi_window['eyeR_x_mean'],
+                                           roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
+
 
                         axs[1].set_title('Average frame cropped ROI', size=11)
                         axs[1].imshow(avgframe_reshape_roi_subset, cmap=cmap)
