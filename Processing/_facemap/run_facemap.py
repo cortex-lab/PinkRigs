@@ -1864,6 +1864,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
             # check whether file was already marked as corrupted
             vid_corrupted = check_file_corrupted(vid_path=video_fpath)
 
+            """
             if vid_corrupted:
                 if output_format == 'ONE':
 
@@ -1877,7 +1878,8 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     corrupted_json_file = os.path.join(exp_folder, 'ONE_preproc',
                                                        video_fov, '%s_corrupted.json' % video_fov)
                     open(corrupted_json_file, 'a').close()
-
+            """
+            
             corrupted_txt_file = os.path.join(exp_folder, '%s_corrupted.txt' % video_fov)
             corrupted_txt_file_not_found = len(glob.glob(corrupted_txt_file)) == 0
             if (not corrupted_txt_file_not_found) & (not vid_corrupted):
