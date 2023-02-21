@@ -2365,4 +2365,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['all'], expDate='last1000')
+    main(subject=['CB020','CB019','CB018'], expDate='last1000')
