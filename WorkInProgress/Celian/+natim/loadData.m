@@ -95,7 +95,7 @@ function [data, proc, recPathUni] = loadData(varargin)
                 dataExp = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                         object={{'spikes'},{'clusters'}}, ...
                         attribute={{'times','clusters'}, ...
-                        {'_av_IDs','_av_KSLabels','depths','_av_xpos','_av_xpos','qualityMetrics'}});
+                        {'_av_IDs','_av_KSLabels','depths','_av_xpos','_av_xpos','qualityMetrics','bc_qualityMetrics'}});
                 spikes = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).spikes;
                 clusters = dataExp.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters;
                 
@@ -162,6 +162,7 @@ function [data, proc, recPathUni] = loadData(varargin)
         data(nn).C.CluID = C{ee}.IDs;
         data(nn).C.CluLab = C{ee}.KSLabels;
         data(nn).C.QM = C{ee}.qualityMetrics; % can't subselect them?
+        data(nn).C.bcQM = C{ee}.bc_qualityMetrics; % can't subselect them?
         data(nn).goodUnits = C{ee}.IDs(ismember([C{ee}.KSLabels],2) & squeeze(nanmean(data(nn).spikeData,[1 2 4]))>0.1);
         data(nn).days = days{ee};
         data(nn).recLoc = recLocAll{ee};

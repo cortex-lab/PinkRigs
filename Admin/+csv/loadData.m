@@ -19,6 +19,7 @@ function expList = loadData(varargin)
 %   indicates which data types to load.   
 %   'blk' or 'block': raw block (output = dataBlock)
 %   'tim' or 'timeline': raw timeline (output = dataTimeline)
+%   'cam' or 'cameras': camera data (output = dataCam) 
 %   'mic' or 'microphone': raw microphone data (output = dataMic) 
 %   'ev' or 'events':  trial events (output = dataEvents)
 %   'eventsFull':  all (including large) trial events (output = dataEvents)
@@ -42,7 +43,7 @@ function expList = loadData(varargin)
 % ---------------
 % expList: table 
 %   New fields with loaded data in structures will be included. 
-%   {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'}
+%   {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataCam';'dataMic'}
 %    These fields will not be included if they are not requested.
 %
 % Examples: 
@@ -93,7 +94,7 @@ params = rmfield(params, {'dataType'; 'object'; 'attribute';'verbose'});
 expList = csv.queryExp(params);
 
 % Add new fields for loaded data to the expList
-newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataMic'};
+newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline'; 'dataCam'; 'dataMic'};
 for i = 1:length(newFields)
     if any(strcmp(expList.Properties.VariableNames, newFields{i})); continue; end
     expList.(newFields{i}) = cell(size(expList,1),1);
@@ -129,7 +130,7 @@ for i=1:height(expList)
         for j = find(dataIdx)'
             if isempty(j); continue; end
             %If requested ONEFolder "probe1", skip other probes
-            if ~contains({ONENames{j}, 'all'}, dataTypes)
+            if ~contains({ONENames{j},'probes', 'all'}, dataTypes)
                 continue
             end
             %If requested object "probe" load all objects in probe folder
@@ -180,6 +181,28 @@ for i=1:height(expList)
             if exist('tim', 'var')
                 expList.dataTimeline{i} = tim.Timeline;
             end
+        end
+    end
+
+    %% load cam data if requested
+    if any(contains(dataTypes, {'cam', 'all'}, 'IgnoreCase',1))
+        dataIdx = contains(ONENames, 'Cam');
+        for j = find(dataIdx)'
+            if isempty(j); continue; end
+            %If requested ONEFolder "probe1", skip other probes
+            if ~contains({ONENames{j}, 'cameras','all'}, dataTypes)
+                continue
+            end
+            %If requested object "cam" load all objects in camera folder
+            camStatus = cell2mat(cellfun(@str2num, split(currExp.(sprintf('fMap%s%s',upper(ONENames{j}(1)),ONENames{j}(2:end))){1}, ','), 'uni', 0));
+            if isnan(camStatus) || ~(camStatus == 1)
+                continue;
+            end
+
+            objPath = fullfile(ONEPath, ONENames{j});
+            idx = contains(dataTypes, {'cam', 'all'}, 'IgnoreCase',1);
+            expList.dataCam{i}.(ONENames{j}) = ...
+                loadAttributes(objects(idx), attributes(idx), objPath);
         end
     end
 
@@ -235,6 +258,8 @@ for j = 1:length(objects)
     loadAttr = splitNames(matchedObj & matchedAttr,2);
     loadExt = splitNames(matchedObj & matchedAttr,4);
     for i = 1:size(loadPaths,1)
+        loadObj{i} = strrep(loadObj{i}, '_av_', '');
+        loadObj{i} = strrep(loadObj{i}, '_bc_', 'bc_');
         loadAttr{i} = strrep(loadAttr{i}, '_av_', '');
         loadAttr{i} = strrep(loadAttr{i}, '_bc_', 'bc_');
         if contains(loadExt{i},{'npy'})
