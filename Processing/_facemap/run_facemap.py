@@ -2214,7 +2214,7 @@ def main(**csv_kwargs):
 
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
-    override_limit = 200  # how many times to override time checking before stopping
+    override_limit = 100  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
@@ -2281,4 +2281,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['CB016', 'CB017'], expDate='last1000')
+    main(subject=['all'], expDate='last1000')
