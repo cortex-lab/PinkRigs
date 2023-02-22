@@ -115,13 +115,7 @@ classdef LaserController < handle
             else
             
                 volts = obj.laserCfg.calib.voltages;
-                power = obj.laserCfg.calib.voltages(:,LEDidx);
-
-                %Trim away zero power
-                idx = power==0;
-                volts(idx)=[];
-                power(idx)=[];
-
+                power = obj.laserCfg.calib.power(:,LEDidx);
                 if desiredPower > max(power)
                     error('power desired outside of calibrated range');
                 end            
