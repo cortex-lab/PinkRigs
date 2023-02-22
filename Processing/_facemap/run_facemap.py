@@ -36,6 +36,8 @@ import datetime
 
 # Run deeplabcut to get anchor points to draw ROI
 import deeplabcut
+import tensorflow as tf
+
 
 # Pink rig dependencies
 from pathlib import Path
