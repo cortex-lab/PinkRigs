@@ -1,6 +1,21 @@
 classdef optoExpt < handle
-    %object which handles interfacing the galvo setup with MC    
-    % requires a callback (e.g. optoExpt_callback) to interact with laser. 
+%     object which handles interfacing the galvo setup with the expServer (run in stim computer);     
+%     requires a callback (e.g. optoExpt_callback) to interact with laser and the laser Object (LaserController).
+%     methods:
+% ----------------------------
+% 	    init
+% 		    initiates the LaserController (that opens and configures the DAQ)
+% 		    executes popup withdow to get plugin configuration		
+% 		    establish connection to UDP. 
+% 	    registerListener: 
+% 		    func to actually instatiate the connection to stim and trigger the callback on local when the stim updates.
+% 	    clearListener: 
+% 		    func to stop registerListener
+% 	    appendToLog:
+% 		    func to call by callback to append to the optoLog
+% 	    saveLog
+% 	    delete         
+        
     properties
         rig;  
         laser; % DAQ object to operate the laser        
