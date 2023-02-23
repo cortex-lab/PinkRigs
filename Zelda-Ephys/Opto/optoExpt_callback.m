@@ -4,6 +4,9 @@ function optoExpt_callback(eventObj, LGObj)
     %LGObj: laserGalvo object containing functions for laser
     % i.e. function that listens to updates from stim computer and
     % triggers the laser accordingly.
+   % this callback is designed the interct with the expDef
+   % \\znas.cortexlab.net\Code\Rigging\ExpDefinitions\PinkRigs\multiSpaceWorld_checker_training.m
+   % 
 
 if iscell(eventObj.Data) && strcmp(eventObj.Data{2}, 'experimentInit') %Experiment started
     expRef = eventObj.Ref;

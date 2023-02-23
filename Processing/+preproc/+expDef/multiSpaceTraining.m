@@ -413,7 +413,11 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     %%
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
         is_laser_On = e.is_laserOnValues(eIdx);
-        all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut');
+        all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
+        all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');
+
+        all_laser_times = [all_laser1_times;all_laser2_times];
+        all_laser_times = sortrows(all_laser_times); 
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
         laser_times_trial_indexed(is_laser_On,:)= all_laser_times;
     else

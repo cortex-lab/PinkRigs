@@ -22,6 +22,12 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
     %% Extract channel
     chan = timeproc.extractChan(timeline,chanName,0);
     timelineTime = timeproc.extractChan(timeline,'time');
+
+    % laserOut channel name might have several endings due to LED indices.
+    if contains(chanName,'laserOut')
+        chanName = 'laserOut'; 
+    end
+
         
     %% Extract events
     if ~isempty(chan)
@@ -139,7 +145,13 @@ function evTimes = getChanEventTime(timeline,chanName, mode)
 
             case 'laserOut'
                 % I detect both the beginning and the end of the ramp. 
-                tlSyncThresh = [min(chan)+0.03*range(chan) max(chan)-0.02*range(chan)]; 
+                %tlSyncThresh = [min(chan)+0.03*range(chan) max(chan)-0.02*range(chan)];
+
+                % or determine from the baseline in which we always pull
+                % down ao in LaserController 
+                bl = (chan(1:10000));
+                tlSyncThresh = mean(bl)+5*std(bl);
+                tlSyncThresh = [tlSyncThresh,tlSyncThresh+40*std(bl)];
                 % I need to find a more robust way of doing this. 
                 [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
