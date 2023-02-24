@@ -53,6 +53,12 @@ def get_tc_correlations(tuning_curves):
     mean_corr = all_corrs.mean(axis=1).values
     return mean_corr
 
+def get_cval_pref_azimuth_difference(tuning_curves):
+    pt_train = tuning_curves[tuning_curves.cv_number==0].preferred_tuning.values
+    pt_test = tuning_curves[tuning_curves.cv_number==1].preferred_tuning.values
+    is_cval_match  = pt_train.astype('float')-pt_test.astype('float')==0
+    return is_cval_match
+
 class azimuthal_tuning():
     def __init__(self,rec_info):
         self.raster_kwargs = {

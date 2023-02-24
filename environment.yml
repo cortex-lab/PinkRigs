@@ -18,7 +18,7 @@ dependencies:
   - bzip2=1.0.8=h8ffe710_4
   - c-ares=1.18.1=h8ffe710_0
   - ca-certificates=2023.01.10=haa95532_0
-  - certifi=2022.12.7=pyhd8ed1ab_0
+  - certifi=2022.12.7=py37haa95532_0
   - cftime=1.6.1=py37h3a130e4_0
   - click=8.0.4=py37h03978a9_0
   - cloudpickle=2.2.1=pyhd8ed1ab_0
@@ -38,7 +38,7 @@ dependencies:
   - gflags=2.2.2=ha925a31_1004
   - glog=0.6.0=h4797de2_0
   - hdf4=4.2.15=h0e5069d_3
-  - hdf5=1.12.1=nompi_h2a0e4a3_104
+  - hdf5=1.12.0=h1756f20_0
   - heapdict=1.0.1=py_0
   - icc_rt=2019.0.0=h0cc432a_1
   - icu=68.2=h0e60522_0
@@ -65,7 +65,6 @@ dependencies:
   - libdeflate=1.10=h8ffe710_0
   - libffi=3.4.2=h8ffe710_5
   - liblapack=3.9.0=12_win64_mkl
-  - libnetcdf=4.8.1=nompi_h1cc8e9d_102
   - libpng=1.6.37=h1d00b33_2
   - libprotobuf=3.20.1=h7755175_0
   - libssh2=1.10.0=h680486a_2
@@ -94,8 +93,8 @@ dependencies:
   - msys2-conda-epoch=20160418=1
   - munkres=1.1.4=pyh9f0ad1d_0
   - nest-asyncio=1.5.5=py37haa95532_0
-  - netcdf4=1.6.2=py37hda396d2_0
-  - openssl=1.1.1s=h2bbff1b_0
+  - numpy-base=1.21.2=py37h0829f74_0
+  - openssl=1.1.1t=h2bbff1b_0
   - packaging=21.3=pyhd8ed1ab_0
   - pandas=1.3.5=py37h9386db6_0
   - parso=0.8.3=pyhd3eb1b0_0
@@ -107,7 +106,7 @@ dependencies:
   - prompt-toolkit=3.0.20=pyhd3eb1b0_0
   - psutil=5.9.1=py37hcc03f2d_0
   - pyarrow=8.0.0=py37h953b917_0
-  - pygments=2.14.0=pyhd8ed1ab_0
+  - pygments=2.11.2=pyhd3eb1b0_0
   - pyparsing=3.0.9=pyhd8ed1ab_0
   - pyqt=5.12.3=py37h1834ac0_4
   - python=3.7.11=h6244533_0

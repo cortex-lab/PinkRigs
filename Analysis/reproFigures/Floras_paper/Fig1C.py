@@ -10,21 +10,35 @@ import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
 dat_keys = get_data_bunch('naive-allen')
-
 rerun_sig_test=False 
+
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 from Admin.csv_queryExp import load_ephys_independent_probes
 from Processing.pyhist.helpers.util import add_gauss_to_mlapdv
+from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning,get_discriminability,get_tc_correlations
+
 
 allen_pos_mlapdv, loc_name,curated_label = [],[],[]
 is_aud_sig, is_vis_sig = [],[]
+vis_discriminability, aud_discriminability = [],[]
+vis_preferred_tuning,aud_preferred_tuning = [],[]
+
+tuning_curve_params = { 
+    'contrast': None, # means I select the max
+    'spl': None, # means I select the max
+    'subselect_neurons':None,
+}
+
 
 for _,session in dat_keys.iterrows():
+
+    # get postitions of units 
     r = load_ephys_independent_probes(ephys_dict={'clusters':'all'},**session)
     allen_pos_mlapdv.append(r.iloc[0].probe.clusters.mlapdv)
     loc_name.append(r.iloc[0].probe.clusters.brainLocationAcronyms_ccf_2017)
     curated_label.append(r.iloc[0].probe.clusters._av_KSLabels)
     
+    # get significance of responsivity  
     interim_data_sess = interim_data_folder / ('%s/%s/%.0f/%s/sig_test' % tuple(session))
     interim_data_sess.mkdir(parents=True,exist_ok=True)
     interim_data_sess = interim_data_sess / ('%s_%s_%.0f_%s_maxtest.csv' % tuple(session))
@@ -48,13 +62,30 @@ for _,session in dat_keys.iterrows():
     is_aud_sig.append(is_signifiant_per_cond[aud_keys].any(axis=1).to_numpy())
     is_vis_sig.append(is_signifiant_per_cond[vis_keys].any(axis=1).to_numpy())
 
+    #get spatial tuning properties
+    azi = azimuthal_tuning(session)
+    tuning_type = 'vis'
+    tuning_curve_params['which'] = tuning_type
+    # get the visual tuning curves
+    azi.get_rasters_perAzi(**tuning_curve_params)
+    tc = azi.get_tuning_curves(cv_split=1,azimuth_shuffle_seed=None)
+    vis_discriminability.append(get_discriminability(tc[tc.cv_number==0]))
+    vis_preferred_tuning.append(tc.preferred_tuning.values.astype('float'))
+
+    tuning_type = 'aud'
+    tuning_curve_params['which'] = tuning_type
+    # get the visual tuning curves
+    azi.get_rasters_perAzi(**tuning_curve_params)
+    tc = azi.get_tuning_curves(cv_split=1,azimuth_shuffle_seed=None)
+    aud_discriminability.append(get_discriminability(tc[tc.cv_number==0]))
+    aud_preferred_tuning.append(tc.preferred_tuning.values.astype('float')) # 
+
+#%% concatenate all outputs
 allen_pos_mlapdv,loc_name,curated_label = np.concatenate(allen_pos_mlapdv),np.concatenate(loc_name),np.concatenate(curated_label)
 is_aud_sig, is_vis_sig = np.concatenate(is_aud_sig),np.concatenate(is_vis_sig)
-
 allen_pos_mlapdv = add_gauss_to_mlapdv(allen_pos_mlapdv,ml=80,ap=80,dv=0)
-
-
-
+vis_discriminability, aud_discriminability =  np.concatenate(vis_discriminability),np.concatenate(aud_discriminability)
+vis_preferred_tuning,aud_preferred_tuning = np.concatenate(vis_preferred_tuning),np.concatenate(aud_preferred_tuning)
 
 is_both = is_aud_sig & is_vis_sig
 is_neither = ~is_aud_sig & ~is_vis_sig
@@ -63,7 +94,7 @@ is_vis= ~is_aud_sig & is_vis_sig
 is_good = curated_label==2
 is_SC = ['SC'in loc for loc in loc_name]
 
-
+# %%
 # plotting in brainrender 
 from brainrender import Scene
 from brainrender.actors import Points
@@ -86,4 +117,6 @@ scene.content
 scene.render()
 
 # %%
+# discriminability
 
+# 
