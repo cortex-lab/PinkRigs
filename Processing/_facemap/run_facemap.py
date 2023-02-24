@@ -2383,4 +2383,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['all'], expDate='last1000')
+    main(subject=['AV013', 'AV023'], expDate='last1000')

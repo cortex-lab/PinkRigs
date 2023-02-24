@@ -12,8 +12,8 @@ dat_params,fit_params,eval_params = get_params()
 nrn_list = [571]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'FT011',
-    expDate = '2021-03-24', 
+    subject = 'FT009',
+    expDate = '2021-01-20', 
     expDef = 'all',
     expNum = 7,
     probe = 'probe0',
@@ -67,8 +67,8 @@ kernels.plot_prediction(
     plot_stim = True, 
     plot_move=False, 
     sep_choice=False,
-    plotted_vis_azimuth = np.array([-1000,-90,0,90]),
-    plotted_aud_azimuth = np.array([-1000,-90,0,90]),
+    plotted_vis_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
+    plotted_aud_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
     plot_train =True,
     plot_test = True,
     plot_pred_train = False,

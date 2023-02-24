@@ -16,7 +16,8 @@ from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning,get_discrimina
 session = { 
     'subject':'FT009',
     'expDate': '2021-01-20',
-    'expNum': 7
+    'expNum': 7,
+    'probe': 'probe0'
 }
 azi = azimuthal_tuning(session)
 
@@ -25,10 +26,9 @@ azi = azimuthal_tuning(session)
 
 # to get significant tuning we will correlate cv split and shuffle the labels.
 tuning_type = 'vis'
-
 tuning_curve_params = { 
-    'contrast': 1,
-    'spl': None, 
+    'contrast': None, # means I select the max
+    'spl': None, # means I select the max
     'which': tuning_type,
     'subselect_neurons':None,
 }
@@ -37,7 +37,10 @@ tuning_curve_params = {
 # test for discriminability
 
 azi.get_rasters_perAzi(**tuning_curve_params)
-tc = azi.get_tuning_curves(cv_split=1,azimuth_shuffle_seed=None)
+tc = azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None)
+
+# %%
+
 d_actual = get_discriminability(tc)
 
 def sample_null_dist(my_seed):
@@ -70,8 +73,6 @@ c_shuff = np.concatenate(c_shuff,axis=0)
 c_actual_ =np.tile(c_actual,(n_shuffles,1))
 p_val = (c_shuff>c_actual_).sum(axis=0)/n_shuffles
 # 
-
-                                                                                                                                                                                                                                                                     # %%
 
 # %%
 # see how it does for some neurons 
