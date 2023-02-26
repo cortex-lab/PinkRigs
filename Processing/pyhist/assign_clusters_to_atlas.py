@@ -259,7 +259,7 @@ def get_anatmap_path_same_day(one_path):
     anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
     return anatmap_paths
 
-def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,depth_selection = 'auto'): 
+def call_for_anatmap_recordings(probe='probe0',near_date=None,depth_selection = 'auto',**kwargs): 
     """
     function to call which recordings should be used for anatomy
     basically this function searches for single shank recordings
@@ -282,8 +282,8 @@ def call_for_anatmap_recordings(subject='AV025',probe='probe0',near_date=None,de
     ('%s_raw' % probe):{'channels':'all'}
     }
     
-    sn_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='sparseNoise')
-    spont_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='spontaneous')
+    sn_recs=load_data(data_name_dict=data_dict,expDef='sparseNoise',**kwargs)
+    spont_recs=load_data(data_name_dict=data_dict,expDef='spontaneous',**kwargs)
     recdat = pd.concat((sn_recs,spont_recs))
 
 

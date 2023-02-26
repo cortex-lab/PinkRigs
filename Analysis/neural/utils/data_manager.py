@@ -507,27 +507,28 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     """
     data_dict = {
         probe:{'clusters':'all'}, 
-        (probe + '_raw'):{'clusters':['brainLocationAcronyms_ccf_2017', 'brainLocationIds_ccf_2017','mlapdv' ] }
     }
     recording = load_data(data_name_dict=data_dict,**rec_kwargs)
+
     clusters = recording[probe].iloc[0].clusters
-    clusters_r = recording[(probe + '_raw')].iloc[0].clusters
 
     clusInfo = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     clusInfo = pd.DataFrame.from_dict(clusInfo)
     clusInfo = clusInfo.set_index('_av_IDs',drop=False)
 
 
-    if 'mlapdv' in list(clusters_r.keys()):
-        clusInfo_ = {k:clusters_r[k] for k in clusters_r.keys() if clusters_r[k].ndim==1}
-        clusInfo_ = pd.DataFrame.from_dict(clusInfo_)
-        clusInfo_['ml'] = clusters_r.mlapdv[:,0]
-        clusInfo_['ap'] = clusters_r.mlapdv[:,1]
-        clusInfo_['dv'] = clusters_r.mlapdv[:,2]
-        all_clusInfo = pd.concat([clusInfo,clusInfo_],axis=1)
-        all_clusInfo = all_clusInfo.loc[clusInfo.index]
-    else: 
-        all_clusInfo = clusInfo    
+    if 'mlapdv' in list(clusters.keys()):
+        # we could add the raw, but for now, I won't actually
+        clusInfo['ml'] = clusters.mlapdv[:,0]
+        clusInfo['ap'] = clusters.mlapdv[:,1]
+        clusInfo['dv'] = clusters.mlapdv[:,2]
+
+    # option to read in the raw data as well  
+    #clusInfo_ = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
+    #clusInfo_ = pd.DataFrame.from_dict(clusInfo_)
+    #all_clusInfo = pd.concat([clusInfo,clusInfo_],axis=1)
+    #all_clusInfo = all_clusInfo.loc[clusInfo.index]  
+    all_clusInfo = clusInfo    
 
 
     # also try loading in the shank posititon this is for the naive
@@ -566,6 +567,13 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
             all_clusInfo['sc_elevation'] = [d[s][2] for s in all_clusInfo._av_shankID]
             all_clusInfo['sc_surface'] = [d[s][0] for s in all_clusInfo._av_shankID]
     
+    
+    all_clusInfo['probe'] = probe
+    all_clusInfo['expFolder'] = recording.iloc[0].expFolder
+    all_clusInfo['Subject'] = recording.iloc[0].Subject
+    all_clusInfo['expDate'] = recording.iloc[0].expDate
+    all_clusInfo['expNum'] = recording.iloc[0].expNum
+    all_clusInfo['expDef'] = recording.iloc[0].expDef
 
     return all_clusInfo
 
