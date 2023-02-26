@@ -228,7 +228,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
             shank_anat_path = brainreg_path / shank_file_name
 
             #
-            if ~shank_anat_path.is_file():
+            if not shank_anat_path.is_file():
                 print('searching for an acute recording registration file...')
                 ephys_date = meta['fileCreateTime'][:10]
                 shank_file_name = '%s_%s_SN%s_shank%s.npy' % (ephys_date,subject_path.name,probe_sn,shank)

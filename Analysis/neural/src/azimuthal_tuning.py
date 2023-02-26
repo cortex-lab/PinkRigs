@@ -1,63 +1,14 @@
 
-import sys,itertools, re,time
+import itertools, re
 import pandas as pd 
 import numpy as np 
-import xarray as xr
+import matplotlib.pyplot as plt
 
 from Admin.csv_queryExp import load_ephys_independent_probes,Bunch
 from Analysis.neural.utils.ev_dat import postactive
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
-
-def get_discriminability(tuning_curves,tuning_type = None):
-    """
-    utility function to get distriminability from responses at various azimuthal tunings
-    
-    Parameters: 
-    -----------
-    tuning curves: pd.df
-    
-    tuning_type: str for indexing into the tuning curves
-    (so func written for the azimuthal tuning object)
-    """ 
-    if not tuning_type:
-        tuning_type = tuning_curves.columns[0][:3]
-
-    keys = [c for c in tuning_curves.columns if tuning_type in c and 'preferred' not in c]               
-    resp_per_azimuth = tuning_curves[keys]
-    disriminability = np.ptp(resp_per_azimuth,axis=1)/(np.min(resp_per_azimuth,axis=1)+np.max(resp_per_azimuth,axis=1))
-
-    return disriminability
-
-
-def get_tc_correlations(tuning_curves):
-    """
-    function to compare how tuning curves are correlated after cv splits
-    requires input with minimum two cv_splits
-
-    Parameters
-    ------------
-
-    """
-    tuning_type = tuning_curves.columns[0][:3]
-    splits = np.unique(tuning_curves.cv_number)
-    keys = [c for c in tuning_curves.columns if tuning_type in c and 'preferred' not in c]
-    # hold out one set for training
-    train = tuning_curves[(tuning_curves.cv_number==0)]
-    train = train[keys]
-    # correlate with other sets 
-    splits = splits[splits>0]
-    corrs = [train.corrwith(tuning_curves[(tuning_curves.cv_number==s)][keys],axis=1) for s in splits]
-    all_corrs = pd.concat(corrs,axis=1)
-    mean_corr = all_corrs.mean(axis=1).values
-    return mean_corr
-
-def get_cval_pref_azimuth_difference(tuning_curves):
-    pt_train = tuning_curves[tuning_curves.cv_number==0].preferred_tuning.values
-    pt_test = tuning_curves[tuning_curves.cv_number==1].preferred_tuning.values
-    is_cval_match  = pt_train.astype('float')-pt_test.astype('float')==0
-    return is_cval_match
 
 class azimuthal_tuning():
     def __init__(self,rec_info):
@@ -195,37 +146,59 @@ class azimuthal_tuning():
         tuning_curves = pd.concat(tuning_curves)
 
         return tuning_curves
-            
+    
 
+    def get_selectivity(self,**kwargs):
+        """
+        function to get cross-validated selectivity from responses at various azimuthal tunings
+        Procedure: 
 
+        """
+        tuning_curves = self.get_tuning_curves(cv_split=2,**kwargs)     
 
+        tuning_type = tuning_curves.columns[0][:3]
 
+        keys = [c for c in tuning_curves.columns if tuning_type in c and 'preferred' not in c]              
 
-            
+        train = tuning_curves[(tuning_curves.cv_number==0)]
+        train = train[keys]
 
+        test= tuning_curves[(tuning_curves.cv_number==1)]
+        test = test[keys]
+
+        max_loc = np.argmax(train.values,axis=1)
+        min_loc = np.argmin(train.values,axis=1)
+
+        max_test = test.values[range(test.shape[0]),max_loc]
+        min_test = test.values[range(test.shape[0]),min_loc]
         
+        selectivity = (max_test-min_test)/(max_test+min_test)
 
+        return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values
+    
+    def calculate_significant_selectivity(self,n_shuffles=100,p_threshold=0.01):
         
+        if 1/n_shuffles>p_threshold:
+            print('not enough shuffles for this p threshold')
+                
+        self.selectivity,self.preferred_tuning = self.get_selectivity(azimuth_shuffle_seed=None)
+        s_shuffled,_ = zip(*[self.get_selectivity(azimuth_shuffle_seed=shuffle_idx) for shuffle_idx in range(n_shuffles)])
+        s_shuffled = [s[np.newaxis,:] for s in s_shuffled]
+        self.selectivity_shuffle_dist = np.concatenate(s_shuffled,axis=0)
+        # calculate p value
+        selectivity_ =np.tile(self.selectivity,(n_shuffles,1))
+        p_val = (self.selectivity_shuffle_dist>selectivity_).sum(axis=0)/n_shuffles
 
-        pass 
+        is_selective = p_val < p_threshold
 
-    #     self
-    #     Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
-    #     responses[k] = Rmax_stim
-
-    #     curr_tuning_curves = pd.DataFrame.from_dict(responses)            
-    #     preferred_tuning_idx = np.argmax(curr_tuning_curves.to_numpy(),axis=1)
-
-    #     curr_tuning_curves[('preferred_%s_tuning' % which)] = [re.split('_',curr_tuning_curves.columns[i])[-1] for i in preferred_tuning_idx]
-    #     curr_tuning_curves['cv_number'] = cv
-    #     curr_tuning_curves = curr_tuning_curves.set_index(clus_ids,drop=True)
-    #     print(time.time()-t0)
-
-    #     tuning_curves.append(curr_tuning_curves)
-
-    # tuning_curves = pd.concat(tuning_curves)
-
-    #     return tuning_curves
+        return is_selective,self.preferred_tuning
+            
+    def plot_selectivity_distribution(self,clusID):
+        cidx = np.where(self.clus_ids==clusID)[0][0]
+        _,ax = plt.subplots(1,1)
+        ax.hist(self.selectivity[:,cidx])
+        ax.axvline(self.selectivity_shuffle_dist[cidx])
+        ax.set_title(self.preferred_tuning[cidx])
 
 
 

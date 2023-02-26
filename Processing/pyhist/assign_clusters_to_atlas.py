@@ -239,7 +239,7 @@ def read_probeSN_from_one_folder(one_path):
     probeSN = a[-16:-5]
     return probeSN
 
-def get_anatmap_path_same_day(one_path):
+def get_anatmap_path_same_day(one_path,ks_type='pyKS'):
     """
     function to get ibl_format_paths that already contain the channel_locations.json files and match the probe serial number of the input puath
     Parameters: 
@@ -250,13 +250,18 @@ def get_anatmap_path_same_day(one_path):
     --------
         :list[pathlib.Path]
     """
-
-    anatmap_list = list(one_path.parents[2].glob("**/kilosort2/ibl_format/channel_locations.json")) 
-    anatmap_paths = [p.parent for p in anatmap_list]
+    if 'kilosort2' in ks_type:
+        anatmap_list = list(one_path.parents[2].glob("**/kilosort2/ibl_format/channel_locations.json")) 
+        meta_loc_idx = 2 # how many parents to find meta 
+    elif 'pyKS' in ks_type:
+        anatmap_list = list(one_path.parents[2].glob("**/pyKS/output/ibl_format/channel_locations.json")) 
+        meta_loc_idx = 3 
+    anatmap_paths = [p for p in anatmap_list]
     # check if the serial number is matching
     target_SN = read_probeSN_from_one_folder(one_path)
-    is_SN_match = [read_probeSN_from_folder(p.parents[1])==target_SN for p in anatmap_paths]
+    is_SN_match = [read_probeSN_from_folder(p.parents[meta_loc_idx])==target_SN for p in anatmap_paths]
     anatmap_paths = (np.array(anatmap_paths)[is_SN_match]).tolist()
+
     return anatmap_paths
 
 def call_for_anatmap_recordings(probe='probe0',near_date=None,depth_selection = 'auto',**kwargs): 
