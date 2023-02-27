@@ -211,6 +211,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
         # get some information from meta file 
         meta = readMeta(list(ephys_path.glob('*.ap.cbin'))[0])
 
+        # search for the npy files
+
         # serial number
         probe_sn = meta['imDatPrb_sn']
 
@@ -224,6 +226,14 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
         for shank in recorded_shanks:
             shank_file_name = '%s_SN%s_shank%s.npy' % (subject_path.name,probe_sn,shank)
             shank_anat_path = brainreg_path / shank_file_name
+
+            #
+            if not shank_anat_path.is_file():
+                print('searching for an acute recording registration file...')
+                ephys_date = meta['fileCreateTime'][:10]
+                shank_file_name = '%s_%s_SN%s_shank%s.npy' % (ephys_date,subject_path.name,probe_sn,shank)
+                shank_anat_path = brainreg_path / shank_file_name
+
 
             if shank_anat_path.is_file():
                 # Load in coordinates of track in CCF space (order - apdvml, origin - top, left, front voxel

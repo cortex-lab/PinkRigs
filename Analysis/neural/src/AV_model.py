@@ -8,13 +8,11 @@ import warnings # just because varance explained van be zero divisor (that's ok 
 warnings.filterwarnings("ignore")
 
 
-from Admin.csv_queryExp import load_data,Bunch
+from Admin.csv_queryExp import Bunch,load_ephys_independent_probes
 
-import utils.spike_dat as su 
-from utils.ev_dat import postactive
-import utils.plotting as my_plotter
-from utils.data_manager import simplify_recdat
-
+import Analysis.neural.utils.spike_dat as su 
+from Analysis.neural.utils.ev_dat import postactive
+import Analysis.neural.utils.plotting as my_plotter
 
 def sort_trialtypes_to_conditions(blank,vis,aud,MS,blank_reps=0,myContrast=1,mySPL=0.1,n_trials=None,align_type='vis'):
      
@@ -303,20 +301,19 @@ class AV_model():
     def __init__(self,regulariser):
         self.regulariser = regulariser
 
-    def load_data(self,probe='probe0',**kwargs):
+    def load_data(self,**rec_info):
         # load the event data by default 
+        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'all'}
+        other_ = {'events': {'_av_trials': 'table'}}
 
-        data_dict = {'events':{'_av_trials':'table'},probe:{'spikes':['times','clusters'],'clusters':'all'}}
+        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**rec_info)
+        if recordings.shape[0] == 1:            
+            recordings =  recordings.iloc[0]
+        else:
+            print('recordings are ambiguously defined. Please recall.')
+        events,self.spikes = recordings.events._av_trials,recordings.probe.spikes
 
-        recdat = load_data(data_name_dict = data_dict,**kwargs)        
-
-        if recdat.shape[0]!=1:
-            print('several exps loaded: please be more specific')
-        else: 
-            print('successful loading.')
         
-        # also loads default kwargs for psth formatting
-        events,self.spikes,_,_ = simplify_recdat(recdat.iloc[0],probe_dat_type=probe)
         self.b,self.v,self.a,self.ms = postactive(events)
         # give dattype kwarg or call default
 

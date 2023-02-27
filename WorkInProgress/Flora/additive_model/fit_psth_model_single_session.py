@@ -1,20 +1,17 @@
 # %%
 import sys
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 import pandas as pd
 import numpy as np
-from utils.io import add_github_paths
-add_github_paths()
-from Analysis.helpers.queryExp import load_data
 
 
-from src.AVmodel_psth import AV_model,get_all_indicator_matrices
-from src.azimuthal_tuning import azimuthal_tuning
-from utils.data_manager import get_data_bunch,load_cluster_info
+from Analysis.neural.src.AV_model import AV_model,get_all_indicator_matrices
+#from src.azimuthal_tuning import azimuthal_tuning
+from Analysis.neural.utils.data_manager import load_cluster_info
 
 rec_info = pd.Series(
-    ['AV025','2022-11-09','postactive','probe0'],
-    index = ['subject','expDate','expDef','probe']
+    ['FT009','2021-01-20',7,'probe0'],
+    index = ['subject','expDate','expNum','probe']
     )
 
 
@@ -47,13 +44,13 @@ meanVE  = np.array([scores_all_reps[m].mean(axis=0) for m in model_names])
 meanVE = pd.DataFrame(meanVE.T,columns=model_names)
 meanVE['winner_model'] = meanVE.idxmax(axis=1)
 ve = meanVE.set_index(av_model.clusIDs,drop = True)
-
+#%%
 # get the cluster information. 
 clusInfo = load_cluster_info(**rec_info)
 rec_clusters_info = pd.concat([clusInfo,ve],axis = 1)
 rec_clusters_info['recording_ID']  = '%s_%s_%s_%s' % tuple(rec_info)  # just a unique identification for the recordings's information. 
 # %%
-nrnID = 116
+nrnID = 0
 
 
 nrn_idx = np.where(rec_clusters_info.cluster_id==nrnID)[0][0]

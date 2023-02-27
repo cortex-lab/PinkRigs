@@ -9,10 +9,10 @@ add_PinkRigs_to_path()
 
 from Admin.csv_queryExp import load_data
 
-subject = 'FT035'
+subject = 'FT008'
 probe = 'probe0'
 data_dict = {'events':{'_av_trials':['squareAzimuth','squareElevation','squareOnTimes']},probe:{'spikes':['times','clusters','depths','_av_shankIDs']}}
-recordings = load_data(subject = subject, expDate = 'all',data_name_dict=data_dict,expDef='sparseNoise')
+recordings = load_data(subject = subject, expDate = '2021-01-15',data_name_dict=data_dict,expDef='sparseNoise')
 
 # %%
 # try finding receptive fields in any recording...
