@@ -1,14 +1,14 @@
 # this is the anatomy figure
 # general loading functions
 # %%
-import sys
+import sys,datetime
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from pathlib import Path
 import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'postactive'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 rerun_sig_test=False 
@@ -17,11 +17,11 @@ recompute_csv = False
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
-from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning,get_discriminability,get_tc_correlations
+from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
 
 tuning_curve_params = { 
     'contrast': None, # means I select the max
-    'spl': None, # means I select the max
+    'spl': None, # None means I select the max
     'subselect_neurons':None,
 }
 
@@ -29,6 +29,7 @@ csv_path = interim_data_folder / dat_type
 csv_path.mkdir(parents=True,exist_ok=True)
 csv_path = csv_path / 'summary_data.csv'
 
+tuning_types = ['vis','aud']
 if not csv_path.is_file() or recompute_csv:
     all_dfs = []
     for _,session in dat_keys.iterrows():
@@ -61,39 +62,36 @@ if not csv_path.is_file() or recompute_csv:
 
         clusInfo['is_aud_sig']= is_signifiant_per_cond[aud_keys].any(axis=1).to_numpy()
         clusInfo['is_vis_sig']=is_signifiant_per_cond[vis_keys].any(axis=1).to_numpy()
-
-        #get spatial tuning properties
-        azi = azimuthal_tuning(session)
-        tuning_type = 'vis'
-        tuning_curve_params['which'] = tuning_type
-        # get the visual tuning curves
-        azi.get_rasters_perAzi(**tuning_curve_params)
-        tc = azi.get_tuning_curves(cv_split=1,azimuth_shuffle_seed=None)
-        clusInfo['vis_discriminability']= get_discriminability(tc[tc.cv_number==0])
-        clusInfo['vis_preferred_tuning']= tc.preferred_tuning.values.astype('float')
-
-        tuning_type = 'aud'
-        tuning_curve_params['which'] = tuning_type
-        # get the visual tuning curves
-        azi.get_rasters_perAzi(**tuning_curve_params)
-        # have to save the output of this step because it seems to be taking forever...
-        # and I am gonna kill myself. 
-        tc = azi.get_tuning_curves(cv_split=1,azimuth_shuffle_seed=None)
-        clusInfo['aud_discriminability']= get_discriminability(tc[tc.cv_number==0])
-        clusInfo['aud_preferred_tuning']= tc.preferred_tuning.values.astype('float')
-
         clusInfo['is_both'] = clusInfo.is_aud_sig & clusInfo.is_vis_sig
         clusInfo['is_neither'] = ~clusInfo.is_aud_sig & ~clusInfo.is_vis_sig
         clusInfo['is_aud']= clusInfo.is_aud_sig & ~clusInfo.is_vis_sig
         clusInfo['is_vis']= ~clusInfo.is_aud_sig & clusInfo.is_vis_sig
+
+        #get spatial tuning properties
+        azi = azimuthal_tuning(session)
+        for t in tuning_types:
+            tuning_curve_params['which'] = t
+            azi.get_rasters_perAzi(**tuning_curve_params)
+            clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
+            clusInfo['%s_selectivity'% t] = azi.selectivity
+
+
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
         clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
 
         all_dfs.append(clusInfo)
     
-    clusInfo = pd.concat(all_dfs,axis=0)
-    clusInfo['hemi'] = np.sign(clusInfo.ml-5600)
+    clusInfo = pd.concat(all_dfs,axis=0)    
     clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi
+    if csv_path.is_file():
+        # save previous
+        old = pd.read_csv(csv_path)
+        time_created = datetime.datetime.fromtimestamp(
+            csv_path.stat().st_ctime
+            ).strftime("%Y-%m-%d-%H%M")
+        old_save_path = csv_path.parent / ('summary_data%s.csv' % time_created)
+        old.to_csv(old_save_path)
+
     clusInfo.to_csv(csv_path)
 else:
     clusInfo = pd.read_csv(csv_path)
@@ -113,10 +111,20 @@ fig.show()
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
+
+# %%
+import matplotlib.pyplot as plt
+from Analysis.neural.utils.plotting import rgb_to_hex
+azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
+color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
+t = 'aud'
+# plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
+# plt.colorbar()
+color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
+
 # %% 
 # look at discriminability 
  
-
 # plotting in brainrender 
 from brainrender import Scene
 from brainrender.actors import Points
@@ -125,18 +133,27 @@ import numpy as np
 
 # Add brain regions
 scene = Scene(title="SC aud and vis units", inset=False,root=False)
-scene.add_brain_region("SCs",alpha=0.3)
-sc = scene.add_brain_region("SCm",alpha=0.3)
+scene.add_brain_region("SCs",alpha=0.1)
+sc = scene.add_brain_region("SCm",alpha=0.1)
 
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
 # plot the neurons in allen atalas space
-scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
+# for azi,c in zip(azimuths,color_):    
+#     scene.add(Points(
+#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+#         colors=c, 
+#         radius=30, 
+#         alpha=1
+#         ))    
+# scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
+
 scene.content
 scene.render()
 

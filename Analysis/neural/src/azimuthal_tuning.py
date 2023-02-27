@@ -61,8 +61,10 @@ class azimuthal_tuning():
             contrast = np.max(self.vis.contrast.values)
 
         if not spl:
-            spl = np.min(self.aud.SPL.values) 
-        
+            spl = np.max(self.aud.SPL.values)
+        else: 
+            spl = np.min(self.aud.SPL.values)
+            
         if not subselect_neurons: 
             self.clus_ids = np.unique(self.spikes.clusters)    
         else:
@@ -174,7 +176,7 @@ class azimuthal_tuning():
         
         selectivity = (max_test-min_test)/(max_test+min_test)
 
-        return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values
+        return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values.astype('float')
     
     def calculate_significant_selectivity(self,n_shuffles=100,p_threshold=0.01):
         

@@ -522,6 +522,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         clusInfo['ml'] = clusters.mlapdv[:,0]
         clusInfo['ap'] = clusters.mlapdv[:,1]
         clusInfo['dv'] = clusters.mlapdv[:,2]
+        clusInfo['hemi'] = np.sign(clusInfo.ml-5600)
 
     # option to read in the raw data as well  
     #clusInfo_ = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
