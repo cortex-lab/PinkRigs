@@ -38,6 +38,12 @@ def off_excepty(ax):
     ax.set_xticks([])
     ax.set_xlabel('')
 
+def rgb_to_hex(rgb):
+    r = rgb[0]
+    g = rgb[1]
+    b = rgb[2]
+    return '#{:02x}{:02x}{:02x}'.format(r,g,b)
+
 def plot_the_psth(spike_times, spike_clusters, cluster_id, events, tscale, pre_time, post_time, bin_size,
                   smoothing, return_fr,pethcolor,erralpha,pethlw,ax,error_bars='sem'):
 

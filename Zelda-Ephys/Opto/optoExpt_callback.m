@@ -4,6 +4,9 @@ function optoExpt_callback(eventObj, LGObj)
     %LGObj: laserGalvo object containing functions for laser
     % i.e. function that listens to updates from stim computer and
     % triggers the laser accordingly.
+   % this callback is designed the interct with the expDef
+   % \\znas.cortexlab.net\Code\Rigging\ExpDefinitions\PinkRigs\multiSpaceWorld_checker_training.m
+   % 
 
 if iscell(eventObj.Data) && strcmp(eventObj.Data{2}, 'experimentInit') %Experiment started
     expRef = eventObj.Ref;
@@ -21,13 +24,10 @@ elseif isstruct(eventObj.Data) && any(strcmp({eventObj.Data.name},'events.newTri
     values = {eventObj.Data.value};  
 
     trialNum = values{strcmp(names,'events.trialNum')};
-    laserOn = values{strcmp(names,'events.is_laserOn')}; 
-    isLaser1On = values{strcmp(names,'events.is_loc1')}; 
-    isLaser2On = values{strcmp(names,'events.is_loc2')};
-    
+    laserOn = values{strcmp(names,'events.is_laserOn')};     
     powerLaser1 = values{strcmp(names,'events.laser_power1')};
     powerLaser2 = values{strcmp(names,'events.laser_power2')};
-    %laserDuration = values{strcmp(names,'events.laserDuration')};   
+
     ROW = struct;    
     ROW.laser1_hemisphere = LGObj.laser.hemispheres{1};
     ROW.laser2_hemisphere = LGObj.laser.hemispheres{2};
@@ -38,7 +38,7 @@ elseif isstruct(eventObj.Data) && any(strcmp({eventObj.Data.name},'events.newTri
         if laserOn>0 %If laser ON
             VoltLaser1 = LGObj.laser.power2volt(powerLaser1,1); % later do this based on calibration.  
             VoltLaser2 = LGObj.laser.power2volt(powerLaser2,1);
-            laserV = LGObj.laser.generateWaveform(VoltLaser1,VoltLaser2,isLaser1On,isLaser2On);    
+            laserV = LGObj.laser.generateWaveform(VoltLaser1,VoltLaser2);    
             ROW.delay_preallocLaserWaveform = toc;
             tic;        
             LGObj.laser.issueWaveform(laserV);            
@@ -53,8 +53,8 @@ elseif isstruct(eventObj.Data) && any(strcmp({eventObj.Data.name},'events.newTri
     %Save these details to a log
     ROW.trialNum = trialNum;
     ROW.is_laserOn = laserOn;
-    ROW.is_loc1 = isLaser1On;
-    ROW.is_loc2 = isLaser2On;
+    ROW.powerLaser1 = powerLaser1;
+    ROW.powerLaser2 = powerLaser2;  
     
     
     ROW.tictoc = toc(allT);

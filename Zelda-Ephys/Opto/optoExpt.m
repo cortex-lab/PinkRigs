@@ -1,6 +1,21 @@
 classdef optoExpt < handle
-    %object which handles interfacing the galvo setup with MC    
-    % requires a callback (e.g. optoExpt_callback) to interact with laser. 
+%     object which handles interfacing the galvo setup with the expServer (run in stim computer);     
+%     requires a callback (e.g. optoExpt_callback) to interact with laser and the laser Object (LaserController).
+%     methods:
+% ----------------------------
+% 	    init
+% 		    initiates the LaserController (that opens and configures the DAQ)
+% 		    executes popup withdow to get plugin configuration		
+% 		    establish connection to UDP. 
+% 	    registerListener: 
+% 		    func to actually instatiate the connection to stim and trigger the callback on local when the stim updates.
+% 	    clearListener: 
+% 		    func to stop registerListener
+% 	    appendToLog:
+% 		    func to call by callback to append to the optoLog
+% 	    saveLog
+% 	    delete         
+        
     properties
         rig;  
         laser; % DAQ object to operate the laser        
@@ -23,11 +38,28 @@ classdef optoExpt < handle
             obj.laser = LaserController;
             obj.laser.daqSession.Rate = 10000;
             
-            % get which hemisphere each patch cord was plugged into
-            prompt = {'LED1 hemisphere:','LED2 hemisphere:'};
-            answer = inputdlg(prompt);
-            obj.laser.hemispheres = answer;
-            
+            % get which hemisphere each patch cord was plugged into           
+%             fig = uifigure('Position',[100 100 229 276]);
+% 
+%             %Create a button group and radio buttons:
+%             bg1 = uibuttongroup('Parent',fig,...
+%                 'Position',[56 167 123 85],'Title','LED1 hemisphere');
+%             rb1 = uiradiobutton(bg1,'Position',[10 40 91 15],'Text','Left');
+%             rb2 = uiradiobutton(bg1,'Position',[10 18 91 15],'Text','Right');
+%             %
+% 
+% 
+%             bg2 = uibuttongroup('Parent',fig,...
+%                 'Position',[56 77 123 85],'Title','LED2 hemisphere');
+%             rb3 = uiradiobutton(bg2,'Position',[10 40 91 15],'Text','Left');
+%             rb4 = uiradiobutton(bg2,'Position',[10 18 91 15],'Text','Right');           
+% 
+%             f = uicontrol(fig,'String','OK','Callback','uiresume(fig)');
+%             uiwait(fig);
+%             answer{1,1} = bg1.SelectedObject.Text;
+%             answer{2,1} = bg2.SelectedObject.Text;
+%             close(fig);
+%             clear rb1 rb2 rb3 rb4 bg1 bg2 fig f 
             
             %Create basicServices UDP listener to receive alyxInstance info
             %from expServer            

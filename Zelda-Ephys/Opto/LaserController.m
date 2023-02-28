@@ -2,6 +2,23 @@ classdef LaserController < handle
     %Code which handles a laser outputs, connected to AO0 channel on a NIDAQ
     %board. 
     % allows to handle two Lasers in parallel.
+%         methods:
+%     --------
+%     init:
+% 	    loads Config and initiates DAQ 
+%     generateWaveform:
+% 	    get a line of waveform based on params (currently max voltage for each channel) 
+%     issueWaveform: 
+% 	    send out the waveform 
+%     registerTrigger: 
+% 	    called by optoExpt to say which digital is the trigger
+%     calibrateLEDs: 
+% 	    function to calibrate the power of LEDs you use.
+%     power2Volt: 
+% 	    function to convert the power values of the LED to volts. 
+%     stop
+%     delete. 
+
     properties
         ConfigPath; 
         laserCfg;
@@ -115,13 +132,7 @@ classdef LaserController < handle
             else
             
                 volts = obj.laserCfg.calib.voltages;
-                power = obj.laserCfg.calib.voltages(:,LEDidx);
-
-                %Trim away zero power
-                idx = power==0;
-                volts(idx)=[];
-                power(idx)=[];
-
+                power = obj.laserCfg.calib.power(:,LEDidx);
                 if desiredPower > max(power)
                     error('power desired outside of calibrated range');
                 end            

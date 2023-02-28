@@ -39,6 +39,12 @@ function runBombcell(varargin)
         ephysKilosortPath = fullfile(recList{rec},'PyKS','output');
         ephysDirPath = recList{rec};
         ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
+        if numel(ephysRawDir)>1
+            idx = find(contains({ephysRawDir.name},'.cbin'));
+            if ~isempty(idx) && numel(idx)==1
+                ephysRawDir = ephysRawDir(idx);
+            end
+        end
         ephysMetaDir = dir(fullfile(ephysDirPath,'*.meta')); % used in bc_qualityParamValues
         savePath = fullfile(ephysKilosortPath,'qMetrics');
 

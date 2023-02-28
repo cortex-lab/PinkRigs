@@ -189,7 +189,7 @@ for i=1:height(expList)
         dataIdx = contains(ONENames, 'Cam');
         for j = find(dataIdx)'
             if isempty(j); continue; end
-            %If requested ONEFolder "probe1", skip other probes
+            %If requested ONEFolder for a specific camera, skip other probes
             if ~contains({ONENames{j}, 'cameras','all'}, dataTypes)
                 continue
             end

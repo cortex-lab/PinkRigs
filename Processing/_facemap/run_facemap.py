@@ -32,6 +32,7 @@ import sciplotlib.style as splstyle
 import subprocess as sp
 
 import datetime
+import natsort
 
 
 # Run deeplabcut to get anchor points to draw ROI
@@ -1522,7 +1523,8 @@ def batch_process_facemap(output_format='flat', sessions=None,
                           subset_mice_to_use=None, subset_date_range=None,
                           recompute_facemap=False, recompute_ONE=False,
                           run_on_cropped_roi=True, old_date_to_overwrite=None,
-                          verbose=False, print_warnings=False):
+                          verbose=False, print_warnings=False,
+                          write_to_log=False):
     """
     Runs facemap SVD processing on videos given dataframe of video paths and information
     Parameters
@@ -1905,6 +1907,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
                 # pdb.set_trace()
                 print('%s not processed yet, will run facemap on it now' % video_fov)
 
+
                 # Check file is not corrupted
                 vid_corrupted = check_file_corrupted(vid_path=video_fpath)
                 if vid_corrupted:
@@ -1927,6 +1930,11 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     print('%s is corrupted, skipping...' % video_fov)
                     continue
 
+                if write_to_log:
+                    log_file_paths = glob.glob(os.path.join('C:/autoRunLog', '*.txt'))
+                    log_file_path = natsort.natsorted(log_file_paths)[-1]
+                    with open(log_file_path, 'a') as f:
+                        f.write('Processing %s %s \n' % (exp_folder, video_fov))
 
                 # Check whether to run on cropped ROI
                 if run_on_cropped_roi:
@@ -1998,6 +2006,12 @@ def batch_process_facemap(output_format='flat', sessions=None,
                 dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
                 processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
                 os.rename(processing_facemap_txt_file, processed_txt_file_name)
+
+                if write_to_log:
+                    log_file_paths = glob.glob(os.path.join('C:/autoRunLog', '*.txt'))
+                    log_file_path = natsort.natsorted(log_file_paths)[-1]
+                    with open(log_file_path, 'a') as f:
+                        f.write('Finished Processing %s %s \n' % (exp_folder, video_fov))
 
                 # Convert things to ONE format
                 if output_format == 'ONE':
@@ -2300,7 +2314,7 @@ def main(**csv_kwargs):
 
     how_often_to_check = 3600  # how often to check the time (seconds), currently not used
     override_time_check = True
-    override_limit = 100  # how many times to override time checking before stopping
+    override_limit = 30  # how many times to override time checking before stopping
     override_counter = 0
     continue_running = True  # fixed at True at the start
     summarize_progress = False
@@ -2310,6 +2324,7 @@ def main(**csv_kwargs):
     process_most_recent = True
     recompute_ONE = False
     recompute_facemap = False
+    write_to_log = True
     old_date_to_overwrite = '2023-01-09'
     # if facemap processed data is older than this date, then overwrite existing
     # (regardless of recompute_facemap) leave empty '' or None to forego option
@@ -2354,7 +2369,8 @@ def main(**csv_kwargs):
                                   subset_mice_to_use=subset_mice_to_use,
                                   recompute_ONE=recompute_ONE,
                                   recompute_facemap=recompute_facemap,
-                                  old_date_to_overwrite=old_date_to_overwrite)
+                                  old_date_to_overwrite=old_date_to_overwrite,
+                                  write_to_log=write_to_log)
 
 
             if override_time_check:
@@ -2367,4 +2383,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['CB020','CB019','CB018'], expDate='last1000')
+    main(subject=['all'], expDate='last1000')
