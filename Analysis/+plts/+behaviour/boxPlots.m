@@ -93,6 +93,7 @@ for i = find(extracted.validSubjects)'
         boxPlot.nExp = nan;
     elseif strcmpi(params.plotType{1}(1:3), 'res')
         keepIdx = tDat.is_validTrial & tDat.response_direction;
+        percentTimeouts = round(mean(tDat.response_direction==0)*100);
         tDat = filterStructRows(tDat, keepIdx);
 
         [~,~,vLabel] = unique(tDat.stim_visDiff);
@@ -107,6 +108,7 @@ for i = find(extracted.validSubjects)'
         colorBar.colorYTick = {'0'; '1'};
     end
     if ~params.noPlot{1}
+        boxPlot.extraInf = [boxPlot.extraInf ', T0:' num2str(percentTimeouts) '%'];
         plts.general.getAxes(axesOpt, find(find(extracted.validSubjects)'==i));
         makePlot(boxPlot);
     end
@@ -145,9 +147,9 @@ if addText
     txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotData(tIdx))/100, triNum(tIdx)],2);
     cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center'), txtD)
 end
-title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf))
 
 set(gca, 'xTick', 1:size(plotData,2), 'xTickLabel', boxPlot.xyValues{1}, 'fontsize', 14)
 set(gca, 'yTick', 1:size(plotData,1), 'yTickLabel', boxPlot.xyValues{2}, 'fontsize', 14, 'TickLength', [0, 0])
+title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf), 'fontsize', 11)
 box off;
 end
