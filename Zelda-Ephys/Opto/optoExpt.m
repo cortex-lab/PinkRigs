@@ -60,11 +60,10 @@ classdef optoExpt < handle
             pause; 
 
             answer{1,1} = app.bg1.SelectedObject.Text;
-            answer{2,1} = app.bg2.SelectedObject.Text;
-            close(fig); 
+            answer{2,1} = app.bg2.SelectedObject.Text;           
             
             obj.laser.hemispheres = answer; 
-
+            close(fig); 
             clear app;
             
             %Create basicServices UDP listener to receive alyxInstance info
