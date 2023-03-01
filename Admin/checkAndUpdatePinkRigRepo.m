@@ -48,6 +48,7 @@ function checkAndUpdatePinkRigRepo
         else
             warning(warnMessage3);
             fprintf(cmdout);
+            
         end
     end
     cd(startFolder);

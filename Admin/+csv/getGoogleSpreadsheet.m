@@ -1,4 +1,4 @@
-function result = GetGoogleSpreadsheet(DOCID)
+function result = getGoogleSpreadsheet(DOCID)
 % result = GetGoogleSpreadsheet(DOCID)
 % Download a google spreadsheet as csv and import into a Matlab cell array.
 %
