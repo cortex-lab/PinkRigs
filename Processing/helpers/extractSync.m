@@ -18,12 +18,14 @@ function extractSync(AP_filename, nChansTotal)
        parent = dir(d.folder);
        parentfiles = {parent.name};
        is_ch = cellfun(@(x) contains(x,'ap.ch'),{parent.name});
-       ch_file = parentfiles{is_ch}; 
+       ch_file = [parent(1,1).folder '\' parentfiles{is_ch}];
+
+       cbin_file = AP_filename; 
 
        % perform decompression        
-        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+        [~,~] = system(['conda activate PinkRigs && ' ...
             'python ' decompressPath ' ' ...
-             AP_filename ' ' parent(1,1).folder '\' ch_file ' && ' ...
+             cbin_file ' ' ch_file ' && ' ...
             'conda deactivate']);        
 
         % find new AP_binfile name
@@ -52,10 +54,14 @@ function extractSync(AP_filename, nChansTotal)
         disp('now  recompressing...')
         compressPath = which('compress_data.py');
 
-        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+        [statusComp,~] = system(['conda activate PinkRigs && ' ...
             'python ' compressPath ' ' ...
              AP_filename ' && ' ...
             'conda deactivate']);
+        if (statusComp==0) && exist(cbin_file, 'file') && exist(ch_file, 'file')
+            mmf = [];  % clear memmap file 
+            delete(AP_filename)
+        end
     end 
 
 end
