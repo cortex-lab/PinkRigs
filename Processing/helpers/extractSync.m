@@ -23,10 +23,14 @@ function extractSync(AP_filename, nChansTotal)
        % perform decompression        
         [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
             'python ' decompressPath ' ' ...
-             AP_filename ch_file ' && ' ...
-            'conda deactivate']);
+             AP_filename ' ' parent(1,1).folder '\' ch_file ' && ' ...
+            'conda deactivate']);        
 
-
+        % find new AP_binfile name
+        parent = dir(d.folder);
+        parentfiles = {parent.name};
+        is_bin = cellfun(@(x) contains(x,'ap.bin'),{parent.name});
+        AP_filename = [parent(1,1).folder '\' parentfiles{is_bin}]; 
     else 
        compressed_dat = 0; 
     end 
@@ -44,5 +48,14 @@ function extractSync(AP_filename, nChansTotal)
     save(fullfile(d.folder,'sync.mat'),'sync');
 
     % recompress if it was compressed data
+    if compressed_dat==1
+        disp('now  recompressing...')
+        compressPath = which('compress_data.py');
+
+        [statusComp,resultComp] = system(['conda activate PinkRigs && ' ...
+            'python ' compressPath ' ' ...
+             AP_filename ' && ' ...
+            'conda deactivate']);
+    end 
 
 end
