@@ -61,7 +61,7 @@ classdef optoExpt < handle
 
             answer{1,1} = app.bg1.SelectedObject.Text;
             answer{2,1} = app.bg2.SelectedObject.Text;
-           
+            close(fig); 
             
             obj.laser.hemispheres = answer; 
 
