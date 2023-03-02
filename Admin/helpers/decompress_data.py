@@ -9,7 +9,7 @@ import re
 import os
 import sys
 
-def mainDecompress(cbinFile='', chFile=''):
+def mainDecompress(cbinFile='', chFile='',delete_compressed = False):
     # Define a reader to decompress a compressed array.
     r = Reader()
     # Open the compressed dataset.
@@ -19,8 +19,9 @@ def mainDecompress(cbinFile='', chFile=''):
     r.tofile(binFile)
     r.close()
 
-    #os.remove(cbinFile)
-    #os.remove(chFile)
+    if delete_compressed:
+        os.remove(cbinFile)
+        os.remove(chFile)
 
 if __name__ == "__main__":
    mainDecompress(cbinFile=sys.argv[1],chFile=sys.argv[2])
