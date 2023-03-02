@@ -413,20 +413,77 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     %%
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
-        is_laser_On = e.is_laserOnValues(eIdx);
-        all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
-        all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');
-        
-        % save out what gets inactivated...
-        
+        disp('opto data...')
+        dat = csv.loadData(block.expInfo, 'dataType', {{'opto'}});
+        opto = dat.dataoptoLog{1,1}; 
+        is_laser_On_block = e.is_laserOnValues(eIdx); 
+        laserPos = zeros(1,numel(is_laser_On_block));
 
-        all_laser_times = [all_laser1_times;all_laser2_times];
-        all_laser_times = sortrows(all_laser_times); 
+        if isfield('laser_power1Values',e) % the Controller way of extracting the data          
+         % sometimes there is some issue and we miss issuing a waveform
+            is_laser_On_optoLog = opto.is_laserOn; 
+
+    	    if sum(is_laser_On_block)~=sum(is_laser_On_optoLog)
+                is_laser_On = zeros(1,numel(is_laser_On_block)); 
+                for i=1:numel(is_laser_On_block)
+                    trialNum_idx = opto.trialNum==i; 
+                    if sum(trialNum_idx)==1
+                    is_laser_On(i) = is_laser_On_optoLog(opto.trialNum==i);
+                    end 
+                end
+                is_laser_On = logical(is_laser_On); 
+               
+            else
+                is_laser_On = is_laser_On_block; 
+            end 
+    
+            % also saving out power and other variables 
+            power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
+            power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+            
+            % location of laser 
+            laserPosID = e.laserPosValues(eIdx) .* double(is_laser_On);
+            if strcmp(opto.laser1_hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.laser1_hemisphere(1),'R'); hemisphere1 = 1; end 
+            if strcmp(opto.laser2_hemisphere(1),'L'); hemisphere2 = -1; elseif strcmp(opto.laser2_hemisphere(1),'R'); hemisphere2 = 1; end 
+            
+            laserPos(laserPosID==1) = hemisphere1;
+            laserPos(laserPosID==2) = hemisphere2;
+            laserPos(laserPosID==12) = -11;   % for bilateral, pretty random... % 
+             
+            all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
+            all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');        
+            all_laser_times = [all_laser1_times;all_laser2_times];
+            all_laser_times = sortrows(all_laser_times); 
+    
+            % as I actually send out the waves together atm there is no reason
+            % to detect them separaytely
+            all_laser_times(logical([0;(diff(all_laser_times(:,1))<.1)]),:) = [];     
+            
+             % and sometimes we issue the laserOn at the last trial... that was
+             % terminated before it finished ... 
+             if (size(all_laser_times,1)-sum(is_laser_On))==1
+                 all_laser_times(end,:) = []; 
+             end
+
+        else
+            is_laser_On = is_laser_On_block;
+            all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut');
+            if strcmp(opto.Hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.Hemisphere(1),'R'); hemisphere1 = 1; end 
+            laserPos(is_laser_On) = hemisphere1; 
+            power_laser1 = zeros(1,numel(is_laser_On_block));
+            power_laser2 = zeros(1,numel(is_laser_On_block));
+            power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+        end 
+
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
-        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;
+        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;  
+
     else
         is_laser_On = NaN(numel(eIdx),1)';
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
+        laserPos = NaN(numel(eIdx),1)';
+        power_laser1 = zeros(numel(eIdx),1)'; 
+        power_laser2 = zeros(numel(eIdx),1)';
     end
     laser_times_trial_indexed = single(laser_times_trial_indexed);
     %% Populate n with all fields;
@@ -435,7 +492,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.is_auditoryTrial = is_auditoryTrial;
     ev.is_coherentTrial = is_coherentTrial;
     ev.is_conflictTrial = is_conflictTrial;
-    ev.is_validTrial = vIdx(:);
+    ev.is_validTrial = vIdx(:) & ~is_noStimTrial;
+    ev.is_noStimTrial = is_noStimTrial; 
 
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));
@@ -466,6 +524,9 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.timeline_laserOn_rampEnd = laser_times_trial_indexed(:,2);
     ev.timeline_laserOff_rampStart = laser_times_trial_indexed(:,3);
     ev.timeline_laserOff_rampEnd = laser_times_trial_indexed(:,4);
+    ev.stim_laserPosition = laserPos'; 
+    ev.stim_laser1_power = power_laser1';
+    ev.stim_laser2_power = power_laser2';
 
     ev.stim_correctResponse = single(correctResponse);
     ev.stim_repeatNum = single(repeatNums);
@@ -477,4 +538,5 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     ev.response_direction = single(responseRecorded);
     ev.response_feedback = single(feedbackValues);
+
 end
