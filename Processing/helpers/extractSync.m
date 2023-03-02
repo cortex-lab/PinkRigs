@@ -51,14 +51,7 @@ function extractSync(AP_filename, nChansTotal)
 
     % recompress if it was compressed data
     if compressed_dat==1
-        disp('now  recompressing...')
-        compressPath = which('compress_data.py');
-
-        [statusComp,~] = system(['conda activate PinkRigs && ' ...
-            'python ' compressPath ' ' ...
-             AP_filename ' && ' ...
-            'conda deactivate']);
-        if (statusComp==0) && exist(cbin_file, 'file') && exist(ch_file, 'file')
+        if exist(cbin_file, 'file') && exist(ch_file, 'file')
             mmf = [];  % clear memmap file 
             delete(AP_filename)
         end

@@ -19,8 +19,8 @@ def mainDecompress(cbinFile='', chFile=''):
     r.tofile(binFile)
     r.close()
 
-    os.remove(cbinFile)
-    os.remove(chFile)
+    #os.remove(cbinFile)
+    #os.remove(chFile)
 
 if __name__ == "__main__":
    mainDecompress(cbinFile=sys.argv[1],chFile=sys.argv[2])
