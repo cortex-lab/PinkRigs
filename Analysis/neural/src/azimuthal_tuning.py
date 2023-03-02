@@ -9,6 +9,7 @@ from Analysis.neural.utils.ev_dat import postactive
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
+import sklearn
 
 class azimuthal_tuning():
     def __init__(self,rec_info):
@@ -20,8 +21,6 @@ class azimuthal_tuning():
                 'return_fr':True,
                 'baseline_subtract': True, 
         }
-
-
         self.load(rec_info)
 
     def load(self,rec_info):
@@ -35,7 +34,7 @@ class azimuthal_tuning():
         else:
             print('recordings are ambiguously defined. Please recall.')
         events,self.spikes = recordings.events._av_trials,recordings.probe.spikes
-        _,self.vis,self.aud,_ = postactive(events)
+        _,self.vis,self.aud,self.ms = postactive(events)
 
     def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis', subselect_neurons = None):
         """
@@ -73,15 +72,27 @@ class azimuthal_tuning():
         if 'vis' in which:
             azimuth_options = sorted(self.vis.azimuths.values)
             onset_matrix = self.vis.sel(contrast=contrast,timeID='ontimes')
+
         elif 'aud' in which:
             azimuth_options = sorted(self.aud.azimuths.values)
-            onset_matrix = self.aud.sel(SPL=spl,timeID='ontimes')      
+            onset_matrix = self.aud.sel(SPL=spl,timeID='ontimes')
+
+        elif 'coherent' in which:
+            azimuth_options = sorted(self.ms.congruent_azimuths[0,:])
+            onset_matrix = self.ms.sel(contrast=contrast,SPL=spl,timeID = 'visontimes')
+
                            
         azimuth_times_dict = {}
         for azimuth in azimuth_options:
-            azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
-                azimuths = azimuth
-            ).values
+            if 'coherent' in which:
+                azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
+                    visazimuths = azimuth,
+                    audazimuths = azimuth,
+                ).values
+            else: 
+                azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
+                    azimuths = azimuth
+                ).values
 
         response_rasters = []
         for k in azimuth_times_dict.keys():
@@ -95,8 +106,8 @@ class azimuthal_tuning():
             'dat':np.concatenate(response_rasters,axis=0), 
             'azimuthIDs':list(azimuth_times_dict.keys())
             })
-    
-
+        
+        return self.response_rasters_per_azimuth
 
     def get_tuning_curves(self,rasters = None,cv_split=2,azimuth_shuffle_seed=None):
         """
@@ -192,7 +203,7 @@ class azimuthal_tuning():
         p_val = (self.selectivity_shuffle_dist>selectivity_).sum(axis=0)/n_shuffles
 
         is_selective = p_val < p_threshold
-
+        self.is_selective = is_selective
         return is_selective,self.preferred_tuning
             
     def plot_selectivity_distribution(self,clusID):
@@ -201,6 +212,72 @@ class azimuthal_tuning():
         ax.hist(self.selectivity[:,cidx])
         ax.axvline(self.selectivity_shuffle_dist[cidx])
         ax.set_title(self.preferred_tuning[cidx])
+
+    def get_enhancement_index(self,at_azimuth=None):
+        """
+        function to calculate traditional enhancement index at preferred azimuth 
+        taken from Stanford et al. 2005 
+        Method in brief:
+        take every combination of unsory response trial additions 
+        then resample that distribution with (skitlearn bootstrap)
+        then get the mean and the std of the additive distribution 
+
+        EI = (ms_mean-additive_mean)/additive_std
+
+        Parameters: 
+        -----------
+        at_azimuth: np.ndarray
+            estimated preferred azimuth for each cell.
+
+        """
+        if not at_azimuth:
+            at_azimuth = self.preferred_tuning
+
+        vis = self.get_rasters_perAzi(which = 'vis')
+        aud = self.get_rasters_perAzi(which = 'aud')
+        ms  = self.get_rasters_perAzi(which = 'coherent')
+
+        # get averages over time 
+        vis.dat = vis.dat.sum(axis=3)
+        aud.dat = aud.dat.sum(axis=3)
+        ms.dat = ms.dat.sum(axis=3)
+
+        # get only the ones at preferred index
+        azimuths_vis = np.array([re.split('_',a)[-1] for a in vis.azimuthIDs]).astype('int')
+        azimuths_aud = np.array([re.split('_',a)[-1] for a in aud.azimuthIDs]).astype('int')
+
+        if (azimuths_vis==azimuths_aud).all():
+            azimuths = azimuths_vis
+        else:
+            print('vis and aud azimuths are not the same, so indexing would be incorrect.')
+
+        at_azimuth_idx = np.array([np.where(azimuths==preferred_nrn)[0][0] for preferred_nrn in at_azimuth])
+
+        vis_trials = np.concatenate([vis.dat[idx,:,nrn][:,np.newaxis] for nrn,idx in enumerate(at_azimuth_idx)],axis=1)
+        aud_trials = np.concatenate([aud.dat[idx,:,nrn][:,np.newaxis] for nrn,idx in enumerate(at_azimuth_idx)],axis=1) 
+        ms_trials = np.concatenate([ms.dat[idx,:,nrn][:,np.newaxis] for nrn,idx in enumerate(at_azimuth_idx)],axis=1) 
+
+        # get the summed distibution across trials
+        additive_samples = np.concatenate(
+            [np.ravel(vis_trials[:,nrn]+aud_trials[:,nrn][:,np.newaxis])[:,np.newaxis]
+                      for nrn in range(vis_trials.shape[1])],
+                      axis=1) 
+
+        additive_dist_resampled = np.concatenate(
+            [sklearn.utils.resample(additive_samples[:,s],replace=True,n_samples=10000)[:,np.newaxis] 
+             for s in range(at_azimuth_idx.size)],
+             axis=1
+             )
+
+        additive_mean = additive_dist_resampled.mean(axis=0)
+        additive_std = additive_dist_resampled.std(axis=0)
+
+        # get mulitsensory mean
+        ms_mean = ms_trials.mean(axis=0)                
+        # get enhancement index
+        enhancement_index = (ms_mean-additive_mean)/additive_std
+
+        return enhancement_index
 
 
 

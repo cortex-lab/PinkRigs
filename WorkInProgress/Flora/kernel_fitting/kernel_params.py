@@ -16,7 +16,7 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
 
     if call_fit:
         fit_params = {
-            'method':'ReducedRankRegression',
+            'method':'Ridge',
             'ridge_alpha':1,
             'tune_hyper_parameter':False,
             'rank':10,

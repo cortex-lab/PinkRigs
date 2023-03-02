@@ -1,7 +1,7 @@
 # this is the anatomy figure
 # general loading functions
 # %%
-import sys,datetime
+import sys,datetime,pickle
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from pathlib import Path
 import pandas as pd
@@ -11,14 +11,28 @@ from Analysis.pyutils.batch_data import get_data_bunch
 dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
-rerun_sig_test=False 
-recompute_csv = False 
+rerun_sig_test= False 
+recompute_csv = True 
+recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
 
+# load the ap pref azimuth model 
+modelpath = Path(r'C:\Users\Flora\Documents\Github\PinkRigs\WorkInProgress\Flora\anatomy')
+modelpath = modelpath / 'aphemi_preferred_azimuth.pickle'
+if modelpath.is_file():
+    openpickle = open(modelpath,'rb')
+    pos_azimuth_fun = pickle.load(openpickle)
+else: 
+    print('position to azimuth mapping does not exist.')
+
+
+
+
+# %%
 tuning_curve_params = { 
     'contrast': None, # means I select the max
     'spl': None, # None means I select the max
@@ -67,6 +81,10 @@ if not csv_path.is_file() or recompute_csv:
         clusInfo['is_aud']= clusInfo.is_aud_sig & ~clusInfo.is_vis_sig
         clusInfo['is_vis']= ~clusInfo.is_aud_sig & clusInfo.is_vis_sig
 
+        # predict preferred spatial tuning based on position
+        clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
+        
+
         #get spatial tuning properties
         azi = azimuthal_tuning(session)
         for t in tuning_types:
@@ -111,6 +129,19 @@ fig.show()
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
+# %%
+# learn preferred azimuth based on location 
+if recompute_pos_model:
+    from sklearn.linear_model import LinearRegression
+    nanpos = np.isnan(goodclus.aphemi.values)
+    pos_azimuth_fun = LinearRegression().fit(
+        goodclus.aphemi.values[~nanpos,np.newaxis],
+        goodclus.vis_preferred_tuning.values[~nanpos]
+        )
+    # save model 
+    modelpath = Path(r'C:\Users\Flora\Documents\Github\PinkRigs\WorkInProgress\Flora\anatomy')
+    modelpath = modelpath / 'aphemi_preferred_azimuth.pickle'
+    pickle.dump(pos_azimuth_fun, open(modelpath, 'wb'))
 
 # %%
 import matplotlib.pyplot as plt
@@ -140,11 +171,15 @@ scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo
 scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
 scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
 scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
+
+
 # plot the neurons in allen atalas space
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
+
+
 # for azi,c in zip(azimuths,color_):    
 #     scene.add(Points(
 #         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 

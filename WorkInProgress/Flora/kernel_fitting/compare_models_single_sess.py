@@ -55,6 +55,8 @@ else:
 kernels.fit(**fit_params)
 # %%
 plt.plot(test_var_nl,kernels.fit_results.test_explained_variance,'o')
+plt.xlabel('non-linear')
+plt.ylabel('additive')
 plt.plot([-.1,.1],[-.1,.1],'k')
 
 # %%

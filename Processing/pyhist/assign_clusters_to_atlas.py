@@ -13,6 +13,7 @@ sys.path.insert(0, (pinkRig_path.__str__()))
 from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 from Admin.csv_queryExp import load_data,get_recorded_channel_position
 
+
 def get_chan_coordinates(jsonFilePath):
     """
     function to get coordinates on npix and allen atlas for a given channel 
@@ -50,8 +51,6 @@ def get_chan_coordinates(jsonFilePath):
 
     chan_pos = np.array([chan_pos_x, chan_pos_y]).T
     allencoords_xyz=np.array([allenx,alleny,allenz]).T
-
-
 
     return chan_pos,allencoords_xyz,np.array(regionID),np.array(region_acronym)
 
@@ -302,7 +301,7 @@ def call_for_anatmap_recordings(probe='probe0',near_date=None,depth_selection = 
 
     recdat = recdat.dropna(subset=['shank_range','depth_range'])
 
-    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<35 for _,rec in recdat.iterrows()]
+    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<50 for _,rec in recdat.iterrows()]
     recdat = recdat[is_single_shank]
     recdat = recdat.assign(
         shank = [int(sh[0]/200) for sh in recdat.shank_range],
