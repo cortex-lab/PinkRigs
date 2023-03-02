@@ -122,7 +122,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     % end
 
     %Create a "logical" for each trial type (blank, auditory, visual, coherent, and incoherent trials)
-    is_blankTrial = (visContrast==0 | visInitialAzimuth==0) & (audAmplitude==0 | audInitialAzimuth==0);
+    is_noStimTrial = isnan(visInitialAzimuth) & isnan(audInitialAzimuth);
+    is_blankTrial = (visContrast==0 | visInitialAzimuth==0) & (audAmplitude>0) & (audInitialAzimuth==0);
     is_auditoryTrial = (visContrast==0 | visInitialAzimuth==0) & (audAmplitude>0 & audInitialAzimuth~=0);
     is_visualTrial = (audAmplitude==0 | audInitialAzimuth==0) & (visContrast>0 & visInitialAzimuth~=0);
     is_coherentTrial = sign(visInitialAzimuth.*audInitialAzimuth)>0 & audAmplitude>0 & visContrast>0;
@@ -279,7 +280,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
             timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
-            missedOnset = isnan(timelineStimOnset);
+            missedOnset = isnan(timelineStimOnset); 
             validIdx = responseMadeIdx & ~missedOnset;
             stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
             stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
@@ -415,6 +416,9 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         is_laser_On = e.is_laserOnValues(eIdx);
         all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
         all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');
+        
+        % save out what gets inactivated...
+        
 
         all_laser_times = [all_laser1_times;all_laser2_times];
         all_laser_times = sortrows(all_laser_times); 
