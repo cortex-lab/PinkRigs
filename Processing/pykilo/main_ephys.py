@@ -74,8 +74,11 @@ def preproc_ephys(func=None,funckwargs=None,**kwargs):
 
         elif 'ibl' in func:
             from Processing.pykilo.convert_to_ibl_format import ks_to_ibl_format
-            ks_to_ibl_format(rec,ks_folder='pyKS',recompute=True)
-
+            if not funckwargs:
+                ks_to_ibl_format(rec,ks_folder='pyKS',recompute=True)
+            else:
+                ks_to_ibl_format(rec,**funckwargs)
+                
         elif 'kilo' in func:
             from Processing.pykilo.run_pyKS import run_pyKS_single_file
             if not funckwargs:

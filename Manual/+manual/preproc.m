@@ -1,10 +1,10 @@
 close all
 
 clear params
-params.subject = {'FT027'};
+params.subject = {'all'};
 params.expDate = {'all'}; 
 params.expDef = 'all'; 
-
+params.checkAlignEphys = '2'; 
 
 %params.expDate = {'2021-03-16'}; 
 exp2checkList = csv.queryExp(params);

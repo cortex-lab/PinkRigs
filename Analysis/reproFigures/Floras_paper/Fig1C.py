@@ -8,10 +8,10 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'naive-allen'
+dat_type = 'postactive'
 dat_keys = get_data_bunch(dat_type)
 
-rerun_sig_test= False 
+rerun_sig_test= True 
 recompute_csv = True 
 recompute_pos_model = False 
 
@@ -51,11 +51,11 @@ if not csv_path.is_file() or recompute_csv:
         clusInfo = load_cluster_info(**session)
         # add clus_new_columns to clusters
         # significance of responsivity  
-        interim_data_sess = interim_data_folder / ('%s/%s/%.0f/%s/sig_test' % tuple(session))
-        #interim_data_sess = interim_data_folder / ('%s/%s/%s/%s/sig_test' % tuple(session))
+        #interim_data_sess = interim_data_folder / ('%s/%s/%.0f/%s/sig_test' % tuple(session))
+        interim_data_sess = interim_data_folder / ('%s/%s/%s/%s/sig_test' % tuple(session))
         interim_data_sess.mkdir(parents=True,exist_ok=True)
-        interim_data_sess = interim_data_sess / ('%s_%s_%.0f_%s_maxtest.csv' % tuple(session))
-        #interim_data_sess = interim_data_sess / ('%s_%s_%s_%s_maxtest.csv' % tuple(session))
+        #interim_data_sess = interim_data_sess / ('%s_%s_%.0f_%s_maxtest.csv' % tuple(session))
+        interim_data_sess = interim_data_sess / ('%s_%s_%s_%s_maxtest.csv' % tuple(session))
         # get significance
         if rerun_sig_test or not interim_data_sess.is_file():
             print('running sig test for %s' % interim_data_sess.__str__())
