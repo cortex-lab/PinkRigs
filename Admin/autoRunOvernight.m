@@ -110,10 +110,10 @@ function autoRunOvernight
     
                 % run at all times 
                 fprintf(fid,'Creating the ibl format (%s)... \n',datestr(now));
-                checkScriptPath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+                checkScriptPath = [githubPath '\Processing\pykilo\convert_to_ibl_format.py'];
                 checkWhichMice = 'all';
                 whichKS = 'pyKS';
-                checkWhichDates = 'last300';
+                checkWhichDates = 'last1000';
                 [statusIBL,resultIBL] = system(['activate iblenv && ' ...
                     'python ' checkScriptPath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                     'conda deactivate']);

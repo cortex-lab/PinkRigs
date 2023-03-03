@@ -1,9 +1,9 @@
 close all
 
 clear params
-params.subject = {'FT011'};
-params.expDate = {'2021-03-23'}; 
-params.expDef = 'n'; 
+params.subject = {'FT027'};
+params.expDate = {'all'}; 
+params.expDef = 'all'; 
 
 
 %params.expDate = {'2021-03-16'}; 
@@ -13,4 +13,4 @@ exp2checkList = csv.queryExp(params);
 preproc.align.main(exp2checkList,'recompute',{'ephys'});
 
 %% Just run preprocessing
-preproc.extractExpData(exp2checkList,'recompute',{['all']}); % here spk does not work 
+preproc.extractExpData(exp2checkList,'recompute',{['spikes']}); % here spk does not work 
