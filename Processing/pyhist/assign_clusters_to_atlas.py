@@ -2,7 +2,7 @@ import json,re,glob,sys,datetime
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from helpers.atlas import AllenAtlas
+from Processing.pyhist.helpers.atlas import AllenAtlas
 from shutil import copyfile
 atlas = AllenAtlas(25)
 
