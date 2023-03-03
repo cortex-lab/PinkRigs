@@ -102,7 +102,7 @@ function autoRunOvernight
                 end
     
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);
@@ -151,7 +151,7 @@ function autoRunOvernight
                 dbstop if error % temporarily, to debug
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
                 githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);
