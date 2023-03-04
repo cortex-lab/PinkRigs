@@ -42,6 +42,8 @@ def preproc_ephys(func=None,funckwargs=None,**kwargs):
         compressed_path = list(rec.glob('**\*.cbin'))
         ch_path = list(rec.glob('**\*.ch'))
 
+        print(compressed_path)
+
         if func == 'compress':
             from Admin.helpers.compress_data import mainCompress
             # find whether there is a uncompressed filed
