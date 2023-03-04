@@ -49,7 +49,7 @@ function extractSync(AP_filename, nChansTotal)
     % save sync data
     save(fullfile(d.folder,'sync.mat'),'sync');
 
-    % recompress if it was compressed data
+    % delet if it was compressed data
     
     if (compressed_dat==1) && exist(cbin_file, 'file') && exist(ch_file, 'file')
         mmf = [];  % clear memmap file 
