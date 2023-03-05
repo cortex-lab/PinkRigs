@@ -26,7 +26,8 @@ ALLEN_CCF_LANDMARKS_MLAPDV_UM = {'bregma': np.array([5739, 5400, 332])}
 PAXINOS_CCF_LANDMARKS_MLAPDV_UM = {'bregma': np.array([5700, 4300 + 160, 330])}
 S3_BUCKET_IBL = 'ibl-brain-wide-map-public'
 
-path_atlas = Path(r'C:\Users\Flora\Downloads\ONE\openalyx.internationalbrainlab.org\histology\ATLAS\Needles\Allen')
+path_atlas = list(Path(r'C:\Users').glob('*\Downloads\ONE'))[0]
+path_atlas = path_atlas / r'openalyx.internationalbrainlab.org\histology\ATLAS\Needles\Allen'
     
 def http_download_file(full_link_to_file, chunks=None, *, clobber=False, silent=False,
                        username='', password='', target_dir='', return_md5=False, headers=None):
