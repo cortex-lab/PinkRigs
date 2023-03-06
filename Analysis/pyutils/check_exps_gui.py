@@ -107,5 +107,5 @@ def main(**kwargs):
     viewer = Viewer(**kwargs)
     sys.exit(app.exec_())
 
-main(subject='AV034',expDate='2022-11-24')
+main(subject='AV028')
 
