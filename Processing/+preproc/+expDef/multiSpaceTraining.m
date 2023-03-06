@@ -419,7 +419,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         is_laser_On_block = e.is_laserOnValues(eIdx); 
         laserPos = zeros(1,numel(is_laser_On_block));
 
-        if isfield('laser_power1Values',e) % the Controller way of extracting the data          
+        if isfield(e,'laser_power1Values') % the Controller way of extracting the data          
          % sometimes there is some issue and we miss issuing a waveform
             is_laser_On_optoLog = opto.is_laserOn; 
 
@@ -431,8 +431,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
                     is_laser_On(i) = is_laser_On_optoLog(opto.trialNum==i);
                     end 
                 end
-                is_laser_On = logical(is_laser_On); 
-               
+                is_laser_On = logical(is_laser_On);                
             else
                 is_laser_On = is_laser_On_block; 
             end 

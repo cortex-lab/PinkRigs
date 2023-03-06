@@ -8,10 +8,10 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'postactive'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
-rerun_sig_test= True 
+rerun_sig_test= False 
 recompute_csv = True 
 recompute_pos_model = False 
 
@@ -28,8 +28,6 @@ if modelpath.is_file():
     pos_azimuth_fun = pickle.load(openpickle)
 else: 
     print('position to azimuth mapping does not exist.')
-
-
 
 
 # %%
@@ -84,6 +82,7 @@ if not csv_path.is_file() or recompute_csv:
         # predict preferred spatial tuning based on position
         clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
         
+        print(np.sum(np.isnan(clusInfo.aphemi.values)))
 
         #get spatial tuning properties
         azi = azimuthal_tuning(session)
@@ -92,7 +91,8 @@ if not csv_path.is_file() or recompute_csv:
             azi.get_rasters_perAzi(**tuning_curve_params)
             clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
             clusInfo['%s_selectivity'% t] = azi.selectivity
-
+        # then calculate enhancement index. 
+        
 
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
         clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
@@ -100,7 +100,6 @@ if not csv_path.is_file() or recompute_csv:
         all_dfs.append(clusInfo)
     
     clusInfo = pd.concat(all_dfs,axis=0)    
-    clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi
     if csv_path.is_file():
         # save previous
         old = pd.read_csv(csv_path)
@@ -148,7 +147,7 @@ import matplotlib.pyplot as plt
 from Analysis.neural.utils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
-t = 'aud'
+t = 'vis'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
 color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
@@ -167,10 +166,10 @@ scene = Scene(title="SC aud and vis units", inset=False,root=False)
 scene.add_brain_region("SCs",alpha=0.1)
 sc = scene.add_brain_region("SCm",alpha=0.1)
 
-scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
 
 
 # plot the neurons in allen atalas space
@@ -180,14 +179,14 @@ scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusI
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
 
 
-# for azi,c in zip(azimuths,color_):    
-#     scene.add(Points(
-#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
-#         colors=c, 
-#         radius=30, 
-#         alpha=1
-#         ))    
-# scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
+for azi,c in zip(azimuths,color_):    
+    scene.add(Points(
+        allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+        colors=c, 
+        radius=30, 
+        alpha=1
+        ))    
+scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
 
 scene.content
 scene.render()
