@@ -20,10 +20,9 @@ opts = setvartype(opts, 'char');
 
 % Read the csv
 if ~contains(csvPath, 'docs.google.com')
-    try
-        csvData = readtable(csvPath, opts');
-    catch
-        % May have been due to internet issues -- wait and rety
+    csvData = readtable(csvPath, opts');
+    if any(contains(csvData.Properties.VariableNames,'ExtraVar')) || isempty(csvData)
+        % May have been due to server issues -- wait and retry
         pause(0.1)
         csvData = readtable(csvPath, opts');
     end
@@ -34,7 +33,13 @@ if ~contains(csvPath, 'docs.google.com')
     end
 else
     docID = csvPath(strfind(csvPath, 'spreadsheets/d/')+15:strfind(csvPath, '/edit?')-1);
-    csvData = csv.getGoogleSpreadsheet(docID);
+    try
+        csvData = csv.getGoogleSpreadsheet(docID);
+    catch
+        % Internet access issue?
+        pause(.1)
+        csvData = csv.getGoogleSpreadsheet(docID);
+    end
     variableNames = csvData(1,:);
     csvData = cell2table(csvData(2:end,:), 'VariableNames', variableNames);
     dVars = variableNames(contains(variableNames, 'Date'));
