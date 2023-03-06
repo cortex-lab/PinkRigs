@@ -58,7 +58,9 @@ def get_chan_coordinates(jsonFilePath):
 def coordinate_matching(local_coordinate_array,target_coordinate_array):
     """
     performs a coordinate matching bsed on xy positions using the channels.localCoordinates.npy output of the ibl format  
-    Basically outputs which indices in target coordinate array match the coordinates in local
+    Basically outputs which indices in target coordinate array match the coordinates in local coordinates. 
+    So, 
+    First, we check whether coordinate for a given unit matches any existing coordinate in 'anatmap'. 
     If does not find identical match, performs a nearest match whereby it checks the coordinates: 
         1. to the left, 2. to the right 3. one down 4. one up
     Parameters: 
@@ -189,10 +191,9 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         region_ID_clus = np.array([region_ID[clus_ch] for clus_ch in clus_channels])
         region_acronym_clus = np.array([region_acronym[clus_ch] for clus_ch in clus_channels])
         
-        # some units can be in "void" (I imagine mostly noise)
-        # those locations will error for tte converions 
         allen_xyz_clus = allen_xyz_clus[:,:,0]
-        allen_xyz_clus[region_ID_clus==0] = np.nan
+        # allen_xyz_clus[region_ID_clus==0] = np.nan  # some units can be in "void" (I imagine mostly noise)
+
 
         allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus/1e6,ccf_order='apdvml') 
         allencoords_ccf_mlapdv = allencoords_ccf_apdvml[:,0,[2,0,1]]                  
