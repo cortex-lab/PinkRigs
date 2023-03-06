@@ -8,11 +8,11 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'naive-allen'
+dat_type = 'naive-chronic'
 dat_keys = get_data_bunch(dat_type)
 
 rerun_sig_test= False 
-recompute_csv = True 
+recompute_csv = False 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -82,8 +82,8 @@ if not csv_path.is_file() or recompute_csv:
         # predict preferred spatial tuning based on position
         clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
         
-        print(np.sum(np.isnan(clusInfo.aphemi.values)))
-
+        azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
+        
         #get spatial tuning properties
         azi = azimuthal_tuning(session)
         for t in tuning_types:
@@ -91,9 +91,13 @@ if not csv_path.is_file() or recompute_csv:
             azi.get_rasters_perAzi(**tuning_curve_params)
             clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
             clusInfo['%s_selectivity'% t] = azi.selectivity
-        # then calculate enhancement index. 
-        
 
+        # then calculate enhancement index at "preferred azimuths". 
+        azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
+        azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
+        clusInfo['enhancement_index'] = azi.get_enhancement_index(at_azimuth=azimuth_pref_estimate)
+
+        
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
         clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
 
@@ -116,12 +120,12 @@ else:
 # %%
 import plotly.express as px
 
-goodclus = clusInfo[clusInfo.is_vis & clusInfo.is_good]
+goodclus = clusInfo[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_aud_spatial]
 
 fig = px.scatter(
     goodclus,
-    x='aphemi', y='vis_preferred_tuning',
-    hover_data=['expFolder','probe']
+    x='aphemi', y='aud_preferred_tuning',
+    hover_data=['expFolder','probe','_av_IDs']
     )
 fig.show()
 
@@ -147,7 +151,7 @@ import matplotlib.pyplot as plt
 from Analysis.neural.utils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
-t = 'vis'
+t = 'aud'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
 color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
