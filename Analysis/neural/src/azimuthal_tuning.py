@@ -230,7 +230,7 @@ class azimuthal_tuning():
             estimated preferred azimuth for each cell.
 
         """
-        if not at_azimuth:
+        if at_azimuth is None:
             at_azimuth = self.preferred_tuning
 
         vis = self.get_rasters_perAzi(which = 'vis')
