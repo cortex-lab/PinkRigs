@@ -19,6 +19,18 @@ from PyQt5.QtGui import QPixmap
 # PinkRig imports 
 from Admin.csv_queryExp import queryCSV
 
+def check_file(my_path,filenamestring):
+    """
+    function to check if file exists.
+    """
+    imagedat = list(Path(my_path).glob('*%s.png' % filenamestring))
+    if len(imagedat)==1: 
+        out_path = imagedat[0]
+    else:
+        out_path = pinkRig_path / r'Analysis/pyutils/nodat.png'
+    
+    return out_path
+    
 class Viewer(QMainWindow):
 
     def __init__(self,**kwargs):
@@ -50,9 +62,18 @@ class Viewer(QMainWindow):
 
     def load_dat(self,**kwargs):
         recordings = queryCSV(**kwargs)
-        dat = recordings.expFolder.values
+        self.expFolders = recordings.expFolder.values
         # search for jpegs & pngs within the folder
-        self.images = [list(Path(exp).glob('*.png')) for exp in dat]
+        self.datatypes = [
+            'frontCam_alignment', 
+            'eyeCam_alignment',
+            'sideCam_alignment',
+            'frontCam_roi_crop_and_mask',
+            'eyeCam_roi_crop_and_mask',
+            'sideCam_roi_crop_and_mask'            
+        ]
+
+        self.images = [[check_file(exp,d) for d in self.datatypes] for exp in self.expFolders]
         self.curr_dataset = 0
         self.curr_image = 0
 
@@ -63,7 +84,7 @@ class Viewer(QMainWindow):
         self.label.setPixmap(self.im)
         self.setGeometry(50,50,320,200)
         #self.resize(180, 380)
-        self.setWindowTitle(image_address.name.__str__())
+        self.setWindowTitle('%s\%s' %(self.expFolders[self.curr_dataset],self.datatypes[self.curr_image]))
         self.label.update()
         self.update()
 
@@ -74,7 +95,7 @@ class Viewer(QMainWindow):
             self.curr_dataset = n_datasets-1
         elif (self.curr_dataset==n_datasets):
             self.curr_dataset = 0
-        self.curr_image=0
+        #self.curr_image=0
 
     def step_image(self,stepsize):
         n_images = len(self.images[self.curr_dataset])
