@@ -1,7 +1,11 @@
 # %% 
 
 #!/usr/bin/python3
-
+"""
+GUI too loop over pngs in expfolders 
+Up/Down -- swap between experiments 
+Left/Right -- swap between pngs
+"""
 import sys,glob
 from pathlib import Path
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
