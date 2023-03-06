@@ -20,7 +20,13 @@ opts = setvartype(opts, 'char');
 
 % Read the csv
 if ~contains(csvPath, 'docs.google.com')
-    csvData = readtable(csvPath, opts');
+    try
+        csvData = readtable(csvPath, opts');
+    catch
+        % May have been due to internet issues -- wait and rety
+        pause(0.1)
+        csvData = readtable(csvPath, opts');
+    end
 
     dateColumns = find(contains(opts.VariableNames,'Date'));
     for dd = 1:numel(dateColumns)
