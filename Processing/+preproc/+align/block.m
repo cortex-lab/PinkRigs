@@ -126,11 +126,9 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
         % Timeline Ref times
         % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
         timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
-        % tlRefTimes = tlRefTimes(diff(tlRefTimes)>0.49); % Not sure why is used to be tlRefTimes(diff(tlRefTimes)>0.49). Ask Pip.
 
         % Block Ref times
         blockRefTimes = block.stimWindowUpdateTimes;
-        % blRefTimes = block.stimWindowUpdateTimes(diff(block.stimWindowUpdateTimes)>0.49);
 
         % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
         % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
@@ -138,9 +136,14 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             try
                 [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes);
             catch
-                warning('Passing in error mode to get photodiode flip times')
-                timelineRefTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
-                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
+                if any(contains({timeline.hw.inputs.name}', 'photoDThorLabs'))
+                    timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDThorLabs');
+                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes);
+                else
+                    warning('Passing in error mode to get photodiode flip times')
+                    timelineRefTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
+                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
+                end
             end
         elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
             [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
