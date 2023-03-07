@@ -79,7 +79,8 @@ function ev = AVPassive(timeline, block, alignmentBlock)
 
     %% visual stimulus timings
     % get all screen flips
-    photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode');
+    [photoDiodeFlipTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+    fprintf('****Using %s channel for photodiode...\n', photoName);
 
     % sort by trial
     p = block.paramsValues(1);

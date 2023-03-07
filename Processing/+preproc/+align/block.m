@@ -123,27 +123,23 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
         % sometimes you skip changes that are recorded in the block etc. This is another reason I prefer to use the wheel. But this method has proved
         % reasonably reliable if the wheel isn't suitable.
 
-        % Timeline Ref times
-        % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
-        timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
-
         % Block Ref times
         blockRefTimes = block.stimWindowUpdateTimes;
 
+
+        % Timeline Ref times
+        % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
+        [timelineRefTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+        
         % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
         % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
         if length(blockRefTimes) ~= length(timelineRefTimes)
             try
                 [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes);
             catch
-                if any(contains({timeline.hw.inputs.name}', 'photoDThorLabs'))
-                    timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDThorLabs');
-                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes);
-                else
-                    warning('Passing in error mode to get photodiode flip times')
-                    timelineRefTimes = timeproc.getChanEventTime(timeline, 'photoDiode','errorMode');
-                    [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
-                end
+                warning('Passing in error mode to get photodiode flip times')
+                timelineRefTimes = timeproc.getChanEventTime(timeline, photoName,'errorMode');
+                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);
             end
         elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
             [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes, 0.25,0);

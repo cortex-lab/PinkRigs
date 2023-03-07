@@ -84,8 +84,9 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     trialStEnTimes = [trialEnd(:)-.22 trialEnd(:)+.02];
     
     %% visual stimulus timings 
-    % get all screen flips 
-    photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode'); 
+    % get all screen flips
+    [photoDiodeFlipTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+    fprintf('****Using %s channel for photodiode...\n', photoName);
     
     % sort by trial
     numClicks = 1; 

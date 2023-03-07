@@ -1,4 +1,4 @@
-function evTimes = getChanEventTime(timeline,chanName, mode)
+function evTimes = getChanEventTime(timeline,chanName,mode)
     %% Extracts event times depending on the chan. 
     %
     % Parameters:
