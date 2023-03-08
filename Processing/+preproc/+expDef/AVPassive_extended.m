@@ -81,7 +81,7 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     % Add delay to trial start and end because of issues with alignment?
     % It's a bit of a hacky thing to do.
     %delay = 0.2; trialStEnTimes = trialStEnTimes + delay;
-    trialStEnTimes = [trialEnd(:)-.22 trialEnd(:)+.02];
+    trialStEnTimes = [trialEnd(:)-.22 trialEnd(:)+.1];
     
     %% visual stimulus timings 
     % get all screen flips
@@ -90,7 +90,7 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     
     % sort by trial
     numClicks = 1; 
-    visOnOffByTrial = indexByTrial(trialStEnTimes, photoDiodeFlipTimes);
+    visOnOffByTrial=  indexByTrial(trialStEnTimes, photoDiodeFlipTimes');
     vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
     visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
     visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);

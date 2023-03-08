@@ -2,20 +2,18 @@
 import sys
 import numpy as np
 from scipy.stats import zscore
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_github_paths
-from utils.plotting import off_axes, share_lim
-from utils.video_dat import get_move_raster,digitise_motion_energy
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Analysis.neural.utils.plotting import off_axes, share_lim
+from Analysis.neural.utils.video_dat import get_move_raster
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 
 
-add_github_paths()
+from Admin.csv_queryExp import load_data
 
-from Analysis.helpers.queryExp import load_data
-
-subject = 'AV030'
-expDate = '2022-12-05'
-expNum= 2
+subject = 'AV034'
+expDate = '2022-12-15'
+expNum= 1
 
 cam = 'eyeCam'
 data_dict = {
@@ -24,6 +22,7 @@ data_dict = {
                 }
 recordings = load_data(subject = subject,expDate= expDate, expNum=expNum, data_name_dict=data_dict)
 #recordings = load_data(subject = subject,expDate= expDate,expDef = 'multiSpace', data_name_dict=data_dict)
+
 #%%
 rec_idx = 0
 events = recordings.iloc[rec_idx].events['_av_trials']
@@ -53,27 +52,26 @@ timings = {
 #  which camera values to plot 
 cam_times = camera.times
 roi_id = 0
-cam_values = (camera.ROIMotionEnergy) #camera._av_motionPCs[:,0,3]
-#_,_,cam_values = digitise_motion_energy(cam_times,cam_values)
-#cam_values = camera._av_motionPCs[:,roi_id,0]
+cam_values = (camera.ROIMotionEnergy)
 sort_by_rt = False
 sort_by_response = False
 
 # plot by aud azimuth
 if 'is_validTrial' not in list(events.keys()):
     events.is_validTrial = np.ones(events.is_auditoryTrial.size).astype('bool')
+    sort_by_rt=False
+is_selected  = events.is_validTrial & (events.stim_audAmplitude>0)  #& events.is_auditoryTrial #& (events.stim_audAmplitude == np.max(events.stim_audAmplitude))
 
-is_selected  = events.is_validTrial & events.is_auditoryTrial #& (events.stim_audAmplitude == np.max(events.stim_audAmplitude))
-
-azimuths = np.unique(events.stim_visAzimuth)
+azimuths = np.unique(events.stim_audAzimuth)
 azimuths = azimuths[~np.isnan(azimuths)]
 #azimuths = np.array([-90,-60,-30,0,30,60,90])
-azi_colors = plt.cm.coolwarm(np.linspace(0,1,2))
+azi_colors = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
 fig,ax = plt.subplots(2,azimuths.size,figsize=(azimuths.size*3,5),gridspec_kw={'height_ratios':[1,3]},sharex=True)
 fig.patch.set_facecolor('xkcd:white')
 
 for azi,rasterax,meanax,c in zip(azimuths,ax[1,:],ax[0,:],azi_colors): 
     is_called_trials = is_selected & (events.stim_audAzimuth==azi)# & (events.stim_audAmplitude==np.max(events.stim_audAmplitude))
+    print(is_called_trials.sum())
     # sort by reaction time 
     on_times = events.timeline_audPeriodOn[is_called_trials]
     if sort_by_rt: 
@@ -88,23 +86,24 @@ for azi,rasterax,meanax,c in zip(azimuths,ax[1,:],ax[0,:],azi_colors):
     raster,br,idx = get_move_raster(
         on_times,cam_times,cam_values,
         sortAmp=False,baseline_subtract=False,
-        ax=rasterax,to_plot=True,**timings
+        ax=rasterax,to_plot=False,**timings
         )
-    #rasterax.imshow(raster,aspect='auto',cmap='Greys_r',norm=LogNorm(vmin=2500, vmax=25000))
+    movement_values = np.median(np.ravel(raster))
+    rasterax.imshow(raster,aspect='auto',cmap='Greys',norm=LogNorm(vmin=movement_values*.65, vmax=movement_values*3))
     meanax.plot(np.nanmean(raster,axis=0),color=c,lw=6)
-    #rasterax.axvline(30,color='r')
+    rasterax.set_title(azi)
+    rasterax.axvline(30,color='r')
     off_axes(meanax)
     off_axes(rasterax)
     #rasterax.set_ylim([0,80])
     meanax.hlines(0,br.size-0.1/timings['bin_size'],br.size,color='k')
-    #meanax.text(br.size-0.1/timings['bin_size'],0.01,'0.1 s')
+    if azi ==azimuths[-1]:
+        meanax.text(br.size-0.1/timings['bin_size'],np.ravel(raster).min()*.1,'0.1 s')
     #meanax.set_title(azi)
-plt.savefig("C:\\Users\\Flora\\Pictures\\movement_plot_vis.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
-
 share_lim(ax[0,:],dim='y')
 
-# for meanax in (ax[0,:]):
-#     meanax.set_ylim((ax[0,1]).get_ylim()) #
+plt.savefig("C:\\Users\\Flora\\Pictures\\movement_plot_vis.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 
 # sort by RT 
 # %%

@@ -37,7 +37,7 @@ else
         csvData = csv.getGoogleSpreadsheet(docID);
     catch
         % Internet access issue?
-        pause(.1)
+        pause(.5)
         csvData = csv.getGoogleSpreadsheet(docID);
     end
     variableNames = csvData(1,:);
