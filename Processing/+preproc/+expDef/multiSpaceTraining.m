@@ -486,7 +486,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));
-    ev.block_stimOn = single(stimPeriodStart);
+    ev.block_stimOn = single(stimStartBlock);
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);
