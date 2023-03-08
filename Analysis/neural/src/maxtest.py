@@ -24,8 +24,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from Analysis.neural.utils.spike_dat import get_binned_rasters
-from Analysis.neural.utils.ev_dat import postactive
-from Analysis.neural.utils.plotting import off_axes
+from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.plotting import off_axes
 
 from Admin.csv_queryExp import load_ephys_independent_probes
 

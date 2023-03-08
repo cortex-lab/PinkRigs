@@ -3,7 +3,7 @@
 import sys
 import numpy as np
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Analysis.neural.utils.plotting import off_topspines,off_axes
+from Analysis.pyutils.plotting import off_topspines,off_axes
 
 from Analysis.neural.src.kernel_model import kernel_model
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)

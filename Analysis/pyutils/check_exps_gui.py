@@ -72,7 +72,10 @@ class Viewer(QMainWindow):
             'sideCam_alignment',
             'frontCam_roi_crop_and_mask',
             'eyeCam_roi_crop_and_mask',
-            'sideCam_roi_crop_and_mask'            
+            'sideCam_roi_crop_and_mask',
+            'frontCam_audTriggeredMovement',
+            'eyeCam_audTriggeredMovement',
+            'sideCam_audTriggeredMovement'            
         ]
 
         self.images = [[check_file(exp,d) for d in self.datatypes] for exp in self.expFolders]

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Admin.csv_queryExp import load_ephys_independent_probes,Bunch
-from Analysis.neural.utils.ev_dat import postactive
+from Analysis.pyutils.ev_dat import postactive
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
@@ -184,7 +184,7 @@ class azimuthal_tuning():
 
         max_test = test.values[range(test.shape[0]),max_loc]
         min_test = test.values[range(test.shape[0]),min_loc]
-        
+
         selectivity = (max_test-min_test)/(max_test+min_test)
 
         return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values.astype('float')

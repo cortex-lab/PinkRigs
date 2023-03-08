@@ -8,8 +8,8 @@ import collections,itertools
 # import PinkRig utilities 
 from Admin.csv_queryExp import load_data,Bunch
 from Analysis.neural.utils.spike_dat import bincount2D
-from Analysis.neural.utils.video_dat import digitise_motion_energy
-from Analysis.neural.utils.plotting import off_axes
+from Analysis.pyutils.video_dat import digitise_motion_energy
+from Analysis.pyutils.plotting import off_axes
 
 
 # Machine learning / statistics
@@ -28,8 +28,8 @@ from scipy.stats import zscore,median_abs_deviation
 # for plotting default plots 
 import matplotlib.pyplot as plt 
 import matplotlib.gridspec as gridspec
-from Analysis.neural.utils.ev_dat import index_trialtype_perazimuth
-import Analysis.neural.utils.plotting as pFT
+from Analysis.pyutils.ev_dat import index_trialtype_perazimuth
+import Analysis.pyutils.plotting as pFT
 from pylab import cm
 from matplotlib.colors import LogNorm
 

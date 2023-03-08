@@ -149,7 +149,7 @@ if recompute_pos_model:
 
 # %%
 import matplotlib.pyplot as plt
-from Analysis.neural.utils.plotting import rgb_to_hex
+from Analysis.pyutils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
 t = 'aud'

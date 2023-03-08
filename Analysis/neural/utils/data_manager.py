@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 from scipy.stats import median_abs_deviation as mad
 
-from Analysis.neural.utils.video_dat import get_move_raster
+from Analysis.pyutils.video_dat import get_move_raster
 
 # ONE loader from the PinkRig Pipeline
 from Admin.csv_queryExp import get_csv_location,load_data

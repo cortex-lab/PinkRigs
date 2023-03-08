@@ -1,8 +1,8 @@
 close all
 
 clear params
-params.subject = {['FT038']};
-params.expDate = {'all'}; 
+params.subject = {['AV038']};
+params.expDate = {'2023-03-08'}; 
 %params.expNum = '5'; 
 %params.expDef = 'p'; 
 %params.checkAlignEphys = '2'; 
