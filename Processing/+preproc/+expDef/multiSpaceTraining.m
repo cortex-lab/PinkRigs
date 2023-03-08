@@ -293,9 +293,9 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             warning('Looks like the mouse did not make a single choice?!');
         end
 
-    catch
-            msgText = getReport(me);
-            error(msgText)
+    catch me
+        msgText = getReport(me);
+        error(msgText)
     end
 
     wheelDeg = extractWheelDeg(timeline);
