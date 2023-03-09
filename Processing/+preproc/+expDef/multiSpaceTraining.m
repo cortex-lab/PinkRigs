@@ -278,9 +278,9 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
         missedOnset = isnan(timelineStimOnset) & ~(audAmplitude==0 & visContrast == 0);
-        validIdx = responseMadeIdx & ~missedOnset;
-        stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
-        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
+        stimFoundIdx = responseMadeIdx & ~(audAmplitude==0 & visContrast == 0);
+        stimOnsetIdx = round(timelineStimOnset(stimFoundIdx)*sR);
+        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(stimFoundIdx,2)*sR],[],2);
         stimEndIdx = stimEndIdx-stimOnsetIdx;
         if any(missedOnset)
             if sum(missedOnset) >0.25*length(missedOnset)
@@ -314,7 +314,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
-    falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
+    falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
 
     choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
     choiceCrsIdx(falseIdx) = nan;
@@ -336,7 +336,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
     onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-    onsetTimDirByChoiceTrial = onsetTimDirByTrial(validIdx);
+    onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
     onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
     %"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
@@ -348,7 +348,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
     %SANITY CHECK
-    blockTstValues = responseRecorded(validIdx);
+    blockTstValues = responseRecorded(stimFoundIdx);
     if ~isempty(choiceInitTimeDir)
         tstIdx = ~isnan(choiceInitTimeDir(:,2));
         if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
