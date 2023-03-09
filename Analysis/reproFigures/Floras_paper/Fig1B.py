@@ -10,8 +10,8 @@ import pandas as pd
 
 # Figure 1B - example visual neuron
 from Admin.csv_queryExp import load_data,simplify_recdat
-from Analysis.neural.utils.ev_dat import postactive
-from Analysis.neural.utils.plotting import my_rasterPSTH
+from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.plotting import my_rasterPSTH
 
 # load single dataset 
 

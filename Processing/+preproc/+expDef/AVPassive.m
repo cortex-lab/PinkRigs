@@ -85,7 +85,7 @@ function ev = AVPassive(timeline, block, alignmentBlock)
     % sort by trial
     p = block.paramsValues(1);
     numClicks = numel((p.clickDuration/2):1/p.clickRate:p.stimDuration);
-    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes);
+    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes');
     vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
     visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
     visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);
