@@ -8,11 +8,11 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'naive-chronic'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 rerun_sig_test= False 
-recompute_csv = False 
+recompute_csv = True 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -92,6 +92,7 @@ if not csv_path.is_file() or recompute_csv:
             clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
             clusInfo['%s_selectivity'% t] = azi.selectivity
 
+
         # then calculate enhancement index at "preferred azimuths". 
         azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
         azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
@@ -148,7 +149,7 @@ if recompute_pos_model:
 
 # %%
 import matplotlib.pyplot as plt
-from Analysis.neural.utils.plotting import rgb_to_hex
+from Analysis.pyutils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
 t = 'aud'

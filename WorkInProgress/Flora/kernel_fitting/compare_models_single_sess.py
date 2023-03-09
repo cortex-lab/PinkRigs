@@ -3,13 +3,14 @@
 import sys
 import numpy as np
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Analysis.neural.utils.plotting import off_topspines,off_axes
+from Analysis.pyutils.plotting import off_topspines,off_axes
 
 from Analysis.neural.src.kernel_model import kernel_model
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
 
 from kernel_params import get_params
 dat_params,fit_params,eval_params = get_params()
+
 nrn_list = [571]
 #nrn_list = [50,140]
 kernels.load_and_format_data(

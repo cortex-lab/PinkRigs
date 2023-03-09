@@ -31,7 +31,7 @@ function [timelineRefTimes, chanName] = extractBestPhotodiode(timeline,block)
     end
 
     [~, bestIdx] = min(abs(cellfun(@length, timelineRefTimes)-numberOfblockFlips));
-    timelineRefTimes = timelineRefTimes{bestIdx};
+    timelineRefTimes = timelineRefTimes{bestIdx}(:)';
     chanName = chanName{bestIdx};
 end
     

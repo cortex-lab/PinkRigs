@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Admin.csv_queryExp import load_ephys_independent_probes,Bunch
-from Analysis.neural.utils.ev_dat import postactive
+from Analysis.pyutils.ev_dat import postactive
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
@@ -184,17 +184,19 @@ class azimuthal_tuning():
 
         max_test = test.values[range(test.shape[0]),max_loc]
         min_test = test.values[range(test.shape[0]),min_loc]
-        
+
         selectivity = (max_test-min_test)/(max_test+min_test)
 
         return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values.astype('float')
     
     def calculate_significant_selectivity(self,n_shuffles=100,p_threshold=0.01):
         
+        
         if 1/n_shuffles>p_threshold:
             print('not enough shuffles for this p threshold')
                 
         self.selectivity,self.preferred_tuning = self.get_selectivity(azimuth_shuffle_seed=None)
+        
         s_shuffled,_ = zip(*[self.get_selectivity(azimuth_shuffle_seed=shuffle_idx) for shuffle_idx in range(n_shuffles)])
         s_shuffled = [s[np.newaxis,:] for s in s_shuffled]
         self.selectivity_shuffle_dist = np.concatenate(s_shuffled,axis=0)
