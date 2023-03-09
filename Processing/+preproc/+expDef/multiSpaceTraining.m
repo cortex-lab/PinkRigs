@@ -216,7 +216,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         nonVisTrials = visContrast(eIdx)==0;
         stimStartRef = stimStartBlock(~nonVisTrials);
         if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-            fprintf('****Removing photodiode times that do not match stimulus starts \n');
+%             fprintf('****Removing photodiode times that do not match stimulus starts \n');
 
             [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
             visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
@@ -277,16 +277,16 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
         timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
-        missedOnset = isnan(timelineStimOnset);
+        missedOnset = isnan(timelineStimOnset) & ~(audAmplitude==0 & visContrast == 0);
         validIdx = responseMadeIdx & ~missedOnset;
         stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
         stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
         stimEndIdx = stimEndIdx-stimOnsetIdx;
         if any(missedOnset)
             if sum(missedOnset) >0.25*length(missedOnset)
-                error('Over 25% of stimulus onsets are missing???');
+                error('Cannot find expected stimulus onset over 25% of stimulus onsets are missing???');
             else
-                warning('There are missing stimulus onsets?! Will process identified ones');
+                warning('Cannot find expected stimulus onset for some trials. Will process identified ones');
             end
         end
         if isempty(stimOnsetIdx)
