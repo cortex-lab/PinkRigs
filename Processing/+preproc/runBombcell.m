@@ -45,7 +45,7 @@ function runBombcell(varargin)
                 ephysRawDir = ephysRawDir(idx);
             end
         end
-        ephysMetaDir = dir(fullfile(ephysDirPath,'*.meta')); % used in bc_qualityParamValues
+        ephysMetaDir = dir(fullfile(ephysDirPath,'*ap.meta')); % used in bc_qualityParamValues
         savePath = fullfile(ephysKilosortPath,'qMetrics');
 
         qMetricsExist = ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
