@@ -35,7 +35,7 @@ if isempty(varargin); csvData = []; return; end
 % "saveData": logical--whether the updated csv entry should be saved
 % "queryExp": logical--whether to run csv.queryExp and update returned rows
 varargin = ['subject', {'active'}, varargin]; % For clarity--default anyway
-varargin = ['expDate', 1, varargin];
+varargin = ['expDate', 'all', varargin];
 varargin = ['expNum', {'all'}, varargin];
 varargin = ['saveData', {1}, varargin];
 varargin = ['queryExp', {1}, varargin];

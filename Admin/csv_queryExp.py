@@ -95,7 +95,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -110,7 +110,8 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         selected expdef or portion of the string of the the expdef name
     expNum: str/list 
         selected expNum
-    
+    checkIsSortedPyKS: None/str    
+        if '2' only outputs
     Returns: 
     ----
     exp2checkList : pandas DataFrame 
@@ -174,6 +175,11 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         print('you did not call any experiments.')
         exp2checkList = None
     
+    if checkIsSortedPyKS:
+        # nan means we should not have ephys. So we drop nan columns
+        exp2checkList = exp2checkList.dropna(subset='issortedPyKS')
+        to_keep_column = np.array([checkIsSortedPyKS in rec.issortedPyKS for _,rec in exp2checkList.iterrows()])
+        exp2checkList = exp2checkList[to_keep_column]
 
     return exp2checkList
 

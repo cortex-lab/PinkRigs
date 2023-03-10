@@ -45,7 +45,7 @@ def rgb_to_hex(rgb):
     return '#{:02x}{:02x}{:02x}'.format(r,g,b)
 
 def plot_the_psth(spike_times, spike_clusters, cluster_id, events, tscale, pre_time, post_time, bin_size,
-                  smoothing, return_fr,pethcolor,erralpha,pethlw,ax,error_bars='sem'):
+                  smoothing, return_fr,bl_subtract,pethcolor,erralpha,pethlw,ax,error_bars='sem'):
 
     """
     Plot psth events based on any type of binning. Input arguments are largely the same as for 
@@ -89,7 +89,7 @@ def plot_the_psth(spike_times, spike_clusters, cluster_id, events, tscale, pre_t
     """
 
     binned_raster_data=get_binned_rasters(spike_times,spike_clusters,cluster_id,
-                                            events,tscale,pre_time,post_time,bin_size,smoothing,return_fr)
+                                            events,tscale,pre_time,post_time,bin_size,smoothing,return_fr,bl_subtract)
 
 
     mean = binned_raster_data['rasters'].mean(axis=0)[0, :]
@@ -145,7 +145,8 @@ def my_rasterPSTH(spike_times,  # Spike times first
                   n_rasters=100, # How many raster traces to include per event set
                   bin_size=0.025,
                   smoothing=0.005,
-                  return_fr=True,        
+                  return_fr=True,
+                  baseline_subtract=False,        
                   event_colors=['blue','magenta','green'],
                   pethlw=2,onset_marker='line',onset_marker_size=2,onset_marker_color='k',
                   erralpha=0.5, 
@@ -174,7 +175,7 @@ def my_rasterPSTH(spike_times,  # Spike times first
     for i,evt in enumerate(events):       
         if include_PSTH:
             lims=plot_the_psth(spike_times, spike_clusters, [cluster_id], evt,tscale, pre_time, post_time,
-                            bin_size,smoothing, return_fr,event_colors[i],erralpha,pethlw,ax,error_bars)
+                            bin_size,smoothing, return_fr,baseline_subtract,event_colors[i],erralpha,pethlw,ax,error_bars)
             p1=lims[1] *1.05 
 
             if i>0: 

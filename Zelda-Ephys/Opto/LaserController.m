@@ -47,8 +47,8 @@ classdef LaserController < handle
         function voltage_traces = generateWaveform(obj,voltageChan0,voltageChan1)
             rate = obj.daqSession.Rate;
             rampUpDur = 0.05; % in ms
-            flatDur = 1.4; % in ms
-            rampDownDur = 0.20; % in ms
+            flatDur = 1.5; % in ms
+            rampDownDur = 0.35; % in ms
             voltage_trace1 = ([linspace(0,1,rampUpDur*rate)';ones(flatDur*rate,1);linspace(1,0,rampDownDur*rate)']*voltageChan0);
             voltage_trace2 = ([linspace(0,1,rampUpDur*rate)';ones(flatDur*rate,1);linspace(1,0,rampDownDur*rate)']*voltageChan1);
             voltage_traces = [voltage_trace1 voltage_trace2];

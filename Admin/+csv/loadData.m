@@ -21,6 +21,7 @@ function expList = loadData(varargin)
 %   'tim' or 'timeline': raw timeline (output = dataTimeline)
 %   'cam' or 'cameras': camera data (output = dataCam) 
 %   'mic' or 'microphone': raw microphone data (output = dataMic) 
+%   'opto' or 'optoLog': raw optoData
 %   'ev' or 'events':  trial events (output = dataEvents)
 %   'eventsFull':  all (including large) trial events (output = dataEvents)
 %   'probe': load spike information (can specify probe number) (output = dataSpikes)
@@ -43,7 +44,7 @@ function expList = loadData(varargin)
 % ---------------
 % expList: table 
 %   New fields with loaded data in structures will be included. 
-%   {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataCam';'dataMic'}
+%   {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline';'dataCam';'dataMic';'dataOpto'}
 %    These fields will not be included if they are not requested.
 %
 % Examples: 
@@ -94,7 +95,7 @@ params = rmfield(params, {'dataType'; 'object'; 'attribute';'verbose'});
 expList = csv.queryExp(params);
 
 % Add new fields for loaded data to the expList
-newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline'; 'dataCam'; 'dataMic'};
+newFields = {'dataBlock'; 'dataEvents'; 'dataSpikes'; 'dataTimeline'; 'dataCam'; 'dataMic';'dataOpto'};
 for i = 1:length(newFields)
     if any(strcmp(expList.Properties.VariableNames, newFields{i})); continue; end
     expList.(newFields{i}) = cell(size(expList,1),1);
@@ -115,7 +116,7 @@ end
 % Loop over each line of the expList and load the requested data
 for i=1:height(expList)
     % Clear any existing data and get current exp details
-    clear dataBlock dataEvents dataSpikes dataTimeline dataMic
+    clear dataBlock dataEvents dataSpikes dataTimeline dataMic dataOpto
 
     currExp = expList(i,:);
     ONEPath = [currExp.expFolder{1} '\ONE_preproc\'];
@@ -182,6 +183,25 @@ for i=1:height(expList)
                 expList.dataTimeline{i} = tim.Timeline;
             end
         end
+    end
+
+    %% load optoLog if requested 
+    if any(contains(dataTypes, {'opto'; 'optoLog'}))
+        optoPath = cell2mat([currExp.expFolder '\' expPathStub '_optoLog.mat']);
+        optoPath_old = cell2mat([currExp.expFolder '\' expPathStub '_optoMetaData.csv']);
+        if exist(optoPath, 'file')
+            opto = load(optoPath);
+
+            if exist('opto', 'var')
+                expList.dataoptoLog{i} = opto;
+            end
+
+        elseif exist(optoPath_old, 'file')
+            opto = table2struct(csv.readTable(optoPath_old));
+            if exist('opto', 'var')
+                expList.dataoptoLog{i} = opto;
+            end
+        end         
     end
 
     %% load cam data if requested

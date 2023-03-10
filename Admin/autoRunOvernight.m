@@ -102,7 +102,7 @@ function autoRunOvernight
                 end
     
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);
@@ -110,10 +110,10 @@ function autoRunOvernight
     
                 % run at all times 
                 fprintf(fid,'Creating the ibl format (%s)... \n',datestr(now));
-                checkScriptPath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+                checkScriptPath = [githubPath '\Processing\pykilo\convert_to_ibl_format.py'];
                 checkWhichMice = 'all';
                 whichKS = 'pyKS';
-                checkWhichDates = 'last300';
+                checkWhichDates = 'last1000';
                 [statusIBL,resultIBL] = system(['activate iblenv && ' ...
                     'python ' checkScriptPath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                     'conda deactivate']);
@@ -151,7 +151,7 @@ function autoRunOvernight
                 dbstop if error % temporarily, to debug
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
                 githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);

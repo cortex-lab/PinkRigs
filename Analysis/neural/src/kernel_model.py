@@ -8,8 +8,8 @@ import collections,itertools
 # import PinkRig utilities 
 from Admin.csv_queryExp import load_data,Bunch
 from Analysis.neural.utils.spike_dat import bincount2D
-from Analysis.neural.utils.video_dat import digitise_motion_energy
-from Analysis.neural.utils.plotting import off_axes
+from Analysis.pyutils.video_dat import digitise_motion_energy
+from Analysis.pyutils.plotting import off_axes
 
 
 # Machine learning / statistics
@@ -28,8 +28,8 @@ from scipy.stats import zscore,median_abs_deviation
 # for plotting default plots 
 import matplotlib.pyplot as plt 
 import matplotlib.gridspec as gridspec
-from Analysis.neural.utils.ev_dat import index_trialtype_perazimuth
-import Analysis.neural.utils.plotting as pFT
+from Analysis.pyutils.ev_dat import index_trialtype_perazimuth
+import Analysis.pyutils.plotting as pFT
 from pylab import cm
 from matplotlib.colors import LogNorm
 
@@ -1282,7 +1282,7 @@ class kernel_model():
                             feature_name_string = feature_name_string + '_dir'
                             extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector)
 
-            if 'coherent-non-linearity' in event_types:
+            if 'coherent-nl-temporal' in event_types:
                 onset_sel_key  = 'block_stimOn'
                 azimuths = aud_azimuths
 
@@ -1299,7 +1299,7 @@ class kernel_model():
 
                     extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string) 
 
-            if 'conflict-non-linearity' in event_types:
+            if 'conflict-nl-temporal' in event_types:
                 # this takes only the most extreme azimuth differeces
                 onset_sel_key  = 'block_stimOn'
                 extreme_aud_azimuths = [min(aud_azimuths), max(aud_azimuths)] # for now we need to take only one of these
@@ -1373,12 +1373,12 @@ class kernel_model():
                 trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)]
             else: 
                 trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0],ev.timeline_choiceMoveOn+t_support_movement[1])]
-                pass 
+           
             trial_indices = np.concatenate(trial_indices).reshape((-1,self.tscale.size))
             fitted_trial_idxs = np.unique(extracted_ev.fitted_trials_idx)
 
 
-            # add any kernels that are not fitted over time (baseline and camera)
+            # add other kernels that are not fitted over time (baseline and camera)
             if 'baseline' in event_types:
                 # add blank trials to bl kernel if requested?
                 if 'blank' in event_types: 
@@ -1432,7 +1432,19 @@ class kernel_model():
                     self.feature_matrix = np.concatenate((self.feature_matrix,cam_values[:,np.newaxis]),axis=1)
                     self.feature_column_dict[camtype] = np.array([self.feature_matrix.shape[1]-1]) 
 
+            if 'coherent-nl-gain' in event_types:                
+                for my_spl,my_azimuth,my_contrast in itertools.product(spls,azimuths,contrasts):
+                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = my_spl, vis_azimuth=my_azimuth, aud_azimuth=my_azimuth,**rt_params)
+                    print(my_spl,my_azimuth,my_contrast,is_selected.sum())
+                    feature_name_string = 'coherent-non-linear_kernel' + '_contrast_%.2f' % my_contrast + '_spl_%.2f' % my_spl 
+                    if my_azimuth!=None:
+                        feature_name_string += '_azimuth_%.0f' % my_azimuth    
 
+                    my_kernel = trial_indices[is_selected,:].sum(axis=0)
+                # add a baseline to the feature matrix
+                    self.feature_matrix = np.concatenate((self.feature_matrix,my_kernel[:,np.newaxis]),axis=1)
+                    self.feature_column_dict[feature_name_string] = np.array([self.feature_matrix.shape[1]-1])
+                    
             # creating training and test set for cross-validation - to do: balance trial types...
             np.random.seed(0)
             np.random.shuffle(fitted_trial_idxs)

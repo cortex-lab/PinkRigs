@@ -22,6 +22,12 @@ tuning_curve_params = {
 azi.get_rasters_perAzi(**tuning_curve_params)
 is_selective,preferred_tuning = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
 
-
-
 # %%
+
+# non-linearity test as performed by Standford et al.,2005
+# at the preferred azimuth only.
+
+# actually one has the data already loaded with azi 
+# so now, get response at preferred azi 
+
+azi.get_enhancement_index()

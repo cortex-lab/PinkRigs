@@ -28,7 +28,13 @@ if ~contains(csvPath, 'docs.google.com')
     end
 else
     docID = csvPath(strfind(csvPath, 'spreadsheets/d/')+15:strfind(csvPath, '/edit?')-1);
-    csvData = csv.getGoogleSpreadsheet(docID);
+    try
+        csvData = csv.getGoogleSpreadsheet(docID);
+    catch
+        % Internet access issue?
+        pause(10)
+        csvData = csv.getGoogleSpreadsheet(docID);
+    end
     variableNames = csvData(1,:);
     csvData = cell2table(csvData(2:end,:), 'VariableNames', variableNames);
     dVars = variableNames(contains(variableNames, 'Date'));

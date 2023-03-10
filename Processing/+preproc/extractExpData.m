@@ -85,6 +85,8 @@ function extractExpData(varargin)
                             loadedData = csv.loadData(expInfo, 'dataType', {{'timeline'; 'block'}});
                             timeline = loadedData.dataTimeline{1};
                             block = loadedData.dataBlock{1};
+                            block.expInfo = expInfo; % need to pass down expInfo for opening the optoLog
+
                             
                             % Get the appropriate ref for the exp def
                             expDefRef = preproc.getExpDefRef(expDef);

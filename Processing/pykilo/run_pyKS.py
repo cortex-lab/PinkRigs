@@ -24,7 +24,8 @@ from Admin.csv_queryExp import get_csv_location
 from Processing.pykilo.check_pyKS_queue import stage_KS_queue
 from Processing.pykilo.helpers import save_error_message
 
-KS_workpath = Path(r'C:\Users\Experiment\Documents\KSworkfolder')
+documents_path = list(Path(r'C:\Users').glob('*\Documents\Github\PinkRigs'))[0].parents[1] # for any user
+KS_workpath = documents_path / 'KSworkfolder'
 
 def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort = False, bin_file_extension ='cbin'):
     """

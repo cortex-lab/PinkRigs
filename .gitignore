@@ -4,3 +4,5 @@
 *.pyc
 *.vscode
 *.idea
+*.manual
+Manual/+manual/preproc.m

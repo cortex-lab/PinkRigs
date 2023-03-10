@@ -24,10 +24,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from Analysis.neural.utils.spike_dat import get_binned_rasters
-from Analysis.neural.utils.ev_dat import postactive
-from Analysis.neural.utils.plotting import off_axes
+from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.plotting import off_axes
 
-from Admin.csv_queryExp import load_data, simplify_recdat
+from Admin.csv_queryExp import load_ephys_independent_probes
 
 # get all the unique trial types 
 
@@ -70,14 +70,18 @@ class maxtest():
                 'baseline_subtract': True, 
             }
             
-    def load_and_format_data(self,probe='probe0',**kwargs):
-        data_dict = {
-            'events':{'_av_trials':'table'},
-            probe:{'spikes':['times','clusters']}
-            }
+    def load_and_format_data(self,**rec_info):
 
-        recordings = load_data(data_name_dict = data_dict,**kwargs)   
-        events,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
+        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
+        other_ = {'events': {'_av_trials': 'table'}}
+
+        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**rec_info)
+        if recordings.shape[0] == 1:            
+            recordings =  recordings.iloc[0]
+        else:
+            print('recordings are ambiguously defined. Please recall.')
+        events,spikes = recordings.events._av_trials,recordings.probe.spikes
+
         blanks,vis,aud,_ = postactive(events)
         event_dict = {}
         # to redo the previous tests
@@ -92,6 +96,7 @@ class maxtest():
         self.event_times_dict = event_dict 
         self.spikes = spikes
         self.blank_times = blanks.sel(timeID='ontimes').values 
+        self.clusters_ids = recordings.probe.clusters._av_IDs.astype('int')
 
 
 
@@ -121,7 +126,7 @@ class maxtest():
             blank_times = self.blank_times
 
         if not subselect_neurons:
-            clus_ids = np.unique(spikes.clusters)    
+            clus_ids = self.clusters_ids#np.unique(spikes.clusters)    
         else:
             clus_ids = np.array(subselect_neurons)
 

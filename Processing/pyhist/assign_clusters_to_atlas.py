@@ -2,7 +2,7 @@ import json,re,glob,sys,datetime
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from helpers.atlas import AllenAtlas
+from Processing.pyhist.helpers.atlas import AllenAtlas
 from shutil import copyfile
 atlas = AllenAtlas(25)
 
@@ -12,6 +12,7 @@ pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 from Admin.csv_queryExp import load_data,get_recorded_channel_position
+
 
 def get_chan_coordinates(jsonFilePath):
     """
@@ -51,15 +52,15 @@ def get_chan_coordinates(jsonFilePath):
     chan_pos = np.array([chan_pos_x, chan_pos_y]).T
     allencoords_xyz=np.array([allenx,alleny,allenz]).T
 
-
-
     return chan_pos,allencoords_xyz,np.array(regionID),np.array(region_acronym)
 
 
 def coordinate_matching(local_coordinate_array,target_coordinate_array):
     """
     performs a coordinate matching bsed on xy positions using the channels.localCoordinates.npy output of the ibl format  
-    Basically outputs which indices in target coordinate array match the coordinates in local
+    Basically outputs which indices in target coordinate array match the coordinates in local coordinates. 
+    So, 
+    First, we check whether coordinate for a given unit matches any existing coordinate in 'anatmap'. 
     If does not find identical match, performs a nearest match whereby it checks the coordinates: 
         1. to the left, 2. to the right 3. one down 4. one up
     Parameters: 
@@ -190,10 +191,9 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         region_ID_clus = np.array([region_ID[clus_ch] for clus_ch in clus_channels])
         region_acronym_clus = np.array([region_acronym[clus_ch] for clus_ch in clus_channels])
         
-        # some units can be in "void" (I imagine mostly noise)
-        # those locations will error for tte converions 
         allen_xyz_clus = allen_xyz_clus[:,:,0]
-        allen_xyz_clus[region_ID_clus==0] = np.nan
+        # allen_xyz_clus[region_ID_clus==0] = np.nan  # some units can be in "void" (I imagine mostly noise)
+
 
         allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus/1e6,ccf_order='apdvml') 
         allencoords_ccf_mlapdv = allencoords_ccf_apdvml[:,0,[2,0,1]]                  
@@ -302,7 +302,7 @@ def call_for_anatmap_recordings(probe='probe0',near_date=None,depth_selection = 
 
     recdat = recdat.dropna(subset=['shank_range','depth_range'])
 
-    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<35 for _,rec in recdat.iterrows()]
+    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<50 for _,rec in recdat.iterrows()]
     recdat = recdat[is_single_shank]
     recdat = recdat.assign(
         shank = [int(sh[0]/200) for sh in recdat.shank_range],

@@ -79,12 +79,13 @@ function ev = AVPassive(timeline, block, alignmentBlock)
 
     %% visual stimulus timings
     % get all screen flips
-    photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, 'photoDiode');
+    [photoDiodeFlipTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+    fprintf('****Using %s channel for photodiode...\n', photoName);
 
     % sort by trial
     p = block.paramsValues(1);
     numClicks = numel((p.clickDuration/2):1/p.clickRate:p.stimDuration);
-    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes);
+    visOnOffByTrial = indexByTrial(trialStEnTimes+delay, photoDiodeFlipTimes');
     vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
     visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
     visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);

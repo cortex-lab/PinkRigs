@@ -199,111 +199,101 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     tExt.audStimPeriodOnOff = audPeriodOnOffTimeline;
 
     %% Will loop through photodiode types in case one is broken
-    photoDiodeNames = {timeline.hw.inputs(contains({timeline.hw.inputs.name},'photoD')).name};
-    err = 1; nn = 1;
-    while err && nn<=numel(photoDiodeNames)
-        try
-            %% Extract visual onsets (unreliable after initial flip)
-            %Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
-            fprintf('****Reading %s...\n', photoDiodeNames{nn});
-            photoDiodeFlipTimes = timeproc.getChanEventTime(timeline, photoDiodeNames{nn})';
-            trialGapThresh = 1./max(clickRate)*5;
-            visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
-            visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
-            visPeriodOnOffTimeline = [visPeriodOnTimeline, visPeriodOffTimeline];
-            visPeriodOnOffTimeline(diff(visPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
+    try
+        %% Extract visual onsets (unreliable after initial flip)
+        %Detrend timeline trace, threshold using kmeans, detect onsets and offsets of sound, estimate duration from this.
+        [photoDiodeFlipTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+        fprintf('****Using %s channel for photodiode...\n', photoName);
+        trialGapThresh = 1./max(clickRate)*5;
+        visPeriodOnTimeline = photoDiodeFlipTimes(diff([0,photoDiodeFlipTimes])>trialGapThresh)';
+        visPeriodOffTimeline = photoDiodeFlipTimes(diff([photoDiodeFlipTimes, 10e10])>trialGapThresh)';
+        visPeriodOnOffTimeline = [visPeriodOnTimeline, visPeriodOffTimeline];
+        visPeriodOnOffTimeline(diff(visPeriodOnOffTimeline,[],2)<(1/2000),:) = [];
 
-            %Sanity check (should be match between stim starts from block and from timeline)
-            compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
+        %Sanity check (should be match between stim starts from block and from timeline)
+        compareTest = @(x,y) (getNearestPoint(x(:)',y(:)')-(1:length(x(:))))';
 
-            nonVisTrials = visContrast(eIdx)==0;
-            stimStartRef = stimStartBlock(~nonVisTrials);
-            if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-                fprintf('****Removing photodiode times that do not match stimulus starts \n');
+        nonVisTrials = visContrast(eIdx)==0;
+        stimStartRef = stimStartBlock(~nonVisTrials);
+        if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+%             fprintf('****Removing photodiode times that do not match stimulus starts \n');
 
-                [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
-                visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
-            end
-
-            if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-                fprintf('****WARNING: Could not fix start-end times\n');
-                fprintf('****Will perform incomplete identification based on trial structure\n');
-
-                visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
-                visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
-                visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
-            else
-                visPeriodOnOffTimeline = visPeriodOnOffTimeline(1:length(stimStartRef),:);
-            end
-            tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
-
-            % Could add this in for pasive
-            photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
-            photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
-            if isfield(block.events,'selected_paramsetValues')
-                responseWindow = block.events.selected_paramsetValues.responseWindow;
-            else
-                responseWindow = [block.paramsValues.responseWindow];
-                responseWindow = responseWindow(1);
-            end
-            if isinf(responseWindow); responseWindow = 0; end
-            expectedFlashTrainLength = clickRate*responseWindow*2*(stimStartRef*0+1);
-            misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
-
-            repeatNums = e.repeatNumValues(eIdx)';
-            stimMoves = repeatNums*0;
-
-            %To deal with old mice where closed loop never changed
-            if ~isfield(block.events, 'wheelMovementOnValues')
-                block.events.wheelMovementOnValues = block.events.newTrialValues;
-            end
-            stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
-            stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
-            stim_closedLoop = stimMoves;
-            stimMoves = stimMoves(~nonVisTrials);
-
-            isTimeOut = responseRecorded(~nonVisTrials)==0;
-            photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
-            photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
-            photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
-
-            visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
-            tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
-            if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
-
-
-            %% MOVEMENT
-            responseMadeIdx = responseRecorded ~= 0;
-            timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
-            timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
-            timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
-            timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
-            timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
-
-            missedOnset = isnan(timelineStimOnset); 
-            validIdx = responseMadeIdx & ~missedOnset;
-            stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
-            stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
-            stimEndIdx = stimEndIdx-stimOnsetIdx;
-            if any(missedOnset)
-                if sum(missedOnset) >0.25*length(missedOnset)
-                    error('Over 25% of stimulus onsets are missing???');
-                else
-                    warning('There are missing stimulus onsets?! Will process identified ones');
-                end
-            end
-            if isempty(stimOnsetIdx)
-                warning('Looks like the mouse did not make a single choice?!');
-            end
-
-
-            err = 0; % continue
-        catch me
-            nn = nn+1;
+            [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
+            visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
         end
-    end
 
-    if err
+        if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
+            fprintf('****WARNING: Could not fix start-end times\n');
+            fprintf('****Will perform incomplete identification based on trial structure\n');
+
+            visBoundsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), sort(visPeriodOnOffTimeline(:)));
+            visBoundsByTrial(cellfun(@length, visBoundsByTrial)~=2) = [];
+            visPeriodOnOffTimeline = cell2mat(cellfun(@(x) x', visBoundsByTrial, 'uni', 0));
+        else
+            visPeriodOnOffTimeline = visPeriodOnOffTimeline(1:length(stimStartRef),:);
+        end
+        tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
+
+        % Could add this in for pasive
+        photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
+        photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
+        if isfield(block.events,'selected_paramsetValues')
+            responseWindow = block.events.selected_paramsetValues.responseWindow;
+        else
+            responseWindow = [block.paramsValues.responseWindow];
+            responseWindow = responseWindow(1);
+        end
+        if isinf(responseWindow); responseWindow = 0; end
+        expectedFlashTrainLength = clickRate*responseWindow*2*(stimStartRef*0+1);
+        misMatchFlashtrain = expectedFlashTrainLength-cellfun(@length,photoFlipsByTrial);
+
+        repeatNums = e.repeatNumValues(eIdx)';
+        stimMoves = repeatNums*0;
+
+        %To deal with old mice where closed loop never changed
+        if ~isfield(block.events, 'wheelMovementOnValues')
+            block.events.wheelMovementOnValues = block.events.newTrialValues;
+        end
+        stimMoves(repeatNums==1) = block.events.wheelMovementOnValues(1:sum(repeatNums==1))';
+        stimMoves = arrayfun(@(x) stimMoves(find(repeatNums(1:x)==1, 1, 'last')), (1:length(eIdx))');
+        stim_closedLoop = stimMoves;
+        stimMoves = stimMoves(~nonVisTrials);
+
+        isTimeOut = responseRecorded(~nonVisTrials)==0;
+        photoFlipsByTrial((~isTimeOut & stimMoves) | (isTimeOut & misMatchFlashtrain~=0)) = [];
+        photoFlipsByTrial(cellfun(@length, photoFlipsByTrial) < 2) = [];
+        photoFlipsByTrial = cellfun(@(x) x(1:(floor(length(x)/2)*2)), photoFlipsByTrial, 'uni', 0);
+
+        visStimOnOffTimes = sort(cell2mat(photoFlipsByTrial));
+        tExt.visStimOnOff = [visStimOnOffTimes(1:2:end) visStimOnOffTimes(2:2:end)];
+        if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
+
+
+        %% MOVEMENT
+        responseMadeIdx = responseRecorded ~= 0;
+        timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
+        timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
+        timelineAudOnset = indexByTrial(trialStEnTimes, tExt.audStimPeriodOnOff(:,1), tExt.audStimPeriodOnOff(:,1));
+        timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
+        timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
+
+        missedOnset = isnan(timelineStimOnset) & ~(audAmplitude==0 & visContrast == 0);
+        stimFoundIdx = responseMadeIdx & ~(audAmplitude==0 & visContrast == 0);
+        stimOnsetIdx = round(timelineStimOnset(stimFoundIdx)*sR);
+        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(stimFoundIdx,2)*sR],[],2);
+        stimEndIdx = stimEndIdx-stimOnsetIdx;
+        if any(missedOnset)
+            if sum(missedOnset) >0.25*length(missedOnset)
+                error('Cannot find expected stimulus onset over 25% of stimulus onsets are missing???');
+            else
+                warning('Cannot find expected stimulus onset for some trials. Will process identified ones');
+            end
+        end
+        if isempty(stimOnsetIdx)
+            warning('Looks like the mouse did not make a single choice?!');
+        end
+
+    catch me
         msgText = getReport(me);
         error(msgText)
     end
@@ -324,7 +314,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
-    falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
+    falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
 
     choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
     choiceCrsIdx(falseIdx) = nan;
@@ -346,7 +336,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
     onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-    onsetTimDirByChoiceTrial = onsetTimDirByTrial(validIdx);
+    onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
     onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
     %"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
@@ -358,7 +348,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
     %SANITY CHECK
-    blockTstValues = responseRecorded(validIdx);
+    blockTstValues = responseRecorded(stimFoundIdx);
     if ~isempty(choiceInitTimeDir)
         tstIdx = ~isnan(choiceInitTimeDir(:,2));
         if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
@@ -413,20 +403,76 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     %%
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
-        is_laser_On = e.is_laserOnValues(eIdx);
-        all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
-        all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');
-        
-        % save out what gets inactivated...
-        
+        disp('opto data...')
+        dat = csv.loadData(block.expInfo, 'dataType', {{'opto'}});
+        opto = dat.dataoptoLog{1,1}; 
+        is_laser_On_block = e.is_laserOnValues(eIdx); 
+        laserPos = zeros(1,numel(is_laser_On_block));
 
-        all_laser_times = [all_laser1_times;all_laser2_times];
-        all_laser_times = sortrows(all_laser_times); 
+        if isfield(e,'laser_power1Values') % the Controller way of extracting the data          
+         % sometimes there is some issue and we miss issuing a waveform
+            is_laser_On_optoLog = opto.is_laserOn; 
+
+    	    if sum(is_laser_On_block)~=sum(is_laser_On_optoLog)
+                is_laser_On = zeros(1,numel(is_laser_On_block)); 
+                for i=1:numel(is_laser_On_block)
+                    trialNum_idx = opto.trialNum==i; 
+                    if sum(trialNum_idx)==1
+                    is_laser_On(i) = is_laser_On_optoLog(opto.trialNum==i);
+                    end 
+                end
+                is_laser_On = logical(is_laser_On);                
+            else
+                is_laser_On = is_laser_On_block; 
+            end 
+    
+            % also saving out power and other variables 
+            power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
+            power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+            
+            % location of laser 
+            laserPosID = e.laserPosValues(eIdx) .* double(is_laser_On);
+            if strcmp(opto.laser1_hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.laser1_hemisphere(1),'R'); hemisphere1 = 1; end 
+            if strcmp(opto.laser2_hemisphere(1),'L'); hemisphere2 = -1; elseif strcmp(opto.laser2_hemisphere(1),'R'); hemisphere2 = 1; end 
+            
+            laserPos(laserPosID==1) = hemisphere1;
+            laserPos(laserPosID==2) = hemisphere2;
+            laserPos(laserPosID==12) = -11;   % for bilateral, pretty random... % 
+             
+            all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
+            all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');        
+            all_laser_times = [all_laser1_times;all_laser2_times];
+            all_laser_times = sortrows(all_laser_times); 
+    
+            % as I actually send out the waves together atm there is no reason
+            % to detect them separaytely
+            all_laser_times(logical([0;(diff(all_laser_times(:,1))<.1)]),:) = [];     
+            
+             % and sometimes we issue the laserOn at the last trial... that was
+             % terminated before it finished ... 
+             if (size(all_laser_times,1)-sum(is_laser_On))==1
+                 all_laser_times(end,:) = []; 
+             end
+
+        else
+            is_laser_On = is_laser_On_block;
+            all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut');
+            if strcmp(opto.Hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.Hemisphere(1),'R'); hemisphere1 = 1; end 
+            laserPos(is_laser_On) = hemisphere1; 
+            power_laser1 = zeros(1,numel(is_laser_On_block));
+            power_laser2 = zeros(1,numel(is_laser_On_block));
+            power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+        end 
+
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
-        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;
+        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;  
+
     else
         is_laser_On = NaN(numel(eIdx),1)';
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
+        laserPos = NaN(numel(eIdx),1)';
+        power_laser1 = zeros(numel(eIdx),1)'; 
+        power_laser2 = zeros(numel(eIdx),1)';
     end
     laser_times_trial_indexed = single(laser_times_trial_indexed);
     %% Populate n with all fields;
@@ -435,11 +481,12 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.is_auditoryTrial = is_auditoryTrial;
     ev.is_coherentTrial = is_coherentTrial;
     ev.is_conflictTrial = is_conflictTrial;
-    ev.is_validTrial = vIdx(:);
+    ev.is_validTrial = vIdx(:) & ~is_noStimTrial;
+    ev.is_noStimTrial = is_noStimTrial; 
 
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));
-    ev.block_stimOn = single(stimPeriodStart);
+    ev.block_stimOn = single(stimStartBlock);
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);
@@ -466,6 +513,9 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.timeline_laserOn_rampEnd = laser_times_trial_indexed(:,2);
     ev.timeline_laserOff_rampStart = laser_times_trial_indexed(:,3);
     ev.timeline_laserOff_rampEnd = laser_times_trial_indexed(:,4);
+    ev.stim_laserPosition = laserPos'; 
+    ev.stim_laser1_power = power_laser1';
+    ev.stim_laser2_power = power_laser2';
 
     ev.stim_correctResponse = single(correctResponse);
     ev.stim_repeatNum = single(repeatNums);
@@ -477,4 +527,5 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     ev.response_direction = single(responseRecorded);
     ev.response_feedback = single(feedbackValues);
+
 end

@@ -10,8 +10,8 @@ import pandas as pd
 
 # Figure 1B - example visual neuron
 from Admin.csv_queryExp import load_data,simplify_recdat
-from Analysis.neural.utils.ev_dat import postactive
-from Analysis.neural.utils.plotting import my_rasterPSTH
+from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.plotting import my_rasterPSTH
 
 # load single dataset 
 
@@ -21,9 +21,9 @@ from Analysis.neural.utils.plotting import my_rasterPSTH
 # aud unit: 
 probe = 'probe0'
 recordings = load_data(
-    subject = 'FT009',
-    expDate = '2021-01-20',
-    expNum = 7,
+    subject = 'FT022',
+    expDate = '2021-07-20',
+    expNum = 1,
     data_name_dict={
         'events':{'_av_trials':'table'},
         probe:{'spikes':['times','clusters']}
@@ -33,8 +33,8 @@ recordings = load_data(
 ev,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
 
-cID = 26
-azimuths =np.array([-90,0,90])  # which azimuths to plot 
+cID = 5
+azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values
 
@@ -42,7 +42,7 @@ sel_spl = a.SPL.max().values
 bin_kwargs={'tscale':[None],
             'pre_time':.03,'post_time': .2, 
             'bin_size':0.005, 'smoothing':0.02,
-            'return_fr':True 
+            'return_fr':True,'baseline_subtract':True
             }
 
 event_kwargs = {
@@ -58,16 +58,18 @@ plot_kwargs = {
 }
 
 
-_,ax=plt.subplots(1,azimuths.size,figsize=(5,2))
+_,ax=plt.subplots(1,azimuths.size,figsize=(5,2),sharey=True)
 for idx,azi in enumerate(azimuths):
     VisOnsets = v.sel(azimuths=azi,contrast=sel_contrast).values.flatten()
     AudOnsets = a.sel(azimuths=azi,SPL=sel_spl).values.flatten()
 
     my_rasterPSTH(spikes.times,spikes.clusters,[VisOnsets, AudOnsets],
-                    [cID],ax=ax[idx],ax1=ax[idx],include_PSTH=False,include_raster=True,
+                    [cID],ax=ax[idx],ax1=ax[idx],include_PSTH=True,include_raster=False,
                     **bin_kwargs,**plot_kwargs,**event_kwargs)
 
     ax[idx].set_xlabel('%.0f deg' % azi)
+
+plt.show()
 # %%
 
 # Fig 1C -- all the neurons plotted in SC 
