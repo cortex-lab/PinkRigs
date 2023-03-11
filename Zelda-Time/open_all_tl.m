@@ -8,10 +8,10 @@ else
 end
 %%
 % open frontcam
-eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
+% eval('!matlab -nodesktop -nosplash -r "my_frontcam" &')
 
 % open sidecam
-% eval('!matlab -nodesktop -nosplash -r "my_sidecam" &')
+eval('!matlab -nodesktop -nosplash -r "my_sidecam" &')
 
 % open eyecam 
 % eval('!matlab -nodesktop -nosplash -r "my_eyecam" &')
