@@ -8,11 +8,20 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'naive-allen'
+dat_type = 'naive-3B'
 dat_keys = get_data_bunch(dat_type)
 
+from Admin.csv_queryExp import queryCSV
+
+# dat_type = 'AV028_all'
+# recordings = queryCSV(subject='AV028',expDef='postactive')
+
+# dat_keys = recordings[['subject','expDate','expNum']]
+# dat_keys['probe']='probe0'
+
+#  %%
 rerun_sig_test= False 
-recompute_csv = True 
+recompute_csv = False 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -82,7 +91,7 @@ if not csv_path.is_file() or recompute_csv:
         # predict preferred spatial tuning based on position
         clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
         
-        azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
+        #azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
         
         #get spatial tuning properties
         azi = azimuthal_tuning(session)
@@ -94,9 +103,9 @@ if not csv_path.is_file() or recompute_csv:
 
 
         # then calculate enhancement index at "preferred azimuths". 
-        azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
-        azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
-        clusInfo['enhancement_index'] = azi.get_enhancement_index(at_azimuth=azimuth_pref_estimate)
+        # azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
+        # azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
+        # clusInfo['enhancement_index'] = azi.get_enhancement_index(at_azimuth=azimuth_pref_estimate)
 
         
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
@@ -177,21 +186,21 @@ sc = scene.add_brain_region("SCm",alpha=0.1)
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
 
 
-# plot the neurons in allen atalas space
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
+#plot the neurons in allen atalas space
+scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
 
 
-for azi,c in zip(azimuths,color_):    
-    scene.add(Points(
-        allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
-        colors=c, 
-        radius=30, 
-        alpha=1
-        ))    
-scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
+# for azi,c in zip(azimuths,color_):    
+#     scene.add(Points(
+#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+#         colors=c, 
+#         radius=30, 
+#         alpha=1
+#         ))    
+# scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
 
 scene.content
 scene.render()

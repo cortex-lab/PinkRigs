@@ -214,7 +214,7 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
                 
                 
                 #plt.show()
-                plt.savefig((Path(rec.expFolder) / stub),transparent=False,bbox_inches = "tight",format='png',dpi=100)
+                plt.savefig((Path(rec.expFolder) / stub),transparent=False,bbox_inches = "tight",format='png',dpi=300)
             
             except:
                 print('%s did not work.' % stub)

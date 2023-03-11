@@ -182,7 +182,7 @@ def check_postactive(rec):
         'events':{'_av_trials':'table'},
         'eyeCam':{'camera': 'all'}
         }
-    any_postactive = load_data(subject = rec.Subject,expDate = rec.expDate,expDef = 'postactive', data_name_dict = data_dict)
+    any_postactive = load_data(subject = rec.subject,expDate = rec.expDate,expDef = 'postactive', data_name_dict = data_dict)
     is_long_enough = [float(r.expDuration)>1500 for _,r in any_postactive.iterrows()]
     good_postactive = any_postactive[is_long_enough]
     if len(good_postactive)==1:
@@ -264,12 +264,12 @@ def get_highest_yield_unique_ephys(sessions,probe='probe0'):
         # warnings
         no_range_recs = probe_best[check_range]
         for _,r in no_range_recs.iterrows(): 
-            print('%s %s, expNum=%s does not have channels.localCoordinates but has nrns??!' % (r.Subject,r.expDate,r.expNum))
+            print('%s %s, expNum=%s does not have channels.localCoordinates but has nrns??!' % (r.subject,r.expDate,r.expNum))
         # throw
         probe_best = probe_best[probe_best['%s_depth_range' % probe].notna()]
 
-    for s in np.unique(probe_best.Subject):
-        subject_table = probe_best[probe_best.Subject == s]
+    for s in np.unique(probe_best.subject):
+        subject_table = probe_best[probe_best.subject == s]
         b = subject_table.pivot(index=['expDate'],columns=['%s_depth_range' % probe],values=['%s_n_good' % probe])
         # merge columns with significant overlap
         ranges = [(int(x[0]),int(x[1])) for x in b['%s_n_good' % probe].columns]
@@ -339,7 +339,7 @@ def get_behavior_quality_scores(savepath=None,trim_bad=False,n_go_thr = 200,perf
     kwargs['expDef'] = 'multiSpace'
     recdat = load_data(data_name_dict = data_dict,**kwargs)
     # from recdat drop recordings that are too short
-    out_dat = recdat[['Subject','expDate','expNum','rigName','expDuration']]    
+    out_dat = recdat[['subject','expDate','expNum','rigName','expDuration']]    
     out_dat = out_dat.reset_index(drop=True)
     # performance measures   
     go,nogo,p_coh,p_vis,p_aud,bias = zip(*[get_performance_metrics(rec.events._av_trials) for _,rec in recdat.iterrows()])
@@ -431,7 +431,7 @@ def get_sessions_with_units(expdef_namestring,savepath=None,trim_bad = False,**k
     kwargs['expDef'] = expdef_namestring
     recdat = load_data(data_name_dict = data_dict,**kwargs)
     # from recdat drop recordings that are too short
-    out_dat = recdat[['Subject','expDate','expNum','rigName','expDuration']]    
+    out_dat = recdat[['subject','expDate','expNum','rigName','expDuration']]    
     out_dat = out_dat.reset_index(drop=True)
 
     # recording locations 
@@ -571,7 +571,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     
     all_clusInfo['probe'] = probe
     all_clusInfo['expFolder'] = recording.iloc[0].expFolder
-    all_clusInfo['Subject'] = recording.iloc[0].Subject
+    all_clusInfo['subject'] = recording.iloc[0].subject
     all_clusInfo['expDate'] = recording.iloc[0].expDate
     all_clusInfo['expNum'] = recording.iloc[0].expNum
     all_clusInfo['expDef'] = recording.iloc[0].expDef

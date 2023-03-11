@@ -21,8 +21,8 @@ from Analysis.pyutils.plotting import my_rasterPSTH
 # aud unit: 
 probe = 'probe0'
 recordings = load_data(
-    subject = 'FT022',
-    expDate = '2021-07-20',
+    subject = 'FT038',
+    expDate = '2021-11-08',
     expNum = 1,
     data_name_dict={
         'events':{'_av_trials':'table'},
@@ -33,14 +33,14 @@ recordings = load_data(
 ev,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
 
-cID = 5
+cID = 68
 azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values
 
 # parameters of plotting 
 bin_kwargs={'tscale':[None],
-            'pre_time':.03,'post_time': .2, 
+            'pre_time':.03,'post_time': .5, 
             'bin_size':0.005, 'smoothing':0.02,
             'return_fr':True,'baseline_subtract':True
             }
@@ -58,7 +58,7 @@ plot_kwargs = {
 }
 
 
-_,ax=plt.subplots(1,azimuths.size,figsize=(5,2),sharey=True)
+_,ax=plt.subplots(1,azimuths.size,figsize=(7,2),sharey=True)
 for idx,azi in enumerate(azimuths):
     VisOnsets = v.sel(azimuths=azi,contrast=sel_contrast).values.flatten()
     AudOnsets = a.sel(azimuths=azi,SPL=sel_spl).values.flatten()

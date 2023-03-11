@@ -76,13 +76,29 @@ def get_data_bunch(namekey):
            # ('FT011','2021-03-24',7,'probe0'),
         ]
 
-    elif namekey == 'naive-chronic':
+    elif namekey == 'FT038':
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('FT038','2021-11-05',1,'probe0'),
+            ('FT038','2021-11-08',1,'probe0'),
+        ]
+
+    elif namekey == 'naive-3B':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
             ('FT022','2021-07-20',1,'probe0'), #
             ('FT019','2021-07-07',2,'probe0'),
             ('FT025','2021-07-19',4,'probe0'),
             ('FT027','2021-09-13',1,'probe0'),
+        ]
+        
+    elif namekey == 'naive-chronic':
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            # ('FT022','2021-07-20',1,'probe0'), #
+            # ('FT019','2021-07-07',2,'probe0'),
+            # ('FT025','2021-07-19',4,'probe0'),
+            # ('FT027','2021-09-13',1,'probe0'),
             ('AV024','2022-10-12',1,'probe0'),
             ('AV024','2022-10-12',2,'probe0'),
             ('AV024','2022-10-12',3,'probe0'),

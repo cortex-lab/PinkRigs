@@ -95,7 +95,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -112,6 +112,11 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
         selected expNum
     checkIsSortedPyKS: None/str    
         if '2' only outputs
+
+    checkEvents: None\str
+        returns match to string if not none ('1', or '2')  
+    checkSpikes: None/str
+        returns match to string if not none ('1', or '2')    
     Returns: 
     ----
     exp2checkList : pandas DataFrame 
@@ -162,7 +167,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
                 expList = expList.iloc[idx]  
             
             # add mouse name to list
-            expList['Subject'] = mm
+            expList['subject'] = mm
 
             exp2checkList.append(expList)
 
@@ -175,10 +180,20 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
         print('you did not call any experiments.')
         exp2checkList = None
     
-    if checkIsSortedPyKS:
+    if checkIsSortedPyKS is not None:
         # nan means we should not have ephys. So we drop nan columns
-        exp2checkList = exp2checkList.dropna(subset='issortedPyKS')
+        exp2checkList = exp2checkList[exp2checkList['issortedPyKS'].notna()]
         to_keep_column = np.array([checkIsSortedPyKS in rec.issortedPyKS for _,rec in exp2checkList.iterrows()])
+        exp2checkList = exp2checkList[to_keep_column]
+    
+    if checkEvents is not None:
+        exp2checkList = exp2checkList[exp2checkList['extractEvents'].notna()]
+        to_keep_column = np.array([checkEvents in rec.extractEvents for _,rec in exp2checkList.iterrows()])
+        exp2checkList = exp2checkList[to_keep_column]
+
+    if checkSpikes is not None:
+        exp2checkList = exp2checkList[exp2checkList['extractSpikes'].notna()]
+        to_keep_column = np.array([checkSpikes in rec.extractSpikes for _,rec in exp2checkList.iterrows()])
         exp2checkList = exp2checkList[to_keep_column]
 
     return exp2checkList
