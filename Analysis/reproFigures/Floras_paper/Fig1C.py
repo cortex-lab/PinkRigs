@@ -21,7 +21,7 @@ from Admin.csv_queryExp import queryCSV
 
 #  %%
 rerun_sig_test= False 
-recompute_csv = True 
+recompute_csv = False 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -161,7 +161,7 @@ import matplotlib.pyplot as plt
 from Analysis.pyutils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
-t = 'aud'
+t = 'vis'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
 color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
@@ -177,8 +177,8 @@ import numpy as np
 
 # Add brain regions
 scene = Scene(title="SC aud and vis units", inset=False,root=False)
-scene.add_brain_region("SCs",alpha=0.1)
-sc = scene.add_brain_region("SCm",alpha=0.1)
+scene.add_brain_region("SCs",alpha=0.05,color='grey')
+sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))

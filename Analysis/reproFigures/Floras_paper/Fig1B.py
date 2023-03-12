@@ -21,9 +21,9 @@ from Analysis.pyutils.plotting import my_rasterPSTH
 # aud unit: 
 probe = 'probe0'
 recordings = load_data(
-    subject = 'FT008',
-    expDate = '2021-07-20',
-    expNum = 1,
+    subject = 'FT009',
+    expDate = '2021-01-20',
+    expNum = 8,
     data_name_dict={
         'events':{'_av_trials':'table'},
         probe:{'spikes':['times','clusters']}
@@ -33,7 +33,7 @@ recordings = load_data(
 ev,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
 
-cID = 104
+cID = 90
 azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values
@@ -58,7 +58,7 @@ plot_kwargs = {
 }
 
 
-_,ax=plt.subplots(1,azimuths.size,figsize=(7,2),sharey=True)
+_,ax=plt.subplots(1,azimuths.size,figsize=(14,2),sharey=True)
 for idx,azi in enumerate(azimuths):
     VisOnsets = v.sel(azimuths=azi,contrast=sel_contrast).values.flatten()
     AudOnsets = a.sel(azimuths=azi,SPL=sel_spl).values.flatten()
@@ -68,7 +68,7 @@ for idx,azi in enumerate(azimuths):
                     **bin_kwargs,**plot_kwargs,**event_kwargs)
 
     ax[idx].set_xlabel('%.0f deg' % azi)
-
+plt.suptitle(cID)
 plt.show()
 # %%
 

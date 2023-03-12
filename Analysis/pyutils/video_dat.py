@@ -156,7 +156,7 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
         
         events = rec.events._av_trials
         for cam in cameras:
-            stub = '%s_%s_%s_%s_audTriggeredMovement.png' % (rec.expDate, rec.expNum, rec.Subject, cam)
+            stub = '%s_%s_%s_%s_audTriggeredMovement.png' % (rec.expDate, rec.expNum, rec.subject, cam)
             try:
                 camera = rec[cam]['camera']
 
@@ -196,7 +196,7 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
 
                     raster,br,idx = get_move_raster(
                         on_times,cam_times,cam_values,
-                        sortAmp=False,baseline_subtract=False,
+                        sortAmp=True,baseline_subtract=False,
                         ax=rasterax,to_plot=True,**timings
                         )
 
@@ -221,4 +221,4 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
 
 
 if __name__ == "__main__":  
-   plot_triggerred_data(subject='all')
+   plot_triggerred_data(subject='FT008')
