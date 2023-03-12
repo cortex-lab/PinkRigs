@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from Analysis.pyutils.batch_data import get_data_bunch
-dat_type = 'naive-3B'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
@@ -21,7 +21,7 @@ from Admin.csv_queryExp import queryCSV
 
 #  %%
 rerun_sig_test= False 
-recompute_csv = False 
+recompute_csv = True 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -76,7 +76,7 @@ if not csv_path.is_file() or recompute_csv:
         else: 
             p = pd.read_csv(interim_data_sess)
         # for each max test get neurons that pass threshold
-        bonferroni_p_thr = 0.01/p.columns.size
+        bonferroni_p_thr = 0.05/p.columns.size
         is_signifiant_per_cond = p<bonferroni_p_thr
         aud_keys = [k for k in p.keys() if 'aud' in k]
         vis_keys = [k for k in p.keys() if 'vis' in k]
@@ -130,11 +130,11 @@ else:
 # %%
 import plotly.express as px
 
-goodclus = clusInfo[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_aud_spatial]
+goodclus = clusInfo[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_aud_spatial & clusInfo.is_SC]
 
 fig = px.scatter(
     goodclus,
-    x='aphemi', y='aud_preferred_tuning',
+    x='aphemi', y='aud_preferred_tuning',color = 'expFolder',symbol='probe', 
     hover_data=['expFolder','probe','_av_IDs']
     )
 fig.show()
@@ -187,20 +187,20 @@ sc = scene.add_brain_region("SCm",alpha=0.1)
 
 
 #plot the neurons in allen atalas space
-scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_both,:], colors='g', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis,:], colors='b', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud,:], colors='m', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither,:], colors='k', radius=15, alpha=0.2))
 
 
-# for azi,c in zip(azimuths,color_):    
-#     scene.add(Points(
-#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
-#         colors=c, 
-#         radius=30, 
-#         alpha=1
-#         ))    
-# scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
+for azi,c in zip(azimuths,color_):    
+    scene.add(Points(
+        allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+        colors=c, 
+        radius=30, 
+        alpha=1
+        ))    
+scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
 
 scene.content
 scene.render()

@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.optimize as opt
-import utils.spike_dat as su
+import Analysis.neural.utils.spike_dat as su
 
 def get_start_params(myresp):
     max_amplitude=np.max(myresp) 
@@ -95,7 +95,6 @@ class rf_fit():
 
                 blmean=(resp_sq[:,:before_ix].sum(axis=1))/t_before
                 respmean=(resp_sq[:,(before_ix+delay_ix):].sum(axis=1))/(t_after-t_delay)
-
                 response[xct,yct]=np.abs((respmean-blmean).mean(axis=0)/blmean.std(axis=0))
                 #mypred,ve,fitted_params=self.fit_predict(response.T)
 

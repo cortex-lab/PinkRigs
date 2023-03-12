@@ -74,6 +74,10 @@ def get_data_bunch(namekey):
             ('FT011','2021-03-23',6,'probe0'), # video 
            # ('FT011','2021-03-24',6,'probe0'),
            # ('FT011','2021-03-24',7,'probe0'),
+            ('FT022','2021-07-20',1,'probe0'), #
+            ('FT019','2021-07-07',2,'probe0'),
+            ('FT025','2021-07-19',4,'probe0'),
+            ('FT027','2021-09-13',1,'probe0'),
         ]
 
     elif namekey == 'FT038':
@@ -91,7 +95,7 @@ def get_data_bunch(namekey):
             ('FT025','2021-07-19',4,'probe0'),
             ('FT027','2021-09-13',1,'probe0'),
         ]
-        
+
     elif namekey == 'naive-chronic':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [

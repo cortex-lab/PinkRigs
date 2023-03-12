@@ -21,8 +21,8 @@ from Analysis.pyutils.plotting import my_rasterPSTH
 # aud unit: 
 probe = 'probe0'
 recordings = load_data(
-    subject = 'FT038',
-    expDate = '2021-11-08',
+    subject = 'FT008',
+    expDate = '2021-07-20',
     expNum = 1,
     data_name_dict={
         'events':{'_av_trials':'table'},
@@ -33,7 +33,7 @@ recordings = load_data(
 ev,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
 
-cID = 68
+cID = 104
 azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values

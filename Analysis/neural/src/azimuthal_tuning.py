@@ -145,7 +145,8 @@ class azimuthal_tuning():
             for k in azimuth_inds:
                 curr_idxs = trials_idx[split_edges[cv]:split_edges[cv+1]]
                 stim = rasters[k,curr_idxs,:,:]                 
-                Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
+                #Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
+                Rmax_stim = np.max((stim.mean(axis=0)),axis=1)
                 responses[azimuths[k]] = Rmax_stim
 
             curr_tuning_curves = pd.DataFrame.from_dict(responses)            

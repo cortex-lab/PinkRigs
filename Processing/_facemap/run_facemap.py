@@ -1664,7 +1664,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
     else:
         all_mouse_info = sessions
         all_mouse_info['server_path'] = [os.path.join('\\\\', *os.path.normpath(x).split(os.sep)[2:4]) for x in sessions['expFolder'].values]
-        all_mouse_info['subject'] = all_mouse_info['Subject']
+        all_mouse_info['subject'] = all_mouse_info['subject']
 
     # Tim temp hack to try running this for one experiment
     # all_mouse_info = all_mouse_info.loc[1:2]
@@ -1767,6 +1767,28 @@ def batch_process_facemap(output_format='flat', sessions=None,
             save_mat=False,
             sy=None,
             sx=None,
+        ), 
+
+        'lilrig-stim': dict(
+            rois=[
+                {
+                    'rind': 1,
+                    'rtype': 'motion_SVD',
+                    'iROI': 0,
+                    'ivid': 0,
+                    'color': (78.32401579229648, 15.276705546609746, 100.90024790442232),
+                    'yrange': 'full',  # np.arange(0, Ly[0]).astype(np.int32),
+                    'xrange': 'full',  # np.arange(0, Lx[0]).astype(np.int32),
+                    'saturation': 255,
+                    'pupil_sigma': 2,  # again does not matter I think
+                    'ellipse': 'full',  # np.zeros((Ly[0], Lx[0])).astype(bool)
+                },
+            ],
+            sbin=1,
+            fullSVD=False,
+            save_mat=False,
+            sy=None,
+            sx=None,
         )
     }
     # loop through the experiments and see if there are videos with no corresponding facemap output
@@ -1800,6 +1822,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
         # remove the *lastFrames.mj2 videos
         video_files = [x for x in video_files if 'lastFrames' not in x]
+        # remove lilrig video files
+        video_files = [x for x in video_files if 'eye.mj2' not in x]
+        video_files = [x for x in video_files if 'face.mj2' not in x]
 
         # TODO: use .count('_') instead
         try:
@@ -2087,9 +2112,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
                             axs[motmask_idx + 2].set_title('Motion mask SVD %.f' % (motmask_idx + 1), size=11)
 
                         fig.suptitle('%s %s exp %.f' %
-                                     (exp_info['Subject'], exp_info['expDate'], exp_info['expNum']), size=11)
+                                     (exp_info['subject'], exp_info['expDate'], exp_info['expNum']), size=11)
                         fig_name = '%s_%.f_%s_facemap_%s_roi_crop_and_mask.png' % \
-                                   (exp_info['expDate'], exp_info['expNum'], exp_info['Subject'], video_fov)
+                                   (exp_info['expDate'], exp_info['expNum'], exp_info['subject'], video_fov)
                         fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
 
 

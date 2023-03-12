@@ -2,11 +2,9 @@
 import sys,glob,os 
 import scipy.io
 import numpy as np
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_PinkRigs_to_path
-import src.rf_fit as rf 
-add_PinkRigs_to_path()
 
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+import Analysis.neural.src.rf_fit as rf 
 from Admin.csv_queryExp import load_data
 
 subject = 'FT008'
@@ -14,9 +12,10 @@ probe = 'probe0'
 data_dict = {'events':{'_av_trials':['squareAzimuth','squareElevation','squareOnTimes']},probe:{'spikes':['times','clusters','depths','_av_shankIDs']}}
 recordings = load_data(subject = subject, expDate = '2021-01-15',data_name_dict=data_dict,expDef='sparseNoise')
 
+
 # %%
 # try finding receptive fields in any recording...
-findRF = rf.RF_model()
+findRF = rf.rf_fit()
 shankpos = np.zeros((4,3)) 
 myRFs={}
 for idx,rec in recordings.iterrows():
