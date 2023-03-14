@@ -1454,19 +1454,33 @@ def get_dlc_roi_window(vid_path, projectName):
         rectangle_height = body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']
 
         eye_x_big_diff = np.abs(body_part_median_xy['eyeL_x'] - body_part_median_xy['eyeR_x']) > 100
-        eye_y_small_diff = np.abs(body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']) < 100
+        eye_y_small_diff = np.abs(body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']) < 50
 
-        if eye_x_big_diff or eye_y_small_diff:
+        eyeL_on_the_leftx = body_part_median_xy['eyeL_x'] > 390
+
+        if (eye_x_big_diff or eye_y_small_diff):
             # something is wrong (likely video flipped), implementing some hack
-            print('FrontCam flipped, using fix')
-            rectangle_height = 120
-            roi_window['mpl_obj'] = mpl.patches.Rectangle(
-                (body_part_median_xy['eyeL_x'] - 60, body_part_median_xy['eyeL_y']),
-                rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
-            )
 
-            x_start = body_part_median_xy['eyeL_x'] - 60
-            x_end = x_start + rectangle_width
+            rectangle_height = 120
+
+            if not eyeL_on_the_leftx:
+                print('FrontCam flipped, using fix')
+                roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                    (body_part_median_xy['eyeL_x'] - 60, body_part_median_xy['eyeL_y']),
+                    rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+                )
+
+                x_start = body_part_median_xy['eyeL_x'] - 60
+                x_end = x_start + rectangle_width
+            else:
+                print('Something wrong with frontCam, relying on eyeL')
+                x_start = body_part_median_xy['eyeL_x'] + 25
+                x_end = x_start + rectangle_width
+                roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                    (x_start, body_part_median_xy['eyeL_y']),
+                    rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+                )
+
             y_start = body_part_median_xy['eyeL_y'] - rectangle_height
             y_end = y_start + rectangle_height
 
@@ -1487,8 +1501,8 @@ def get_dlc_roi_window(vid_path, projectName):
                 y_start, y_end = y_end, y_start
 
                 # this is to do with frontCam being mirrored
-                x_start = body_part_median_xy['eyeR_x'] - 25 - rectangle_width
-                x_end = x_start + rectangle_width
+                # x_start = body_part_median_xy['eyeR_x'] - 25 - rectangle_width
+                # x_end = x_start + rectangle_width
 
         roi_window['xrange'] = np.arange(x_start, x_end).astype(np.int32)
         roi_window['yrange'] = np.arange(y_start, y_end).astype(np.int32)
@@ -1496,6 +1510,8 @@ def get_dlc_roi_window(vid_path, projectName):
         roi_window['eyeL_y_mean'] = body_part_median_xy['eyeL_y']
         roi_window['eyeR_x_mean'] = body_part_median_xy['eyeR_x']
         roi_window['eyeR_y_mean'] = body_part_median_xy['eyeR_y']
+        roi_window['snoutF_x_mean'] = body_part_median_xy['snoutF_x']
+        roi_window['snoutF_y_mean'] = body_part_median_xy['snoutF_y']
 
     elif projectName == 'pinkrigsSideCam':
 
@@ -2060,7 +2076,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     ax.spines['right'].set_visible(False)
                     ax.spines['left'].set_visible(False)
                     ax.spines['bottom'].set_visible(False)
-                    fig_name = '%s_%.f_%s_facemap_%s_avgframe_reshaped.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['Subject'], video_fov)
+                    fig_name = '%s_%.f_%s_facemap_%s_avgframe_reshaped.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['subject'], video_fov)
                     fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
 
                     plt.close(fig)
@@ -2097,6 +2113,10 @@ def batch_process_facemap(output_format='flat', sessions=None,
                                             roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
                             axs[0].scatter(roi_window['eyeR_x_mean'],
                                            roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
+
+                            #axs[0].scatter(roi_window['snoutF_x_mean'],
+                            #               roi_window['snoutF_y_mean'], lw=0, s=20, color='green')
+
                         elif 'eyeCam' in video_fpath:
                             axs[0].scatter(roi_window['eyeR_x_mean'],
                                            roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
@@ -2408,4 +2428,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['all'], expDate='last1000')
+    main(subject=['AV030'], expDate='2022-12-06')
