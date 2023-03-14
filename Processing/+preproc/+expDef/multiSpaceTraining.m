@@ -429,6 +429,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             % also saving out power and other variables 
             power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
             power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+
+            is_laser_On = (power_laser1+power_laser2)>0; % that is laser power 0 is issued in a bunch of cases
             
             % location of laser 
             laserPosID = e.laserPosValues(eIdx) .* double(is_laser_On);
