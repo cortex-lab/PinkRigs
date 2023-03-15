@@ -15,9 +15,9 @@ nrn_list = [571]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
     subject = 'FT011',
-    expDate = '2021-03-24', 
+    expDate = '2021-03-23', 
     expDef = 'all',
-    expNum = 7,
+    expNum = 6,
     probe = 'probe0',
     subselect_neurons=None,
     **dat_params
@@ -65,18 +65,20 @@ cidx =  np.where(test_var_nl>kernels.fit_results.test_explained_variance)[0]
 kernels.predict()
 
 # %%
-
+cID= 353
+cidx = np.where(kernels.clusIDs==cID)[0][0]
 kernels.plot_prediction(
-    nrnID=kernels.clusIDs[cidx][43],
+    nrnID=kernels.clusIDs[cidx],
     plot_stim = True, 
     plot_move=False, 
     sep_choice=False,
     plotted_vis_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
     plotted_aud_azimuth = np.array([-1000,-90,-60,-30,0,30,60,90]),
     plot_train =True,
-    plot_test = False,
+    plot_test = True,
     plot_pred_train = False,
     plot_pred_test = True,
     )
+plt.suptitle(cID)
 
 # %%

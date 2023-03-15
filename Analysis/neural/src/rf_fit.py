@@ -50,28 +50,6 @@ class rf_fit():
         self.xy_pos = np.array([sparseNoise.squareAzimuth,sparseNoise.squareElevation]).T
         self.xy_times = sparseNoise.squareOnTimes
 
-    def fit_predict(self,response):
-
-        # if the response is also 0/inf/nan the fit will error and that cannot be fitted anyway.
-        # 
-        # 
-        if np.isnan(response).any():
-            fitted_params=np.nan
-        else:
-            p0 = get_start_params(response)
-            try:
-                popt, _ = opt.curve_fit(_gaussian, self.screenpos, response.ravel(), p0)
-                fitted_params=popt
-                pred=f_2D_gaussian(self.azi_loc_screen,self.elevation_loc_screen,*fitted_params)
-                ve = get_VE(response,pred)
-                # probably not a real fit
-                if ve<.3:
-                    fitted_params=np.nan
-            except RuntimeError: # this is when the curve fit could not manage to fit a gaussian after 1200 iterations
-                    fitted_params=np.nan
-                
-        return fitted_params
-
     def get_response_binned(self,sel_depth_binned,t_before=0.2,t_after=0.06,t_delay=0.02):
 
         before_ix=int(t_before/self.t_bin)
@@ -99,3 +77,24 @@ class rf_fit():
                 #mypred,ve,fitted_params=self.fit_predict(response.T)
 
         return response.T
+
+    def fit_predict(self,response):
+        
+        # if the response is also 0/inf/nan the fit will error and that cannot be fitted anyway.
+
+        if np.isnan(response).any():
+            fitted_params=np.nan
+        else:
+            p0 = get_start_params(response)
+            try:
+                popt, _ = opt.curve_fit(_gaussian, self.screenpos, response.ravel(), p0)
+                fitted_params=popt
+                pred=f_2D_gaussian(self.azi_loc_screen,self.elevation_loc_screen,*fitted_params)
+                ve = get_VE(response,pred)
+                # probably not a real fit
+                if ve<.3:
+                    fitted_params=np.nan
+            except RuntimeError: # this is when the curve fit could not manage to fit a gaussian after 1200 iterations
+                    fitted_params=np.nan
+                
+        return fitted_params

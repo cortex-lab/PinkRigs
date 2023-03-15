@@ -405,11 +405,18 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
         disp('opto data...')
         dat = csv.loadData(block.expInfo, 'dataType', {{'opto'}});
-        opto = dat.dataoptoLog{1,1}; 
+
+        if any("dataoptoLog" == string(dat.Properties.VariableNames))
+            opto = dat.dataoptoLog{1,1}; 
+            optoLogExists = true; 
+        else
+            warning('optoLog does not exist ... opto data will only rely on block.')
+            optoLogExists = false;
+        end
         is_laser_On_block = e.is_laserOnValues(eIdx); 
         laserPos = zeros(1,numel(is_laser_On_block));
 
-        if isfield(e,'laser_power1Values') % the Controller way of extracting the data          
+        if isfield(e,'laser_power1Values') && optoLogExists % the Controller way of extracting the data          
          % sometimes there is some issue and we miss issuing a waveform
             is_laser_On_optoLog = opto.is_laserOn; 
 
@@ -456,7 +463,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
                  all_laser_times(end,:) = []; 
              end
 
-        else
+        elseif ~isfield(e,'laser_power1Values') && optoLogExists % when we did not have power saved in block. i.e. 2022 Dec experiments
             is_laser_On = is_laser_On_block;
             all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut');
             if strcmp(opto.Hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.Hemisphere(1),'R'); hemisphere1 = 1; end 
@@ -464,6 +471,17 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             power_laser1 = zeros(1,numel(is_laser_On_block));
             power_laser2 = zeros(1,numel(is_laser_On_block));
             power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+
+        elseif isfield(e,'laser_power1Values') && ~optoLogExists  % when no optoLog is saved but we have powers in the block
+            is_laser_On = is_laser_On_block;
+            all_laser_times = NaN(sum(is_laser_On),4); 
+             % also saving out power and other variables 
+            power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
+            power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+            is_laser_On = (power_laser1+power_laser2)>0; % that is laser power 0 is issued in a bunch of cases            
+            % location of laser 
+            laserPos = NaN(numel(eIdx),1)';
+
         end 
 
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);

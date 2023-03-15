@@ -357,8 +357,6 @@ def load_data(data_name_dict=None,**kwargs):
 
     # merge probes 
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
-
-
     return recordings
 
 def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},add_dict = None,raw_ephys_dict = None,**kwargs):
@@ -406,8 +404,14 @@ def simplify_recdat(recording,probe='probe0'):
         if it does not exist, we will out None
     """
     ev,spikes,clusters,channels = None,None,None,None
+
     if hasattr(recording,'events'):
         ev = recording.events._av_trials
+        if hasattr(ev,'stim_visContrast'):
+            ev.stim_visContrast = np.round(ev.stim_visContrast,2)
+        if hasattr(ev,'stim_audAmplitude'):
+            ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
+    
 
     if hasattr(recording,probe):
         p_dat = recording[probe]

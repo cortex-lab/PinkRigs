@@ -1,7 +1,5 @@
 # %%
-
 # this code fits receptive fields of individual units
-
 import sys
 from pathlib import Path
 
@@ -27,6 +25,10 @@ sn_info = rec.events._av_trials
 
 rf = rf_fit()
 rf.add_sparseNoise_info(sn_info)
+
+
+# %%
+
 
 
 
