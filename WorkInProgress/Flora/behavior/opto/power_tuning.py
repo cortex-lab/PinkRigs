@@ -8,8 +8,8 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
 recordings = load_data(
-    subject = 'AV036',
-    expDate = '2023-03-13',
+    subject = 'AV038',
+    expDate = '2023-03-15',
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
@@ -26,7 +26,7 @@ no_laserTrialtypes = (
 is_only_vis = no_laserTrialtypes == sum(ev.is_laserTrial)
 print('keeping vis trials only is:',is_only_vis)
 # keep only blank and visual trials for ev 
-to_keep_trials = ev.is_visualTrial | ev.is_blankTrial
+to_keep_trials =(ev.is_visualTrial | ev.is_blankTrial) & ev.is_validTrial
 ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 ##
 laser_power = (ev_.stim_laser1_power+ev_.stim_laser2_power)*ev_.stim_laserPosition

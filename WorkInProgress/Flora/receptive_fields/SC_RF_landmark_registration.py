@@ -4,7 +4,7 @@ import scipy.io
 import numpy as np
 
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-import Analysis.neural.src.rf_fit as rf 
+import Analysis.neural.src.rf_model as rf 
 from Admin.csv_queryExp import load_data
 
 subject = 'FT008'

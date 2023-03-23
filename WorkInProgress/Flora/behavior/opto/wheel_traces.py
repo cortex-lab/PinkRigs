@@ -18,9 +18,8 @@ data_dict = {
                 }
 
 subject = 'AV038'
-
 #recordings = query_opto(subject=subject,expDate = 'all',expDef='multiSpace',data_dict=data_dict)
-recordings = load_data(subject=subject,expDate='2023-03-08',expDef='multiSpace',data_name_dict=data_dict)
+recordings = load_data(subject=subject,expDate='2023-03-15',expDef='multiSpace',data_name_dict=data_dict)
 recordings = recordings[recordings.extractEvents=='1']
 
 
@@ -51,5 +50,5 @@ td = np.concatenate(td)
 fig,ax = plt.subplots(1,1)
 ax.imshow(np.abs(rasters[np.argsort(td),:]),aspect='auto',vmin=0,vmax=5)
 ax.axvline(100,color='r')
-ax.set_title('%s,inactivated_side=%s,%.0fmW,align:laser,sort:audOn-laserOn' % (subject,hemisphere,selected_power))
+ax.set_title('%s,inactivated_side=%s,%.0fmW,align:laser,sort:audOn-laserOn' % (subject)) 
 # %%
