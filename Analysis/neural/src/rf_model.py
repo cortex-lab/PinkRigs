@@ -66,7 +66,7 @@ class rf_model():
                 'pre_time':0.2,
                 'post_time':0.08, 
                 'bin_size':0.01,
-                'smoothing':0,
+                'smoothing':0.025,
                 'return_fr':True,
                 'baseline_subtract': True, 
         }
@@ -83,7 +83,7 @@ class rf_model():
     def load_single_session(self,**csvkwargs):
 
         loader_kwargs = {
-            'expDef':'AP_sparseNoise',
+            'expDef':'sparseNoise',
             'checkSpikes': '1',  
             'ephys_dict': self.ephys_dict,
             'add_dict': self.other_dicts
@@ -237,6 +237,7 @@ class rf_model():
                 fitted_params=np.empty(p0.shape)*np.nan
         
         return fitted_params
+    
 
     def fit(self,**response_kwargs):
         """
@@ -248,6 +249,13 @@ class rf_model():
         # optomise curve fit and store values
         fit_params = [self.optimise_2Dgauss(self.responses.sel(cv_number=0,neuronID=nrn).values)[np.newaxis,:] for nrn in self.responses.neuronID.values]        
         self.fit_params = np.concatenate(fit_params)
+
+    def get_rf_degs_from_fit(self): 
+        pref_azimuth = (self.fit_params[:,1])*7.5-135
+        azimuth_sigma = (self.fit_params[:,2])*7.5
+        pref_elevation = 75-7.5*(self.fit_params[:,3])-41.25 
+        elevation_sigma = (self.fit_params[:,4])*7.5 
+        return pref_azimuth,pref_elevation,azimuth_sigma,elevation_sigma
 
     def predict(self):
         # predict 
@@ -272,11 +280,14 @@ class rf_model():
                                 coords={'neuronID':self.responses.neuronID.values,
                                         'cv_number':self.responses.cv_number.values}) 
         
+        
 
     def fit_evaluate(self,**response_kwargs):
+
         self.fit(**response_kwargs)
         self.predict() 
-        self.evaluate()   
+        self.evaluate() 
+
 
     def plot_fit(self,ID='0',**response_kwargs):
         """
@@ -303,10 +314,14 @@ class rf_model():
         elif type(ID)==int: 
             ID = [ID]
 
-        fig,ax = plt.subplots(len(ID),self.responses.cv_number.size+1,sharex=True,sharey=True,figsize=(20,10))
+        fig,ax = plt.subplots(len(ID),self.responses.cv_number.size+1,sharex=True,sharey=True,figsize=(20,10))        
+        if ax.ndim==1:
+            ax = ax[np.newaxis,:]
         # plot the prediction
         for idx,cID in enumerate(ID):
-            im = ax[idx,0].imshow(self.predictions.sel(neuronID=cID).values,cmap='coolwarm')
+            pred_ =self.predictions.sel(neuronID=cID).values
+            vmax = vmax=np.max(np.abs(pred_))/2
+            im = ax[idx,0].imshow(pred_,vmin=-vmax,vmax=vmax,cmap='coolwarm')
             if (type(cID)==np.str_):
                 if len(ID)<10:
                     ax[idx,0].set_title('neuron %s' % cID)
@@ -316,8 +331,10 @@ class rf_model():
             ax[idx,0].set_xticks(np.round(self.azimuths[self.azimuth_idx[::10]],0))
             ax[idx,0].set_yticks(np.round(self.elevations[self.elevation_idx[::10]],0))
             # then plot the data
-            for cv in self.responses.cv_number: 
-                im = ax[idx,cv+1].imshow(self.responses.sel(neuronID=cID,cv_number=cv).values,cmap='coolwarm')
+            for cv in self.responses.cv_number:
+                resp_ =  self.responses.sel(neuronID=cID,cv_number=cv).values
+                vmax = vmax=np.max(np.abs(resp_))/2
+                im = ax[idx,cv+1].imshow(resp_,vmin=-vmax,vmax=vmax,cmap='coolwarm')
                 curr_score =  self.score.sel(neuronID=cID,cv_number=cv).values
                 if ~np.isnan(curr_score):
                     if len(ID)<10:
@@ -328,8 +345,21 @@ class rf_model():
         
         fig.colorbar(im, ax=ax, shrink=0.3)
 
-    def get_significant_rfs(self):
-        pass 
+    def get_significant_rfs(self,n_shuffles=20,**response_kwargs):
+        print('evaluating significance. This might take a while.')
+        shuffle_scores = []
+        for n in range(n_shuffles):
+            self.fit_evaluate(shuffle_seed = n, **response_kwargs)
+            shuffle_scores.append(self.score.sel(cv_number=1).values[np.newaxis,:]) # cv score on the test set 
+
+        shuffle_scores = np.concatenate(shuffle_scores).T
+
+        self.fit_evaluate(shuffle_seed = None, **response_kwargs)
+        actual_score = self.score.sel(cv_number=1).values
+        p_value = np.sum(shuffle_scores>np.tile(actual_score[:,np.newaxis],n_shuffles),axis=1)/n_shuffles
+        self.is_significant = p_value<0.05
+
+        return  self.is_significant
 
 
     def fit_mua(self,response):

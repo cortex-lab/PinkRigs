@@ -114,7 +114,14 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                 [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
                 laserOnStart = sort(laserOnStart); 
                 laserOffStart  = sort(laserOffStart);                 
-                evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd]; 
+                evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd];
+
+                % throw away events that are point processes and most
+                % certainly too long
+                laserOnPeriod = diff(evTimes');
+                laserOnPeriod = laserOnPeriod(2,:);
+
+                evTimes = evTimes(find(laserOnPeriod>0.1),:); 
 
             case 'micSync'
                 micSyncThresh = [min(chan)+0.2*range(chan) max(chan)-0.2*range(chan)]; % these seem to work well

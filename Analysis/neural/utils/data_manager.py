@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.stats import median_abs_deviation as mad
+import datetime 
 
 from Analysis.pyutils.video_dat import get_move_raster
 
@@ -13,6 +14,23 @@ def get_sc_mice_list():
     mice = pd.read_csv(get_csv_location('main'))
     sc_mice = mice[mice.P0_AP<-3.7]
     return sc_mice.Subject.values.tolist()
+
+def write_cleanCSV(dat,csv_path):
+    
+    # create a backup if file already exists 
+    if csv_path.is_file():
+        # save previous
+        old = pd.read_csv(csv_path)
+        time_created = datetime.datetime.fromtimestamp(
+            csv_path.stat().st_ctime
+            ).strftime("%Y-%m-%d-%H%M")
+        old_save_path = csv_path.parent / ('%s%s.csv' % (csv_path.stem,time_created))
+        old.to_csv(old_save_path)
+    
+    # write file 
+    csv_path.parent.mkdir(parents=True,exist_ok=True)
+    dat.to_csv(csv_path)
+
 
 # a bunch of helper functions for the type pf stuff we want to calculate
 def get_performance_metrics(ev):

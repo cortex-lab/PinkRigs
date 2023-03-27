@@ -61,22 +61,28 @@ function [ev] = sparseNoise(timeline, block, alignmentBlock)
     timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
 
     if length(blockRefTimes) ~= length(timelineRefTimes)
+        % account for the most common mistake: first stim cut off either by block or timeline
         if (length(blockRefTimes)-length(timelineRefTimes))==1
             truncated_block = blockRefTimes(2:end);
+            % check whether it indeed works
             if sum((diff(truncated_block)-diff(timelineRefTimes))>0.25)==0
                 blockRefTimes=truncated_block;
                 stimArray = stimArray(:,:,2:end);
-                %% I am starting to not understand this ---- if flips are thrown away the indexing is surely False????
-            else
-                [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,1);
             end
-
-        else
-            [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes,blockRefTimes,0.25,1);
+        elseif (length(blockRefTimes)-length(timelineRefTimes))==-1
+            % most often the issue is this ....
+            truncated_timeline = timelineRefTimes(2:end);
+            if sum((diff(blockRefTimes)-diff(truncated_timeline))>0.25)==0
+                timelineRefTimes = truncated_timeline;
+            end 
         end
+
     elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
+        % this is the least safe method so print warning
+        warning('trying to account for missing flips with try2alignVectors ...')
         [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes,0.25,1);
     end
+
     block.alignment = 'photodiode';
     if length(blockRefTimes) ~= length(timelineRefTimes)
         error('Photodiode alignment error');

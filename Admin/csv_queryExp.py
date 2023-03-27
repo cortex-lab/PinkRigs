@@ -180,21 +180,22 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
         print('you did not call any experiments.')
         exp2checkList = None
     
-    if checkIsSortedPyKS is not None:
-        # nan means we should not have ephys. So we drop nan columns
-        exp2checkList = exp2checkList[exp2checkList['issortedPyKS'].notna()]
-        to_keep_column = np.array([checkIsSortedPyKS in rec.issortedPyKS for _,rec in exp2checkList.iterrows()])
-        exp2checkList = exp2checkList[to_keep_column]
-    
-    if checkEvents is not None:
-        exp2checkList = exp2checkList[exp2checkList['extractEvents'].notna()]
-        to_keep_column = np.array([checkEvents in rec.extractEvents for _,rec in exp2checkList.iterrows()])
-        exp2checkList = exp2checkList[to_keep_column]
+    if len(exp2checkList)>0:
+        if checkIsSortedPyKS is not None:
+            # nan means we should not have ephys. So we drop nan columns
+            exp2checkList = exp2checkList[exp2checkList['issortedPyKS'].notna()]
+            to_keep_column = np.array([checkIsSortedPyKS in rec.issortedPyKS for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
+        
+        if checkEvents is not None:
+            exp2checkList = exp2checkList[exp2checkList['extractEvents'].notna()]
+            to_keep_column = np.array([checkEvents in rec.extractEvents for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
 
-    if checkSpikes is not None:
-        exp2checkList = exp2checkList[exp2checkList['extractSpikes'].notna()]
-        to_keep_column = np.array([checkSpikes in rec.extractSpikes for _,rec in exp2checkList.iterrows()])
-        exp2checkList = exp2checkList[to_keep_column]
+        if checkSpikes is not None:
+            exp2checkList = exp2checkList[exp2checkList['extractSpikes'].notna()]
+            to_keep_column = np.array([checkSpikes in rec.extractSpikes for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
 
     return exp2checkList
 

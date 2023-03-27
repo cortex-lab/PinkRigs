@@ -9,11 +9,18 @@ from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
 recordings = load_data(
     subject = 'AV038',
-    expDate = '2023-03-15',
+    expDate = ['2023-03-23','2023-03-24','2023-03-27'],
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
-ev,_,_,_ = simplify_recdat(recordings.iloc[0]) # write a merging procedure when the time comes
+# %% 
+ev,_,_,_ = zip(*[simplify_recdat(rec) for _,rec in recordings.iterrows()])
+ev_keys = list(ev[0].keys())
+ev = Bunch({k:np.concatenate([e[k] for e in ev]) for k in ev_keys})
+            
+
+# %% 
+#ev,_,_,_ = simplify_recdat(recordings.iloc[0]) # write a merging procedure when the time comes
 # for unilateral inactivations laser power can be summed 
 # do a sanity check that laser trials are only on visual trials
 
@@ -37,6 +44,7 @@ azimuths = ev_.stim_visAzimuth
 azimuths[np.isnan(azimuths)]=0
 stim_contrast = ev_.stim_visContrast * np.sign(azimuths)
 contrasts = np.unique(stim_contrast)
+contrasts=contrasts[[1,3,5]]
 # %%
 choices = ev_.timeline_choiceMoveDir-1
 power_colors = plt.cm.coolwarm(np.linspace(0,1,powers.size))
@@ -47,7 +55,7 @@ fig,ax = plt.subplots(1,1,figsize=(5,5))
 
 for p_idx in range(len(pR)):
     ax.plot(contrasts,pR[p_idx],color=power_colors[p_idx],label= '%.0d mW,n=%.0d' % (powers[p_idx],sum(n_trials[p_idx])))
-fig.legend()
+fig.legend(loc=(0.5,0.005),bbox_to_anchor=(1.05, 1))
 ax.set_xlabel('vis contrast')
 ax.set_ylabel('p(Right)')
 # %%

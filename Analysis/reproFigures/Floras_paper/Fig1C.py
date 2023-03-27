@@ -47,7 +47,7 @@ tuning_curve_params = {
     'spl': None, # None means I select the max
     'subselect_neurons':None,
 }
-
+interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 csv_path = interim_data_folder / dat_type 
 csv_path.mkdir(parents=True,exist_ok=True)
 csv_path = csv_path / 'summary_data.csv'
