@@ -57,31 +57,31 @@ function [ev] = sparseNoise(timeline, block, alignmentBlock)
             stimPositions{2} = [stimPositions{2}; yPos(x)*ones(nEv,1) xPos(y)*ones(nEv,1)];
         end
     end
+    
+    % get the aligned block? 
 
     timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
 
+    % if not the same unfortunately we need to trim
+
     if length(blockRefTimes) ~= length(timelineRefTimes)
-        % account for the most common mistake: first stim cut off either by block or timeline
-        if (length(blockRefTimes)-length(timelineRefTimes))==1
-            truncated_block = blockRefTimes(2:end);
-            % check whether it indeed works
-            if sum((diff(truncated_block)-diff(timelineRefTimes))>0.25)==0
-                blockRefTimes=truncated_block;
-                stimArray = stimArray(:,:,2:end);
-            end
-        elseif (length(blockRefTimes)-length(timelineRefTimes))==-1
-            % most often the issue is this ....
-            truncated_timeline = timelineRefTimes(2:end);
-            if sum((diff(blockRefTimes)-diff(truncated_timeline))>0.25)==0
-                timelineRefTimes = truncated_timeline;
-            end 
+        % this is the least safe method so print warning
+        [timelineRefTimes, blockRefTimes_trimmed] = try2alignVectors(timelineRefTimes, blockRefTimes,0.05,1);
+        % check how many we are potentially throwing away
+        percentage_missing = 1 - (numel(blockRefTimes_trimmed)/numel(blockRefTimes)); 
+
+        if (percentage_missing>0.05) && (percentage_missing<0.1)
+            warning('throwing away more than 5% of square flips...')
+        elseif (percentage_missing>0.1)
+            error('Over 10% of square flips are missing???');
         end
 
-    elseif any(abs((blockRefTimes-blockRefTimes(1)) - (timelineRefTimes-timelineRefTimes(1)))>0.5)
-        % this is the least safe method so print warning
-        warning('trying to account for missing flips with try2alignVectors ...')
-        [timelineRefTimes, blockRefTimes] = try2alignVectors(timelineRefTimes, blockRefTimes,0.25,1);
+        [~,idx,~] = intersect(blockRefTimes,blockRefTimes_trimmed);
+        blockRefTimes = blockRefTimes_trimmed; 
+        stimArray = stimArray(:,:,idx);
+
     end
+
 
     block.alignment = 'photodiode';
     if length(blockRefTimes) ~= length(timelineRefTimes)

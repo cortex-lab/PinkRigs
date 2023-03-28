@@ -12,10 +12,16 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'naive-receptiveField'
+dat_type = 'Apollo-RFs'
 from Admin.csv_queryExp import queryCSV
+#
 # 
-recordings = queryCSV(subject='AV024',expDate='2022-10-11',expDef='sparseNoise',checkSpikes='1')
+recordings = queryCSV(subject='FT038',expDate='2021-11-04',expDef='sparseNoise',checkSpikes='1',checkEvents='1')
+recordings1 = queryCSV(subject='AV028',expDate='2022-10-26',expDef='sparseNoise',checkSpikes='1',checkEvents='1')
+recordings2 = queryCSV(subject='FT039',expDate='2021-11-16',expDef='sparseNoise',checkSpikes='1',checkEvents='1')
+
+recordings = pd.concat([recordings,recordings1,recordings2])
+
 dat_keys = recordings[['subject','expDate','expNum']]
 dat_keys['probe']='probe0'
 csv_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual\%s\%s' % (dat_type,'summary_data.csv'))
@@ -30,6 +36,10 @@ else:
         clusInfo = load_cluster_info(**session)
         rf = rf_model(**session)
         rf.fit_evaluate()
+
+        # some clusters have no spikes so we drop those from clusInfo
+        _,idx,_ = np.intersect1d(clusInfo._av_IDs,rf.score.neuronID,return_indices=True)
+        clusInfo = clusInfo.iloc[idx]
 
         clusInfo['score'] = rf.score.sel(cv_number=1).values
 
@@ -55,7 +65,7 @@ allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 
 score_thr = 0.05
 dots_to_plot = allen_pos_apdvml[clusInfo.score>score_thr]
-dot_colors = brainrender_scattermap(clusInfo.fit_sigma_azimuth.values[clusInfo.score>score_thr],vmin = 0,vmax=15,n_bins=7,cmap='coolwarm')
+dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = -60,vmax=60,n_bins=7,cmap='coolwarm')
 
 
 # %%

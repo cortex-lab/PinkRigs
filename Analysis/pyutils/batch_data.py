@@ -16,7 +16,7 @@ def get_data_bunch(namekey):
         : pd.DataFrame
 
     """
-
+    
     if namekey == 'naive-all': 
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
@@ -81,6 +81,20 @@ def get_data_bunch(namekey):
         ]
 
     elif namekey == 'FT038':
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('FT038','2021-11-05',1,'probe0'),
+            ('FT038','2021-11-08',1,'probe0'),
+        ]
+
+    elif namekey == 'rf-acute':
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('FT038','2021-11-05',1,'probe0'),
+            ('FT038','2021-11-08',1,'probe0'),
+        ]
+
+    elif namekey == 'rf-chronic':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
             ('FT038','2021-11-05',1,'probe0'),

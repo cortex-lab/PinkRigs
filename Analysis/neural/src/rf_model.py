@@ -73,7 +73,7 @@ class rf_model():
 
         # initiate default parameters for calling the experiments
 
-        self.ephys_dict =  {'spikes': 'all'} # load the ephys data
+        self.ephys_dict =  {'spikes': 'all','clusters':'all'} # load the ephys data
         self.other_dicts = {'events':{'_av_trials':'all'}} # load the events 
 
         if bool(csvkwargs) is True: 
@@ -308,7 +308,7 @@ class rf_model():
             depths = np.array([float(re.split('-',nrn)[1]) for nrn in all_IDs])
             is_called = [(ID in nrn) for nrn in all_IDs]
             ID = all_IDs[is_called]
-            sorted_idx = np.argsort(depths[is_called])
+            sorted_idx = np.argsort(depths[is_called])[::-1] # in descending order... 
             ID = ID[sorted_idx]
 
         elif type(ID)==int: 

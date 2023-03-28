@@ -52,7 +52,7 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                         [clustIdx, thresh] = kmeans(chan(1:5:end),5);
                         thresh(arrayfun(@(x) mean(clustIdx==x)*100, unique(clustIdx))<2) = [];
                         thresh = [min(thresh) + range(thresh)*0.2;  max(thresh) - range(thresh)*0.2];
-                        
+
                         % Find flips based on these thresholds.
                         photoDiodeFlipOn = sort([strfind(chan'>thresh(1), [0 1]), strfind(chan'>thresh(2), [0 1])]);
                         photoDiodeFlipOff = sort([strfind(chan'<thresh(1), [0 1]), strfind(chan'<thresh(2), [0 1])]);

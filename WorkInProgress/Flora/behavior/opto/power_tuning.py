@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
+my_subject = 'AV038'
 recordings = load_data(
-    subject = 'AV038',
-    expDate = ['2023-03-23','2023-03-24','2023-03-27'],
+    subject = my_subject,
+    expDate = ['2023-03-28'],
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
@@ -47,17 +48,21 @@ contrasts = np.unique(stim_contrast)
 contrasts=contrasts[[1,3,5]]
 # %%
 choices = ev_.timeline_choiceMoveDir-1
-power_colors = plt.cm.coolwarm(np.linspace(0,1,powers.size))
+power_options = np.array([-15,-10,-5,-2,0,2,5,10,15])
+power_colors = plt.cm.coolwarm(np.linspace(0,1,len(power_options)))
+_,keep_idx,_ = np.intersect1d(power_options,powers,return_indices=True)
+power_colors = power_colors[keep_idx]
 
 pR = [[np.nanmean(choices[(laser_power==p) & (stim_contrast==c)])for c in contrasts] for p in powers]
 n_trials = [[(choices[(laser_power==p) & (stim_contrast==c)]).size for c in contrasts] for p in powers]
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-
+fig.patch.set_facecolor('xkcd:white')
 for p_idx in range(len(pR)):
     ax.plot(contrasts,pR[p_idx],color=power_colors[p_idx],label= '%.0d mW,n=%.0d' % (powers[p_idx],sum(n_trials[p_idx])))
-fig.legend(loc=(0.5,0.005),bbox_to_anchor=(1.05, 1))
+fig.legend(loc=(0.5,0.005),bbox_to_anchor=(1.001, 1))
 ax.set_xlabel('vis contrast')
 ax.set_ylabel('p(Right)')
+ax.set_title(my_subject)
 # %%
 
 
