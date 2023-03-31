@@ -17,6 +17,8 @@ were discarded) # maybe don't do that (?)
 6. Get null distribution by shuffling blank and stimulus trials % and this is by design a right-sided permutation test
 7. get p-value (Bonferroni correct if necessary). 
 
+optional:   
+
 """
 import itertools
 import numpy as np
@@ -31,7 +33,11 @@ from Admin.csv_queryExp import load_ephys_independent_probes
 
 # get all the unique trial types 
 
-def get_test_statistic(test_raster,blank_raster,permute_seed = None):
+def get_test_statistic(test_raster,blank_raster,trim_fraction = None, permute_seed = None):
+    """
+    trim_fraction: float
+        fraction ot trials to trim from highest to loweest response 
+    """
     # check if trial sizes are the same, if not subsample
     n_trials_test = test_raster.shape[0]
     n_trials_blank = blank_raster.shape[0]
@@ -52,6 +58,10 @@ def get_test_statistic(test_raster,blank_raster,permute_seed = None):
     s_p = int(n_trials/2)
     stim = rasters[idx[:s_p],:,:]
     blank = rasters[idx[s_p:],:,:]
+
+    # trim? 
+    if trim_fraction is not None: 
+        pass 
 
     Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
     Rmax_blank = np.max(np.abs(blank.mean(axis=0)),axis=1)

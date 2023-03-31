@@ -34,7 +34,7 @@ neuron_idx = np.where(azi.clus_ids==66)[0][0]
 
 r = azi.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
 r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
-[u,s,v] = np.linalg.svd(r_)
+[u,s,v] = np.linalg.svd(r_,full_matrices=False)
 nPC=2
 r_pc = u[:,:nPC] @ np.diag(s[:nPC]) @ v[:nPC,:] # 1st PC
 r_pc = r_pc.mean(axis=0)
@@ -52,8 +52,12 @@ neuron_idx = np.where(azi.clus_ids==66)[0][0]
 
 r = azi.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
 r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
-[u,s,v] = np.linalg.svd(r_)
-fromPC=1
+[u,s,v] = np.linalg.svd(r_,full_matrices=False)
+m,n = u.shape[0], u.shape[1]
+s_ = np.zeros((m,n))
+s_[0:len(s),0:len(s)] = np.diag(s)
+
+fromPC=2
 r_pc = u[:,fromPC:] @ np.diag(s[fromPC:]) @ v[fromPC:,:] 
 
 # %%

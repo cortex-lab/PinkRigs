@@ -21,7 +21,7 @@ dat_keys = get_data_bunch(dat_type)
 # dat_keys['probe']='probe0'
 # %%
 csv_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual\%s\%s' % (dat_type,'summary_data.csv'))
-recompute = True 
+recompute = False 
 # %%
 all_dfs = []
 if csv_path.is_file() & (not recompute):
@@ -61,7 +61,7 @@ allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 
 score_thr = 0.05
 dots_to_plot = allen_pos_apdvml[clusInfo.score>score_thr]
-dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = 0,vmax=25,n_bins=7,cmap='copper_r')
+dot_colors = brainrender_scattermap(clusInfo.fit_elevation.values[clusInfo.score>score_thr],vmin = -30,vmax=30,n_bins=15,cmap='coolwarm')
 
 
 # %%
@@ -70,11 +70,11 @@ from brainrender import Scene
 from brainrender.actors import Points
 scene = Scene(title="SC aud and vis units", inset=False,root=False)
 scene.add_brain_region("SCs",alpha=0.05,color='grey')
-#sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
+sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 scene.add_brain_region("VISp",alpha=0.05)
-scene.add_brain_region("RSP",alpha=0.05)
-
-scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.8))
+#scene.add_brain_region("RSP",alpha=0.05)
+dots_to_plot = allen_pos_apdvml[clusInfo._av_KSLabels==2]
+scene.add(Points(dots_to_plot, colors='k', radius=14, alpha=0.5))
 
 # for p,c in zip(dots_to_plot,dot_colors):
 #    scene.add(Points(p[np.newaxis,:]), colors=c, radius=30, alpha=0.8)
