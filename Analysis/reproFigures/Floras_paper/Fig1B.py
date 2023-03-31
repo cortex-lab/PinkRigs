@@ -33,14 +33,14 @@ recordings = load_data(
 ev,spikes,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
 
-cID = 82
+cID = 334
 azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values
 
 # parameters of plotting 
 bin_kwargs={'tscale':[None],
-            'pre_time':.03,'post_time': .5, 
+            'pre_time':.3,'post_time': .5, 
             'bin_size':0.005, 'smoothing':0.02,
             'return_fr':True,'baseline_subtract':True
             }
@@ -64,7 +64,7 @@ for idx,azi in enumerate(azimuths):
     AudOnsets = a.sel(azimuths=azi,SPL=sel_spl).values.flatten()
 
     my_rasterPSTH(spikes.times,spikes.clusters,[VisOnsets, AudOnsets],
-                    [cID],ax=ax[idx],ax1=ax[idx],include_PSTH=True,include_raster=False,
+                    [cID],ax=ax[idx],ax1=ax[idx],include_PSTH=False,include_raster=True,
                     **bin_kwargs,**plot_kwargs,**event_kwargs)
 
     ax[idx].set_xlabel('%.0f deg' % azi)

@@ -214,7 +214,7 @@ import matplotlib.pyplot as plt
 from Analysis.pyutils.plotting import rgb_to_hex
 azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
-t = 'vis'
+t = 'aud'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
 color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
@@ -240,20 +240,20 @@ sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 
 
 #plot the neurons in allen atalas space
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_both  & clusInfo.is_good,:], colors='g', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good,:], colors='b', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good,:], colors='m', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good,:], colors='k', radius=15, alpha=0.2))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_both  & clusInfo.is_good,:], colors='g', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good,:], colors='b', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good,:], colors='m', radius=30, alpha=0.8))
+scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good,:], colors='k', radius=15, alpha=0.2))
 
 
-for azi,c in zip(azimuths,color_):    
-    scene.add(Points(
-        allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
-        colors=c, 
-        radius=30, 
-        alpha=1
-        ))    
-scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:], colors='k', radius=15, alpha=0.1))    
+# for azi,c in zip(azimuths,color_):    
+#     scene.add(Points(
+#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+#         colors=c, 
+#         radius=30, 
+#         alpha=1
+#         ))    
+# scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
 
 scene.content
 scene.render()

@@ -106,6 +106,7 @@ class rf_model():
         function to format events from PinkRigs to something more clear
 
         """
+        
         self.azimuths = np.unique(ev.squareAzimuth)
         self.elevations = np.unique(ev.squareElevation)
         self.xy_pos = np.array([ev.squareAzimuth,ev.squareElevation]).T

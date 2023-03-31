@@ -6,10 +6,100 @@ import matplotlib.pyplot as plt
 
 from Admin.csv_queryExp import load_ephys_independent_probes,Bunch
 from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.model_funcs import get_VE
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # load data
 import sklearn
+import scipy
+
+def genericTune(x,ybot,ytop,x0,sigmaL,sigmaR):
+    """
+    1D Gaussian where sigma towards the left vs the right is allowed to vary 
+    Parameters: 
+    -----------
+    x: np.ndarray
+    ybot: float
+        baseline of the Gaussian
+    ytop: float 
+        determines the magnitude of the Gaussian
+    x0: float 
+        center
+    sigmaL: float
+        sigma towards left
+    sigmaR: float
+        sigma towards right
+
+    """
+    left = ybot+(ytop-ybot)*np.exp(-((x-x0)**2/(2*sigmaL**2)))
+    left[(x>=x0)] = 0 # sum the half gaussians
+    right = ybot+(ytop-ybot)*np.exp(-((x-x0)**2/(2*sigmaR**2)))
+    right[(x<x0)] = 0 
+    return (left+right)
+
+def init_params_fitGeneric(x,y):
+    """
+    function to initilaise parameters 
+    """
+    ybot = np.min(y)
+    ytop = np.max(y)
+    x0 = x[np.argmax(y)]
+    sigmaL = 145
+    sigmaR = 145 
+
+    return [ybot,ytop,x0,sigmaL,sigmaR]
+
+def upsample(x,y,upfactor = 100,**kwargs):
+    """
+    upsample values using scipy.interpolate1d
+
+    Parameters: 
+    x: numpy ndarray
+    y: numpy ndarray 
+    upfactor: float 
+        factor by which we upsample x
+    
+    Returns: np.ndarrays  
+    --------
+    x_
+    y_ 
+
+    """
+    interp_func = scipy.interpolate.interp1d(x,y,**kwargs)
+    x_ = np.linspace(np.min(x),np.max(x),x.size*upfactor)
+    y_ = interp_func(x_)
+    return x_,y_
+
+def fitGeneric(x,y,upfactor= None,p0=None):   
+    """
+    p0:None/list 
+        parameters for genericTime 
+    """ 
+    if upfactor is not None: 
+        x,y = upsample(x,y,upfactor=upfactor)
+
+    if p0 is None: 
+        p0 = init_params_fitGeneric(x,y) 
+
+
+    try:
+        fitted_params, _ = scipy.optimize.curve_fit(genericTune,x,y,p0=p0)
+    except RuntimeError:         
+        fitted_params = np.empty(len(p0))*np.nan
+
+
+    return fitted_params
+
+def get_tuning_only(tuning_curves):
+    """
+    helper function to handle the tuning curves dataframe
+
+    """
+
+    isgood = ~tuning_curves.columns.isin(['score','cv_number','preferred_tuning'])
+    tc = tuning_curves.loc[:,isgood]
+
+    return tc
 
 class azimuthal_tuning():
     def __init__(self,rec_info):
@@ -53,8 +143,11 @@ class azimuthal_tuning():
         
         Returns:
         --------
-            :pd.DataFrame        
-
+            :Bunch
+        .dat: np.ndarray
+            azimuths x trials x neurons x timebins     
+        .azimuthIDs: list of str
+            which azimuths we actually included.         
         """
         if not contrast: 
             contrast = np.max(self.vis.contrast.values)
@@ -107,7 +200,33 @@ class azimuthal_tuning():
             'azimuthIDs':list(azimuth_times_dict.keys())
             })
         
+        self.azimuths = np.array([int(re.split('_',azi)[-1]) for azi in self.response_rasters_per_azimuth.azimuthIDs])
         return self.response_rasters_per_azimuth
+
+    def plot_response_per_azimuth(self,neuronID=1,which='psth'):
+        """
+        plot the response at each azimuth for give n neuron 
+
+        Parameters:
+        ----------- 
+        neuronID: float 
+        which: str
+            'p' if psth
+            'r' if raster
+        """
+        neuron_idx = np.where(self.clus_ids==neuronID)[0][0]
+
+        response = self.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
+        fig,ax = plt.subplots(1,response.shape[0],figsize=(15,3),sharex=True,sharey=True)
+        for i,r in enumerate(response):
+            if 'r' in which:
+                ax[i].imshow(r,cmap='Greys')
+            elif 'p' in which:
+                ax[i].plot(r.mean(axis=0))
+
+            ax[i].set_title(self.response_rasters_per_azimuth.azimuthIDs[i]) 
+
+        fig.suptitle('neuron %.0d' % neuronID)           
 
     def get_tuning_curves(self,rasters = None,cv_split=2,azimuth_shuffle_seed=None):
         """
@@ -145,11 +264,14 @@ class azimuthal_tuning():
             for k in azimuth_inds:
                 curr_idxs = trials_idx[split_edges[cv]:split_edges[cv+1]]
                 stim = rasters[k,curr_idxs,:,:]                 
-                Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
+                Rmax_stim = np.mean(np.abs(stim.mean(axis=0)),axis=1)
                 #Rmax_stim = np.max((stim.mean(axis=0)),axis=1)
                 responses[azimuths[k]] = Rmax_stim
 
-            curr_tuning_curves = pd.DataFrame.from_dict(responses)            
+            curr_tuning_curves = pd.DataFrame.from_dict(responses)  
+
+            # interpolate the tunining curves
+
             preferred_tuning_idx = np.argmax(curr_tuning_curves.to_numpy(),axis=1)
 
             curr_tuning_curves[('preferred_tuning')] = [re.split('_',curr_tuning_curves.columns[i])[-1] for i in preferred_tuning_idx]
@@ -162,10 +284,117 @@ class azimuthal_tuning():
         return tuning_curves
     
 
+    
+    def fit_tuning_curve(self,tuning_curves=None,**kwargs):
+        """
+
+        Parameters: 
+        -----------
+        tuning_curves: pd.DataFrame 
+
+        """
+        if tuning_curves is None:            
+            tuning_curves = self.get_tuning_curves(cv_split=1,**kwargs)   
+
+        # convert tuning curves df to numpy array and fit the training set 
+        tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).values
+        azimuths = self.azimuths
+        # fit each neuron 
+        p0 = np.concatenate([fitGeneric(azimuths,n,upfactor=100)[np.newaxis,:] for n in tc_train])
+        self.tc_params = pd.DataFrame(data=p0,columns=['ybot','ytop','x0','sigmaL','sigmaR'])
+
+        # evaluate on the 2nd half
+
+    def predict_tuning_curve(self,azimuths=None):      
+
+        if azimuths is None: 
+            azimuths = self.azimuths
+
+        self.predictions = np.concatenate([genericTune(azimuths,*p)[np.newaxis,:] for _,p in self.tc_params.iterrows()])
+
+    def evaluate_tuning_curve(self,tuning_curves):
+        self.predict_tuning_curve()
+        cv_numbers = tuning_curves.cv_number.values
+        
+        score=[]
+        for cv_number in np.unique(cv_numbers):
+            tc = get_tuning_only(tuning_curves[tuning_curves.cv_number==cv_number]).values
+            score.append([get_VE(actual,predicted) for actual,predicted in zip(tc,self.predictions)])
+        score=np.concatenate(score)
+        return score
+
+
+
+    def fit_evaluate(self,**kwargs):
+        tuning_curves = self.get_tuning_curves(**kwargs)   
+        self.fit_tuning_curve(tuning_curves=tuning_curves)
+        score = self.evaluate_tuning_curve(tuning_curves)      
+        tuning_curves['score'] = score
+        return tuning_curves
+
+    def plot_tuning_curves(self,tuning_curves=None,neuronID=1,plot_train=True,plot_test=True,plot_pred=True): 
+        """
+        function to plot the tuning curve for a given neuron
+        """
+        if tuning_curves is None:            
+            tuning_curves = self.get_tuning_curves(cv_split=2) 
+
+        neuron_idx = np.where(self.clus_ids==neuronID)[0][0]
+        # get azimuth values at which we are making calculations 
+
+        azimuths = self.azimuths
+        stim = self.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
+
+        n_azimuths = self.response_rasters_per_azimuth.dat.shape[0]
+        n_trials = self.response_rasters_per_azimuth.dat.shape[1]
+
+        # for each trial get the max across time    # this to be modified based on how I take the trials
+        stim_per_trial = np.mean(np.abs(stim),axis=2)
+        figure,ax = plt.subplots(1,1,figsize=(6,7))
+        for i in range(n_azimuths):
+            ax.plot(np.ones((n_trials,1))*azimuths[i],stim_per_trial[i,:],'ko')
+
+
+        titlestring = 'neuron %.0d' % neuronID
+        if plot_train:
+            tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).iloc[neuron_idx].values
+            ax.plot(azimuths,tc_train,'b')
+        
+        if plot_test: 
+            tc_test = get_tuning_only(tuning_curves[tuning_curves.cv_number==1]).iloc[neuron_idx].values
+            ax.plot(azimuths,tc_test,'m')
+
+        if plot_pred: 
+            azimuths_upped = np.linspace(np.min(azimuths),np.max(azimuths),azimuths.size*100)
+            p = self.tc_params.iloc[neuron_idx].values
+            t_pred = genericTune(azimuths_upped,*p)
+            ax.plot(azimuths_upped,t_pred,'k')
+
+            if plot_train: 
+                ve_string = ' VE,train = %.2f' % tuning_curves[tuning_curves.cv_number==0].iloc[neuron_idx].score
+                titlestring += ve_string
+            
+            if plot_test: 
+                ve_string = ' VE,test = %.2f' % tuning_curves[tuning_curves.cv_number==1].iloc[neuron_idx].score
+                titlestring += ve_string
+
+        
+        ax.set_title(titlestring)
+
+                
+
+
+        
+    
+
+
     def get_selectivity(self,**kwargs):
         """
         function to get cross-validated selectivity from responses at various azimuthal tunings
+
         Procedure: 
+        ----------
+
 
         """
         tuning_curves = self.get_tuning_curves(cv_split=2,**kwargs)     
@@ -191,8 +420,6 @@ class azimuthal_tuning():
         return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values.astype('float')
     
     def calculate_significant_selectivity(self,n_shuffles=100,p_threshold=0.01):
-        
-        
         if 1/n_shuffles>p_threshold:
             print('not enough shuffles for this p threshold')
                 
