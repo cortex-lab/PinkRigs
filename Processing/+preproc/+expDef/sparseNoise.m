@@ -63,10 +63,21 @@ function [ev] = sparseNoise(timeline, block, alignmentBlock)
     timelineRefTimes = timeproc.getChanEventTime(timeline,'photoDiode');
 
     % if not the same unfortunately we need to trim
+    
+    % most often there is a flip in timeline that is not there in block 
+    if length(timelineRefTimes)-length(blockRefTimes) == 1
+        timelineRefTimes = timelineRefTimes(2:end);
+    end 
 
     if length(blockRefTimes) ~= length(timelineRefTimes)
         % this is the least safe method so print warning
-        [timelineRefTimes, blockRefTimes_trimmed] = try2alignVectors(timelineRefTimes, blockRefTimes,0.05,1);
+        
+        try
+            [timelineRefTimes, blockRefTimes_trimmed] = try2alignVectors(timelineRefTimes, blockRefTimes,0.05,1);
+        catch
+            warning('cutting the ends of timeline more extensively...')
+            [timelineRefTimes, blockRefTimes_trimmed] = try2alignVectors(timelineRefTimes(2:end-2), blockRefTimes,0.05,1);
+        end
         % check how many we are potentially throwing away
         percentage_missing = 1 - (numel(blockRefTimes_trimmed)/numel(blockRefTimes)); 
 
