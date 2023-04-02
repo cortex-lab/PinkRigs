@@ -44,8 +44,8 @@ def init_params_fitGeneric(x,y):
     ybot = np.min(y)
     ytop = np.max(y)
     x0 = x[np.argmax(y)]
-    sigmaL = 145
-    sigmaR = 145 
+    sigmaL = 245
+    sigmaR = 245 
 
     return [ybot,ytop,x0,sigmaL,sigmaR]
 
@@ -89,6 +89,32 @@ def fitGeneric(x,y,upfactor= None,p0=None):
 
 
     return fitted_params
+
+
+def svd_across_azimuths(r): 
+    """
+    helper function to get the tuning curve via the svd method for each neuron 
+    details: 1) svd across all responses (independent of azimuth)
+             2) get the weight of every trial on the 1st PC
+             3) average and take the absolute value of weights
+
+    Parameters: 
+    -----------
+    r: np.ndarray
+        azimuth x trials x time raster matrix
+
+    Returns: np.ndarray,np.ndarray
+        weights per trial  ... and 
+        the mean weights of PC1 along the azimuth axis (1D array)
+
+    """
+    r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
+    [u,_,_] = np.linalg.svd(r_,full_matrices=False)
+    weight_per_trial = np.reshape(u[:,0],(r.shape[0],r.shape[1])) # weights of every trial on PC1
+    weight_per_trial = np.abs(weight_per_trial)    
+    average_weight = weight_per_trial.mean(axis=1)
+
+    return weight_per_trial, average_weight[np.newaxis,:]
 
 def get_tuning_only(tuning_curves):
     """
@@ -228,12 +254,22 @@ class azimuthal_tuning():
 
         fig.suptitle('neuron %.0d' % neuronID)           
 
-    def get_tuning_curves(self,rasters = None,cv_split=2,azimuth_shuffle_seed=None):
+    def get_tuning_curves(self,rasters = None,cv_split=2,azimuth_shuffle_seed=None,metric='abs-max'):
         """
         Parameters: 
         -----------
         rasters: np.ndarray 
             azimuths x trials x neurons x timebins 
+        cv_split: float
+            no. of cross-validation sets to divide the data to 
+        azimuth_shuffle_seed: None/float 
+            None: no shuffle 
+            float: seed number of shuffling the azimuth labels prior to arraning responses into a matrix per azimuth
+        mode: str
+            label on how to calculate the response metric at a given azimuth 
+            options: 
+            abs-max: takes the abs of the mean across trials, and then taking the max of that
+            svd: svd across all responses, and take average PC1 weight for a given azimuth
         """
         if not rasters:
             rasters = self.response_rasters_per_azimuth.dat
@@ -261,14 +297,24 @@ class azimuthal_tuning():
         tuning_curves = []
         for cv in range(cv_split):
             responses = {}
-            for k in azimuth_inds:
-                curr_idxs = trials_idx[split_edges[cv]:split_edges[cv+1]]
-                stim = rasters[k,curr_idxs,:,:]                 
-                Rmax_stim = np.mean(np.abs(stim.mean(axis=0)),axis=1)
-                #Rmax_stim = np.max((stim.mean(axis=0)),axis=1)
-                responses[azimuths[k]] = Rmax_stim
+            curr_idxs = trials_idx[split_edges[cv]:split_edges[cv+1]] # trial indices of current set 
+            stim_all_azimuth = rasters[:,curr_idxs,:,:] # azimuth x trials (cv_set) x neuron x time
 
-            curr_tuning_curves = pd.DataFrame.from_dict(responses)  
+            if 'svd' in metric: 
+                n_neurons = stim_all_azimuth.shape[2]
+                _ , responses = zip(*[svd_across_azimuths(stim_all_azimuth[:,:,n,:]) for n in range(n_neurons)])
+                curr_tuning_curves = pd.DataFrame(
+                    np.concatenate(responses),
+                    columns=azimuths
+                )
+
+            elif 'abs-max' in metric: 
+                for k in azimuth_inds:
+                    stim = stim_all_azimuth[k,:,:,:]                                  
+                    Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
+                    responses[azimuths[k]] = Rmax_stim
+
+                curr_tuning_curves = pd.DataFrame.from_dict(responses)  
 
             # interpolate the tunining curves
 
@@ -332,7 +378,7 @@ class azimuthal_tuning():
         tuning_curves['score'] = score
         return tuning_curves
 
-    def plot_tuning_curves(self,tuning_curves=None,neuronID=1,plot_train=True,plot_test=True,plot_pred=True): 
+    def plot_tuning_curves(self,tuning_curves=None,metric='abs-max',neuronID=1,plot_train=True,plot_test=True,plot_pred=True): 
         """
         function to plot the tuning curve for a given neuron
         """
@@ -349,7 +395,11 @@ class azimuthal_tuning():
         n_trials = self.response_rasters_per_azimuth.dat.shape[1]
 
         # for each trial get the max across time    # this to be modified based on how I take the trials
-        stim_per_trial = np.mean(np.abs(stim),axis=2)
+        if 'abs-max' in metric:
+            stim_per_trial = np.max(np.abs(stim),axis=2)
+        elif 'svd' in metric: 
+            stim_per_trial,_ = svd_across_azimuths(stim)
+
         figure,ax = plt.subplots(1,1,figsize=(6,7))
         for i in range(n_azimuths):
             ax.plot(np.ones((n_trials,1))*azimuths[i],stim_per_trial[i,:],'ko')

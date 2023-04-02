@@ -20,9 +20,11 @@ tuning_curve_params = {
 }
 
 azi.get_rasters_perAzi(**tuning_curve_params)
-tuning_curves = azi.fit_evaluate(cv_split=2)
+tuning_curves = azi.fit_evaluate(cv_split=2,metric='svd')
 # %%
-azi.plot_response_per_azimuth(neuronID=22,which='p')
+testedID = 56
+azi.plot_response_per_azimuth(neuronID=testedID,which='p')
+azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID)
 
 # %%
 # alternative methods to test: 
@@ -30,7 +32,7 @@ azi.plot_response_per_azimuth(neuronID=22,which='p')
 import numpy as np
 import matplotlib.pyplot as plt
 
-neuron_idx = np.where(azi.clus_ids==66)[0][0]
+neuron_idx = np.where(azi.clus_ids==testedID)[0][0]
 
 r = azi.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
 r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
@@ -48,7 +50,7 @@ fig,ax = plt.subplots(1,1)
 ax.plot(tc)
 # %%
 # yet another alternative: we reconstruct from PC2<
-neuron_idx = np.where(azi.clus_ids==66)[0][0]
+neuron_idx = np.where(azi.clus_ids==testedID)[0][0]
 
 r = azi.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
 r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
@@ -57,17 +59,28 @@ m,n = u.shape[0], u.shape[1]
 s_ = np.zeros((m,n))
 s_[0:len(s),0:len(s)] = np.diag(s)
 
-fromPC=2
-r_pc = u[:,fromPC:] @ np.diag(s[fromPC:]) @ v[fromPC:,:] 
+fromPC=0
+toPC = 2
+r_pc = u[:,fromPC:toPC] @ np.diag(s[fromPC:toPC]) @ v[fromPC:toPC,:] 
+r_pc = r_pc.reshape(r.shape)
+fig,ax = plt.subplots(1,7,sharey=True,figsize=(15,4))
+for i,a in enumerate(r_pc.mean(axis=1)):
+    ax[i].plot(a)
+
+
+
+# %% method 3   take the trial weight from the 1st pc 
+neuron_idx = np.where(azi.clus_ids==testedID)[0][0]
+
+r = azi.response_rasters_per_azimuth.dat[:,:,neuron_idx,:]
+r_ = np.reshape(r,(r.shape[0]*r.shape[1],r.shape[2]))
+[u,s,v] = np.linalg.svd(r_,full_matrices=False)
+tc = np.reshape(u[:,0],(7,30))
+fig,ax = plt.subplots(1,1)
+ax.plot(np.abs(tc.mean(axis=1)))
 
 # %%
 is_selective,preferred_tuning = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
-
-
-# %%
-
-azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=66)
-
 
 # %%
 
