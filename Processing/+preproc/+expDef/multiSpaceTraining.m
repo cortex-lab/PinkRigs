@@ -483,9 +483,13 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             laserPos = NaN(numel(eIdx),1)';
 
         end 
-
+        laser_times_per_trial = indexByTrial(trialStEnTimes,all_laser_times(:,1)); 
+        % the longer ITI is at the end of the trial so most of the time of
+        % there is an extra flip, it will happen in that ITI
+        kept_times = cellfun(@(x) x(1), laser_times_per_trial(is_laser_On));
+        [~,idx,~] = intersect(all_laser_times(:,1),kept_times);
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
-        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;  
+        laser_times_trial_indexed(is_laser_On,:)= all_laser_times(idx,:);  
 
     else
         is_laser_On = NaN(numel(eIdx),1)';

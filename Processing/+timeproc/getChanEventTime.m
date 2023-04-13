@@ -107,7 +107,7 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                 % or determine from the baseline in which we always pull
                 % down ao in LaserController 
                 bl = (chan(1:1000));
-                tlSyncThresh = mean(bl)+5*std(bl);
+                tlSyncThresh = mean(bl)+10*std(bl);
                 tlSyncThresh = [tlSyncThresh,tlSyncThresh+50*std(bl)];
                 % I need to find a more robust way of doing this. 
                 [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
