@@ -522,10 +522,11 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     returns: 
         : pd.DataFrame
         
-    """
+    """ # for now I won't call all the data as apparenty the bombcell stuff f*cks things up. 
+
+    
     data_dict = {
-        probe:{'clusters':'all'}, 
-    }
+        probe:{'clusters':'all'}}
     recording = load_data(data_name_dict=data_dict,**rec_kwargs)
 
     clusters = recording[probe].iloc[0].clusters

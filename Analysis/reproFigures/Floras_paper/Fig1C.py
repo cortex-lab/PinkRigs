@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
-dat_type = 'naive-chronic'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
@@ -53,10 +53,12 @@ csv_path.mkdir(parents=True,exist_ok=True)
 csv_path = csv_path / 'summary_data.csv'
 
 tuning_types = ['vis','aud']
+cv_names = ['train','test']
 if not csv_path.is_file() or recompute_csv:
     all_dfs = []
     for _,session in dat_keys.iterrows():
     # get generic info on clusters 
+        print(*session)
         clusInfo = load_cluster_info(**session)
         # add clus_new_columns to clusters
         # significance of responsivity  
@@ -100,11 +102,16 @@ if not csv_path.is_file() or recompute_csv:
         for t in tuning_types:
             tuning_curve_params['which'] = t
             azi.get_rasters_perAzi(**tuning_curve_params)
-            clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
-            clusInfo['%s_selectivity'% t] = azi.selectivity
-            tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None)
-            clusInfo = pd.concat((clusInfo,tcs[tcs.cv_number==1].iloc[:,:-2]),axis=1) # concatenate the actual tuning curves, test set_only
+            tcs = azi.fit_evaluate(cv_split=2,metric='svd')
 
+            # old method when using the rossi et al. selectivity method 
+            #clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
+            #clusInfo['%s_selectivity'% t] = azi.selectivity
+            #tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None)            
+            for i,cv in enumerate(cv_names):
+                clusInfo = pd.concat((clusInfo,tcs[tcs.cv_number==i].add_suffix('_'+ cv)),axis=1) # concatenate the actual tuning curves, test set_only
+
+            clusInfo = pd.concat((azi.tc_params.add_suffix(t),clusInfo),axis=1)
 
 
        # then calculate enhancement index at "preferred azimuths". 
@@ -118,7 +125,13 @@ if not csv_path.is_file() or recompute_csv:
 
         all_dfs.append(clusInfo)
     
+    # temproary hack 
+    all_dfs = [d.drop(columns=['sc_azimuth', 'sc_elevation', 'sc_surface']) if 'sc_azimuth' in d.columns else d for d in all_dfs]
     clusInfo = pd.concat(all_dfs,axis=0)    
+
+    clusInfo['vis_score_test']  =  clusInfo.score_test.iloc[:,0]
+    clusInfo['aud_score_test']  =  clusInfo.score_test.iloc[:,1]
+
     if csv_path.is_file():
         # save previous
         old = pd.read_csv(csv_path)
@@ -145,54 +158,60 @@ off_exceptx(ax)
 ax.set_xlabel('multisensory enhancement index')
 
 # %%
-import plotly.express as px
-plotted_tc = 'vis'
 
-goodclus = clusInfo[clusInfo['is_%s' % plotted_tc] & clusInfo.is_good & clusInfo['is_%s_spatial' % plotted_tc] & clusInfo.is_SC]
+# we consider units spatual that 
+clusInfo['is_vis_spatial'] = clusInfo.vis_score_test>0.05
+clusInfo['is_aud_spatial'] = clusInfo.aud_score_test>0.05
 
-fig = px.scatter(
-    goodclus,
-    x='aphemi', y='%s_preferred_tuning' % plotted_tc,color = 'expFolder',symbol='probe', 
-    hover_data=['expFolder','probe','_av_IDs']
-    )
-fig.show()
+# %%
+# import plotly.express as px
+# plotted_tc = 'vis'
+
+# goodclus = clusInfo[clusInfo['is_%s' % plotted_tc] & clusInfo.is_good & clusInfo['is_%s_spatial' % plotted_tc] & clusInfo.is_SC]
+
+# fig = px.scatter(
+#     goodclus,
+#     x='aphemi', y='%s_preferred_tuning' % plotted_tc,color = 'expFolder',symbol='probe', 
+#     hover_data=['expFolder','probe','_av_IDs']
+#     )
+# fig.show()
 
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 # %%
-# _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
+_,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
 
-# maps = {}
-# for idx,t in enumerate(tuning_types):
-#     print(t)
-#     goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC]
-#     namekeys = [c for c in clusInfo.columns if '%s_' % t in c][-7:]
-#     print(namekeys)
-#     tcs = goodclus.sort_values('%s_preferred_tuning' % t)
-#     tcs = tcs[namekeys]
+maps = {}
+for idx,t in enumerate(tuning_types):
+    print(t)
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
+    print(namekeys)
+    tcs = goodclus.sort_values('x0%s' % t)
+    tcs = tcs[namekeys]
 
-#     tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
-#         (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
+    tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
+        (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
 
 
-#     ax[idx].imshow(tcs_norm,aspect='auto',cmap='PuRd')
-#     ax[idx].set_ylim([269,0])
-#     off_axes(ax[idx])
+    ax[idx].imshow(tcs_norm,aspect='auto',cmap='PuRd')
+    ax[idx].set_ylim([276,0])
+    off_axes(ax[idx])
+# 
+    goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
+    unique_bins = np.unique(goodclus.pos_bin_idx)
+    mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+    std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+    maps['%s_mean'% t] = mean_per_pos
+    maps['%s_std' % t ] = std_per_pos
 
-#     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,200))
-#     unique_bins = np.unique(goodclus.pos_bin_idx)
-#     mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['%s_preferred_tuning' % t]) for b in unique_bins]
-#     std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['%s_preferred_tuning' % t]) for b in unique_bins]
-#     maps['%s_mean'% t] = mean_per_pos
-#     maps['%s_std' % t ] = std_per_pos
-
-# print(len(maps['vis_mean']),len(maps['aud_mean']))
-# _,ax = plt.subplots(1,1,figsize=(2,2))
-# ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
-# off_topspines(ax)
-# ax.set_xlabel('preferred visual azimuth')
-# ax.set_ylabel('preferred auditory azimuth')
+print(len(maps['vis_mean']),len(maps['aud_mean']))
+_,ax = plt.subplots(1,1,figsize=(2,2))
+ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
+off_topspines(ax)
+ax.set_xlabel('preferred visual azimuth')
+ax.set_ylabel('preferred auditory azimuth')
 
 # %%
 
@@ -212,8 +231,8 @@ if recompute_pos_model:
 # %%
 import matplotlib.pyplot as plt
 from Analysis.pyutils.plotting import rgb_to_hex
-azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
-color_ = plt.cm.coolwarm(np.linspace(0,1,azimuths.size))
+#azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
+color_ = plt.cm.coolwarm(np.linspace(0,1,7))
 t = 'aud'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
@@ -238,22 +257,29 @@ sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
 
-
 #plot the neurons in allen atalas space
-scene.add(Points(allen_pos_apdvml[clusInfo.is_both  & clusInfo.is_good,:], colors='g', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good,:], colors='b', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good,:], colors='m', radius=30, alpha=0.8))
-scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good,:], colors='k', radius=15, alpha=0.2))
-
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_both  & clusInfo.is_good,:], colors='g', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good,:], colors='b', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good,:], colors='m', radius=30, alpha=0.8))
+# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good,:], colors='k', radius=15, alpha=0.2))
 
 # for azi,c in zip(azimuths,color_):    
 #     scene.add(Points(
-#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & (clusInfo['%s_preferred_tuning'  % t] == azi),:], 
+#         allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & (clusInfo['%s'  % t] == azi),:], 
 #         colors=c, 
 #         radius=30, 
 #         alpha=1
 #         ))    
 # scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
+t = 'vis'
+from Analysis.pyutils.plotting import brainrender_scattermap
+
+dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:]
+dot_colors = brainrender_scattermap(clusInfo['x0%s' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+
+scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
+
+
 
 scene.content
 scene.render()

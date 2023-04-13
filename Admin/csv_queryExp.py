@@ -390,14 +390,22 @@ def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','
 
     return r
 
-def simplify_recdat(recording,probe='probe0'): 
+def simplify_recdat(recording,probe='probe0',reverse_opto=False): 
     """
     spits out the event,spike etc bunches with one line
     allows for quicker calling of data in a single experiment
+    also allows calculations of extra parameters that vary session to session, utilised for mutliSpaceWorld 
+    such that 
+    A) we calculate reaction times 
+    B) we reverse opto to do ipsi.contra calculations. In this case, 
+        stim_audAzimuth/stim_visAzimuth: +ve: ipsi, -ve contra
+        timeline_choiceMoveDir 1 contra, 2 ipsi
+
     Parameters: 
     -----------
     recording: pd.Series
         details of recording as outputted by load date
+    probe:
     Retruns:
     --------
         Bunch,Bunch,Bunch,Bunch
@@ -412,7 +420,17 @@ def simplify_recdat(recording,probe='probe0'):
             ev.stim_visContrast = np.round(ev.stim_visContrast,2)
         if hasattr(ev,'stim_audAmplitude'):
             ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
-    
+        if hasattr(ev,'timeline_choiceMoveOn'):
+            ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+        if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
+            ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
+            ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition).astype('int')
+            if reverse_opto & ~(np.unique(ev.laser_power_signed>0).any()): 
+                # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
+                ev.stim_audAzimuth = ev.stim_audAzimuth * -1 
+                ev.stim_visAzimuth = ev.stim_visAzimuth * -1 
+                ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5
+                    
 
     if hasattr(recording,probe):
         p_dat = recording[probe]

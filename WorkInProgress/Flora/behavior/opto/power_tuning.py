@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
-my_subject = 'AV036'
+my_subject = 'AV038'
 recordings = load_data(
     subject = my_subject,
-    expDate = ['2023-03-31'],
+    expDate = '2023-03-28',
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
@@ -62,7 +62,7 @@ for p_idx in range(len(pR)):
 fig.legend(loc=(0.5,0.005),bbox_to_anchor=(1.001, 1))
 ax.set_xlabel('vis contrast')
 ax.set_ylabel('p(Right)')
-ax.set_ylim([0,1])
+ax.set_ylim([0,1.05])
 ax.axhline(0.5,xmin=0,xmax=1,color='k',linestyle='--',alpha=.2)
 ax.axvline(0,ymin=0,ymax=1,color='k',linestyle='--',alpha=.2)
 ax.set_title(my_subject)

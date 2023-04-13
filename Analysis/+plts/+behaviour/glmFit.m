@@ -41,6 +41,17 @@ function glmData = glmFit(varargin)
 % onlyPlt (default={0}): logical 
 %   If 1, will plot data without actually fitting. 
 %   NOTE: this is only for use when plotting GLM data already "extracted"
+% 
+% fitLineStyle (default={'-'}): str
+%     linestype of fitted plot 
+%  'datDotStyle' (default={'.'}): str
+%     the dot style of the plot use 
+% 'useLaserTrials' (default={0}) : double 
+%     whether to use the laster trials for glmfit
+%  'laserTrialType' (default={1}: double 
+%     -1 - left hemisphere inhibtion
+%     1 - right hemisphere inhibition (most of the time, depending on LED wiring, recorded in metadata...)
+
 %
 % Returns: 
 % -----------
@@ -77,7 +88,7 @@ varargin = ['onlyPlt', {0}, varargin];
 varargin = ['fitLineStyle', {'-'}, varargin];
 varargin = ['datDotStyle', {'.'}, varargin];
 varargin = ['useLaserTrials', {0}, varargin];
-
+varargin = ['laserTrialType', {1}, varargin];
 
 
 % Deals with sepPlots=1 where subjects are repliacted in getTrainingData
@@ -99,9 +110,10 @@ for i = find(extracted.validSubjects)'
     refIdx = min([i length(params.useCurrentAxes)]);
     if ~params.onlyPlt{refIdx}
         currBlock = extracted.data{i};
-
-        if params.useLaserTrials{1}
-            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+        if params.useLaserTrials{1} && isnan(params.laserTrialType{1})
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;  
+        elseif params.useLaserTrials{1} && ~isnan(params.laserTrialType{1})
+            keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30 & currBlock.stim_laserPosition==params.laserTrialType{1};    
         elseif (params.useLaserTrials{1}==0) && sum(isnan(currBlock.is_laserTrial))==0
             keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
         else
@@ -183,7 +195,15 @@ for i = find(extracted.validSubjects)'
     xTickLabel(2:2:end) = deal({[]});
     set(gca, 'xTick', xTickLoc, 'xTickLabel', xTickLabel);
 
-    title(sprintf('%s: %d Tri in %s', extracted.subject{i}, length(responseDir), extracted.blkDates{i}{1}))
+    if params.useLaserTrials{1}
+        if unique(currBlock.stim_laserPosition)==-1; inhibited_hemisphere = 'Left'; elseif unique(currBlock.stim_laserPosition)==1; inhibited_hemisphere = 'Right'; end
+        titlestring = sprintf('%s: %d opto Tri in %s,%s hemi', extracted.subject{i}, length(responseDir), extracted.blkDates{i}{1},inhibited_hemisphere);
+        
+    else
+        titlestring = sprintf('%s: %d Tri in %s', extracted.subject{i}, length(responseDir), extracted.blkDates{i}{1}); 
+    end
+
+    title(titlestring)
     xL = xlim; hold on; plot(xL,[midPoint midPoint], '--k', 'linewidth', 1.5);
     yL = ylim; hold on; plot([0 0], yL, '--k', 'linewidth', 1.5);
 end

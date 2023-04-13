@@ -13,6 +13,11 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 import sklearn
 import scipy
 
+import math
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
+
 def genericTune(x,ybot,ytop,x0,sigmaL,sigmaR):
     """
     1D Gaussian where sigma towards the left vs the right is allowed to vary 
@@ -44,8 +49,9 @@ def init_params_fitGeneric(x,y):
     ybot = np.min(y)
     ytop = np.max(y)
     x0 = x[np.argmax(y)]
-    sigmaL = 245
-    sigmaR = 245 
+    d = (ytop-ybot)/(ytop+ybot)
+    sigmaL = 10/d 
+    sigmaR = 10/d
 
     return [ybot,ytop,x0,sigmaL,sigmaR]
 
@@ -347,7 +353,7 @@ class azimuthal_tuning():
         azimuths = self.azimuths
         # fit each neuron 
         p0 = np.concatenate([fitGeneric(azimuths,n,upfactor=100)[np.newaxis,:] for n in tc_train])
-        self.tc_params = pd.DataFrame(data=p0,columns=['ybot','ytop','x0','sigmaL','sigmaR'])
+        self.tc_params = pd.DataFrame(data=p0,columns=['ybot','ytop','x0','sigmaL','sigmaR'],index = self.clus_ids)
 
         # evaluate on the 2nd half
 

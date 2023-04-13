@@ -22,9 +22,9 @@ tuning_curve_params = {
 azi.get_rasters_perAzi(**tuning_curve_params)
 tuning_curves = azi.fit_evaluate(cv_split=2,metric='svd')
 # %%
-testedID = 56
+testedID = 2
 azi.plot_response_per_azimuth(neuronID=testedID,which='p')
-azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID)
+azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID,metric='svd')
 
 # %%
 # alternative methods to test: 
@@ -90,5 +90,7 @@ is_selective,preferred_tuning = azi.calculate_significant_selectivity(n_shuffles
 # actually one has the data already loaded with azi 
 # so now, get response at preferred azi 
 
-azi.get_enhancement_index()
+a = azi.get_enhancement_index()
 
+
+# %%

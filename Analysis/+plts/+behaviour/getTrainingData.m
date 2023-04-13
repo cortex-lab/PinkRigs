@@ -123,6 +123,7 @@ for i = 1:length(params.subject)
     AVParams = cell(length(dataEvents),1);
     for j = 1:length(dataEvents)
         dataEvents(j).stim_visAzimuth(isnan(dataEvents(j).stim_visAzimuth)) = 0;
+        dataEvents(j).stim_audAzimuth(isnan(dataEvents(j).stim_audAzimuth)) = -1000; % the nans are in reality no aud stim trials ...
         dataEvents(j).stim_visDiff = dataEvents(j).stim_visContrast.*sign(dataEvents(j).stim_visAzimuth);
         dataEvents(j).stim_audDiff = dataEvents(j).stim_audAzimuth;
         AVParams{j,1} = unique([dataEvents(j).stim_audDiff dataEvents(j).stim_visDiff], 'rows');

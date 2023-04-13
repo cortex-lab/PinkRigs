@@ -12,7 +12,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'naive-acute-rfs'
+dat_type = 'active-chronic-rfs'
 dat_keys = get_data_bunch(dat_type)
 
 #from Admin.csv_queryExp import queryCSV
@@ -29,6 +29,7 @@ if csv_path.is_file() & (not recompute):
 else:
     for _,session in dat_keys.iterrows():
     # get generic info on clusters 
+        print(*session)
         clusInfo = load_cluster_info(**session)
         rf = rf_model(**session)
         rf.fit_evaluate()
@@ -61,7 +62,7 @@ allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 
 score_thr = 0.05
 dots_to_plot = allen_pos_apdvml[clusInfo.score>score_thr]
-dot_colors = brainrender_scattermap(clusInfo.fit_elevation.values[clusInfo.score>score_thr],vmin = -30,vmax=30,n_bins=15,cmap='coolwarm')
+dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = -120,vmax=120,n_bins=15,cmap='coolwarm')
 
 
 # %%
@@ -73,8 +74,8 @@ scene.add_brain_region("SCs",alpha=0.05,color='grey')
 sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 scene.add_brain_region("VISp",alpha=0.05)
 #scene.add_brain_region("RSP",alpha=0.05)
-dots_to_plot = allen_pos_apdvml[clusInfo._av_KSLabels==2]
-scene.add(Points(dots_to_plot, colors='k', radius=14, alpha=0.5))
+#dots_to_plot = allen_pos_apdvml[clusInfo._av_KSLabels==2]
+scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
 
 # for p,c in zip(dots_to_plot,dot_colors):
 #    scene.add(Points(p[np.newaxis,:]), colors=c, radius=30, alpha=0.8)
