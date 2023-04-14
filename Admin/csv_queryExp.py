@@ -390,8 +390,9 @@ def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','
 
     return r
 
-def simplify_recdat(recording,probe='probe0',reverse_opto=False): 
+def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['frontCam','eyeCam','sideCam']): 
     """
+    this is the most standarising loader. Allows standardisation of numerous sessions etc. 
     spits out the event,spike etc bunches with one line
     allows for quicker calling of data in a single experiment
     also allows calculations of extra parameters that vary session to session, utilised for mutliSpaceWorld 
@@ -406,13 +407,18 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False):
     recording: pd.Series
         details of recording as outputted by load date
     probe:
+    reverse_opto:bool
+    cam_hierarchy: list
+        we load a single camera's data. Cam_hierarchy will determine which one exactly.I.e. if 1st exist, load 1st, if not load2nd etc.
+        so cam_hierarchy is a list of names. 
+
     Retruns:
     --------
         Bunch,Bunch,Bunch,Bunch
         for ev,spikes,clusters & channels
         if it does not exist, we will out None
     """
-    ev,spikes,clusters,channels = None,None,None,None
+    ev,spikes,clusters,channels,cam = None,None,None,None,None
 
     if hasattr(recording,'events'):
         ev = recording.events._av_trials
@@ -429,8 +435,7 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False):
                 # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
                 ev.stim_audAzimuth = ev.stim_audAzimuth * -1 
                 ev.stim_visAzimuth = ev.stim_visAzimuth * -1 
-                ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5
-                    
+                ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5                    
 
     if hasattr(recording,probe):
         p_dat = recording[probe]
@@ -443,7 +448,17 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False):
         if hasattr(p_dat,'channels'):
             channels = p_dat.channels
 
-    return (ev,spikes,clusters,channels)
+    cam_checks = np.array([hasattr(recording,cam) for cam in cam_hierarchy])
+    if cam_checks.any(): 
+        cam_idx = np.where(cam_checks)[0][0]
+        used_camname = cam_hierarchy[cam_idx]
+        cam = recording[used_camname].camera
+
+        if hasattr(cam,'ROIMotionEnergy'):
+            if cam.ROIMotionEnergy.ndim==2:
+                cam.ROIMotionEnergy = (cam.ROIMotionEnergy[:,0])    
+
+    return (ev,spikes,clusters,channels,cam)
 
 def get_recorded_channel_position(channels):
     """

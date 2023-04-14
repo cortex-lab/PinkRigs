@@ -19,10 +19,36 @@ def get_move_raster(on_times,camt,camv,pre_time=.1,post_time=1,bin_size=.005,sor
 
     Parameters: 
     -----------
-
-
+    on_times: list 
+        instances of onsets (same scale as camt)
+    camt: np.ndarray 
+        camera timepoints (same length as camv)
+    camv: np.ndarray
+        camera values 
+    pre_time: float
+        time prior to event 
+    post_time: float 
+        time taken after event for the raster 
+    bin_size: float 
+    sortPC1: bool
+        whether to sort the raster based on how much each trial weighs on PC1, output is descending ?
+    sortAmp: bool
+        whether to sort the raster based on amplitude of movement after the event (specified by on_times). Output is ascending
+    baseline_subtract: bool 
+    to_plot: bool 
+        can plot the raster output directly 
+    ax: matplotlib.pyplot.axis
+        can pass down on which axis to plot the raster output (in case of subplot)
+    
+    
     Returns:
     --------
+    raster: np.ndarray
+        len(on_times) x time 
+    bin_range: np.ndarray
+        timepoints at of the raster 
+    sort_idx: 
+        indices over trials by which raster was sorted 
 
     todo: 
     return mean/mad and bunch output

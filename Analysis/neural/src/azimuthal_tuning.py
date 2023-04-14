@@ -4,8 +4,9 @@ import pandas as pd
 import numpy as np 
 import matplotlib.pyplot as plt
 
-from Admin.csv_queryExp import load_ephys_independent_probes,Bunch
+from Admin.csv_queryExp import load_ephys_independent_probes,Bunch,simplify_recdat
 from Analysis.pyutils.ev_dat import postactive
+from Analysis.pyutils.video_dat import get_move_raster
 from Analysis.pyutils.model_funcs import get_VE
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
@@ -42,9 +43,31 @@ def genericTune(x,ybot,ytop,x0,sigmaL,sigmaR):
     right[(x<x0)] = 0 
     return (left+right)
 
-def init_params_fitGeneric(x,y):
+def gaussian(x,ybot,ytop,x0,sigma):
     """
-    function to initilaise parameters 
+    1D Gaussian where sigma towards the left vs the right is allowed to vary 
+    Parameters: 
+    -----------
+    x: np.ndarray
+    ybot: float
+        baseline of the Gaussian
+    ytop: float 
+        determines the magnitude of the Gaussian
+    x0: float 
+        center
+    sigmaL: float
+        sigma towards left
+    sigmaR: float
+        sigma towards right
+
+    """
+    y = ybot+(ytop-ybot)*np.exp(-((x-x0)**2/(2*sigma**2)))
+
+    return y
+
+def init_GenericTune(x,y):
+    """
+    function to initilaise parameters for GenericTune
     """
     ybot = np.min(y)
     ytop = np.max(y)
@@ -54,6 +77,18 @@ def init_params_fitGeneric(x,y):
     sigmaR = 10/d
 
     return [ybot,ytop,x0,sigmaL,sigmaR]
+
+def init_Gaussian(x,y):
+    """
+    function to initilaise parameters for GenericTune
+    """
+    ybot = np.min(y)
+    ytop = np.max(y)
+    x0 = x[np.argmax(y)]
+    d = (ytop-ybot)/(ytop+ybot)
+    sigma = 10/d 
+
+    return [ybot,ytop,x0,sigma]
 
 def upsample(x,y,upfactor = 100,**kwargs):
     """
@@ -75,26 +110,6 @@ def upsample(x,y,upfactor = 100,**kwargs):
     x_ = np.linspace(np.min(x),np.max(x),x.size*upfactor)
     y_ = interp_func(x_)
     return x_,y_
-
-def fitGeneric(x,y,upfactor= None,p0=None):   
-    """
-    p0:None/list 
-        parameters for genericTime 
-    """ 
-    if upfactor is not None: 
-        x,y = upsample(x,y,upfactor=upfactor)
-
-    if p0 is None: 
-        p0 = init_params_fitGeneric(x,y) 
-
-
-    try:
-        fitted_params, _ = scipy.optimize.curve_fit(genericTune,x,y,p0=p0)
-    except RuntimeError:         
-        fitted_params = np.empty(len(p0))*np.nan
-
-
-    return fitted_params
 
 
 def svd_across_azimuths(r): 
@@ -146,19 +161,19 @@ class azimuthal_tuning():
         self.load(rec_info)
 
     def load(self,rec_info):
-
         ephys_dict =  {'spikes': ['times', 'clusters']}
-        other_ = {'events': {'_av_trials': 'table'}}
+        other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
 
         recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**rec_info)
         if recordings.shape[0] == 1:            
             recordings =  recordings.iloc[0]
         else:
             print('recordings are ambiguously defined. Please recall.')
-        events,self.spikes = recordings.events._av_trials,recordings.probe.spikes
+        
+        events,self.spikes,_,_,self.cam = simplify_recdat(recordings,probe='probe')
         _,self.vis,self.aud,self.ms = postactive(events)
 
-    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis', subselect_neurons = None):
+    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis',subselect_neurons = None,trim_type = None):
         """
         get rasters per azimuth for the loaded data
 
@@ -172,7 +187,8 @@ class azimuthal_tuning():
             cluster_ids subselection not implemented. 
         cv_split: float
             no of splits for cross_validation
-        
+        trim:
+            whether to throw away some trials for the rasters. Can do it based on A) distance from mean ('activity') B) movement score 
         Returns:
         --------
             :Bunch
@@ -225,6 +241,17 @@ class azimuthal_tuning():
             r = get_binned_rasters(self.spikes.times,self.spikes.clusters,self.clus_ids,t_on,**self.raster_kwargs)
             # so we need to break here so that we perorm getting binned rasters only once...
             stim = r.rasters[:,:,r.tscale>=0]
+
+            if 'movement' in trim_type:
+                m_raster,br,idx = get_move_raster(
+                    t_on,self.cam.times,self.cam.ROIMotionEnergy,
+                    sortAmp=False,baseline_subtract=False,
+                    to_plot=False,**self.raster_kwargs
+                    )
+            
+            if 'activity' in trim_type: 
+                pass 
+
             response_rasters.append(stim[np.newaxis,:,:,:])       
         
         self.response_rasters_per_azimuth = Bunch({
@@ -336,8 +363,33 @@ class azimuthal_tuning():
         return tuning_curves
     
 
+    def fitCurve(self,x,y,curve_type='genericTune',upfactor= None):   
+        """
+        helper function to fit the curve on a single xy data
+        p0:None/list 
+            parameters for genericTime 
+        """ 
+        if upfactor is not None: 
+            x,y = upsample(x,y,upfactor=upfactor)
+
+        try:
+            if 'genericTune' in curve_type:
+                p0 = init_GenericTune(x,y)
+                fitted_params, _ = scipy.optimize.curve_fit(genericTune,x,y,p0=p0)
+                self.fit_type = 'genericTune'
+                self.param_list = ['ybot','ytop','x0','sigmaL','sigmaR']
+            elif 'gaussian' in curve_type:
+                p0 = init_Gaussian(x,y)
+                fitted_params, _ = scipy.optimize.curve_fit(gaussian,x,y,p0=p0)
+                self.fit_type = 'gaussian'
+                self.param_list = ['ybot','ytop','x0','sigma']
+                
+        except RuntimeError:         
+            fitted_params = np.empty(len(p0))*np.nan
+
+        return fitted_params
     
-    def fit_tuning_curve(self,tuning_curves=None,**kwargs):
+    def fit_tuning_curve(self,tuning_curves=None,curve_type = 'gaussian',**kwargs):
         """
 
         Parameters: 
@@ -352,9 +404,9 @@ class azimuthal_tuning():
         tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).values
         azimuths = self.azimuths
         # fit each neuron 
-        p0 = np.concatenate([fitGeneric(azimuths,n,upfactor=100)[np.newaxis,:] for n in tc_train])
-        self.tc_params = pd.DataFrame(data=p0,columns=['ybot','ytop','x0','sigmaL','sigmaR'],index = self.clus_ids)
-
+        p0 = np.concatenate([self.fitCurve(azimuths,n,curve_type=curve_type,upfactor=100)[np.newaxis,:] for n in tc_train])
+        
+        self.tc_params = pd.DataFrame(data=p0,columns=self.param_list,index = self.clus_ids)
         # evaluate on the 2nd half
 
     def predict_tuning_curve(self,azimuths=None):      
@@ -362,7 +414,10 @@ class azimuthal_tuning():
         if azimuths is None: 
             azimuths = self.azimuths
 
-        self.predictions = np.concatenate([genericTune(azimuths,*p)[np.newaxis,:] for _,p in self.tc_params.iterrows()])
+        if 'genericTune' in self.fit_type:
+            self.predictions = np.concatenate([genericTune(azimuths,*p)[np.newaxis,:] for _,p in self.tc_params.iterrows()])
+        elif 'gaussian' in self.fit_type:
+            self.predictions = np.concatenate([gaussian(azimuths,*p)[np.newaxis,:] for _,p in self.tc_params.iterrows()])
 
     def evaluate_tuning_curve(self,tuning_curves):
         self.predict_tuning_curve()
@@ -375,11 +430,9 @@ class azimuthal_tuning():
         score=np.concatenate(score)
         return score
 
-
-
-    def fit_evaluate(self,**kwargs):
+    def fit_evaluate(self,curve_type = 'gaussian',**kwargs):
         tuning_curves = self.get_tuning_curves(**kwargs)   
-        self.fit_tuning_curve(tuning_curves=tuning_curves)
+        self.fit_tuning_curve(tuning_curves=tuning_curves,curve_type=curve_type)
         score = self.evaluate_tuning_curve(tuning_curves)      
         tuning_curves['score'] = score
         return tuning_curves
@@ -423,7 +476,11 @@ class azimuthal_tuning():
         if plot_pred: 
             azimuths_upped = np.linspace(np.min(azimuths),np.max(azimuths),azimuths.size*100)
             p = self.tc_params.iloc[neuron_idx].values
-            t_pred = genericTune(azimuths_upped,*p)
+            if 'genericTune' in self.fit_type:
+                t_pred = genericTune(azimuths_upped,*p)
+            elif 'gaussian' in self.fit_type:
+                t_pred = gaussian(azimuths_upped,*p)
+
             ax.plot(azimuths_upped,t_pred,'k')
 
             if plot_train: 
@@ -435,13 +492,7 @@ class azimuthal_tuning():
                 titlestring += ve_string
 
         
-        ax.set_title(titlestring)
-
-                
-
-
-        
-    
+        ax.set_title(titlestring)             
 
 
     def get_selectivity(self,**kwargs):

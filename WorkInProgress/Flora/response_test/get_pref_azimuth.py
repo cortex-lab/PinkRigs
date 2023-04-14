@@ -17,12 +17,13 @@ tuning_curve_params = {
     'spl': 0.02, # means I select the max
     'which': tuning_type,
     'subselect_neurons':None,
+    'trim_type':'movement'
 }
 
 azi.get_rasters_perAzi(**tuning_curve_params)
-tuning_curves = azi.fit_evaluate(cv_split=2,metric='svd')
+tuning_curves = azi.fit_evaluate(cv_split=2,curve_type= 'gaussian',metric='svd')
 # %%
-testedID = 2
+testedID = 85
 azi.plot_response_per_azimuth(neuronID=testedID,which='p')
 azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID,metric='svd')
 
