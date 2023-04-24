@@ -22,8 +22,8 @@ from Admin.csv_queryExp import queryCSV
 # dat_keys['probe']='probe0'
 
 #  %%
-rerun_sig_test= True 
-recompute_csv = True 
+rerun_sig_test= False 
+recompute_csv = False 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -189,7 +189,7 @@ for idx,t in enumerate(tuning_types):
     print(t)
     goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
 ]
-    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
     print(namekeys)
     tcs = goodclus.sort_values('x0%s' % t)
     tcs = tcs[namekeys]
@@ -199,7 +199,7 @@ for idx,t in enumerate(tuning_types):
 
 
     ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
-    ax[idx].set_ylim([225,0])
+    ax[idx].set_ylim([275,0])
     off_axes(ax[idx])
 # 
     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
@@ -213,6 +213,8 @@ print(len(maps['vis_mean']),len(maps['aud_mean']))
 _,ax = plt.subplots(1,1,figsize=(2,2))
 ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
 off_topspines(ax)
+ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
+
 ax.set_xlim([-90,90])
 ax.set_ylim([-90,90])
 ax.set_xlabel('preferred visual azimuth')

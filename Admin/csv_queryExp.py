@@ -61,9 +61,9 @@ def check_date_selection(date_selection,dateList):
     """
     date_range = []
     date_range_called = False # when a from to type of date range called. Otherwise date_selection is treated as list of dates 
-    if 'last' in date_selection:
+    if 'previous' in date_selection:
         date_range_called = True 
-        date_selection = date_selection.split('last')[1]
+        date_selection = date_selection.split('previous')[1]
         date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
         date_range.append(datetime.datetime.today())
     else:
@@ -144,7 +144,6 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
                 expList = expList[expList.expDef.str.contains(expDef)]
             if 'all' not in expDate: 
                 # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
-
                 if ('postImplant' in expDate):
                     implant_date  = mouseList[mouseList.Subject == mm].P0_implantDate
                     # check whether mouse was implanted at all or not.
@@ -156,11 +155,18 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
                     else: 
                         print('%s was not implanted or did not have the requested type of exps.' % mm)
                         selected_dates = np.zeros(expList.expDate.size).astype('bool')
+                    
+                    expList = expList[selected_dates]
+
+                elif ('last' in expDate):
+                    # this only selects the last experiment done on the given animal
+                    how_many_days = int(expDate.split('last')[1]) 
+                    expList = expList.iloc[-how_many_days:]
 
                 else:  
-                    selected_dates = check_date_selection(expDate,expList.expDate)
-
-                expList = expList[selected_dates]
+                    selected_dates = check_date_selection(expDate,expList.expDate)                    
+                    expList = expList[selected_dates]
+                    
             if expNum:
                 expNum = (np.array(expNum)).astype('str')
                 _,idx,_ = np.intersect1d(expList.expNum.to_numpy(),expNum,return_indices=True)
