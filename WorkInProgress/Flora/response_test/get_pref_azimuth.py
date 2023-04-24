@@ -17,15 +17,16 @@ tuning_curve_params = {
     'spl': 0.02, # means I select the max
     'which': tuning_type,
     'subselect_neurons':None,
-    'trim_type':'movement'
+    'trim_type': None, 
+    'trim_fraction':None
 }
 
 azi.get_rasters_perAzi(**tuning_curve_params)
-tuning_curves = azi.fit_evaluate(cv_split=2,curve_type= 'gaussian',metric='svd')
+tuning_curves,is_selective = azi.get_significant_fits(curve_type= 'gaussian',metric='svd')
 # %%
-testedID = 85
+testedID = 325
 azi.plot_response_per_azimuth(neuronID=testedID,which='p')
-azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID,metric='svd')
+azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=testedID,metric='svd',plot_trials=False)
 
 # %%
 # alternative methods to test: 
@@ -67,8 +68,6 @@ r_pc = r_pc.reshape(r.shape)
 fig,ax = plt.subplots(1,7,sharey=True,figsize=(15,4))
 for i,a in enumerate(r_pc.mean(axis=1)):
     ax[i].plot(a)
-
-
 
 # %% method 3   take the trial weight from the 1st pc 
 neuron_idx = np.where(azi.clus_ids==testedID)[0][0]

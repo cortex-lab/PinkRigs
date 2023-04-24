@@ -22,8 +22,8 @@ from Admin.csv_queryExp import queryCSV
 # dat_keys['probe']='probe0'
 
 #  %%
-rerun_sig_test= False 
-recompute_csv = False 
+rerun_sig_test= True 
+recompute_csv = True 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -46,6 +46,8 @@ tuning_curve_params = {
     'contrast': None, # means I select the max
     'spl': None, # None means I select the max
     'subselect_neurons':None,
+    'trim_type':None, 
+    'trim_fraction':None
 }
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 csv_path = interim_data_folder / dat_type 
@@ -102,12 +104,13 @@ if not csv_path.is_file() or recompute_csv:
         for t in tuning_types:
             tuning_curve_params['which'] = t
             azi.get_rasters_perAzi(**tuning_curve_params)
-            tcs = azi.fit_evaluate(cv_split=2,metric='svd')
+            tcs,is_selective = azi.get_significant_fits(curve_type= 'gaussian',metric='svd')
 
             # old method when using the rossi et al. selectivity method 
             #clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
             #clusInfo['%s_selectivity'% t] = azi.selectivity
-            #tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None)            
+            #tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None) 
+            clusInfo['is_%s_spatial' % t]  = is_selective       
             for i,cv in enumerate(cv_names):
                 clusInfo = pd.concat((clusInfo,tcs[tcs.cv_number==i].add_suffix('_'+ cv)),axis=1) # concatenate the actual tuning curves, test set_only
 
@@ -160,9 +163,8 @@ ax.set_xlabel('multisensory enhancement index')
 # %%
 
 # we consider units spatual that 
-clusInfo['is_vis_spatial'] = clusInfo.vis_score_test>0.05
-clusInfo['is_aud_spatial'] = clusInfo.aud_score_test>0.05
-
+# clusInfo['is_vis_spatial'] = clusInfo.vis_score_test>0.2
+# clusInfo['is_aud_spatial'] = clusInfo.aud_score_test>0.2
 # %%
 # import plotly.express as px
 # plotted_tc = 'vis'
@@ -185,8 +187,9 @@ _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
 maps = {}
 for idx,t in enumerate(tuning_types):
     print(t)
-    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC]
-    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
     print(namekeys)
     tcs = goodclus.sort_values('x0%s' % t)
     tcs = tcs[namekeys]
@@ -195,8 +198,8 @@ for idx,t in enumerate(tuning_types):
         (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
 
 
-    ax[idx].imshow(tcs_norm,aspect='auto',cmap='PuRd')
-    ax[idx].set_ylim([276,0])
+    ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
+    ax[idx].set_ylim([225,0])
     off_axes(ax[idx])
 # 
     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
@@ -210,6 +213,8 @@ print(len(maps['vis_mean']),len(maps['aud_mean']))
 _,ax = plt.subplots(1,1,figsize=(2,2))
 ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
 off_topspines(ax)
+ax.set_xlim([-90,90])
+ax.set_ylim([-90,90])
 ax.set_xlabel('preferred visual azimuth')
 ax.set_ylabel('preferred auditory azimuth')
 
@@ -242,20 +247,18 @@ color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
 # look at discriminability 
  
 # plotting in brainrender 
-from brainrender import Scene
-from brainrender.actors import Points
-
+import brainrender as br
 import numpy as np
 
 # Add brain regions
-scene = Scene(title="SC aud and vis units", inset=False,root=False)
-scene.add_brain_region("SCs",alpha=0.05,color='grey')
-sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
+scene = br.Scene(title="SC aud and vis units", inset=False,root=False)
 
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=30, alpha=0.8))
-# scene.add(Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='k', radius=15, alpha=0.2))
+#scene.add_brain_region("SCs",alpha=0.07,color='sienna')
+sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
+# scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='grey', radius=20, alpha=0.7))
+# scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=20, alpha=0.7))
+# scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=20, alpha=0.7))
+# scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_both & clusInfo.is_good & clusInfo.is_SC,:], colors='g', radius=20, alpha=0.7))
 
 #plot the neurons in allen atalas space
 # scene.add(Points(allen_pos_apdvml[clusInfo.is_both  & clusInfo.is_good,:], colors='g', radius=30, alpha=0.8))
@@ -271,17 +274,15 @@ sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 #         alpha=1
 #         ))    
 # scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
-t = 'vis'
+t = 'aud'
 from Analysis.pyutils.plotting import brainrender_scattermap
 
-dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC ,:]
-dot_colors = brainrender_scattermap(clusInfo['x0%s' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]
+dot_colors = brainrender_scattermap(clusInfo['x0%s' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
 
-scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
+scene.add(br.actors.Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
 
 
-
-scene.content
 scene.render()
 
 # %%

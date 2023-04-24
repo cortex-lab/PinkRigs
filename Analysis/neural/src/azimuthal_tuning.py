@@ -161,7 +161,7 @@ class azimuthal_tuning():
         self.load(rec_info)
 
     def load(self,rec_info):
-        ephys_dict =  {'spikes': ['times', 'clusters']}
+        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
         other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
 
         recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**rec_info)
@@ -172,8 +172,9 @@ class azimuthal_tuning():
         
         events,self.spikes,_,_,self.cam = simplify_recdat(recordings,probe='probe')
         _,self.vis,self.aud,self.ms = postactive(events)
+        self.clus_ids = recordings.probe.clusters._av_IDs.astype('int') 
 
-    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis',subselect_neurons = None,trim_type = None):
+    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis',subselect_neurons = None,trim_type = None,trim_fraction=None):
         """
         get rasters per azimuth for the loaded data
 
@@ -205,9 +206,7 @@ class azimuthal_tuning():
         else: 
             spl = np.min(self.aud.SPL.values)
             
-        if not subselect_neurons: 
-            self.clus_ids = np.unique(self.spikes.clusters)    
-        else:
+        if subselect_neurons: 
             pass
 
         if 'vis' in which:
@@ -242,15 +241,23 @@ class azimuthal_tuning():
             # so we need to break here so that we perorm getting binned rasters only once...
             stim = r.rasters[:,:,r.tscale>=0]
 
-            if 'movement' in trim_type:
-                m_raster,br,idx = get_move_raster(
-                    t_on,self.cam.times,self.cam.ROIMotionEnergy,
-                    sortAmp=False,baseline_subtract=False,
-                    to_plot=False,**self.raster_kwargs
-                    )
-            
-            if 'activity' in trim_type: 
-                pass 
+            timings = ['pre_time','post_time','bin_size']
+            timings = {t:self.raster_kwargs[t] for t in timings}
+
+            n_trials = stim.shape[0]
+            if trim_type:
+                if 'movement' in trim_type:
+                    _,_,idx = get_move_raster(
+                        t_on,self.cam.times,self.cam.ROIMotionEnergy,
+                        sortAmp=True,baseline_subtract=False,
+                        to_plot=False,**timings
+                        )
+                    
+                n_to_cut = int(n_trials*trim_fraction)    
+                stim = stim[idx[:-n_to_cut],:,:]    
+                
+                if 'activity' in trim_type: 
+                    pass 
 
             response_rasters.append(stim[np.newaxis,:,:,:])       
         
@@ -321,7 +328,7 @@ class azimuthal_tuning():
             rasters = collated_rasters.reshape(rasters.shape[0],rasters.shape[1],rasters.shape[2],rasters.shape[3])
         
         # shuffle trial indices
-        trials_idx = self.aud.trials.values
+        trials_idx = np.arange(rasters.shape[1])
         np.random.seed(0)
         trials_idx = np.random.permutation(trials_idx)
         split_edges = list(itertools.accumulate(itertools.repeat(int(trials_idx.size/cv_split),cv_split)))
@@ -436,8 +443,29 @@ class azimuthal_tuning():
         score = self.evaluate_tuning_curve(tuning_curves)      
         tuning_curves['score'] = score
         return tuning_curves
+    
+    def get_significant_fits(self,n_shuffles=20,p_threshold=0.05,**kwargs):
 
-    def plot_tuning_curves(self,tuning_curves=None,metric='abs-max',neuronID=1,plot_train=True,plot_test=True,plot_pred=True): 
+        shuffle_scores = []
+        for shuffle_idx in range(n_shuffles): 
+            tuning_curves = self.fit_evaluate(cv_split=2,azimuth_shuffle_seed=shuffle_idx,**kwargs)
+            shuffle_scores.append(tuning_curves[tuning_curves.cv_number==1].score.values[np.newaxis,:])
+
+        shuffle_scores = np.concatenate(shuffle_scores)
+
+        tuning_curves = self.fit_evaluate(cv_split=2,azimuth_shuffle_seed=None,**kwargs)
+
+        actual = tuning_curves[tuning_curves.cv_number==1].score.values
+
+        actual = np.tile(actual,(n_shuffles,1))
+        p_val = (shuffle_scores>actual).sum(axis=0)/n_shuffles
+        
+        is_selective = p_val < p_threshold
+        is_selective[np.isnan(actual[0,:])] = False
+        
+        return tuning_curves,is_selective
+
+    def plot_tuning_curves(self,tuning_curves=None,metric='abs-max',neuronID=1,plot_train=True,plot_test=True,plot_pred=True,plot_trials=True): 
         """
         function to plot the tuning curve for a given neuron
         """
@@ -460,8 +488,10 @@ class azimuthal_tuning():
             stim_per_trial,_ = svd_across_azimuths(stim)
 
         figure,ax = plt.subplots(1,1,figsize=(6,7))
-        for i in range(n_azimuths):
-            ax.plot(np.ones((n_trials,1))*azimuths[i],stim_per_trial[i,:],'ko')
+
+        if plot_trials:
+            for i in range(n_azimuths):
+                ax.plot(np.ones((n_trials,1))*azimuths[i],stim_per_trial[i,:],'ko')
 
 
         titlestring = 'neuron %.0d' % neuronID

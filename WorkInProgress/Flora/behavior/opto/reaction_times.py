@@ -9,17 +9,17 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
-my_subject = ['AV036']
+my_subject = ['AV038']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-03-30:2023-04-06',
+    expDate = '2023-04-14:2023-04-20',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
 # %% 
-ev,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=True) for _,rec in recordings.iterrows()])
+ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=True) for _,rec in recordings.iterrows()])
 is_laser_session = [np.sum(e.is_laserTrial)>0 for e in ev]
 ev = list(compress(ev,is_laser_session))
 
@@ -121,7 +121,9 @@ for i,p in enumerate(powers):
     off_topspines(ax[1])
 ax[1].legend(powers)
 # %%
-# look at block of nogo vs single nogos 
+# look at nogos per trial type
+
+fig,ax = plt.subplots(1,1)
 
 
 # %%
