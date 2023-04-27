@@ -95,7 +95,23 @@ switch modChoose
         end
         obj.evalPoints = [repmat(linspace(-max(abs(uniV)),max(abs(uniV)),200)', length(uniA),1), reshape(repmat(uniA,1,200)',200*length(uniA),1)];
         obj.prmBounds = repmat([-inf; inf], 1, length(obj.prmLabels));
-    
+
+    case lower({'simpLogSplitVSplitAPast'})
+        obj.prmLabels = {'bias';'visScaleR';'visScaleL';'N';'audScaleR';'audScaleL'};
+        freeP = zeros(1,length(obj.prmLabels));
+        if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
+
+        if exist('P', 'var')
+            pOld = obj.prmInit;
+            allPrms = [pOld; P; freeP];
+            visContributionLR =  mkPrm(allPrms,2)*(abs(visDiff.*(visDiff>0)).^(mkPrm(allPrms,4))) -  ...
+                    mkPrm(allPrms,3)*(abs(visDiff.*(visDiff<0)).^(mkPrm(allPrms,4)));
+            audContributionLR =  mkPrm(allPrms,5)*(abs(audDiff.*(audDiff>0))) -  mkPrm(allPrms,6)*(abs(audDiff.*(audDiff<0)));
+            logOddsLR = mkPrm(allPrms,1)+visContributionLR + audContributionLR;
+        end
+        obj.evalPoints = [repmat(linspace(-max(abs(uniV)),max(abs(uniV)),200)', length(uniA),1), reshape(repmat(uniA,1,200)',200*length(uniA),1)];
+        obj.prmBounds = repmat([-inf; inf], 1, length(obj.prmLabels));
+
         
     case lower({'simpLogSplitVSplitAAudDom'; 'simpLogSplitVSplitAAudExtraDom'; 'simpLogSplitVSplitASplitT'})
         if contains(lower(modChoose), {'auddom'}); audDom = 1; else; audDom = 0; end
