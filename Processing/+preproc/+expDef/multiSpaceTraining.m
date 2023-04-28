@@ -486,6 +486,20 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         laser_times_per_trial = indexByTrial(trialStEnTimes,all_laser_times(:,1)); 
         % the longer ITI is at the end of the trial so most of the time of
         % there is an extra flip, it will happen in that ITI
+
+        % sometimes the laser does not turn on for some reason even if
+        % there is a pulse: I think it is queing the previous..? But that
+        % should be indicated 
+
+        is_laser_On_trial_indexed  = (~cellfun(@isempty,laser_times_per_trial));
+        % check whether any is missed 
+        missed_waveforms = sum(is_laser_On'-is_laser_On_trial_indexed);         
+        if missed_waveforms>0 && missed_waveforms<5
+            fprintf('****WARNING: seems like a few laser Trials did not output a waveform... (if more than 5, experiment will error) \n');
+            is_laser_On = is_laser_On_trial_indexed';
+        end 
+
+
         kept_times = cellfun(@(x) x(1), laser_times_per_trial(is_laser_On));
         [~,idx,~] = intersect(all_laser_times(:,1),kept_times);
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);

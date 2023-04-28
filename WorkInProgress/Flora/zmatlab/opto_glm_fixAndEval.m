@@ -107,6 +107,8 @@ hold all;
 for i=1:numel(subject_list)
     plot(fits(:,i));
 end
+
+
 %plot(mean(fits))
 
 %%
