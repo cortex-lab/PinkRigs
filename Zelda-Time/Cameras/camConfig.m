@@ -65,7 +65,7 @@ list(i).LocalPort = 1003;
 list(i).CompressionRatio = 10;
 list(i).cameraClass = camClass;
 list(i).liveViewOn = false;
-list(i).closingDelay = (i-1)*15+10; % to avoid closing jam?
+list(i).closingDelay = (i-1)*5+10; % to avoid closing jam?
 list(i).copyToServer = false;
 
 i = i + 1;
@@ -76,7 +76,7 @@ list(i).LocalPort = 1004;
 list(i).CompressionRatio = 10;
 list(i).cameraClass = camClass;
 list(i).liveViewOn = false;
-list(i).closingDelay = (i-1)*15+10;
+list(i).closingDelay = (i-1)*5+10;
 list(i).copyToServer = false;
 
 i = i + 1;
@@ -87,5 +87,5 @@ list(i).LocalPort = 1005;
 list(i).CompressionRatio = 10;
 list(i).cameraClass = camClass;
 list(i).liveViewOn = true;
-list(i).closingDelay = (i-1)*15+10;
+list(i).closingDelay = (i-1)*5+10;
 list(i).copyToServer = false;
