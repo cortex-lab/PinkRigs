@@ -36,8 +36,8 @@ import natsort
 
 
 # Run deeplabcut to get anchor points to draw ROI
-# import deeplabcut
-# import tensorflow as tf
+import deeplabcut
+import tensorflow as tf
 
 
 # Pink rig dependencies
@@ -2431,4 +2431,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['FT022'], expDate='2021-07-20')
+    main(subject=['FT019'], expDate='2021-07-07')
