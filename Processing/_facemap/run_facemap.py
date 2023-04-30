@@ -2157,7 +2157,10 @@ def batch_process_facemap(output_format='flat', sessions=None,
                    
                     facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)
                     if facemap_output_path:
-                        convert_facemap_output_to_ONE_format(facemap_output_path[0])
+                        is_last_frames = np.array(['lastFrames' in p for p in facemap_output_path])
+                        idx = np.where(~is_last_frames)[0]
+                        if len(idx)==1:
+                            convert_facemap_output_to_ONE_format(facemap_output_path[idx[0]])
                     else:
                         print('not processed.')
 
