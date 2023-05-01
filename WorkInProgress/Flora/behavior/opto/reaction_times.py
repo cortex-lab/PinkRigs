@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
-my_subject = ['AV038']
+my_subject = ['AV036']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-04-14:2023-04-20',
+    expDate = '2023-04-24:2023-04-28',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'all'}}

@@ -23,13 +23,15 @@ from Admin.csv_queryExp import queryCSV
 
 #  %%
 rerun_sig_test= False 
-recompute_csv = False 
+recompute_csv = True 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
+from Analysis.neural.src.movements import movement_correlation
+
 
 # load the ap pref azimuth model 
 modelpath = Path(r'C:\Users\Flora\Documents\Github\PinkRigs\WorkInProgress\Flora\anatomy')
@@ -40,7 +42,7 @@ if modelpath.is_file():
 else: 
     print('position to azimuth mapping does not exist.')
 
-
+m = movement_correlation()
 # %%
 tuning_curve_params = { 
     'contrast': None, # means I select the max
@@ -95,10 +97,13 @@ if not csv_path.is_file() or recompute_csv:
         clusInfo['is_vis']= ~clusInfo.is_aud_sig & clusInfo.is_vis_sig
 
         # predict preferred spatial tuning based on position
-        clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
+        #clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
         
-        azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
+       # azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
         
+
+        clusInfo['movement_correlation'],clusInfo['is_movement_correlated'] = m.session_permutation(session,0.05)
+
         #get spatial tuning properties
         azi = azimuthal_tuning(session)
         for t in tuning_types:
@@ -106,7 +111,7 @@ if not csv_path.is_file() or recompute_csv:
             azi.get_rasters_perAzi(**tuning_curve_params)
             tcs,is_selective = azi.get_significant_fits(curve_type= 'gaussian',metric='svd')
 
-            # old method when using the rossi et al. selectivity method 
+            # old methohen using the rossi et al. selectivity method 
             #clusInfo['is_%s_spatial' % t],clusInfo['%s_preferred_tuning' % t] = azi.calculate_significant_selectivity(n_shuffles=100,p_threshold=0.05)
             #clusInfo['%s_selectivity'% t] = azi.selectivity
             #tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None) 
@@ -118,13 +123,33 @@ if not csv_path.is_file() or recompute_csv:
 
 
        # then calculate enhancement index at "preferred azimuths". 
-        azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
-        azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
-        clusInfo['enhancement_index'] = azi.get_enhancement_index(at_azimuth=azimuth_pref_estimate)
+        # azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
+        # azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
+
+        azimuth_pref_estimate_aud = np.digitize(clusInfo.x0aud.values,bins=np.arange(-75,105,30),right=False)
+        azimuth_pref_estimate_aud = azi.aud.azimuths.values[azimuth_pref_estimate_aud]
+        azimuth_pref_estimate_aud[azimuth_pref_estimate_aud==0] = np.nan
+
+        azimuth_pref_estimate_vis = np.digitize(clusInfo.x0vis.values,bins=np.arange(-75,105,30),right=False)
+        azimuth_pref_estimate_vis = azi.aud.azimuths.values[azimuth_pref_estimate_vis]
+        azimuth_pref_estimate_vis[azimuth_pref_estimate_vis==0] = np.nan
+
+        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
+        clusInfo['enhancement_index_pref'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)    
+
+        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]*-1),axis=1)
+        clusInfo['enhancement_index_antipref,aud'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
+
+        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
+        clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
 
         
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
-        clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
+
+        if hasattr(clusInfo,'brainLocationAcronyms_ccf_2017'):
+            clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
+        else:
+            clusInfo['is_SC'] = False
 
         all_dfs.append(clusInfo)
     
@@ -150,12 +175,12 @@ else:
 
 # %%
 from Analysis.pyutils.plotting import off_exceptx
-sc_clus = clusInfo[clusInfo.is_SC & clusInfo.is_good]
-ei = sc_clus.enhancement_index.values
+sc_clus = clusInfo[clusInfo.is_SC & clusInfo.is_good & clusInfo.is_aud_spatial & clusInfo.is_vis_spatial]
+ei = sc_clus['enhancement_index_antipref,aud'].values
 _,ax = plt.subplots(1,1,figsize=(3,3))
 ax.hist(
     ei[~np.isnan(ei) & ~np.isinf(ei)],
-    bins=np.arange(-3,3,0.1)
+    bins=np.arange(-2,2,0.2)
 )
 off_exceptx(ax)
 ax.set_xlabel('multisensory enhancement index')
@@ -189,7 +214,7 @@ for idx,t in enumerate(tuning_types):
     print(t)
     goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
 ]
-    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
     print(namekeys)
     tcs = goodclus.sort_values('x0%s' % t)
     tcs = tcs[namekeys]
@@ -199,7 +224,7 @@ for idx,t in enumerate(tuning_types):
 
 
     ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
-    ax[idx].set_ylim([275,0])
+    ax[idx].set_ylim([240,0])
     off_axes(ax[idx])
 # 
     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
@@ -255,8 +280,8 @@ import numpy as np
 # Add brain regions
 scene = br.Scene(title="SC aud and vis units", inset=False,root=False)
 
-#scene.add_brain_region("SCs",alpha=0.07,color='sienna')
-sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
+scene.add_brain_region("SCs",alpha=0.07,color='sienna')
+#sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='grey', radius=20, alpha=0.7))
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=20, alpha=0.7))
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=20, alpha=0.7))
@@ -276,7 +301,7 @@ sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
 #         alpha=1
 #         ))    
 # scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
-t = 'aud'
+t = 'vis'
 from Analysis.pyutils.plotting import brainrender_scattermap
 
 dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]

@@ -1,8 +1,9 @@
-clear params
-params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
+clear all;
+%params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
+%params.subject  = {['AV038'];['AV036']};
 params.expDef = 'm'; 
 params.checkEvents = '1'; 
-params.expDate = {['2022-04-04:2023-04-20']}; 
+params.expDate = {['2023-04-24:2023-04-28']}; 
 exp2checkList = csv.queryExp(params);
 params = csv.inputValidation(exp2checkList);
 extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',0,'combHemispheres',0,'combDates',1); 
@@ -31,11 +32,10 @@ opto_fit_sets = logical([
 ]);
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
-plot_model_pred(2) = 1; 
+plot_model_pred(8) = 1; 
 shouldPlot = 1; 
 plotParams.plottype = 'res'; 
-for s=1:1%numel(extracted.data)    
-    s=10;
+for s=1:numel(extracted.data)    
     currBlock = extracted.data{s};
     nTrials(s) = numel(currBlock.is_blankTrial); 
     keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
@@ -80,6 +80,7 @@ for s=1:1%numel(extracted.data)
     end
     %
 end
+
 %%
 % summary plots for cross-validation 
 % only include things that are more than 2k trials
@@ -97,8 +98,12 @@ deltaR2 = (opto_fit_logLik_(:,1)-opto_fit_logLik_(:,3:7))./best_deltaR2;
 
 cvR2 = (opto_fit_logLik_(:,2)-opto_fit_logLik_(:,8:12))./best_deltaR2;
 
-%
+%% individual plots 
+figure; 
+plot(deltaR2');
+figure;plot(cvR2'); 
 
+%% plot bar plot of summary 
 figure;
 errorbar(paramLabels,median(deltaR2),zeros(size(deltaR2,2),1),mad(deltaR2),'black',"LineStyle","none");
 hold on; 
@@ -113,7 +118,7 @@ bar(paramLabels,median(cvR2),'green');
 % fit
 
 figure; 
-ptype = 2; 
+ptype = 1; 
 plot(opto_fit_params(nTrials>2000,1,ptype),opto_fit_params(nTrials>2000,2,ptype),'o')
 hold on; 
 plot([-5,5],[-5,5],'k--')
