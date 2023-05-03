@@ -12,6 +12,9 @@ function glmData = glmFit(varargin)
 %   Indicates which model to fit. Different strings are interpreted in
 %   the script "GLMMultiModels.m" 
 %
+% plotCond (default={'none'}): string 
+%   Plotting with a condition, e.g. on the choice in the previous trial.
+%
 % sepPlots (default=0): int 
 %   If this is a 1, indicates that plots for a single mouse should be shown
 %   separately across sessions (rather than combining into an average).
@@ -57,6 +60,7 @@ function glmData = glmFit(varargin)
 % -----------
 % glmData: cell array. One cell per plot, contains GLMmulti class object 
 %   .modelString: modelString used
+%   .plotCond:    condition for plotting
 %   .prmLabels:   labels for the parameters used
 %   .prmFits:     fitted values for paramters used
 %   .prmBounds:   bounds used for fitting (not confidence interval)
@@ -77,6 +81,7 @@ function glmData = glmFit(varargin)
 
 
 varargin = ['modelString', {'simpLogSplitVSplitA'}, varargin];
+varargin = ['plotCond', {'none'}, varargin];
 varargin = ['sepPlots', {0}, varargin];
 varargin = ['expDef', {'t'}, varargin];
 varargin = ['plotType', {'res'}, varargin];
@@ -110,6 +115,11 @@ for i = find(extracted.validSubjects)'
     refIdx = min([i length(params.useCurrentAxes)]);
     if ~params.onlyPlt{refIdx}
         currBlock = extracted.data{i};
+
+        % Add previous choices and rewards
+        currBlock.previous_respDirection = [0; currBlock.response_direction(1:end-1)];
+        currBlock.previous_respFeedback = [0; currBlock.response_feedback(1:end-1)];
+
         if params.useLaserTrials{1} && isnan(params.laserTrialType{1})
             keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;  
         elseif params.useLaserTrials{1} && ~isnan(params.laserTrialType{1})
@@ -136,11 +146,66 @@ for i = find(extracted.validSubjects)'
     end
     if params.noPlot{1}; return; end
     
-    params2use = mean(glmData{i}.prmFits,1);   
+    %%% FIT
+    params2use = mean(glmData{i}.prmFits,1);
     pHatCalculated = glmData{i}.calculatepHat(params2use,'eval');
-    [grids.visValues, grids.audValues] = meshgrid(unique(glmData{i}.evalPoints(:,1)),unique(glmData{i}.evalPoints(:,2)));
-    [~, gridIdx] = ismember(glmData{i}.evalPoints, [grids.visValues(:), grids.audValues(:)], 'rows');
-    plotData = grids.visValues;
+
+    visValFit = glmData{i}.evalPoints(:,1);
+    audValFit = glmData{i}.evalPoints(:,2);
+    if size(glmData{i}.evalPoints,2)>3
+        prevRespDirValFit = glmData{i}.evalPoints(:,3);
+        prevRespDirValFit(prevRespDirValFit == 1) = -2; % -2 = left, 0 = timeout, 2 = right
+        prevRespDirValFit = prevRespDirValFit/2; % between -1 and 1
+        prevRespFeedValFit = glmData{i}.evalPoints(:,4);
+    end
+
+    clear uniGridFit
+    uniGridFit{1} = unique(visValFit);
+    uniGridFit{2} = unique(audValFit);
+    allVal = [visValFit,audValFit];
+    switch params.modelString{1}
+        case 'simpLogSplitVSplitAPast'
+            % Split by previous choice
+            uniGridFit = cat(2,uniGridFit,{unique(prevRespDirValFit)});
+            allVal = cat(2,allVal,prevRespDirValFit);
+            noRepIdx = 1:numel(uniGridFit{1})*numel(uniGridFit{2})*numel(uniGridFit{3});
+            allVal = allVal(noRepIdx,:);
+            pHatCalculated = pHatCalculated(noRepIdx,:);
+
+            lineStyle = {params.fitLineStyle{1}; params.fitLineStyle{1}; params.fitLineStyle{1}};
+            lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+            lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
+
+        case {'simpLogSplitVSplitAPastWSLS', 'simpLogSplitVSplitAPastBusse'}
+            % Split by previous choice and previous reward
+            prevRewardedChoice = prevRespDirValFit;
+            prevRewardedChoice(prevRespDirValFit == -1 & prevRespFeedValFit == 1) = -2;
+            prevRewardedChoice(prevRespDirValFit ==1 & prevRespFeedValFit == 1) = 2;
+
+            uniGridFit = cat(2,uniGridFit,{unique(prevRewardedChoice)});
+            allVal = cat(2,allVal,prevRewardedChoice);
+
+                        lineStyle = {'-','--',':','--','-'};
+            lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+            lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
+
+        otherwise
+            % Nothing to add!
+
+            lineStyle = {params.fitLineStyle{1}};
+            lineColors = {plts.general.selectRedBlueColors(uniGridFit{2})};
+    end
+    clear valGridFit
+    [valGridFit{1:numel(uniGridFit)}] = ndgrid(uniGridFit{:});
+
+    [~, gridIdx] = ismember(allVal, cell2mat(cellfun(@(x) x(:), valGridFit, 'uni', 0)), 'rows');
+    plotData = valGridFit{1};
     plotData(gridIdx) = pHatCalculated(:,2);
     plotOpt.lineStyle = params.fitLineStyle{1};
     plotOpt.Marker = 'none';
@@ -160,27 +225,89 @@ for i = find(extracted.validSubjects)'
         params.contrastPower{refIdx} = 1;
     end
     contrastPower = params.contrastPower{refIdx};
+    visValues = (abs(valGridFit{1}(:,1))).^contrastPower.*sign(valGridFit{1}(:,1));
 
-    visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:));
-    lineColors = plts.general.selectRedBlueColors(grids.audValues(:,1));
-    plts.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
+    for k = 1:size(plotData,3)
+        plotOpt.lineStyle = lineStyle{k};
+        plts.general.rowsOfGrid(visValues, plotData(:,:,k)', lineColors{k}, plotOpt);
+    end
 
-    plotOpt.lineStyle = 'none';
-    plotOpt.Marker = params.datDotStyle{1};
-    
+    %%% DATA
     visDiff = currBlock.stim_visDiff;
     audDiff = currBlock.stim_audDiff;
     responseDir = currBlock.response_direction;
-    [visGrid, audGrid] = meshgrid(unique(visDiff),unique(audDiff));
-    maxContrast = max(abs(visGrid(1,:)));
-    fracRightTurns = arrayfun(@(x,y) mean(responseDir(ismember([visDiff,audDiff],[x,y],'rows'))==2), visGrid, audGrid);
-    
-    visValues = abs(visGrid(1,:)).^contrastPower.*sign(visGrid(1,:))./(maxContrast.^contrastPower);
+    prevRespDir = currBlock.previous_respDirection;
+    prevRespDir(prevRespDir == 1) = -2; % -2 = left, 0 = timeout, 2 = right
+    prevRespDir = prevRespDir/2; % between -1 and 1
+    prevRespFeed = currBlock.previous_respFeedback;
+
+    % Get trial conditions in a grid
+    clear uniGrid
+    uniGrid{1} = unique(visDiff);
+    uniGrid{2} = unique(audDiff);
+    blkSumm = [visDiff,audDiff];
+    switch params.plotCond{1}
+        case 'none'
+            % Nothing to add!
+            Marker = {params.datDotStyle(1)};
+            lineColors = {plts.general.selectRedBlueColors(uniGrid{2})};
+
+        case 'prevChoice'
+            uniGrid = cat(2,uniGrid,{unique(prevRespDir)});
+            blkSumm = cat(2,blkSumm,prevRespDir);
+
+            plotOpt.MarkerSize = 10;
+            Marker = {'o','o','o'};
+            lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+            lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
+            
+        case 'prevRewardedChoice'
+            % Right of Left, rewarded or not
+            prevRewardedChoice = prevRespDir;
+            prevRewardedChoice(prevRespDir == -1 & prevRespFeed == 1) = -2;
+            prevRewardedChoice(prevRespDir == 1 & prevRespFeed == 1) = 2;
+            uniGrid = cat(2,uniGrid,{unique(prevRewardedChoice)});
+            blkSumm = cat(2,blkSumm,prevRewardedChoice);
+
+            plotOpt.MarkerSize = 10;
+            Marker = {'o','x','.','x','o'};
+            lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+            lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1]); ...
+                repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
+    end
+    clear valGrid
+    [valGrid{1:numel(uniGrid)}] = ndgrid(uniGrid{:});
+    maxContrast = max(abs(visDiff));
+
+    % Find fraction of right turn for each condition -- less elegant than
+    % before but couldn't find a shorter way
+    fracRightTurns = nan(1,numel(valGrid{1}(:))); 
+    for k = 1:numel(valGrid{1}(:))
+        idx = [];
+        for c = 1:size(blkSumm,2)
+            idx = cat(2,idx,ismember(blkSumm(:,c),valGrid{c}(k)));
+        end
+        idx = all(idx,2);
+        fracRightTurns(k) = mean(responseDir(idx)==2);
+    end
+    fracRightTurns = reshape(fracRightTurns,size(valGrid{1}));
+
+    visValues = abs(uniGrid{1}).^contrastPower.*sign(uniGrid{1})./(maxContrast.^contrastPower);
     if strcmp(params.plotType{refIdx}, 'log')
         fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
     end
-    plts.general.rowsOfGrid(visValues, fracRightTurns, lineColors, plotOpt);
-    
+    plotOpt.lineStyle = 'none';
+    s = size(valGrid{1});
+    for k = 1:prod(s(3:end))
+        plotOpt.Marker = Marker{k};
+        plts.general.rowsOfGrid(visValues, fracRightTurns(:,:,k)', lineColors{k}, plotOpt);
+    end
+
     xlim([-1 1])
     midPoint = 0.5;
     xTickLoc = (-1):(1/8):1;
