@@ -85,7 +85,7 @@ classdef GLMmulti < matlab.mixin.Copyable
 
             options = optimset('algorithm','interior-point','MaxFunEvals',100000,'MaxIter',2000, 'Display', 'none');
             cvObj = cvpartition(obj.dataBlock.response_direction,'KFold',nFolds);
-            mulIdx = obj.dataBlock.tri.trialType.coherent | obj.dataBlock.tri.trialType.conflict;
+            mulIdx = obj.dataBlock.is_coherentTrial | obj.dataBlock.is_conflictTrial;
             if ~strcmpi(obj.modelString, 'simpLogSplitVSplitAUnisensory'); mulIdx = mulIdx*0; end
 
             obj.prmFits = nan(cvObj.NumTestSets,length(obj.prmLabels));

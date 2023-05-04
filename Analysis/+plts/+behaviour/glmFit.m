@@ -163,7 +163,7 @@ for i = find(extracted.validSubjects)'
     uniGridFit{1} = unique(visValFit);
     uniGridFit{2} = unique(audValFit);
     allVal = [visValFit,audValFit];
-    switch params.modelString{1}
+    switch params.modelString{refIdx}
         case 'simpLogSplitVSplitAPast'
             % Split by previous choice
             uniGridFit = cat(2,uniGridFit,{unique(prevRespDirValFit)});
@@ -246,7 +246,7 @@ for i = find(extracted.validSubjects)'
     uniGrid{1} = unique(visDiff);
     uniGrid{2} = unique(audDiff);
     blkSumm = [visDiff,audDiff];
-    switch params.plotCond{1}
+    switch params.plotCond{refIdx}
         case 'none'
             % Nothing to add!
             Marker = {params.datDotStyle(1)};
