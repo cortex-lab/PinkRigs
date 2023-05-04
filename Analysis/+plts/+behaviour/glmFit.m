@@ -122,7 +122,7 @@ models = unnestCell(params.modelString{1});
 glmData = cell(length(extracted.data), numel(models));
 
 for mm = 1:numel(models)
-    if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure('Name',models); end
+    if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure('Name',models{mm}); end
     for i = find(extracted.validSubjects)'
         refIdx = min([i length(params.useCurrentAxes)]);
         if ~params.onlyPlt{refIdx}
@@ -143,7 +143,7 @@ for mm = 1:numel(models)
 
             end
             currBlock = filterStructRows(currBlock, keepIdx);
-            glmData{i,mm} = plts.behaviour.GLMmulti(currBlock, models);
+            glmData{i,mm} = plts.behaviour.GLMmulti(currBlock, models{mm});
         else
             glmData{i,mm} = extracted.data{i};
         end
@@ -175,7 +175,7 @@ for mm = 1:numel(models)
         uniGridFit{1} = unique(visValFit);
         uniGridFit{2} = unique(audValFit);
         allVal = [visValFit,audValFit];
-        switch models
+        switch models{mm}
             case 'simpLogSplitVSplitAPast'
                 % Split by previous choice
                 uniGridFit = cat(2,uniGridFit,{unique(prevRespDirValFit)});
