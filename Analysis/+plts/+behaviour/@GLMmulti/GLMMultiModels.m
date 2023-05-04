@@ -133,7 +133,7 @@ switch modChoose
             WSLSContribution = mkPrm(allPrms,8)*(prevRespDir.*prevRespFeed);
 
             % Busse-style: failures and successes
-            BusseContribution = mkPrm(allPrms,9)*(prevRespDir.*(prevRespFeed == 1)) + mkPrm(allPrms,10)*(prevRespDir.*(-(prevRespFeed == -1)));
+            BusseContribution = mkPrm(allPrms,9)*(prevRespDir.*(prevRespFeed == 1)) + mkPrm(allPrms,10)*(prevRespDir.*(prevRespFeed == -1));
 
             logOddsLR = mkPrm(allPrms,1) + visContributionLR + audContributionLR + ...
                 prevChoiceContribution*prevC + WSLSContribution*wsls + BusseContribution*busse;

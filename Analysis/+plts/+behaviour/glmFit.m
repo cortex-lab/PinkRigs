@@ -1,4 +1,4 @@
-function glmData = glmFit(varargin)
+function [glmData, extracted] = glmFit(varargin)
 %% Generates GLM plots for the behaviour of a mouse/mice
 % 
 % NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
@@ -59,17 +59,26 @@ function glmData = glmFit(varargin)
 % Returns: 
 % -----------
 % glmData: cell array. One cell per plot, contains GLMmulti class object 
-%   .modelString: modelString used
-%   .plotCond:    condition for plotting
-%   .prmLabels:   labels for the parameters used
-%   .prmFits:     fitted values for paramters used
-%   .prmBounds:   bounds used for fitting (not confidence interval)
-%   .prmInit:     initial values for paramters used
-%   .dataBlock:   behaviour data used for fitting (struct)
-%   .pHat:        fitting information
-%   .logLik:      logliklihood for final fit
-%   .evalPoints:  points at which the curve was evaluated
-%   .initGuess:   inital guess for values
+%   .modelString:   modelString used
+%   .plotCond:      condition for plotting
+%   .prmLabels:     labels for the parameters used
+%   .prmFits:       fitted values for paramters used
+%   .prmBounds:     bounds used for fitting (not confidence interval)
+%   .prmInit:       initial values for paramters used
+%   .dataBlock:     behaviour data used for fitting (struct)
+%   .pHat:          fitting information
+%   .logLik:        logliklihood for final fit
+%   .evalPoints:    points at which the curve was evaluated
+%   .initGuess:     inital guess for values
+%
+% extracted: cell array. One cell per plot, contains info about the data 
+%   .subject:       subject name
+%   .blkDates:      dates of the experiments
+%   .rigNames:      rigs names
+%   .AVParams:      parameters for the AV stimuli
+%   .nExp:          number of experiments
+%   .data:          data containing the single trial info
+%   .validSubjects: valid subjects
 %
 % Examples: 
 % ------------
@@ -109,10 +118,11 @@ axesOpt.gapBetweenAxes = [100 60];
 axesOpt.numOfRows = max([1 ceil(axesOpt.totalNumOfAxes/4)]);
 axesOpt.figureHWRatio = 1.1;
 
-glmData = cell(length(extracted.data), numel(params.modelString{1}));
+models = unnestCell(params.modelString{1});
+glmData = cell(length(extracted.data), numel(models));
 
-for mm = 1:numel(params.modelString{1})
-    if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure('Name',params.modelString{1}{mm}); end
+for mm = 1:numel(models)
+    if ~params.noPlot{1} && ~params.useCurrentAxes{1}; figure('Name',models); end
     for i = find(extracted.validSubjects)'
         refIdx = min([i length(params.useCurrentAxes)]);
         if ~params.onlyPlt{refIdx}
@@ -133,7 +143,7 @@ for mm = 1:numel(params.modelString{1})
 
             end
             currBlock = filterStructRows(currBlock, keepIdx);
-            glmData{i,mm} = plts.behaviour.GLMmulti(currBlock, params.modelString{refIdx}{mm});
+            glmData{i,mm} = plts.behaviour.GLMmulti(currBlock, models);
         else
             glmData{i,mm} = extracted.data{i};
         end
@@ -165,7 +175,7 @@ for mm = 1:numel(params.modelString{1})
         uniGridFit{1} = unique(visValFit);
         uniGridFit{2} = unique(audValFit);
         allVal = [visValFit,audValFit];
-        switch params.modelString{refIdx}{mm}
+        switch models
             case 'simpLogSplitVSplitAPast'
                 % Split by previous choice
                 uniGridFit = cat(2,uniGridFit,{unique(prevRespDirValFit)});
@@ -175,7 +185,7 @@ for mm = 1:numel(params.modelString{1})
                 pHatCalculated = pHatCalculated(noRepIdx,:);
 
                 lineStyle = {params.fitLineStyle{1}; params.fitLineStyle{1}; params.fitLineStyle{1}};
-                lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+                lineColors_tmp = plts.general.selectRedBlueColors([-1 0 1]);
                 lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
@@ -184,13 +194,17 @@ for mm = 1:numel(params.modelString{1})
                 % Split by previous choice and previous reward
                 prevRewardedChoice = prevRespDirValFit;
                 prevRewardedChoice(prevRespDirValFit == -1 & prevRespFeedValFit == 1) = -2;
-                prevRewardedChoice(prevRespDirValFit ==1 & prevRespFeedValFit == 1) = 2;
+                prevRewardedChoice(prevRespDirValFit == 1 & prevRespFeedValFit == 1) = 2;
+                % Remove impossible combination?
+                impIdx = (prevRespDirValFit ~= 0 & prevRespFeedValFit == 0) | ...
+                    (prevRespDirValFit == 0 & prevRespFeedValFit ~= 0);
+                prevRewardedChoice(impIdx) = nan;
 
-                uniGridFit = cat(2,uniGridFit,{unique(prevRewardedChoice)});
+                uniGridFit = cat(2,uniGridFit,{unique(prevRewardedChoice(~isnan(prevRewardedChoice)))});
                 allVal = cat(2,allVal,prevRewardedChoice);
 
                 lineStyle = {'-','--',':','--','-'};
-                lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+                lineColors_tmp = plts.general.selectRedBlueColors([-1 0 1]);
                 lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
@@ -207,8 +221,8 @@ for mm = 1:numel(params.modelString{1})
         [valGridFit{1:numel(uniGridFit)}] = ndgrid(uniGridFit{:});
 
         [~, gridIdx] = ismember(allVal, cell2mat(cellfun(@(x) x(:), valGridFit, 'uni', 0)), 'rows');
-        plotData = valGridFit{1};
-        plotData(gridIdx) = pHatCalculated(:,2);
+        plotData = nan(size(valGridFit{1}));
+        plotData(gridIdx(gridIdx ~= 0)) = pHatCalculated(gridIdx ~= 0,2);
         plotOpt.lineStyle = params.fitLineStyle{1};
         plotOpt.Marker = 'none';
 
@@ -260,7 +274,7 @@ for mm = 1:numel(params.modelString{1})
 
                 plotOpt.MarkerSize = 10;
                 Marker = {'o','o','o'};
-                lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+                lineColors_tmp = plts.general.selectRedBlueColors([-1 0 1]);
                 lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(3,:),[numel(uniGridFit{2}) 1])};
@@ -270,12 +284,16 @@ for mm = 1:numel(params.modelString{1})
                 prevRewardedChoice = prevRespDir;
                 prevRewardedChoice(prevRespDir == -1 & prevRespFeed == 1) = -2;
                 prevRewardedChoice(prevRespDir == 1 & prevRespFeed == 1) = 2;
-                uniGrid = cat(2,uniGrid,{unique(prevRewardedChoice)});
+                impIdx = (prevRespDir ~= 0 & prevRespFeed == 0) | ...
+                    (prevRespDir == 0 & prevRespFeed ~= 0);
+                prevRewardedChoice(impIdx) = nan;
+
+                uniGrid = cat(2,uniGrid,{unique(prevRewardedChoice(~isnan(prevRewardedChoice)))});
                 blkSumm = cat(2,blkSumm,prevRewardedChoice);
 
                 plotOpt.MarkerSize = 10;
                 Marker = {'o','x','.','x','o'};
-                lineColors_tmp = plts.general.selectRedBlueColors(uniGridFit{2});
+                lineColors_tmp = plts.general.selectRedBlueColors([-1 0 1]);
                 lineColors = {repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(1,:),[numel(uniGridFit{2}) 1]); ...
                     repmat(lineColors_tmp(2,:),[numel(uniGridFit{2}) 1]); ...
