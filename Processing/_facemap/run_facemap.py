@@ -39,6 +39,8 @@ import natsort
 import deeplabcut
 import tensorflow as tf
 
+# other video processing
+import skvideo.io
 
 # Pink rig dependencies
 from pathlib import Path
@@ -1358,7 +1360,8 @@ def get_dlc_roi_window(vid_path, projectName):
     if projectName == 'pinkrigs':
 
         subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
-        scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+        # scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_50000'
+        scorer_name = 'DLC_resnet50_pinkrigsSep12shuffle1_1030000'
         body_parts = ['eyeL', 'eyeR', 'eyeU', 'eyeD', 'pupilL', 'pupilR', 'pupilU', 'pupilD', 'whiskPadL', 'whiskPadR']
 
         # eyeR_xvals = np.array([x[(scorer_name, 'eyeR', 'x')] for (_, x) in subset_vid_output_df.iterrows()])
@@ -1374,7 +1377,8 @@ def get_dlc_roi_window(vid_path, projectName):
     elif projectName == 'pinkrigsFrontCam':
 
         subset_vid_output_df = pd.read_hdf(subset_vid_h5_path)  # pandas multindex
-        scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_150000'
+        # scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_150000'
+        scorer_name = 'DLC_resnet50_pinkrigsFrontCamOct16shuffle1_1030000'  # new model from 2023-04-14
         body_parts = ['eyeL', 'eyeR', 'snoutL', 'snoutR', 'snoutF', 'pawL', 'pawR']
 
 
@@ -1416,10 +1420,15 @@ def get_dlc_roi_window(vid_path, projectName):
     if projectName == 'pinkrigs':
         rectangle_width = 200
 
-        eyeR_xvals_mean = body_part_mean_xy['eyeR_x']
-        eyeR_yvals_mean = body_part_mean_xy['eyeR_y']
+        # eyeR_xvals_mean = body_part_mean_xy['eyeR_x']
+        # eyeR_yvals_mean = body_part_mean_xy['eyeR_y']
+        eyeR_xvals_mean = body_part_median_xy['eyeR_x']
+        eyeR_yvals_mean = body_part_median_xy['eyeR_y']
 
-        if eyeR_yvals_mean > 150:  # threhsold for eye being not too "up"
+        eyeL_xvals_mean = body_part_median_xy['eyeL_x']
+        eyeL_yvals_mean = body_part_median_xy['eyeL_y']
+
+        if eyeL_yvals_mean - eyeR_yvals_mean < 60:  # threshold for eyeR being not on top of eyeL
             roi_window['mpl_obj'] = mpl.patches.Rectangle(
                 (eyeR_xvals_mean - 300, eyeR_yvals_mean),
                 rectangle_width, 150, edgecolor='red', facecolor='red', fill=False, lw=1
@@ -1447,31 +1456,37 @@ def get_dlc_roi_window(vid_path, projectName):
         roi_window['eyeR_x_mean'] = eyeR_xvals_mean
         roi_window['eyeR_y_mean'] = eyeR_yvals_mean
 
+        roi_window['eyeL_x_mean'] = eyeL_xvals_mean
+        roi_window['eyeL_y_mean'] = eyeL_yvals_mean
+
     elif projectName == 'pinkrigsFrontCam':
 
         rectangle_width = 50
         # rectangle_height = eyeL_yvals_mean - eyeR_yvals_mean
         rectangle_height = body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']
 
-        eye_x_big_diff = np.abs(body_part_median_xy['eyeL_x'] - body_part_median_xy['eyeR_x']) > 100
-        eye_y_small_diff = np.abs(body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']) < 50
+        # eye_x_big_diff = np.abs(body_part_median_xy['eyeL_x'] - body_part_median_xy['eyeR_x']) > 100
+        # eye_y_small_diff = np.abs(body_part_median_xy['eyeL_y'] - body_part_median_xy['eyeR_y']) < 50
+        # eyeL_on_the_leftx = body_part_median_xy['eyeL_x'] > 390
 
-        eyeL_on_the_leftx = body_part_median_xy['eyeL_x'] > 390
+        eyeR_on_top_of_eyeL = body_part_median_xy['eyeR_y'] < body_part_median_xy['eyeL_y']
 
-        if (eye_x_big_diff or eye_y_small_diff):
+        if eyeR_on_top_of_eyeL:
             # something is wrong (likely video flipped), implementing some hack
 
             rectangle_height = 120
 
-            if not eyeL_on_the_leftx:
-                print('FrontCam flipped, using fix')
-                roi_window['mpl_obj'] = mpl.patches.Rectangle(
-                    (body_part_median_xy['eyeL_x'] - 60, body_part_median_xy['eyeL_y']),
-                    rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
-                )
+            # if not eyeL_on_the_leftx:
+            print('FrontCam flipped, using fix')
+            roi_window['mpl_obj'] = mpl.patches.Rectangle(
+                (body_part_median_xy['eyeL_x'] - 60, body_part_median_xy['eyeL_y']),
+                rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+            )
 
-                x_start = body_part_median_xy['eyeL_x'] - 60
-                x_end = x_start + rectangle_width
+            x_start = body_part_median_xy['eyeL_x'] - 60
+            x_end = x_start + rectangle_width
+
+            """
             else:
                 print('Something wrong with frontCam, relying on eyeL')
                 x_start = body_part_median_xy['eyeL_x'] + 25
@@ -1480,6 +1495,7 @@ def get_dlc_roi_window(vid_path, projectName):
                     (x_start, body_part_median_xy['eyeL_y']),
                     rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
                 )
+            """
 
             y_start = body_part_median_xy['eyeL_y'] - rectangle_height
             y_end = y_start + rectangle_height
@@ -1540,7 +1556,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
                           recompute_facemap=False, recompute_ONE=False,
                           run_on_cropped_roi=True, old_date_to_overwrite=None,
                           verbose=False, print_warnings=False,
-                          write_to_log=False):
+                          write_to_log=False, skip_svd_step=False):
     """
     Runs facemap SVD processing on videos given dataframe of video paths and information
     Parameters
@@ -2038,7 +2054,8 @@ def batch_process_facemap(output_format='flat', sessions=None,
                 video_path_basename = os.path.basename(video_fpath).split('.')[0]
                 # save_path = os.path.join(exp_folder, '%s_proc.npy' % video_path_basename)
                 # still not quite sure needs this list in a list...
-                run_facemap_mod([[video_fpath]], proc=proc)
+                if not skip_svd_step:
+                    run_facemap_mod([[video_fpath]], proc=proc)
                 num_videos_ran += 1
                 # run_facemap(video_fpath)
 
@@ -2055,31 +2072,75 @@ def batch_process_facemap(output_format='flat', sessions=None,
                         f.write('Finished Processing %s %s \n' % (exp_folder, video_fov))
 
                 # Convert things to ONE format
-                if output_format == 'ONE':
+                if (output_format == 'ONE') and (not skip_svd_step):
                     print('Converting files to ONE format')
                     facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
                     convert_facemap_output_to_ONE_format(facemap_output_path)
 
+                if skip_svd_step:
+                    # some temp code here to plot DLC output
 
-                if plot_results:
-                    # load facemap results
-                    facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
-                    facemap_output = np.load(facemap_output_path, allow_pickle=True).item()
+                    # read the subset video
+                    cut_video_array = skvideo.io.vread(cut_video_fpath)
+                    avgframe = np.mean(cut_video_array, axis=0)
 
-                    # Plot average frame
-                    avgframe_reshape = facemap_output['avgframe_reshape']
-                    fig, ax = plt.subplots()
-                    ax.imshow(avgframe_reshape, aspect='auto', cmap='gray')
-                    ax.set_xlabel('x axis pixel', size=12)
-                    ax.set_ylabel('y axis pixel', size=12)
-                    ax.spines['top'].set_visible(False)
-                    ax.spines['right'].set_visible(False)
-                    ax.spines['left'].set_visible(False)
-                    ax.spines['bottom'].set_visible(False)
-                    fig_name = '%s_%.f_%s_facemap_%s_avgframe_reshaped.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['subject'], video_fov)
-                    fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
+                    with plt.style.context(splstyle.get_style('nature-reviews')):
+                        fig, ax = plt.subplots()
+                        ax.imshow(np.mean(avgframe, axis=2), aspect='auto', cmap='gray')
 
-                    plt.close(fig)
+                        # Detected body locations
+                        if 'frontCam' in video_fpath:
+                            ax.scatter(roi_window['eyeL_x_mean'],
+                                            roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
+                            ax.scatter(roi_window['eyeR_x_mean'],
+                                           roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
+
+                            ax.scatter(roi_window['snoutF_x_mean'],
+                                       roi_window['snoutF_y_mean'], lw=0, s=20, color='orange')
+
+                            #axs[0].scatter(roi_window['snoutF_x_mean'],
+                            #               roi_window['snoutF_y_mean'], lw=0, s=20, color='green')
+
+                        elif 'eyeCam' in video_fpath:
+                            ax.scatter(roi_window['eyeR_x_mean'],
+                                           roi_window['eyeR_y_mean'], lw=0, s=20, color='red')
+                            ax.scatter(roi_window['eyeL_x_mean'],
+                                       roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
+
+
+
+
+                        ax.set_xlabel('x axis pixel', size=12)
+                        ax.set_ylabel('y axis pixel', size=12)
+                        ax.spines['top'].set_visible(False)
+                        ax.spines['right'].set_visible(False)
+                        ax.spines['left'].set_visible(False)
+                        ax.spines['bottom'].set_visible(False)
+
+                        fig_name = '%s_%.f_%s_dlc_%s_avgframe.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['subject'], video_fov)
+                        fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
+
+                if plot_results and (not skip_svd_step):
+
+                    if not skip_svd_step:
+                        # load facemap results
+                        facemap_output_path = glob.glob(os.path.join(exp_folder, '*%s*proc.npy') % video_fov)[0]
+                        facemap_output = np.load(facemap_output_path, allow_pickle=True).item()
+
+                        # Plot average frame
+                        avgframe_reshape = facemap_output['avgframe_reshape']
+                        fig, ax = plt.subplots()
+                        ax.imshow(avgframe_reshape, aspect='auto', cmap='gray')
+                        ax.set_xlabel('x axis pixel', size=12)
+                        ax.set_ylabel('y axis pixel', size=12)
+                        ax.spines['top'].set_visible(False)
+                        ax.spines['right'].set_visible(False)
+                        ax.spines['left'].set_visible(False)
+                        ax.spines['bottom'].set_visible(False)
+                        fig_name = '%s_%.f_%s_facemap_%s_avgframe_reshaped.png' % (exp_info['expDate'], exp_info['expNum'], exp_info['subject'], video_fov)
+                        fig.savefig(os.path.join(exp_folder, fig_name), dpi=300, bbox_inches='tight')
+
+                        plt.close(fig)
 
 
                     # Plot average frame + ROI window + top motion SVDs + DLC anchor points
@@ -2370,6 +2431,7 @@ def main(**csv_kwargs):
     recompute_ONE = False
     recompute_facemap = False
     write_to_log = True
+    skip_svd_step = False
     old_date_to_overwrite = '2023-01-09'
     # if facemap processed data is older than this date, then overwrite existing
     # (regardless of recompute_facemap) leave empty '' or None to forego option
@@ -2415,7 +2477,8 @@ def main(**csv_kwargs):
                                   recompute_ONE=recompute_ONE,
                                   recompute_facemap=recompute_facemap,
                                   old_date_to_overwrite=old_date_to_overwrite,
-                                  write_to_log=write_to_log)
+                                  write_to_log=write_to_log,
+                                  skip_svd_step=skip_svd_step)
 
 
             if override_time_check:
@@ -2428,4 +2491,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject=['AV030'], expDate='2022-12-06')
+    main(subject='all', expDate='last1000')
