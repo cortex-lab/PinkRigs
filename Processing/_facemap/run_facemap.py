@@ -1993,6 +1993,13 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     with open(log_file_path, 'a') as f:
                         f.write('Processing %s %s \n' % (exp_folder, video_fov))
 
+                        # make an empty text file saying that the facemap file is being processed
+                        e = datetime.datetime.now()
+                        dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
+                        processing_facemap_txt_file = os.path.join(exp_folder,
+                                                                   '%s_%s_processing.txt' % (dt_string, video_fov))
+                        open(processing_facemap_txt_file, 'a').close()
+
                 # Check whether to run on cropped ROI
                 if run_on_cropped_roi:
 
@@ -2045,11 +2052,6 @@ def batch_process_facemap(output_format='flat', sessions=None,
                     #     pdb.set_trace()
 
 
-                # make an empty text file saying that the facemap file is being processed
-                e = datetime.datetime.now()
-                dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
-                processing_facemap_txt_file = os.path.join(exp_folder, '%s_%s_processing.txt' % (dt_string, video_fov))
-                open(processing_facemap_txt_file, 'a').close()
 
                 video_path_basename = os.path.basename(video_fpath).split('.')[0]
                 # save_path = os.path.join(exp_folder, '%s_proc.npy' % video_path_basename)
