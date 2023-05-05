@@ -235,7 +235,8 @@ def my_rasterPSTH(spike_times,  # Spike times first
         ax.set_xlim([-pre_time, post_time])    
         if plot_edge==None: 
             plot_edge=pmax
-        ax.vlines(0., 0., plot_edge, color='black', alpha=0.5)
+        if 'line' in onset_marker:
+            ax.vlines(0., 0., plot_edge, color='black', alpha=0.5)
         #ax.set_ylim([ 0., plot_edge])
         ax.set_yticks([0., plot_edge/2, plot_edge])
         ax.set_ylabel('Firing Rate' if return_fr else 'Number of spikes')
@@ -271,7 +272,9 @@ def my_rasterPSTH(spike_times,  # Spike times first
 
         if include_PSTH:
             # set the labels of the PSTH 
-            ax.axhline(0., color='black')
+            if 'line' in onset_marker:
+                ax.axhline(0., color='black')
+
             plt.setp(ax.get_xticklabels(), visible=False)
             #ax.set_xticks([])
             ax.spines['bottom'].set_visible(False)

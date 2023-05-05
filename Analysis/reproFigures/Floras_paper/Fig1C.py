@@ -63,6 +63,8 @@ if not csv_path.is_file() or recompute_csv:
     for _,session in dat_keys.iterrows():
     # get generic info on clusters 
         print(*session)
+
+        ################## MAXTEST #################################
         clusInfo = load_cluster_info(**session)
         # add clus_new_columns to clusters
         # significance of responsivity  
@@ -101,10 +103,10 @@ if not csv_path.is_file() or recompute_csv:
         
        # azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
         
-
+        ################ MOVEMENT ########################
         clusInfo['movement_correlation'],clusInfo['is_movement_correlated'] = m.session_permutation(session,0.05)
 
-        #get spatial tuning properties
+        ################ SPATIAL TUNING ######################
         azi = azimuthal_tuning(session)
         for t in tuning_types:
             tuning_curve_params['which'] = t
@@ -143,18 +145,50 @@ if not csv_path.is_file() or recompute_csv:
         at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
         clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
 
-        
+        ################### KERNEL FIT RESULTS #############################
+        foldertag = r'kernel_model\additive-fit'
+        csvname = '%s_%s_%.0f_%s.csv' % tuple(session)
+        kernel_fit_results = interim_data_folder / dat_type  / foldertag / csvname
+
+        kernel_events_to_save = ['aud', 'baseline', 'motionEnergy', 'vis']
+        for k in kernel_events_to_save:
+            tag = 'kernelVE_%s' % k 
+            if kernel_fit_results.is_file():
+                kernel_fits = pd.read_csv(kernel_fit_results)
+                kernel_events_to_save  = np.unique(kernel_fits.event)
+                # match neurons 
+                curr_set = kernel_fits[(kernel_fits.event==k) & (kernel_fits.cv_number==1)]             
+
+                # concatenate with clusInfo
+                unmatched_clus_idx = np.setdiff1d(clusInfo._av_IDs,curr_set.clusID)
+                if len(unmatched_clus_idx)==0:
+                    clusInfo[tag] = curr_set.VE.values
+                else:
+                    VEs = curr_set.VE.values
+                    newVE = []
+                    matched_clusIDs = curr_set.clusID
+                    for c in clusInfo._av_IDs:
+                        idx = np.where(matched_clusIDs==c)[0]
+                        if len(idx)==1:
+                            newVE.append(VEs[idx[0]])
+                        else:
+                            newVE.append(np.nan)  
+                    
+                    clusInfo[tag] = newVE                     
+
+            else: 
+                clusInfo[tag] = np.nan
+
+
+        #################### MISC ###########################################
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
 
-        if hasattr(clusInfo,'brainLocationAcronyms_ccf_2017'):
-            clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
-        else:
-            clusInfo['is_SC'] = False
+        clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017]
 
         all_dfs.append(clusInfo)
     
     # temproary hack 
-    all_dfs = [d.drop(columns=['sc_azimuth', 'sc_elevation', 'sc_surface']) if 'sc_azimuth' in d.columns else d for d in all_dfs]
+    #all_dfs = [d.drop(columns=['sc_azimuth', 'sc_elevation', 'sc_surface']) if 'sc_azimuth' in d.columns else d for d in all_dfs]
     clusInfo = pd.concat(all_dfs,axis=0)    
 
     clusInfo['vis_score_test']  =  clusInfo.score_test.iloc[:,0]

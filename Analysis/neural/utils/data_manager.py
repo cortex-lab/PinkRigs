@@ -524,7 +524,8 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         
     """ # for now I won't call all the data as apparenty the bombcell stuff f*cks things up. 
 
-    
+
+
     data_dict = {
         probe:{'clusters':'all'}}
     recording = load_data(data_name_dict=data_dict,**rec_kwargs)
@@ -543,6 +544,14 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         clusInfo['dv'] = clusters.mlapdv[:,2]
         clusInfo['hemi'] = np.sign(clusInfo.ml-5600)
 
+    else: 
+        clusInfo['ml'] = np.nan
+        clusInfo['ap'] = np.nan
+        clusInfo['dv'] = np.nan
+        clusInfo['hemi'] = np.nan
+        clusInfo['brainLocationAcronyms_ccf_2017'] = 'unregistered'
+        clusInfo['brainLocationIds_ccf_2017']  = np.nan   
+
     # option to read in the raw data as well  
     #clusInfo_ = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     #clusInfo_ = pd.DataFrame.from_dict(clusInfo_)
@@ -558,6 +567,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     registration_folder = sc_probeloc_path / rec_kwargs['subject'] / rec_kwargs['expDate']/ 'alf' / probe_imec
     registration_files = list(registration_folder.glob('*.npy')) 
 
+    success = 0
     if len(registration_files)==4:  
         print('acute recording. Found SC registration.') 
         d = {}
@@ -568,6 +578,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         all_clusInfo['sc_azimuth'] = [d[s][0] for s in all_clusInfo._av_shankID]
         all_clusInfo['sc_elevation'] = [d[s][1] for s in all_clusInfo._av_shankID]
         all_clusInfo['sc_surface'] = [d[s][2] for s in all_clusInfo._av_shankID]
+        success = 1
 
     elif len(registration_files)==0:
         print('trying to load a chronic registration ...')
@@ -586,7 +597,13 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
             all_clusInfo['sc_azimuth'] = [d[s][1] for s in all_clusInfo._av_shankID]
             all_clusInfo['sc_elevation'] = [d[s][2] for s in all_clusInfo._av_shankID]
             all_clusInfo['sc_surface'] = [d[s][0] for s in all_clusInfo._av_shankID]
+            success=1
     
+    if not success:
+        print('failed to load SC surface registration...')
+        all_clusInfo['sc_azimuth'] = np.nan
+        all_clusInfo['sc_elevation'] = np.nan
+        all_clusInfo['sc_surface'] = np.nan
     
     all_clusInfo['probe'] = probe
     all_clusInfo['expFolder'] = recording.iloc[0].expFolder

@@ -9,6 +9,7 @@ from Analysis.pyutils.ev_dat import postactive
 from Analysis.pyutils.video_dat import get_move_raster
 from Analysis.pyutils.model_funcs import get_VE
 from Analysis.neural.utils.spike_dat import get_binned_rasters
+from Analysis.pyutils.plotting import off_axes
 
 # load data
 import sklearn
@@ -529,11 +530,11 @@ class azimuthal_tuning():
         titlestring = 'neuron %.0d' % neuronID
         if plot_train:
             tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).iloc[neuron_idx].values
-            ax.plot(azimuths,tc_train,'b')
+            ax.plot(azimuths,tc_train,'k')
         
         if plot_test: 
             tc_test = get_tuning_only(tuning_curves[tuning_curves.cv_number==1]).iloc[neuron_idx].values
-            ax.plot(azimuths,tc_test,'m')
+            ax.plot(azimuths,tc_test,'grey')
 
         if plot_pred: 
             azimuths_upped = np.linspace(np.min(azimuths),np.max(azimuths),azimuths.size*100)
@@ -543,7 +544,7 @@ class azimuthal_tuning():
             elif 'gaussian' in self.fit_type:
                 t_pred = gaussian(azimuths_upped,*p)
 
-            ax.plot(azimuths_upped,t_pred,'k')
+            ax.plot(azimuths_upped,t_pred,'darkturquoise')
 
             if plot_train: 
                 ve_string = ' VE,train = %.2f' % tuning_curves[tuning_curves.cv_number==0].iloc[neuron_idx].score
@@ -554,7 +555,9 @@ class azimuthal_tuning():
                 titlestring += ve_string
 
         
-        ax.set_title(titlestring)             
+        ax.set_title(titlestring)        
+        off_axes(ax)  
+        return figure   
 
 
     def get_selectivity(self,**kwargs):

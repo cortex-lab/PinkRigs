@@ -1221,6 +1221,9 @@ class kernel_model():
             elif 'spatialIntegrationFlora' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
+            elif 'Passive' in recdat.expDef.iloc[0]:
+                ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
+                self.sess_type = 'passive'
             elif 'ckeckerboard_updatechecker' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'

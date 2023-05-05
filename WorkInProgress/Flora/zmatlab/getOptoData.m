@@ -12,6 +12,7 @@ varargin = ['reverse_opto', {0}, varargin];
 varargin = ['combDates', {0}, varargin]; % whether to combine dates for each mouse
 varargin = ['combMice', {1}, varargin]; % whether to combine mice 
 varargin = ['combHemispheres', {0}, varargin]; % whether to merge unhibiton of 2 hemispheres or not -- only an option if reverse_opto is True 
+varargin = ['combPowers', {0}, varargin]; % whether to merge unhibiton of 2 hemispheres or not -- only an option if reverse_opto is True 
 
 
 params = csv.inputValidation(varargin{:});
@@ -64,6 +65,9 @@ for i=1:numel(extracted.subject)
     optoParams(i,2) = extracted.usedPositions{i,1}(find(extracted.usedPositions{i,1}~=0));
     if params.combMice{1}==1
         optoParams(i,3) = 1;
+        if params.combPowers{1} == 1
+            optoParams(i,1) = 1;
+        end
     else 
         optoParams(i,3) = subject_indices(strcmp(unique_subjects,extracted.subject{i}));
     end

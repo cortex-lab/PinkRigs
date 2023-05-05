@@ -5,9 +5,9 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
         dat_params = {
             't_support_stim':[-0.05,0.6],    
             'rt_params':{'rt_min': None, 'rt_max': None},
-            'event_types': ['aud','vis','baseline'],
-            'contrasts': [1],
-            'spls': [0.02,0.1],
+            'event_types': ['aud','vis','baseline','coherent-nl-gain','motionEnergy'], # 
+            'contrasts': [0.4],
+            'spls': [0.25],
             'vis_azimuths': [-90,-60,-30,0,30,60,90],
             'aud_azimuths': [-90,-60,-30,0,30,60,90],
             'digitise_cam': False,

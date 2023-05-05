@@ -1,12 +1,12 @@
-clear all;
-%params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
-%params.subject  = {['AV038'];['AV036']};
+clear all;,
+params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
+%params.subject  = {['AV038']};
 params.expDef = 'm'; 
 params.checkEvents = '1'; 
-params.expDate = {['2023-04-24:2023-04-28']}; 
+params.expDate = {['2022-04-24:2023-04-28']}; 
 exp2checkList = csv.queryExp(params);
 params = csv.inputValidation(exp2checkList);
-extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',0,'combHemispheres',0,'combDates',1); 
+extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',0,'combHemispheres',0,'combDates',1,'combPowers',1); 
 
 % plot the control vs the opto on the same plot for each 'extracted'
 
@@ -32,9 +32,10 @@ opto_fit_sets = logical([
 ]);
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
-plot_model_pred(8) = 1; 
+plot_model_pred(2) = 1; 
 shouldPlot = 1; 
-plotParams.plottype = 'res'; 
+plotfit = 1; % whether to connect the data or plot actual fits
+plotParams.plottype = 'log'; 
 for s=1:numel(extracted.data)    
     currBlock = extracted.data{s};
     nTrials(s) = numel(currBlock.is_blankTrial); 
@@ -50,8 +51,9 @@ for s=1:numel(extracted.data)
     if shouldPlot
         figure; 
         plotParams.LineStyle = '-';
-        plotParams.DotStyle = 'None';
-        plot_optofit(controlfit,plotParams)
+        plotParams.DotStyle = ['.'];
+        plotParams.MarkerSize = 24; 
+        plot_optofit(controlfit,plotParams,plotfit)
         hold on; 
         title(sprintf('%s,%.0d opto,%.0d control trials,%.0f mW, %.0f', ...
             extracted.subject{s},...
@@ -74,9 +76,11 @@ for s=1:numel(extracted.data)
 
         if shouldPlot && plot_model_pred(model_idx)
            plotParams.LineStyle = '--';
-           plotParams.DotStyle = 'x';
-           plot_optofit(orifit,plotParams)
+           plotParams.DotStyle = 'o';
+           plotParams.MarkerSize = 8; 
+           plot_optofit(orifit,plotParams,plotfit)
         end
+
     end
     %
 end
@@ -126,7 +130,7 @@ xlabel('bias,control fit')
 ylabel('bias,full fit')
 ylim([-5,5])
 %%
-function plot_optofit(glmData,plotParams)
+function plot_optofit(glmData,plotParams,plotfit)
 plottype = plotParams.plottype; 
 params2use = mean(glmData.prmFits,1);   
 pHatCalculated = glmData.calculatepHat(params2use,'eval');
@@ -134,7 +138,11 @@ pHatCalculated = glmData.calculatepHat(params2use,'eval');
 [~, gridIdx] = ismember(glmData.evalPoints, [grids.visValues(:), grids.audValues(:)], 'rows');
 plotData = grids.visValues;
 plotData(gridIdx) = pHatCalculated(:,2);
-plotOpt.lineStyle = plotParams.LineStyle;
+if plotfit
+    plotOpt.lineStyle = plotParams.LineStyle;
+else
+    plotOpt.lineStyle = 'none'; %plotParams.LineStyle;
+end
 plotOpt.Marker = 'none';
 currBlock = glmData.dataBlock; 
 %contrastPower = params.contrastPower{refIdx};
@@ -153,8 +161,14 @@ visValues = (abs(grids.visValues(1,:))).^contrastPower.*sign(grids.visValues(1,:
 lineColors = plts.general.selectRedBlueColors(grids.audValues(:,1));
 plts.general.rowsOfGrid(visValues, plotData, lineColors, plotOpt);
 
-plotOpt.lineStyle = 'None';
+if plotfit
+    plotOpt.lineStyle = 'none';
+else
+    plotOpt.lineStyle = plotParams.LineStyle;
+end
 plotOpt.Marker = plotParams.DotStyle;
+plotOpt.MarkerSize = plotParams.MarkerSize; 
+plotOpt.FaceAlpha = 0.1; 
 
 visDiff = currBlock.stim_visDiff;
 audDiff = currBlock.stim_audDiff;

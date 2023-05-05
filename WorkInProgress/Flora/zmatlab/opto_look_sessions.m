@@ -6,7 +6,7 @@ params.expDate = {['all']};
 params.expDef = 'm'; 
 params.checkEvents = '1'; 
 %params.expNum = '1'; 
-params.expDate = {['2023-04-24:2023-04-28']}; 
+params.expDate = {['2023-04-04:2023-04-28']}; 
 exp2checkList = csv.queryExp(params);
 
 %%
@@ -28,7 +28,7 @@ plts.behaviour.glmFit(exp2checkList,...
      'fitLineStyle','None',...
     'useCurrentAxes',1,...
      'datDotStyle','o',...
-     'laserTrialType',-1);
+     'laserTrialType',1);
 
 %% day-by-day plot 
 nExps = size(exp2checkList); nExps = nExps(1); 

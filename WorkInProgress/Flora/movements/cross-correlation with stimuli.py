@@ -70,13 +70,19 @@ for _,rec_info in dat_keys.iterrows():
         #ax.plot(tvals,cvals)
 vis_d = np.array(np.concatenate(vis_d))
 aud_d = np.array(np.concatenate(aud_d))
-
-fig,ax = plt.subplots(1,1)
+# %%
+plt.rcParams.update({'font.family':'Calibri'})
+plt.rcParams.update({'font.size':28})
+from Analysis.pyutils.plotting import off_topspines
+fig,ax = plt.subplots(1,1,figsize=(4,3))
 for i in range(len(vis_d)):
-    ax.plot(tvals,vis_d[i,:],'b',alpha=0.5)
-    ax.plot(tvals,aud_d[i,:],'m',alpha=0.5)
+    ax.plot(tvals,vis_d[i,:],'b',alpha=0.3,lw=2)
+    ax.plot(tvals,aud_d[i,:],'m',alpha=0.3,lw=2)
 
-ax.plot(tvals,vis_d.mean(axis=0),'b',alpha=1,lw=8)
-ax.plot(tvals,aud_d.mean(axis=0),'m',alpha=1,lw=8)
+ax.plot(tvals,aud_d.mean(axis=0),'m',alpha=0.8,lw=6)
+ax.plot(tvals,vis_d.mean(axis=0),'b',alpha=0.8,lw=6)
+ax.set_xticks([-0.8,0,0.8])
+off_topspines(ax)
+fig.savefig("C:\\Users\\Flora\\Pictures\\LakeConf\\movestim_crossCorr.svg",transparent=False,bbox_inches = "tight",format='svg',dpi=200)
 
 # %%

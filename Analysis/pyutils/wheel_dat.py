@@ -77,7 +77,7 @@ def wheel_raster(ev,selected_trials='all',align_type=None,t=None, bl_subtract=Tr
     # hacky way of normalising the values as they are atm in the accumulating format thoughout the session
     bl_subtracted_wheelValue = np.array([i - i[0] for i in ev.timeline_wheelValue])
 
-    raster = np.interp(ev.timeline_audPeriodOn[selected_trials,np.newaxis]+t,
+    raster = np.interp(align_time[selected_trials,np.newaxis]+t,
                             np.concatenate(ev.timeline_wheelTime[selected_trials]),
                             np.concatenate(bl_subtracted_wheelValue[selected_trials]))
 
