@@ -2109,8 +2109,16 @@ def batch_process_facemap(output_format='flat', sessions=None,
                             ax.scatter(roi_window['eyeL_x_mean'],
                                        roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
 
-
-
+                        elif 'sideCam' in video_fpath:
+                            ax.scatter(roi_window['eyeL_x_mean'],
+                                       roi_window['eyeL_y_mean'], lw=0, s=20, color='blue')
+                            rectangle_width = 150
+                            rectangle_height = 100
+                            rect = mpl.patches.Rectangle(
+                                (roi_window['eyeL_x_mean'] - 75, roi_window['eyeL_y_mean'] + 25),
+                                rectangle_width, rectangle_height, edgecolor='red', facecolor='red', fill=False, lw=1
+                            )
+                            ax.add_patch(rect)
 
                         ax.set_xlabel('x axis pixel', size=12)
                         ax.set_ylabel('y axis pixel', size=12)
