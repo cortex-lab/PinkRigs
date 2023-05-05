@@ -95,7 +95,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -202,6 +202,11 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
             exp2checkList = exp2checkList[exp2checkList['extractSpikes'].notna()]
             to_keep_column = np.array([checkSpikes in rec.extractSpikes for _,rec in exp2checkList.iterrows()])
             exp2checkList = exp2checkList[to_keep_column]
+
+        if checkFrontCam is not None: 
+            exp2checkList = exp2checkList[exp2checkList['alignFrontCam'].notna() & exp2checkList['fMapFrontCam'].notna()]
+            to_keep_column = np.array([(checkFrontCam in rec.alignFrontCam) & (checkFrontCam in rec.fMapFrontCam) for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]        
 
     return exp2checkList
 

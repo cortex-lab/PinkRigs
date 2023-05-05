@@ -85,7 +85,7 @@ classdef GLMmulti < matlab.mixin.Copyable
 
             options = optimset('algorithm','interior-point','MaxFunEvals',100000,'MaxIter',2000, 'Display', 'none');
             cvObj = cvpartition(obj.dataBlock.response_direction,'KFold',nFolds);
-            mulIdx = obj.dataBlock.tri.trialType.coherent | obj.dataBlock.tri.trialType.conflict;
+            mulIdx = obj.dataBlock.is_coherentTrial | obj.dataBlock.is_conflictTrial;
             if ~strcmpi(obj.modelString, 'simpLogSplitVSplitAUnisensory'); mulIdx = mulIdx*0; end
 
             obj.prmFits = nan(cvObj.NumTestSets,length(obj.prmLabels));
@@ -93,7 +93,7 @@ classdef GLMmulti < matlab.mixin.Copyable
             obj.logLik = nan(cvObj.NumTestSets,1);
             for i = 1:cvObj.NumTestSets
                 cvTrainObj = copy(obj);
-                cvTrainObj.dataBlock = prc.filtBlock(cvTrainObj.dataBlock, cvObj.training(i) & ~mulIdx);
+                cvTrainObj.dataBlock = filterStructRows(cvTrainObj.dataBlock, cvObj.training(i) & ~mulIdx);
                 disp(['Model: ' obj.modelString '. Fold: ' num2str(i) '/' num2str(cvObj.NumTestSets)]);
 
                 fittingObjective = @(b) (cvTrainObj.calculateLogLik(b));
@@ -101,44 +101,13 @@ classdef GLMmulti < matlab.mixin.Copyable
                 if ~any(exitflag == [1,2]); obj.prmFits(i,:) = nan(1,length(obj.prmLabels)); end
 
                 cvTestObj = copy(obj);
-                cvTestObj.dataBlock = prc.filtBlock(cvTestObj.dataBlock, cvObj.test(i));
+                cvTestObj.dataBlock = filterStructRows(cvTestObj.dataBlock, cvObj.test(i));
                 pHatTested = cvTestObj.calculatepHat(obj.prmFits(i,:));
                 obj.pHat(cvObj.test(i)) = pHatTested(sub2ind(size(pHatTested),(1:size(pHatTested,1))', cvTestObj.dataBlock.response_direction));
                 obj.logLik(i) = -mean(log2(obj.pHat(cvObj.test(i))));
             end
         end
 
-        function h = plotBlockData(obj)
-            %%
-            numTrials = prc.makeGrid(obj.dataBlock, ~isnan(obj.dataBlock.response_direction), @length, 1, 0, 1);
-            numRightTurns = prc.makeGrid(obj.dataBlock, obj.dataBlock.response_direction==2, @sum, 1, 0, 1);
-
-            audValues = [obj.dataBlock.audValues]./abs(max(obj.dataBlock.audValues));
-            colorChoices = plts.general.selectRedBlueColors(audValues);
-
-            [prob,confInterval] = arrayfun(@(x,z) binofit(x, z, 0.05), numRightTurns, numTrials, 'uni', 0);
-            prob = cell2mat(cellfun(@(x) permute(x, [3,1,2]), prob, 'uni', 0));
-            lowBound = cell2mat(cellfun(@(x) permute(x(:,1), [3,2,1]), confInterval, 'uni', 0));
-            highBound = cell2mat(cellfun(@(x) permute(x(:,2), [3,2,1]), confInterval, 'uni', 0));
-            grds = prc.getGridsFromBlock(obj.dataBlock);
-            grds.visValues = grds.visValues./abs(max(grds.visValues(:)));
-            for audVal = audValues(:)'
-                idx = find(sign(grds.audValues)==audVal & numTrials>0);
-                err = [prob(idx)-lowBound(idx), highBound(idx) - prob(idx)];
-                errorbar(grds.visValues(idx),prob(idx),err(:,1),err(:,2),'.','MarkerSize',20, 'Color', colorChoices(audValues==audVal,:));
-                hold on;
-            end
-
-            maxContrast =obj.dataBlock.origMax(1);
-            xlim([-1 1])
-            set(gca, 'xTick', (-1):(1/4):1, 'xTickLabel', round(((-maxContrast):(maxContrast/4):maxContrast)*100));
-
-            xlabel('Contrast');
-            ylabel('P( choice | contrast)');
-            set(gca,'box','off');
-            h=gca;
-            set(gcf,'color','w');
-        end
 
         function figureHand = plotFit(obj)
             if isempty(obj.prmFits); error('Model not fitted (non-crossvalidated) yet'); end

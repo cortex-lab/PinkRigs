@@ -13,7 +13,6 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 # load data
 import sklearn
 import scipy
-
 import math
 
 def sigmoid(x):
@@ -183,7 +182,8 @@ class azimuthal_tuning():
         contrast: numpy.ndarray
         spl: numpy.ndarray
         which: str
-            'vis' or 'aud'
+            'vis' or 'aud' or 'coherent' or 
+            list
         subselect_neurons: list
             cluster_ids subselection not implemented. 
         cv_split: float
@@ -206,8 +206,15 @@ class azimuthal_tuning():
         else: 
             spl = np.min(self.aud.SPL.values)
             
+        spikes = self.spikes.copy()
         if subselect_neurons: 
-            pass
+            cIDs = subselect_neurons
+            subselect_neurons = np.array(subselect_neurons)
+            idx  = np.where(spikes.clusters==subselect_neurons[:,np.newaxis])[1]
+            spikes.clusters = spikes.clusters[idx]  
+            spikes.times = spikes.times[idx]  
+        else:
+            cIDs = self.clus_ids
 
         if 'vis' in which:
             azimuth_options = sorted(self.vis.azimuths.values)
@@ -221,23 +228,48 @@ class azimuthal_tuning():
             azimuth_options = sorted(self.ms.congruent_azimuths[0,:])
             onset_matrix = self.ms.sel(contrast=contrast,SPL=spl,timeID = 'visontimes')
 
-                           
-        azimuth_times_dict = {}
-        for azimuth in azimuth_options:
-            if 'coherent' in which:
-                azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
-                    visazimuths = azimuth,
-                    audazimuths = azimuth,
-                ).values
+        elif type(which) is list: 
+            if np.isnan(which).any():
+                # unisensory 
+                idx  = np.where(~np.isnan(which))[0][0]
+                if idx==0: # visual 
+                    azimuth_options = np.array([which[idx]])
+                    onset_matrix = self.vis.sel(contrast=contrast,timeID='ontimes')
+                    which = 'vis'
+                elif idx==1: 
+                    azimuth_options = np.array([which[idx]])
+                    onset_matrix = self.aud.sel(SPL=spl,timeID='ontimes')
+                    which = 'aud'               
             else: 
-                azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
-                    azimuths = azimuth
-                ).values
+                azimuth_options = np.nan
+                onset_matrix = self.ms.sel(contrast=contrast,SPL=spl,timeID = 'visontimes')
+                v_azimuth,a_azimuth = which[0],which[1]
+                which = 'ms'
+                         
+        azimuth_times_dict = {}
+
+        if np.isnan(azimuth_options).any():
+                    azimuth_times_dict[('%s_%.0f_%.0f' % (which,v_azimuth,a_azimuth))] = onset_matrix.sel(
+                        visazimuths = v_azimuth,
+                        audazimuths = a_azimuth,
+                    ).values            
+        else: 
+            for azimuth in azimuth_options:
+                if 'coherent' in which:
+                    azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
+                        visazimuths = azimuth,
+                        audazimuths = azimuth,
+                    ).values
+
+                else: 
+                    azimuth_times_dict[('%s_%.0f' % (which,azimuth))] = onset_matrix.sel(
+                        azimuths = azimuth
+                    ).values
 
         response_rasters = []
         for k in azimuth_times_dict.keys():
             t_on = azimuth_times_dict[k]
-            r = get_binned_rasters(self.spikes.times,self.spikes.clusters,self.clus_ids,t_on,**self.raster_kwargs)
+            r = get_binned_rasters(spikes.times,spikes.clusters,cIDs,t_on,**self.raster_kwargs)
             # so we need to break here so that we perorm getting binned rasters only once...
             stim = r.rasters[:,:,r.tscale>=0]
 
@@ -532,7 +564,6 @@ class azimuthal_tuning():
         Procedure: 
         ----------
 
-
         """
         tuning_curves = self.get_tuning_curves(cv_split=2,**kwargs)     
 
@@ -580,12 +611,44 @@ class azimuthal_tuning():
         ax.axvline(self.selectivity_shuffle_dist[cidx])
         ax.set_title(self.preferred_tuning[cidx])
 
+    def get_enhancement_index_per_nrn(self,at_azimuth): 
+        enhancement_index = np.zeros((self.clus_ids.size,1))
+        for idx,n in enumerate(self.clus_ids):
+            try:
+                if ~np.isnan(at_azimuth[n,:]).all():
+                    vis = self.get_rasters_perAzi(subselect_neurons= [n],which = [at_azimuth[n,0], np.nan])
+                    aud = self.get_rasters_perAzi(subselect_neurons= [n], which = [np.nan,at_azimuth[n,1]])
+                    ms  = self.get_rasters_perAzi(subselect_neurons= [n],which = list(at_azimuth[n,:]))
+
+                    vis_trials = vis.dat.sum(axis=3)[0,:,0]
+                    aud_trials = aud.dat.sum(axis=3)[0,:,0]
+                    ms_trials = ms.dat.sum(axis=3)[0,:,0]
+
+                    additive_samples = np.ravel(vis_trials+aud_trials[:,np.newaxis])
+
+                    additive_dist_resampled = sklearn.utils.resample(additive_samples,replace=True,n_samples=10000)
+                    
+                    additive_mean = additive_dist_resampled.mean(axis=0)
+                    additive_std = additive_dist_resampled.std(axis=0)
+
+                    # get mulitsensory mean
+                    ms_mean = ms_trials.mean(axis=0)                
+                    # get enhancement index
+                    enhancement_index[idx] = (ms_mean-additive_mean)/additive_std
+                else:
+                    enhancement_index[idx] = None
+            except:
+                enhancement_index[idx] = None
+
+
+        return enhancement_index
+    
     def get_enhancement_index(self,at_azimuth=None):
         """
         function to calculate traditional enhancement index at preferred azimuth 
         taken from Stanford et al. 2005 
         Method in brief:
-        take every combination of unsory response trial additions 
+        take every combination of unisensory response trial additions 
         then resample that distribution with (skitlearn bootstrap)
         then get the mean and the std of the additive distribution 
 

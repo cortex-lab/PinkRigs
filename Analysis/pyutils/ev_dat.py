@@ -158,3 +158,28 @@ def digitise_event_onsets(ev_times,bin_range = None,**binkwargs):
         bin2show = None
 
     return myev_digi,onset_idx,bin2show
+
+def digitize_events(ontimes,offtimes,timepoints):
+    """
+    another function to digitise events between on and offsets
+    
+    """
+    ontimes = ontimes[~np.isnan(ontimes)]
+    offtimes = offtimes[~np.isnan(offtimes)]                  
+    new_dt = np.diff(timepoints).mean()
+    FIRST_EVENT= timepoints.min()  # because the first event of the neural data is not always 0 
+
+    events_nsamples = timepoints.size
+    onsets,offsets= ontimes-FIRST_EVENT, offtimes-FIRST_EVENT
+        
+    events_digitized = np.zeros(events_nsamples, dtype=np.uint8)
+    for idx, (on, off) in enumerate(zip(onsets, offsets)):
+        onsample = int(on/new_dt)
+        offsample = int((off)/new_dt) # (off+new_dt) is there to include the last digital sample
+        if idx % 10000 == 0:
+            # print every 1000th event
+            print(idx, ontimes[idx], offtimes[idx], timepoints[onsample], timepoints[offsample])
+        events_digitized[onsample:offsample] = 1
+    
+
+    return events_digitized
