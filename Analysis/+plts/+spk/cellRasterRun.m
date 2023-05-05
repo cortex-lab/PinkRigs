@@ -1,4 +1,4 @@
-function cellRasterAuto(varargin)
+function cellRasterRun(varargin)
 %% Audomatically formats requested mouse experiments for plts.spk.cellRaster
 %
 % NOTE: This function uses csv.inputValidate to parse inputs. Paramters are 
@@ -77,4 +77,4 @@ for i = 1:length(uniDates)
         dat{i,1} = paramFunc(currData);
     end
 end
-plts.spk.cellRaster(dat)
+plts.spk.cellRasterGUI(dat)
