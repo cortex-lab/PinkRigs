@@ -94,6 +94,8 @@ In both cases, please write a few words to explain in the text file. In this way
 
 ### Debugging
 #### `plt.functionGraph`
+#### `checkOrChangePinkRigsFunc`
+Use this function to change the name of a function in the whole repo.
 
 ### Performing analysis
 #### `+natim` package
