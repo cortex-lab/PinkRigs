@@ -175,6 +175,21 @@ def bin_spikes_pos_and_time(spikes,depth_corr_window_spacing=40,spike_binning_t=
     
     return Bunch({'array': binned_spikes_depth,'xposscale':shank_bins,'depthscale':depth_corr_bins,'tscale':spike_binning_t_edges})
 
+def bin_mua_per_depth(spikes, depth_spacing = 40, depth_min = 0, depth_max = 5760):
+    
+    depth_bin_edges = np.arange(depth_min,depth_max,depth_spacing)            
+    depth_ids = np.digitize(spikes.depths, bins=depth_bin_edges)            
+    # shank*depth ID strings so that units can be sorted based on that if necessary
+    shank_depth_ids = ['%.0d-%.0d' % (shank,depth_bin_edges[d_id-1]) for shank,d_id in zip(spikes._av_shankIDs,depth_ids)] 
+
+    spikes_depthID = Bunch({
+        'depth_ids':depth_ids,
+        'shank_depth_ids': np.array(shank_depth_ids),
+        'depth_bin_edges':depth_bin_edges
+              })
+    # digitise depth bins
+    return spikes_depthID
+
 def call_bombcell_params():
     # select units based on metrics 
     metric_thresholds = {

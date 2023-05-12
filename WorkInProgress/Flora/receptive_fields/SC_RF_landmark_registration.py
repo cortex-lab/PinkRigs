@@ -2,21 +2,20 @@
 import sys,glob,os 
 import scipy.io
 import numpy as np
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_PinkRigs_to_path
-import src.rf_fit as rf 
-add_PinkRigs_to_path()
 
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+import Analysis.neural.src.rf_model as rf 
 from Admin.csv_queryExp import load_data
 
-subject = 'FT008'
+subject = 'FT009'
 probe = 'probe0'
 data_dict = {'events':{'_av_trials':['squareAzimuth','squareElevation','squareOnTimes']},probe:{'spikes':['times','clusters','depths','_av_shankIDs']}}
-recordings = load_data(subject = subject, expDate = '2021-01-15',data_name_dict=data_dict,expDef='sparseNoise')
+recordings = load_data(subject = subject,expNum='4', expDate = '2021-01-20',data_name_dict=data_dict,expDef='sparseNoise')
+
 
 # %%
 # try finding receptive fields in any recording...
-findRF = rf.RF_model()
+findRF = rf.rf_model()
 shankpos = np.zeros((4,3)) 
 myRFs={}
 for idx,rec in recordings.iterrows():
@@ -25,7 +24,7 @@ for idx,rec in recordings.iterrows():
             spikes = rec[probe].spikes
             sn_info = rec.events._av_trials
 
-            findRF.add_sparseNoise_info(sn_info)
+            findRF.format_events(sn_info)
             findRF.bin_spikes_per_loc(spikes)
             a =findRF.binned_spikes_depths['array']
             findnonzeros = np.where(a.sum(axis=2)>a.sum(axis=2).max()*0.01) # check which pieces have nonzero activity
@@ -41,10 +40,11 @@ for idx,rec in recordings.iterrows():
                     RF_pos = []
                     resps = []
                     for p0 in startpos:
+                        print(p0)
                         ct=0
                         while (foundrf<5 and (ct<4)): # search for receptive fields
                             r =findRF.get_response_binned(a[shk,p0-ct,:]) #8.8s for a single one... # now imagine 
-                            mf = findRF.fit_predict(r)
+                            mf = findRF.fit_mua(r)
                             depth_um = findRF.binned_spikes_depths['depthscale'][int(p0-ct)]
                             if mf is not np.nan:
                                 RF_pos.append(np.append(depth_um,mf))

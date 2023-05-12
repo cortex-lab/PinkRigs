@@ -61,6 +61,10 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     % get timing for blanks 
     stimOnsetRaw = preproc.align.event2Timeline(block.events.visstimONTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+
+    stimOffsetRaw = preproc.align.event2Timeline(block.events.visstimOFFTimes, ...
+        alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+    
     
     % get timings of trials
     trialStart = preproc.align.event2Timeline(block.events.newTrialTimes, ...
@@ -75,14 +79,11 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
             error('Discrepancy between the number of started vs. ended trials. Have a look.')
         end
     end
+
     trialStEnTimes = [trialStart(:) trialEnd(:)];
     timelineTime = timeproc.extractChan(timeline,'time');
 
-    % Add delay to trial start and end because of issues with alignment?
-    % It's a bit of a hacky thing to do.
-    %delay = 0.2; trialStEnTimes = trialStEnTimes + delay;
-    trialStEnTimes = [trialEnd(:)-.22 trialEnd(:)+.02];
-    
+
     %% visual stimulus timings 
     % get all screen flips
     [photoDiodeFlipTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
@@ -90,18 +91,38 @@ function ev = AVPassive_extended(timeline, block, alignmentBlock)
     
     % sort by trial
     numClicks = 1; 
-    visOnOffByTrial = indexByTrial(trialStEnTimes, photoDiodeFlipTimes);
-    vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);
-    visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
-    visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);
-    visPeriodOnOff = cellfun(@(x) [x(1,1) x(end,2)], visOnOffByTrial, 'uni', 0);
-   
+
+    % In some passive protocols, the screen was flipping extras at
+    % trialStart. On top of that, in some protocols, I did not end the
+    % stimulus properly, so it got ended when trialEnd was called (FT008). 
+    % This is why I have these loops to find the best addition to trialEnd.
+    % in addition in the lilrig experiment we also flipped the pd when
+    % there was no vis stimulus (as I outputed 0 contrast). 
+    test_adding_this_to_trialEnd = [0.15,0.1,0.05,0.02];
+    for ct=1:numel(test_adding_this_to_trialEnd)
+        trialStEnTimes = [stimOnsetRaw' trialEnd(:)+test_adding_this_to_trialEnd(ct)];
+        visOnOffByTrial=  indexByTrial(trialStEnTimes, photoDiodeFlipTimes');
+        vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial);  
+        how_much_vis2Remove(ct)=sum(vis2Remove);
+    end 
+
+    [~,best_idx]=min(how_much_vis2Remove); 
+    trialStEnTimes = [stimOnsetRaw' trialEnd(:)+test_adding_this_to_trialEnd(best_idx)];
+    visOnOffByTrial=  indexByTrial(trialStEnTimes, photoDiodeFlipTimes');
+    vis2Remove = cellfun(@(x) length(x)~=numClicks*2, visOnOffByTrial); 
+
+    disp(sprintf('Removing %.0f visual trials...',sum(vis2Remove(visTrial))));
+
     if sum(~vis2Remove) < 0.9*sum(visTrial)
         fprintf('****Removing more than 10 percent of visual trials..? \n')
     end
     if sum(~vis2Remove) < 0.5*sum(visTrial)
         warning('Removing more than 50% of visual trials..?!!')
     end
+
+    visOnOffByTrial(vis2Remove)= deal({nan*ones(1, 2)});
+    visOnOffByTrial = cellfun(@(x) [x(1:2:end) x(2:2:end)], visOnOffByTrial, 'uni', 0);
+    visPeriodOnOff = cellfun(@(x) [x(1,1) x(end,2)], visOnOffByTrial, 'uni', 0);
 
     %% auditory click times
     audTrace = timeproc.extractChan(timeline,'audioOut');

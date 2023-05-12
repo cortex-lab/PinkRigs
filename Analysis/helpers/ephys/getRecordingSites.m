@@ -91,7 +91,8 @@ function [chanPos, elecPos, shank, probeSN] = getRecordingSites(binFileName,binF
     elseif contains(probeType,'1')
         % NP 1.0
         %%% VERY APPROXIMATE--whole thing is a hack
-        npx1_chanMap = load('C:\Users\Hamish\OneDrive - University College London\Documents\GitHub\Kilosort2\configFiles\neuropixPhase3A_kilosortChanMap.mat');
+        githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
+        npx1_chanMap = load(fullfile(githubPath,'Processing','helpers','configFiles','neuropixPhase3A_kilosortChanMap.mat'));
 
         elecPos = [npx1_chanMap.xcoords npx1_chanMap.ycoords];
     end

@@ -216,7 +216,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         nonVisTrials = visContrast(eIdx)==0;
         stimStartRef = stimStartBlock(~nonVisTrials);
         if any(compareTest(stimStartRef, visPeriodOnOffTimeline(:,1)))
-            fprintf('****Removing photodiode times that do not match stimulus starts \n');
+%             fprintf('****Removing photodiode times that do not match stimulus starts \n');
 
             [~, nearestPoint] = getNearestPoint(visPeriodOnOffTimeline(:,1), stimStartRef);
             visPeriodOnOffTimeline(nearestPoint>0.75,:) = [];
@@ -277,16 +277,16 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         timelineAudOnset(cellfun(@isempty, timelineAudOnset)) = deal({nan});
         timelineStimOnset = min(cell2mat([timelineVisOnset timelineAudOnset]), [],2, 'omitnan');
 
-        missedOnset = isnan(timelineStimOnset);
-        validIdx = responseMadeIdx & ~missedOnset;
-        stimOnsetIdx = round(timelineStimOnset(validIdx)*sR);
-        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(validIdx,2)*sR],[],2);
+        missedOnset = isnan(timelineStimOnset) & ~(audAmplitude==0 & visContrast == 0);
+        stimFoundIdx = responseMadeIdx & ~(audAmplitude==0 & visContrast == 0);
+        stimOnsetIdx = round(timelineStimOnset(stimFoundIdx)*sR);
+        stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(stimFoundIdx,2)*sR],[],2);
         stimEndIdx = stimEndIdx-stimOnsetIdx;
         if any(missedOnset)
             if sum(missedOnset) >0.25*length(missedOnset)
-                error('Over 25% of stimulus onsets are missing???');
+                error('Cannot find expected stimulus onset over 25% of stimulus onsets are missing???');
             else
-                warning('There are missing stimulus onsets?! Will process identified ones');
+                warning('Cannot find expected stimulus onset for some trials. Will process identified ones');
             end
         end
         if isempty(stimOnsetIdx)
@@ -314,7 +314,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
-    falseIdx = (movingScan(stimOnsetIdx)~=0); %don't want trials when mouse is moving at stim onset
+    falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
 
     choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
     choiceCrsIdx(falseIdx) = nan;
@@ -336,7 +336,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
     onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
-    onsetTimDirByChoiceTrial = onsetTimDirByTrial(validIdx);
+    onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
     onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
     %"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
@@ -348,7 +348,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     choiceInitTimeDir = cell2mat(choiceInitTimeDir);
 
     %SANITY CHECK
-    blockTstValues = responseRecorded(validIdx);
+    blockTstValues = responseRecorded(stimFoundIdx);
     if ~isempty(choiceInitTimeDir)
         tstIdx = ~isnan(choiceInitTimeDir(:,2));
         if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
@@ -405,11 +405,18 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
         disp('opto data...')
         dat = csv.loadData(block.expInfo, 'dataType', {{'opto'}});
-        opto = dat.dataoptoLog{1,1}; 
+
+        if any("dataoptoLog" == string(dat.Properties.VariableNames))
+            opto = dat.dataoptoLog{1,1}; 
+            optoLogExists = true; 
+        else
+            warning('optoLog does not exist ... opto data will only rely on block.')
+            optoLogExists = false;
+        end
         is_laser_On_block = e.is_laserOnValues(eIdx); 
         laserPos = zeros(1,numel(is_laser_On_block));
 
-        if isfield(e,'laser_power1Values') % the Controller way of extracting the data          
+        if isfield(e,'laser_power1Values') && optoLogExists % the Controller way of extracting the data          
          % sometimes there is some issue and we miss issuing a waveform
             is_laser_On_optoLog = opto.is_laserOn; 
 
@@ -429,6 +436,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             % also saving out power and other variables 
             power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
             power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+
+            is_laser_On = (power_laser1+power_laser2)>0; % that is laser power 0 is issued in a bunch of cases
             
             % location of laser 
             laserPosID = e.laserPosValues(eIdx) .* double(is_laser_On);
@@ -454,7 +463,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
                  all_laser_times(end,:) = []; 
              end
 
-        else
+        elseif ~isfield(e,'laser_power1Values') && optoLogExists % when we did not have power saved in block. i.e. 2022 Dec experiments
             is_laser_On = is_laser_On_block;
             all_laser_times  = timeproc.getChanEventTime(timeline,'laserOut');
             if strcmp(opto.Hemisphere(1),'L'); hemisphere1 = -1; elseif strcmp(opto.Hemisphere(1),'R'); hemisphere1 = 1; end 
@@ -462,10 +471,39 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             power_laser1 = zeros(1,numel(is_laser_On_block));
             power_laser2 = zeros(1,numel(is_laser_On_block));
             power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+
+        elseif isfield(e,'laser_power1Values') && ~optoLogExists  % when no optoLog is saved but we have powers in the block
+            is_laser_On = is_laser_On_block;
+            all_laser_times = NaN(sum(is_laser_On),4); 
+             % also saving out power and other variables 
+            power_laser1 = e.laser_power1Values(eIdx) .* double(is_laser_On); %
+            power_laser2 = e.laser_power2Values(eIdx) .* double(is_laser_On); % 
+            is_laser_On = (power_laser1+power_laser2)>0; % that is laser power 0 is issued in a bunch of cases            
+            % location of laser 
+            laserPos = NaN(numel(eIdx),1)';
+
+        end 
+        laser_times_per_trial = indexByTrial(trialStEnTimes,all_laser_times(:,1)); 
+        % the longer ITI is at the end of the trial so most of the time of
+        % there is an extra flip, it will happen in that ITI
+
+        % sometimes the laser does not turn on for some reason even if
+        % there is a pulse: I think it is queing the previous..? But that
+        % should be indicated 
+
+        is_laser_On_trial_indexed  = (~cellfun(@isempty,laser_times_per_trial));
+        % check whether any is missed 
+        missed_waveforms = sum(is_laser_On'-is_laser_On_trial_indexed);         
+        if missed_waveforms>0 && missed_waveforms<5
+            fprintf('****WARNING: seems like a few laser Trials did not output a waveform... (if more than 5, experiment will error) \n');
+            is_laser_On = is_laser_On_trial_indexed';
         end 
 
+
+        kept_times = cellfun(@(x) x(1), laser_times_per_trial(is_laser_On));
+        [~,idx,~] = intersect(all_laser_times(:,1),kept_times);
         laser_times_trial_indexed = NaN(numel(is_laser_On),4);
-        laser_times_trial_indexed(is_laser_On,:)= all_laser_times;  
+        laser_times_trial_indexed(is_laser_On,:)= all_laser_times(idx,:);  
 
     else
         is_laser_On = NaN(numel(eIdx),1)';
@@ -486,7 +524,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));
-    ev.block_stimOn = single(stimPeriodStart);
+    ev.block_stimOn = single(stimStartBlock);
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);

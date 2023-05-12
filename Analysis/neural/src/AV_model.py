@@ -11,8 +11,8 @@ warnings.filterwarnings("ignore")
 from Admin.csv_queryExp import Bunch,load_ephys_independent_probes
 
 import Analysis.neural.utils.spike_dat as su 
-from Analysis.neural.utils.ev_dat import postactive
-import Analysis.neural.utils.plotting as my_plotter
+from Analysis.pyutils.ev_dat import postactive
+import Analysis.pyutils.plotting as my_plotter
 
 def sort_trialtypes_to_conditions(blank,vis,aud,MS,blank_reps=0,myContrast=1,mySPL=0.1,n_trials=None,align_type='vis'):
      

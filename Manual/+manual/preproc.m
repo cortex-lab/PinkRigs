@@ -11,7 +11,9 @@ preproc.extractExpData(exp2checkList,'recompute',{['events']});
 exp2checkList = csv.queryExp(params);
 
 %% Just run alignment
-preproc.align.main(exp2checkList,'recompute',{'block'});
+preproc.align.main(exp2checkList,'recompute',{'ephys'});
 
 %% Just run preprocessing
-preproc.extractExpData(exp2checkList,'recompute',{['events']}); % here spk does not work 
+preproc.extractExpData(exp2checkList,'recompute',{['events']},'process',{['events']}); % here spk does not work 
+
+

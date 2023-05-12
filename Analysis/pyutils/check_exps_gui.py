@@ -5,6 +5,8 @@
 GUI too loop over pngs in expfolders 
 Up/Down -- swap between experiments 
 Left/Right -- swap between pngs
+in main you can use queryExp-like inputs to call the desired experiments
+
 """
 import sys,glob
 from pathlib import Path
@@ -14,7 +16,7 @@ sys.path.insert(0, (pinkRig_path.__str__()))
 
 # Qt imports 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QApplication,QGridLayout,QLabel,QWidget,QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QApplication,QLabel,QWidget,QVBoxLayout
 from PyQt5.QtGui import QPixmap
 # PinkRig imports 
 from Admin.csv_queryExp import queryCSV
@@ -70,7 +72,10 @@ class Viewer(QMainWindow):
             'sideCam_alignment',
             'frontCam_roi_crop_and_mask',
             'eyeCam_roi_crop_and_mask',
-            'sideCam_roi_crop_and_mask'            
+            'sideCam_roi_crop_and_mask',
+            'frontCam_audTriggeredMovement',
+            'eyeCam_audTriggeredMovement',
+            'sideCam_audTriggeredMovement'            
         ]
 
         self.images = [[check_file(exp,d) for d in self.datatypes] for exp in self.expFolders]
@@ -128,5 +133,5 @@ def main(**kwargs):
     viewer = Viewer(**kwargs)
     sys.exit(app.exec_())
 
-main(subject='AV028')
+main(subject='AV020')
 

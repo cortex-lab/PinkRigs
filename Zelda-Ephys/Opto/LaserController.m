@@ -134,6 +134,8 @@ classdef LaserController < handle
                 volts = obj.laserCfg.calib.voltages;
                 power = obj.laserCfg.calib.power(:,LEDidx);
                 if desiredPower > max(power)
+                    disp(LEDidx);
+                    disp(max(power));
                     error('power desired outside of calibrated range');
                 end            
                 %Local interpolation from the calibration data

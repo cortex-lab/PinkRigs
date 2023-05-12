@@ -44,6 +44,48 @@ def rgb_to_hex(rgb):
     b = rgb[2]
     return '#{:02x}{:02x}{:02x}'.format(r,g,b)
 
+def brainrender_scattermap(values,n_bins=None,vmin=None,vmax= None,cmap='viridis'):
+    """
+    function that produces the colors for brainrender scatter 
+    Parameters: 
+    -----------
+    values: np.ndarray 
+        values that determine the hue of the scatter 
+    cmap: str
+        colormap by matplotlib
+    vmin: None/float
+    vmax: None/float
+        values to determine colormap edges
+
+    Returns: list of strings
+    --------
+        hex map of for each value in values 
+    """
+
+    if vmin is None:
+        vmin = min(values)
+
+    if vmax is None: 
+        vmax = max(values)
+
+    
+    map_min,map_max = 0,1
+    if n_bins is None: 
+        n_bins = int(np.round(values.size/15,0))        
+    my_cbins = np.linspace(map_min,map_max,int(n_bins+1))
+    my_datbins = np.linspace(vmin,vmax,n_bins)
+    color_func = plt.cm.get_cmap(cmap)
+    colors_ = color_func(my_cbins)
+    colors_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in colors_]
+    cbin_idxs = np.digitize(values,bins=my_datbins) 
+
+    values_cmap = [colors_[i] for i in cbin_idxs]
+    
+
+    return values_cmap
+
+
+
 def plot_the_psth(spike_times, spike_clusters, cluster_id, events, tscale, pre_time, post_time, bin_size,
                   smoothing, return_fr,bl_subtract,pethcolor,erralpha,pethlw,ax,error_bars='sem'):
 
@@ -193,7 +235,8 @@ def my_rasterPSTH(spike_times,  # Spike times first
         ax.set_xlim([-pre_time, post_time])    
         if plot_edge==None: 
             plot_edge=pmax
-        ax.vlines(0., 0., plot_edge, color='black', alpha=0.5)
+        if 'line' in onset_marker:
+            ax.vlines(0., 0., plot_edge, color='black', alpha=0.5)
         #ax.set_ylim([ 0., plot_edge])
         ax.set_yticks([0., plot_edge/2, plot_edge])
         ax.set_ylabel('Firing Rate' if return_fr else 'Number of spikes')
@@ -229,7 +272,9 @@ def my_rasterPSTH(spike_times,  # Spike times first
 
         if include_PSTH:
             # set the labels of the PSTH 
-            ax.axhline(0., color='black')
+            if 'line' in onset_marker:
+                ax.axhline(0., color='black')
+
             plt.setp(ax.get_xticklabels(), visible=False)
             #ax.set_xticks([])
             ax.spines['bottom'].set_visible(False)

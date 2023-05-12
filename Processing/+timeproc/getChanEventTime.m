@@ -52,7 +52,7 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                         [clustIdx, thresh] = kmeans(chan(1:5:end),5);
                         thresh(arrayfun(@(x) mean(clustIdx==x)*100, unique(clustIdx))<2) = [];
                         thresh = [min(thresh) + range(thresh)*0.2;  max(thresh) - range(thresh)*0.2];
-                        
+
                         % Find flips based on these thresholds.
                         photoDiodeFlipOn = sort([strfind(chan'>thresh(1), [0 1]), strfind(chan'>thresh(2), [0 1])]);
                         photoDiodeFlipOff = sort([strfind(chan'<thresh(1), [0 1]), strfind(chan'<thresh(2), [0 1])]);
@@ -107,14 +107,21 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                 % or determine from the baseline in which we always pull
                 % down ao in LaserController 
                 bl = (chan(1:1000));
-                tlSyncThresh = mean(bl)+5*std(bl);
+                tlSyncThresh = mean(bl)+10*std(bl);
                 tlSyncThresh = [tlSyncThresh,tlSyncThresh+50*std(bl)];
                 % I need to find a more robust way of doing this. 
                 [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
                 laserOnStart = sort(laserOnStart); 
                 laserOffStart  = sort(laserOffStart);                 
-                evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd]; 
+                evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd];
+
+                % throw away events that are point processes and most
+                % certainly too long
+                laserOnPeriod = diff(evTimes');
+                laserOnPeriod = laserOnPeriod(2,:);
+
+                evTimes = evTimes(find(laserOnPeriod>0.1),:); 
 
             case 'micSync'
                 micSyncThresh = [min(chan)+0.2*range(chan) max(chan)-0.2*range(chan)]; % these seem to work well

@@ -21,11 +21,6 @@ opts = setvartype(opts, 'char');
 % Read the csv
 if ~contains(csvPath, 'docs.google.com')
     csvData = readtable(csvPath, opts');
-    if any(contains(csvData.Properties.VariableNames,'ExtraVar')) || isempty(csvData)
-        % May have been due to server issues -- wait and retry
-        pause(0.1)
-        csvData = readtable(csvPath, opts');
-    end
 
     dateColumns = find(contains(opts.VariableNames,'Date'));
     for dd = 1:numel(dateColumns)
@@ -37,7 +32,7 @@ else
         csvData = csv.getGoogleSpreadsheet(docID);
     catch
         % Internet access issue?
-        pause(.1)
+        pause(10)
         csvData = csv.getGoogleSpreadsheet(docID);
     end
     variableNames = csvData(1,:);

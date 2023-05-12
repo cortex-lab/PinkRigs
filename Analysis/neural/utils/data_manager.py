@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.stats import median_abs_deviation as mad
+import datetime 
 
-from Analysis.neural.utils.video_dat import get_move_raster
+from Analysis.pyutils.video_dat import get_move_raster
 
 # ONE loader from the PinkRig Pipeline
 from Admin.csv_queryExp import get_csv_location,load_data
@@ -13,6 +14,23 @@ def get_sc_mice_list():
     mice = pd.read_csv(get_csv_location('main'))
     sc_mice = mice[mice.P0_AP<-3.7]
     return sc_mice.Subject.values.tolist()
+
+def write_cleanCSV(dat,csv_path):
+    
+    # create a backup if file already exists 
+    if csv_path.is_file():
+        # save previous
+        old = pd.read_csv(csv_path)
+        time_created = datetime.datetime.fromtimestamp(
+            csv_path.stat().st_ctime
+            ).strftime("%Y-%m-%d-%H%M")
+        old_save_path = csv_path.parent / ('%s%s.csv' % (csv_path.stem,time_created))
+        old.to_csv(old_save_path)
+    
+    # write file 
+    csv_path.parent.mkdir(parents=True,exist_ok=True)
+    dat.to_csv(csv_path)
+
 
 # a bunch of helper functions for the type pf stuff we want to calculate
 def get_performance_metrics(ev):
@@ -182,7 +200,7 @@ def check_postactive(rec):
         'events':{'_av_trials':'table'},
         'eyeCam':{'camera': 'all'}
         }
-    any_postactive = load_data(subject = rec.Subject,expDate = rec.expDate,expDef = 'postactive', data_name_dict = data_dict)
+    any_postactive = load_data(subject = rec.subject,expDate = rec.expDate,expDef = 'postactive', data_name_dict = data_dict)
     is_long_enough = [float(r.expDuration)>1500 for _,r in any_postactive.iterrows()]
     good_postactive = any_postactive[is_long_enough]
     if len(good_postactive)==1:
@@ -264,12 +282,12 @@ def get_highest_yield_unique_ephys(sessions,probe='probe0'):
         # warnings
         no_range_recs = probe_best[check_range]
         for _,r in no_range_recs.iterrows(): 
-            print('%s %s, expNum=%s does not have channels.localCoordinates but has nrns??!' % (r.Subject,r.expDate,r.expNum))
+            print('%s %s, expNum=%s does not have channels.localCoordinates but has nrns??!' % (r.subject,r.expDate,r.expNum))
         # throw
         probe_best = probe_best[probe_best['%s_depth_range' % probe].notna()]
 
-    for s in np.unique(probe_best.Subject):
-        subject_table = probe_best[probe_best.Subject == s]
+    for s in np.unique(probe_best.subject):
+        subject_table = probe_best[probe_best.subject == s]
         b = subject_table.pivot(index=['expDate'],columns=['%s_depth_range' % probe],values=['%s_n_good' % probe])
         # merge columns with significant overlap
         ranges = [(int(x[0]),int(x[1])) for x in b['%s_n_good' % probe].columns]
@@ -339,7 +357,7 @@ def get_behavior_quality_scores(savepath=None,trim_bad=False,n_go_thr = 200,perf
     kwargs['expDef'] = 'multiSpace'
     recdat = load_data(data_name_dict = data_dict,**kwargs)
     # from recdat drop recordings that are too short
-    out_dat = recdat[['Subject','expDate','expNum','rigName','expDuration']]    
+    out_dat = recdat[['subject','expDate','expNum','rigName','expDuration']]    
     out_dat = out_dat.reset_index(drop=True)
     # performance measures   
     go,nogo,p_coh,p_vis,p_aud,bias = zip(*[get_performance_metrics(rec.events._av_trials) for _,rec in recdat.iterrows()])
@@ -431,7 +449,7 @@ def get_sessions_with_units(expdef_namestring,savepath=None,trim_bad = False,**k
     kwargs['expDef'] = expdef_namestring
     recdat = load_data(data_name_dict = data_dict,**kwargs)
     # from recdat drop recordings that are too short
-    out_dat = recdat[['Subject','expDate','expNum','rigName','expDuration']]    
+    out_dat = recdat[['subject','expDate','expNum','rigName','expDuration']]    
     out_dat = out_dat.reset_index(drop=True)
 
     # recording locations 
@@ -504,10 +522,12 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     returns: 
         : pd.DataFrame
         
-    """
+    """ # for now I won't call all the data as apparenty the bombcell stuff f*cks things up. 
+
+
+
     data_dict = {
-        probe:{'clusters':'all'}, 
-    }
+        probe:{'clusters':'all'}}
     recording = load_data(data_name_dict=data_dict,**rec_kwargs)
 
     clusters = recording[probe].iloc[0].clusters
@@ -524,6 +544,14 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         clusInfo['dv'] = clusters.mlapdv[:,2]
         clusInfo['hemi'] = np.sign(clusInfo.ml-5600)
 
+    else: 
+        clusInfo['ml'] = np.nan
+        clusInfo['ap'] = np.nan
+        clusInfo['dv'] = np.nan
+        clusInfo['hemi'] = np.nan
+        clusInfo['brainLocationAcronyms_ccf_2017'] = 'unregistered'
+        clusInfo['brainLocationIds_ccf_2017']  = np.nan   
+
     # option to read in the raw data as well  
     #clusInfo_ = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     #clusInfo_ = pd.DataFrame.from_dict(clusInfo_)
@@ -539,6 +567,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     registration_folder = sc_probeloc_path / rec_kwargs['subject'] / rec_kwargs['expDate']/ 'alf' / probe_imec
     registration_files = list(registration_folder.glob('*.npy')) 
 
+    success = 0
     if len(registration_files)==4:  
         print('acute recording. Found SC registration.') 
         d = {}
@@ -549,6 +578,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         all_clusInfo['sc_azimuth'] = [d[s][0] for s in all_clusInfo._av_shankID]
         all_clusInfo['sc_elevation'] = [d[s][1] for s in all_clusInfo._av_shankID]
         all_clusInfo['sc_surface'] = [d[s][2] for s in all_clusInfo._av_shankID]
+        success = 1
 
     elif len(registration_files)==0:
         print('trying to load a chronic registration ...')
@@ -567,11 +597,17 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
             all_clusInfo['sc_azimuth'] = [d[s][1] for s in all_clusInfo._av_shankID]
             all_clusInfo['sc_elevation'] = [d[s][2] for s in all_clusInfo._av_shankID]
             all_clusInfo['sc_surface'] = [d[s][0] for s in all_clusInfo._av_shankID]
+            success=1
     
+    if not success:
+        print('failed to load SC surface registration...')
+        all_clusInfo['sc_azimuth'] = np.nan
+        all_clusInfo['sc_elevation'] = np.nan
+        all_clusInfo['sc_surface'] = np.nan
     
     all_clusInfo['probe'] = probe
     all_clusInfo['expFolder'] = recording.iloc[0].expFolder
-    all_clusInfo['Subject'] = recording.iloc[0].Subject
+    all_clusInfo['subject'] = recording.iloc[0].subject
     all_clusInfo['expDate'] = recording.iloc[0].expDate
     all_clusInfo['expNum'] = recording.iloc[0].expNum
     all_clusInfo['expDef'] = recording.iloc[0].expDef

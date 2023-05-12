@@ -47,13 +47,24 @@ function logOddsLR = GLMMultiModels(obj, tag, P)
 if ~exist('P', 'var'); obj.modelString = tag; end
 [obj.dataBlock.audValues, uniA] = deal(unique(obj.dataBlock.stim_audDiff));
 [obj.dataBlock.visValues, uniV] = deal(unique(obj.dataBlock.stim_visDiff));
-uniA = sort(uniA, 'descend'); uniV = sort(uniV, 'descend');
+[obj.dataBlock.dirValues, uniD] = deal(unique(obj.dataBlock.previous_respDirection));
+[obj.dataBlock.feedValues, uniF] = deal(unique(obj.dataBlock.previous_respFeedback));
 
 [audGrid,visGrid] = meshgrid(uniA,uniV);
 comb = unique([obj.dataBlock.stim_visDiff obj.dataBlock.stim_audDiff], 'rows');
 switch tag
-    case 'eval'; visDiff = obj.evalPoints(:,1); audDiff = obj.evalPoints(:,2);
-    otherwise, audDiff = obj.dataBlock.stim_audDiff; visDiff = obj.dataBlock.stim_visDiff;
+    case 'eval' 
+        visDiff = obj.evalPoints(:,1);
+        audDiff = obj.evalPoints(:,2);
+        if size(obj.evalPoints,2)>3
+            prevRespDir = obj.evalPoints(:,3);
+            prevRespFeed = obj.evalPoints(:,4);
+        end
+    otherwise
+        audDiff = obj.dataBlock.stim_audDiff;
+        visDiff = obj.dataBlock.stim_visDiff;
+        prevRespDir = obj.dataBlock.previous_respDirection;
+        prevRespFeed = obj.dataBlock.previous_respFeedback;
 end
 repAud = repmat({audDiff},1,length(uniA));
 repVis = repmat({visDiff},1,length(uniV));
@@ -95,7 +106,42 @@ switch modChoose
         end
         obj.evalPoints = [repmat(linspace(-max(abs(uniV)),max(abs(uniV)),200)', length(uniA),1), reshape(repmat(uniA,1,200)',200*length(uniA),1)];
         obj.prmBounds = repmat([-inf; inf], 1, length(obj.prmLabels));
-    
+
+    case lower({'simpLogSplitVSplitAPast','simpLogSplitVSplitAPastWSLS','simpLogSplitVSplitAPastBusse'})
+        if ~contains(modChoose, 'busse'); prevC = 1; else; prevC = 0; end
+        if contains(modChoose, 'wsls'); wsls = 1; else; wsls = 0; end
+        if contains(modChoose, 'busse'); busse = 1; else; busse = 0; end
+
+        obj.prmLabels = {'bias';'visScaleR';'visScaleL';'N';'audScaleR';'audScaleL'; 'prevChoice'; 'prevRew'; 'prevSucc';'prevFail'};
+
+        freeP = zeros(1,length(obj.prmLabels));
+        if ~isfield(obj.dataBlock, 'freeP'); freeP = freeP+1; elseif ~isempty(obj.dataBlock.freeP); freeP(obj.dataBlock.freeP) = 1; end
+
+        if exist('P', 'var')
+            pOld = obj.prmInit;
+            allPrms = [pOld; P; freeP];
+            visContributionLR =  mkPrm(allPrms,2)*(abs(visDiff.*(visDiff>0)).^(mkPrm(allPrms,4))) -  ...
+                    mkPrm(allPrms,3)*(abs(visDiff.*(visDiff<0)).^(mkPrm(allPrms,4)));
+            audContributionLR =  mkPrm(allPrms,5)*(abs(audDiff.*(audDiff>0))) -  mkPrm(allPrms,6)*(abs(audDiff.*(audDiff<0)));
+
+            % previous choice
+            prevRespDir(prevRespDir == 1) = -2;
+            prevRespDir = prevRespDir/2;
+            prevChoiceContribution = mkPrm(allPrms,7)*prevRespDir; 
+
+            % Win: stay/ Loose: switch
+            WSLSContribution = mkPrm(allPrms,8)*(prevRespDir.*prevRespFeed);
+
+            % Busse-style: failures and successes
+            BusseContribution = mkPrm(allPrms,9)*(prevRespDir.*(prevRespFeed == 1)) + mkPrm(allPrms,10)*(prevRespDir.*(prevRespFeed == -1));
+
+            logOddsLR = mkPrm(allPrms,1) + visContributionLR + audContributionLR + ...
+                prevChoiceContribution*prevC + WSLSContribution*wsls + BusseContribution*busse;
+        end
+        [evalVis,evalAud,evalPrevDir,evalPrevFeed] = ndgrid(linspace(-max(abs(uniV)),max(abs(uniV)),200)',uniA,uniD,uniF);
+        obj.evalPoints = [evalVis(:)  evalAud(:)  evalPrevDir(:)  evalPrevFeed(:)];
+        obj.prmBounds = repmat([-inf; inf], 1, length(obj.prmLabels));
+
         
     case lower({'simpLogSplitVSplitAAudDom'; 'simpLogSplitVSplitAAudExtraDom'; 'simpLogSplitVSplitASplitT'})
         if contains(lower(modChoose), {'auddom'}); audDom = 1; else; audDom = 0; end

@@ -7,7 +7,7 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 
 from Admin.csv_queryExp import load_data
 from Analysis.neural.utils.data_manager import get_recorded_channel_position
-from Analysis.neural.utils.plotting import off_axes
+from Analysis.pyutils.plotting import off_axes
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 subject = 'AV025'
 expDef = 'multiSpace'

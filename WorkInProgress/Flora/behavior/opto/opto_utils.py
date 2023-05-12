@@ -4,6 +4,7 @@ import numpy as np
 
 from Admin.csv_queryExp import queryCSV,load_data
 
+#### these are now going to be historic .....
 def select_opto_sessions(recdat): 
     print('loading opto metadata ...')
     laser_powers = []

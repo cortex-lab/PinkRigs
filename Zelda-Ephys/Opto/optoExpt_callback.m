@@ -37,7 +37,7 @@ elseif isstruct(eventObj.Data) && any(strcmp({eventObj.Data.name},'events.newTri
     %Setup waveforms depending on the trial configurations
         if laserOn>0 %If laser ON
             VoltLaser1 = LGObj.laser.power2volt(powerLaser1,1); % later do this based on calibration.  
-            VoltLaser2 = LGObj.laser.power2volt(powerLaser2,1);
+            VoltLaser2 = LGObj.laser.power2volt(powerLaser2,2);
             laserV = LGObj.laser.generateWaveform(VoltLaser1,VoltLaser2);    
             ROW.delay_preallocLaserWaveform = toc;
             tic;        

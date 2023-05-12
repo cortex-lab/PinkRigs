@@ -128,7 +128,7 @@ sns.histplot(sc_done,x='aud',y='d_from_sc_surface',ax=ax[1],color='magenta',bins
 sns.histplot(sc_done,x='non-linearity',y='d_from_sc_surface',ax=ax[2],color='green',bins=20)
 
 ax[0].set_ylim([-1500,100])
-from Analysis.neural.utils.plotting import off_exceptx, off_topspines
+from Analysis.pyutils.plotting import off_exceptx, off_topspines
 off_exceptx(ax[1])
 off_exceptx(ax[2])
 off_exceptx(ax[0])
