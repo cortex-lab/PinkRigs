@@ -21,10 +21,10 @@ from Admin.csv_queryExp import get_csv_location, check_date_selection
 from Processing.pykilo.helpers import save_error_message
 from Processing.pykilo.ReadSGLXData.readSGLX import readMeta
 
-def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='last3'):
+def stage_queue(mouse_selection='',ks_folder='pyKS', date_selection='previous3'):
     # the function will have a kwarg input structure where you can overwrite MasterMouseList with
     # which mice to sort -- FT or FT032
-    # what dates to sort -- last10 from today or a range (2021-12-13:2021-12-20)
+    # what dates to sort -- previous10 from today or a range (2021-12-13:2021-12-20)
     # check
     
     print(mouse_selection)
@@ -261,7 +261,7 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 if __name__ == "__main__":
    stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection=['FT030','FT031'],ks_folder = 'pyKS', date_selection='last600')
+   #stage_queue(mouse_selection=['FT030','FT031'],ks_folder = 'pyKS', date_selection='previous600')
    run_batch_ibl_formatting(run_for=10)
 
 
