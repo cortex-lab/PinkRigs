@@ -86,7 +86,7 @@ for i = 1:cycles
     if cycles - i == 1
         paths2Check(finalDigits~=10) = [];
     elseif cycles-i == 0
-        paths2Check(finalDigits>2) = [];
+        paths2Check(finalDigits>3) = [];
     end
 
     % Remove paths where the final digit isn't a number

@@ -1,4 +1,4 @@
-function [cids, cgs] = readClusterGroupsCSV(filename,curated)
+function [cids, cgs] = readClusterGroupsCSV_AV(filename,curated)
     %% Gets the IDs and groups of the clusters.
     % Taken from the spikes repository.
     %
