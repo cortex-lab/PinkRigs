@@ -95,7 +95,7 @@ function spikeStruct = loadKSdir_AV(ksDir, params)
        cgsFile = fullfile(ksDir, 'cluster_KSLabel.tsv');
     end
     if ~isempty(cgsFile)
-        [cids, cgs] = readClusterGroupsCSV(cgsFile);
+        [cids, cgs] = readClusterGroupsCSV_AV(cgsFile);
     
         if params.excludeNoise
             noiseClusters = cids(cgs==0);
