@@ -271,7 +271,7 @@ function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
     end
     
     if ~exist([pathStub, '_times.txt'], 'file')
-        if ~contain(contains(params.rigName,'zelda'))
+        if ~contains(params.rigName,'zelda')
             %%%%%% FOR LIL-RIG where vBox isn't used!%%%%%%
             % I will now stop spending time figuring out what is the difference between this code and the
             % lilrig code but the lilrig code just works better for lilrig data.
