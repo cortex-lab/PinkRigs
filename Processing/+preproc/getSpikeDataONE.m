@@ -97,10 +97,10 @@ function spk = getSpikeDataONE(KSFolder)
     % Load the cluster ID and labels
     if exist(fullfile(KSFolder, 'cluster_info.tsv'),'file') 
        cgsFile = fullfile(KSFolder, 'cluster_info.tsv');
-       [cids, cgs] = readClusterGroupsCSV(cgsFile,1);
+       [cids, cgs] = readClusterGroupsCSV_AV(cgsFile,1);
     elseif exist(fullfile(KSFolder, 'cluster_KSLabel.tsv'),'file') 
        cgsFile = fullfile(KSFolder, 'cluster_KSLabel.tsv');
-       [cids, cgs] = readClusterGroupsCSV(cgsFile,0);
+       [cids, cgs] = readClusterGroupsCSV_AV(cgsFile,0);
     end 
 
     clusKSLabels = zeros(1,numel(cids),'uint8');

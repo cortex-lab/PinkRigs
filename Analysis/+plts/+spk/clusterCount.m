@@ -1,4 +1,4 @@
-function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
+function [clusterNum, recLocAll, days, expInfoAll] = clusterCount(varargin)
     %% Plot the number of clusters across days for a the specified subject(s).
     %
     % Parameters:
@@ -25,6 +25,7 @@ function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
     varargin = ['pltIndiv', 0, varargin];
     varargin = ['getQM', 0, varargin];
+    varargin = ['getPos', 0, varargin];
     params = csv.inputValidation(varargin{:});
 
     %% Get exp list
@@ -34,10 +35,11 @@ function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
     %% Get the cluster count
 
     nn = 1;
-    clusterNum = cell(1,1);
+    clusterNum = [];
     recLocAll = cell(1,1);
     recPath = cell(1,1);
     days = cell(1,1);
+    expInfoAll = cell(1,1);
     for ee = 1:size(exp2checkList,1)
         fprintf('Processing experiment #%d/%d.\n',ee,size(exp2checkList,1))
         expInfo = exp2checkList(ee,:);
@@ -61,28 +63,22 @@ function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
                 recPath{nn} = alignment.ephys(pp).ephysPath;
                 recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
+                attr = {'_av_KSLabels','_av_IDs'};
                 if params.getQM{1}
-                    attr = {'_av_KSLabels','qualityMetrics'};
-                else
-                    attr = {'_av_KSLabels'};
+                    attr = cat(2,attr,{'qualityMetrics'});
+                end
+                if params.getPos{1}
+                    attr = cat(2,attr,{'_av_xpos','depths'});
                 end
 
-                clusters = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
+                expInfoAll{nn} = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                     object='clusters', ...
                     attribute=attr);
-                KSLabels = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
+                KSLabels = expInfoAll{nn}.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
                 goodUnits = KSLabels == 2;
 
                 % Get cluster count
-                clusterNum{nn} = sum(goodUnits);
-
-                if params.getQM{1} && isfield(clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters,'qualityMetrics')
-                    qualityMetrics{nn} = clusters.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.qualityMetrics;
-                else
-                    % not sure why it can be that sometimes there's no such
-                    % field?
-                    qualityMetrics{nn} = {};
-                end
+                clusterNum = [clusterNum, sum(goodUnits)];
 
                 nn = nn + 1;
             end
@@ -93,7 +89,7 @@ function [clusterNum, recLocAll, days, qualityMetrics] = clusterCount(varargin)
     goodIdx = ~checkIfEmpty(days);
     days = cell2mat(days(goodIdx));
     recLocAll = recLocAll(goodIdx);
-    clusterNum = cell2mat(clusterNum(goodIdx));
+    clusterNum = clusterNum(goodIdx);
 
     %% Plot it
     recInfo = cellfun(@(x) split(x,'__'),recLocAll,'uni',0);
