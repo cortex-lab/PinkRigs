@@ -83,7 +83,10 @@ function [tVid,numFramesMissed,nFirstFrames] = video(varargin)
     fprintf(1, 'loading avg intensity\n');
     load(intensFile,'avgIntensity');
     nFirstFrames = numel(avgIntensity);
-    
+    if nFirstFrames==1
+        error('Video is only one frame?')
+    end
+
     % Load the lastFrames average intensity
     if ~isempty(d) && d.bytes>100
         lf = load(intensFile_lastFrames,'avgIntensity');
