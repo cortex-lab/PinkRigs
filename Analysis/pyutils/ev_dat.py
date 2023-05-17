@@ -183,3 +183,37 @@ def digitize_events(ontimes,offtimes,timepoints):
     
 
     return events_digitized
+
+def getTrialNames(ev):
+        """
+        in the ev structure we have trialtypes in a binary format but sometimes this is more useful to have as a list for pd/seaborn 
+        so this function returns the list
+
+        """
+        trialtype = np.sum(np.concatenate((
+        (ev.is_blankTrial*1)[np.newaxis,:],
+        (ev.is_auditoryTrial*2)[np.newaxis,:], 
+        (ev.is_visualTrial*3)[np.newaxis,:],
+        (ev.is_coherentTrial*4)[np.newaxis,:],
+        (ev.is_conflictTrial*5)[np.newaxis,:]
+        )),axis=0)
+
+        #
+        trialNames = [] 
+        for i in trialtype: 
+                if i==0: 
+                        n='noStim'
+                elif i==1:
+                        n='blank'
+                elif i==2: 
+                        n='auditory'
+                elif i==3:
+                        n='visual'
+                elif i==4:
+                        n='coherent'
+                elif i==5:
+                        n='conflict'
+
+                trialNames.append(n)   
+
+        return trialNames 

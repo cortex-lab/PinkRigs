@@ -530,7 +530,7 @@ switch eventdata.Key
     case 'leftarrow' % Previous trial group or event times (if shift pressed)
         if contains(eventdata.Modifier, 'shift')
             guiData.curr.evTimeRef = guiData.curr.evTimeRef - 1;
-            guiData.sigRes = cellfun(@(x,y) neural.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
+            guiData.sigRes = cellfun(@(x,y) plts.spk.findResponsiveCells(x,y), guiData.curr.spks, guiData.curr.evTimes, 'uni', 0);
         else
             guiData.curr.triGrpRef = guiData.curr.triGrpRef - 1;
         end
