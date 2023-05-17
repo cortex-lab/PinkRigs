@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
-my_subject = ['AV036']
+from Analysis.pyutils.ev_dat import getTrialNames
+
+my_subject = ['AV038']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-04-24:2023-04-28',
+    expDate = '2023-04-03:2023-05-11',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'all'}}
@@ -108,6 +110,7 @@ powers = np.unique(ev.laser_power)
 power_colors = plt.cm.coolwarm(np.linspace(0.4,1,powers.size))
 fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
 
+#powers = np.array([powers[1]])
 for i,p in enumerate(powers): 
     to_keep_trials = ev.is_validTrial & (ev.laser_power==p)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
@@ -123,7 +126,27 @@ ax[1].legend(powers)
 # %%
 # look at nogos per trial type
 
-fig,ax = plt.subplots(1,1)
+# separate reaction times by trial types 
+import pandas as pd
+import seaborn as sns
 
+to_keep_trials = ev.is_validTrial
+ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
+df = pd.DataFrame(ev_)
+df['trialNames'] = getTrialNames(ev_)
+
+choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
+df['powerXchoiceDir'] = ev_.laser_power * choice_signed
+# make a single array of trialtypes
+
+fig,ax = plt.subplots(1,1,figsize=(15,15))
+sns.boxenplot(data=df, 
+              x="trialNames",
+              y="rt", 
+              hue="powerXchoiceDir",
+              orient='v',
+              palette = "coolwarm")
+
+ax.set_ylabel('reaction time (s)')
 
 # %%
