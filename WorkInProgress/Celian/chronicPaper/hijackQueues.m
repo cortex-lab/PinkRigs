@@ -1,24 +1,44 @@
 queuePath = '\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers';
 
 %% Get recordings
-folder = '\\zaru.cortexlab.net\Subjects\EB019';
-d = dir(fullfile(folder,'**','*ap.*bin'));
 
-alreadySorted = false(1,numel(d));
-for dd = 1:numel(d)
-    if exist(fullfile(d(dd).folder,'pyKS'))
-        alreadySorted(dd) = true;
+subjectList = {'EB014','EB019','CB015'};
+
+serverLocations = getServersList;
+sorted = [];
+iblformatted = [];
+D = {};
+for subject = subjectList
+    for server = serverLocations'
+        d = dir(fullfile(server{1}, subject{1},'**','*ap.*bin'));
+
+        sorted_tmp = false(1,numel(d));
+        iblformatted_tmp = false(1,numel(d));
+        for dd = 1:numel(d)
+            if exist(fullfile(d(dd).folder,'pyKS\output'))
+                sorted_tmp(dd) = true;
+            end
+            if exist(fullfile(d(dd).folder,'pyKS\output\ibl_format'))
+                iblformatted_tmp(dd) = true;
+            end
+        end
+
+        sorted = [sorted sorted_tmp];
+        iblformatted = [iblformatted iblformatted_tmp];
+        D = [D d];
     end
 end
-dunsorted = d(~alreadySorted);
-dsorted = d(alreadySorted);
+D = cat(1,D{:});
+dtosort = D(~sorted);
+dtoformat = D(sorted & ~iblformatted);
+dtoQM = D(sorted & iblformatted);
 
 %% Update pyKS queue
 
 M = csv.readTable(fullfile(queuePath, 'pykilosort_queue.csv'));
 s = size(M,1);
-for dd = 1:numel(dunsorted)
-    M(s+dd,1) = {fullfile(dunsorted(dd).folder, dunsorted(dd).name)};
+for dd = 1:numel(dtosort)
+    M(s+dd,1) = {fullfile(dtosort(dd).folder, dtosort(dd).name)};
     M(s+dd,2) = {'0.0'};
 end
 csv.writeTable(M,fullfile(queuePath, 'pykilosort_queue.csv'));
@@ -27,8 +47,8 @@ csv.writeTable(M,fullfile(queuePath, 'pykilosort_queue.csv'));
 
 M = csv.readTable(fullfile(queuePath, 'ibl_formatting_queue.csv'));
 s = size(M,1);
-for dd = 1:numel(dsorted)
-    pyKSpath = fullfile(dsorted(dd).folder, 'pyKS');
+for dd = 1:numel(dtoformat)
+    pyKSpath = fullfile(dtoformat(dd).folder, 'pyKS');
     M(s+dd,1) = {pyKSpath};
     M(s+dd,2) = {'0.0'};
 end
@@ -41,10 +61,11 @@ if ~exist(decompressDataLocal, 'dir')
     mkdir(decompressDataLocal)
 end
 
-for rec = 1:numel(dsorted)
+recompute = 0;
+for dd = 1:numel(dtoQM)
     % Set paths
-    ephysKilosortPath = fullfile(dsorted(dd).folder,'PyKS','output');
-    ephysDirPath = dsorted(dd).folder;
+    ephysKilosortPath = fullfile(dtoQM(dd).folder,'PyKS','output');
+    ephysDirPath = dtoQM(dd).folder;
     ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
     if numel(ephysRawDir)>1
         idx = find(contains({ephysRawDir.name},'.cbin'));
