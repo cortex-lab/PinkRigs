@@ -218,6 +218,28 @@ def get_data_bunch(namekey):
 
         ]
 
+    elif namekey == 'AV030':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+            ('AV030', '2022-12-06',1,'probe0'),
+            ('AV030', '2022-12-06',5,'probe0'),
+            ('AV030', '2022-12-06',6,'probe0'),
+            ('AV030', '2022-12-06',7,'probe0'),
+            ('AV030', '2022-12-06',1,'probe1'),
+            ('AV030', '2022-12-06',5,'probe1'),
+            ('AV030', '2022-12-06',6,'probe1'),
+            ('AV030', '2022-12-06',7,'probe1')
+            ]
+
+    elif namekey == 'AV034':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('AV034', '2022-12-07',1,'probe0'),
+           ('AV034', '2022-12-07',4,'probe0'),
+           ('AV034', '2022-12-07',5,'probe0'),
+           ('AV034', '2022-12-07',6,'probe0')
+            ]
+
 
 
     elif namekey == 'FT038':
