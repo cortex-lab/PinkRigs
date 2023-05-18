@@ -1,15 +1,11 @@
 close all
 
 clear params
-%params.subject = {['FT008'],['FT009'],['FT010'],['FT011'],['FT038'],['FT039'],['AV024'],['AV028'],['FT019'],['FT022'],['FT025'],['FT027']};
-%params.subject ={['FT039']};
-params.subject  = {['AV036'],['AV038']};
-%
-params.expDate = {['all']}; 
-%params.expNum = '3'; 
+params.subject = {'AV038'};
+params.expDate = {'2023-03-08'}; 
 params.expDef = 'm'; 
-%
-%params.checkEvents = '2'; 
+preproc.extractExpData(exp2checkList,'recompute',{['events']});
+%params.checkAlignEphys = '2'; 
 %params.expNum = '1'; 
 %params.expDate = {'2021-03-16'}; 
 exp2checkList = csv.queryExp(params);
