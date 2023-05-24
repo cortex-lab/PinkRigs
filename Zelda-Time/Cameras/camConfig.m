@@ -75,7 +75,7 @@ list(i).FrameRate = 30;
 list(i).LocalPort = 1004;
 list(i).CompressionRatio = 10;
 list(i).cameraClass = camClass;
-list(i).liveViewOn = false;
+list(i).liveViewOn = true;
 list(i).closingDelay = (i-1)*5+10;
 list(i).copyToServer = false;
 
@@ -86,6 +86,6 @@ list(i).FrameRate = 30;
 list(i).LocalPort = 1005;
 list(i).CompressionRatio = 10;
 list(i).cameraClass = camClass;
-list(i).liveViewOn = true;
+list(i).liveViewOn = false;
 list(i).closingDelay = (i-1)*5+10;
 list(i).copyToServer = false;
