@@ -439,6 +439,7 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['
             ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
         if hasattr(ev,'timeline_choiceMoveOn'):
             ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+            ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
         if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
             ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
             ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition).astype('int')
@@ -484,3 +485,34 @@ def get_recorded_channel_position(channels):
         yrange = (np.min(ycoords),np.max(ycoords))
 
     return (xrange,yrange)
+
+def load_active_and_passive(rec_info):
+    """
+    function to load active and passive data together using load_ephys_independent probes (i.e. can call one probe at a time) 
+
+    Parameters: 
+    -----------
+    rec_info (dict)
+        will be passed as kwarg to load_ephys_independent probes
+    
+    Return: Bunch
+
+    """
+    ephys_dict =  {'spikes': 'all','clusters':'all'}
+    other_ = {'events': {'_av_trials': 'table'}}
+
+    session_types = ['postactive','multiSpaceWorld']
+
+    dat  = {}
+    for sess in session_types:
+        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,expDef = sess, **rec_info)
+
+        # select the longest etc. recording (there might be several)
+        recordings = recordings.iloc[np.argmax(recordings.expDuration)]
+
+        events,spikes,clusters,_,cam = simplify_recdat(recordings,probe='probe')
+        d = Bunch({'events': events,'spikes':spikes,'clusters':clusters}) 
+        dat[sess] = d 
+    dat = Bunch(dat)
+
+    return dat

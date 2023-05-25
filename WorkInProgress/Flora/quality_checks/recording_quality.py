@@ -1,15 +1,14 @@
 # %%
 import sys
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\Audiovisual") 
-from utils.io import add_PinkRigs_to_path
-add_PinkRigs_to_path()
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+
 from Admin.csv_queryExp import load_data
 import numpy as np 
 import matplotlib.pyplot as plt 
 
-subject = 'AV020'
-expDate = '2022-07-26'
-probe = 'probe0'
+subject = 'AV025'
+expDate = '2022-11-07:2022-11-08'
+probe = 'probe1'
 raw_probe = probe + '_raw'
 data_dict = {probe:{'clusters':'all'},raw_probe:{'clusters':'all'}}
 recordings = load_data(subject = subject,expDate= expDate,expDef='sparseNoise',data_name_dict=data_dict)

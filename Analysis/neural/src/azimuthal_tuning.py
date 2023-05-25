@@ -170,11 +170,17 @@ class azimuthal_tuning():
         else:
             print('recordings are ambiguously defined. Please recall.')
         
+
         events,self.spikes,_,_,self.cam = simplify_recdat(recordings,probe='probe')
+
+        if 'multiSpaceWorld' in recordings.expDef: 
+            to_keep_trials = events.is_validTrial & (events.first_move_time > self.raster_kwargs['post_time']) & ~np.isnan(events.rt)
+            events  = Bunch({k:events[k][to_keep_trials] for k in events.keys()})
+
         _,self.vis,self.aud,self.ms = postactive(events)
         self.clus_ids = recordings.probe.clusters._av_IDs.astype('int') 
 
-    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis',subselect_neurons = None,trim_type = None,trim_fraction=None):
+    def get_rasters_perAzi(self,contrast = None, spl = None, which = 'vis',subselect_neurons = None,subselected_azimuths = None, trim_type = None,trim_fraction=None):
         """
         get rasters per azimuth for the loaded data
 
@@ -222,7 +228,11 @@ class azimuthal_tuning():
             onset_matrix = self.vis.sel(contrast=contrast,timeID='ontimes')
 
         elif 'aud' in which:
-            azimuth_options = sorted(self.aud.azimuths.values)
+            if not subselected_azimuths:
+                azimuth_options = sorted(self.aud.azimuths.values)
+            else: 
+                azimuth_options = np.array(subselected_azimuths)
+                
             onset_matrix = self.aud.sel(SPL=spl,timeID='ontimes')
 
         elif 'coherent' in which:

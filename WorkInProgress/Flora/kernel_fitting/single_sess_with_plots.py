@@ -12,10 +12,9 @@ dat_params,fit_params,eval_params = get_params()
 nrn_list = [571]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'FT009',
-    expDate = '2021-01-20', 
-    expDef = 'all',
-    expNum = 7,
+    subject = 'AV030',
+    expDate = '2022-12-07', 
+    expDef = 'multiSpaceWorld',
     probe = 'probe0',
     subselect_neurons=None,
     **dat_params
@@ -30,7 +29,7 @@ variance_explained = kernels.evaluate(**eval_params)
 # %% 
 # look at the VE over the trial
 import matplotlib.pyplot as plt
-n = 208
+n = 464
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})

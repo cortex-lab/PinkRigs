@@ -217,6 +217,54 @@ def get_data_bunch(namekey):
            ('AV006', '2022-03-23',6,'probe0'),
 
         ]
+    elif namekey == 'AV008':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('AV008','2022-03-09',2,'probe0'),
+           ('AV008','2022-03-09',6,'probe0'),
+           ('AV008','2022-03-09',7,'probe0'),
+           ('AV008','2022-03-09',8,'probe0'),
+           ('AV008','2022-03-09',2,'probe1'),
+           ('AV008','2022-03-09',6,'probe1'),
+           ('AV008','2022-03-09',7,'probe1'),
+           ('AV008','2022-03-09',8,'probe1'),
+            ]
+
+    elif namekey == 'AV005':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('AV005','2022-05-11',2,'probe0'),
+           ('AV005','2022-05-11',3,'probe0'),
+           ('AV005','2022-05-11',4,'probe0'),
+           ('AV005','2022-05-11',5,'probe0')
+            ]
+
+    elif namekey == 'AV014':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('AV014','2022-06-07',4,'probe0'),
+           ('AV014','2022-06-06',1,'probe0')
+            ]
+       
+    elif namekey == 'AV020':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('AV020','2022-07-26',3,'probe0'),
+           ('AV020','2022-07-26',10,'probe0'),
+           ('AV020','2022-07-26',12,'probe0')
+            ]
+       
+    
+    elif namekey == 'FT030':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+           ('FT030','2021-12-01',3,'probe0')
+            ]
+    elif namekey == 'FT031':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+            ('FT031','2021-12-03',3,'probe0')
+            ]
 
     elif namekey == 'AV030':
             column_names = ['subject','expDate','expNum','probe']
@@ -240,6 +288,26 @@ def get_data_bunch(namekey):
            ('AV034', '2022-12-07',6,'probe0')
             ]
 
+    elif namekey == 'AV025':
+            column_names = ['subject','expDate','expNum','probe']
+            recordings = [
+            ('AV025', '2022-11-07',1,'probe0'),
+            ('AV025', '2022-11-07',5,'probe0'),
+            ('AV025', '2022-11-07',6,'probe0'),
+            ('AV025', '2022-11-07',7,'probe0'),
+            ('AV025', '2022-11-08',3,'probe0'),
+            ('AV025', '2022-11-08',4,'probe0'),
+            ('AV025', '2022-11-08',5,'probe0'),
+            ('AV025', '2022-11-08',6,'probe0'),
+            ('AV025', '2022-11-07',1,'probe1'),
+            ('AV025', '2022-11-07',5,'probe1'),
+            ('AV025', '2022-11-07',6,'probe1'),
+            ('AV025', '2022-11-07',7,'probe1'),
+            ('AV025', '2022-11-08',3,'probe1'),
+            ('AV025', '2022-11-08',4,'probe1'),
+            ('AV025', '2022-11-08',5,'probe1'),
+            ('AV025', '2022-11-08',6,'probe1')
+            ]
 
 
     elif namekey == 'FT038':

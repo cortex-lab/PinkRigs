@@ -2,7 +2,10 @@ import numpy as np
 import xarray as xr 
 from Analysis.neural.utils.spike_dat import bincount2D
 
-def postactive(ev):        
+def postactive(ev):  
+
+        active_session =  hasattr(ev,'timeline_choiceMoveDir')  
+
         blank_times = ev.block_stimOn[ev.is_blankTrial==1]
 
         timepoints_blanks=xr.DataArray(blank_times[:,np.newaxis],
@@ -11,11 +14,17 @@ def postactive(ev):
 
 
 
-        trial_no = blank_times.size
+        if active_session: 
+                trial_no =  40       
+        else: 
+                trial_no = blank_times.size
+        
         azimuths_set = np.unique(ev.stim_visAzimuth)
         azimuths_set = azimuths_set[[not np.isnan(elem) for elem in azimuths_set]]
-        contrast_set = np.unique(ev.stim_visContrast)[1:]
-        spl_set = np.unique(ev.stim_audAmplitude)[1:]
+        contrast_set = np.unique(ev.stim_visContrast)
+        contrast_set = contrast_set[contrast_set>0]
+        spl_set = np.unique(ev.stim_audAmplitude)
+        spl_set = spl_set[spl_set>0]
 
         # visual
         myarray=np.zeros((azimuths_set.size,contrast_set.size,trial_no,1))
@@ -26,8 +35,12 @@ def postactive(ev):
                                 (ev.stim_visAzimuth==myazi) &
                                 (ev.stim_visContrast==myContrast)
                                 )[0] 
+                        timepoints = ev.timeline_visPeriodOn[ix]
+                        if timepoints.size!=trial_no: 
+                            timepoints = np.append(timepoints,np.empty((trial_no-timepoints.size))*np.nan)
+   
                         try: 
-                                myarray[i,j,:,0]=ev.timeline_visPeriodOn[ix]
+                                myarray[i,j,:,0]=timepoints
                         except ValueError: 
                                 print('%.2f deg azimuth, %.2f Contrast combination does not exist' % (myazi,myContrast))
 
@@ -47,7 +60,10 @@ def postactive(ev):
                                 (ev.stim_audAzimuth==myazi) &
                                 (ev.stim_audAmplitude==mySPL)
                                 )[0] 
-                        myarray[i,j,:,0]=ev.timeline_audPeriodOn[ix]
+                        timepoints =ev.timeline_audPeriodOn[ix]
+                        if timepoints.size!=trial_no: 
+                            timepoints = np.append(timepoints,np.empty((trial_no-timepoints.size))*np.nan)
+                        myarray[i,j,:,0] = timepoints
 
                 timepoints_audio=xr.DataArray(myarray,
                                 dims=('azimuths','SPL','trials','timeID'),
@@ -71,8 +87,16 @@ def postactive(ev):
                                                         )[0]
 
                                         if ix.size>0: 
-                                                myarray[i,j,k,l,:,0]=ev.timeline_visPeriodOn[ix[:trial_no]]
-                                                myarray[i,j,k,l,:,1]=ev.timeline_audPeriodOn[ix[:trial_no]]
+                                                timepoints_V = ev.timeline_visPeriodOn[ix[:trial_no]]
+                                                if timepoints_V.size!=trial_no: 
+                                                        timepoints_V = np.append(timepoints_V,np.empty((trial_no-timepoints_V.size))*np.nan)
+
+                                                timepoints_A = ev.timeline_audPeriodOn[ix[:trial_no]]
+                                                if timepoints_A.size!=trial_no: 
+                                                        timepoints_A = np.append(timepoints_A,np.empty((trial_no-timepoints_A.size))*np.nan)
+
+                                                myarray[i,j,k,l,:,0]=timepoints_V
+                                                myarray[i,j,k,l,:,1]= timepoints_A
 
                 
         myarray[myarray==0]=np.nan

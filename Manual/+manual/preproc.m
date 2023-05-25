@@ -1,10 +1,11 @@
 close all
 
 clear params
-params.subject = {'AV038'};
-params.expDate = {'2023-03-08'}; 
-params.expDef = 'm'; 
-preproc.extractExpData(exp2checkList,'recompute',{['events']});
+params.subject = {'AV030'};
+params.expDate = {'2022-12-07'}; 
+%params.expDef = 'm'; 
+%
+% preproc.extractExpData(exp2checkList,'recompute',{['events']});
 %params.checkAlignEphys = '2'; 
 %params.expNum = '1'; 
 %params.expDate = {'2021-03-16'}; 
