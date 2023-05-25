@@ -14,8 +14,6 @@ recordings = recordings[recordings.existSideCam=='1']
 destination = r"C:\Users\Flora\Documents\testcam"
 
 # %%
-rec = recordings.iloc[0]
-
 for _,rec in recordings.iterrows():
     camfilename = '%s_%s_%s_sideCam.mj2' % (rec.expDate,rec.expNum,rec.subject)
 
@@ -26,7 +24,7 @@ for _,rec in recordings.iterrows():
     
     try:
         shutil.copy(source, destination)
-        print("File copied successfully.")
+        print(" %s copied successfully." % camfilename)
     
     # If source and destination are same
     except shutil.SameFileError:
@@ -38,7 +36,7 @@ for _,rec in recordings.iterrows():
     
     # For other errors
     except:
-        print("Error occurred while copying file.")
+        print("Error occurred while copying %s." % camfilename)
 
 
 # %%
