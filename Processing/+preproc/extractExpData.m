@@ -38,7 +38,11 @@ function extractExpData(varargin)
         recompute = exp2checkList.recompute{ee,1};
         process = exp2checkList.process{ee,1};
         KSversion = exp2checkList.KSversion{ee,1};
-        
+        csv.getOldPipMice;
+       
+        % Special case for old mice from Coen&Sit paper
+        if contains(subject, oldPipMice); oldPipTag = 1; else, oldPipTag = 0; end
+
         % Get the alignment file
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         alignmentFile = [pathStub '_alignment.mat'];
@@ -70,14 +74,18 @@ function extractExpData(varargin)
             
             fprintf(1, '*** Preprocessing experiment %s (%d/%d)... ***\n', expFolder,ee,size(exp2checkList,1));
 
-            if exist(alignmentFile, 'file')
+            if exist(alignmentFile, 'file') || oldPipTag
                 %% Extract important info from timeline or block
                 % If need be, use preproc.align.event2timeline(eventTimes,alignment.block.originTimes,alignment.block.timelineTimes)
                 
                 if shouldProcess('events')
-                    if strcmp(expInfo.alignBlock, '1')
-                        alignment = load(alignmentFile, 'block');
-                        
+                    if strcmp(expInfo.alignBlock, '1') || oldPipTag
+                        if ~oldPipTag
+                            alignment = load(alignmentFile, 'block');
+                        else
+                            alignment.block = nan;
+                        end
+
                         % Get the events ONE folder
                         eventsONEFolder = fullfile(expFolder,'ONE_preproc','events');
                         initONEFolder(eventsONEFolder)
@@ -87,8 +95,29 @@ function extractExpData(varargin)
                             
                             % Get Block and Timeline
                             loadedData = csv.loadData(expInfo, 'dataType', {{'timeline'; 'block'}});
-                            timeline = loadedData.dataTimeline{1};
                             block = loadedData.dataBlock{1};
+                            if ~oldPipTag
+                                timeline = loadedData.dataTimeline{1};
+                            else
+                                %Deal with Coen&Sit mice
+                                timeline = nan;
+                                pipParams = load(strrep(alignmentFile, 'alignment', 'parameters'));
+                                galvoLog = strrep(alignmentFile, 'alignment', 'galvoLog');
+                                if exist(galvoLog, 'file')
+                                    block.galvoLog = load(galvoLog);
+                                else
+                                    block.galvoLog = 0;
+                                end
+                                if isstruct(galvoLog) && length(fieldnames(galvoLog))<2
+                                    block.galvoLog = 0;
+                                end
+                                % Needed because there was an issue with old recordings where the 1st trial
+                                % timings were wrong.
+                                [block, block.galvoLog] = removeFirstTrialFromBlock(block, block.galvoLog);
+
+                                % Need to account for name changes
+                                block = standardPipMiceBlkNames(block, pipParams.parameters);
+                            end
                             block.expInfo = expInfo; % need to pass down expInfo for opening the optoLog
 
                             

@@ -65,6 +65,7 @@ end
 extracted.data = cell(length(params.subject),1);
 
 extracted.validSubjects = ones(length(params.subject),1);
+csv.getOldPipMice;
 for i = 1:length(params.subject)
     if params.sepPlots{1}
         currData = expList(i,:);
@@ -81,9 +82,10 @@ for i = 1:length(params.subject)
     end
 
     alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock);
-    if any(~alignedBlock)
+    alignRedo = ~alignedBlock & ~ismember(currData.subject, oldPipMice);
+    if any(alignRedo)
         fprintf('Missing block alignments. Will try and align...\n')
-        preproc.align.main(varargin{:}, currData(~alignedBlock,:), 'recompute', 'block', 'process', 'block');
+        preproc.align.main(varargin{:}, currData(alignRedo,:), 'recompute', 'block', 'process', 'block');
         currData = csv.queryExp(currData);
     end
 
@@ -94,7 +96,7 @@ for i = 1:length(params.subject)
         currData = csv.queryExp(currData);
     end
     
-    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock);
+    alignedBlock = cellfun(@(x) strcmp(x(1), '1'), currData.alignBlock) | ismember(currData.subject, oldPipMice);
     evExtracted = cellfun(@(x) strcmp(x(1), '1'), currData.extractEvents);
 
     failIdx = any(~[alignedBlock, evExtracted],2);

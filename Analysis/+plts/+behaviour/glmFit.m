@@ -132,15 +132,17 @@ for mm = 1:numel(models)
             currBlock.previous_respDirection = [0; currBlock.response_direction(1:end-1)];
             currBlock.previous_respFeedback = [0; currBlock.response_feedback(1:end-1)];
 
+            respDirTest = (~isnan(currBlock.response_direction).*currBlock.response_direction>0)>0;
+            valTrial = (~isnan(currBlock.is_validTrial).*currBlock.is_validTrial)>0;
+            laserOn = (~isnan(currBlock.is_laserTrial).*currBlock.is_laserTrial)>0;
             if params.useLaserTrials{1} && isnan(params.laserTrialType{1})
-                keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+                keepIdx = respDirTest & valTrial & laserOn & abs(currBlock.stim_audAzimuth)~=30;
             elseif params.useLaserTrials{1} && ~isnan(params.laserTrialType{1})
-                keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30 & currBlock.stim_laserPosition==params.laserTrialType{1};
+                keepIdx = respDirTest & valTrial & laserOn & abs(currBlock.stim_audAzimuth)~=30 & currBlock.stim_laserPosition==params.laserTrialType{1};
             elseif (params.useLaserTrials{1}==0) && sum(isnan(currBlock.is_laserTrial))==0
-                keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
+                keepIdx = respDirTest & valTrial & ~laserOn & abs(currBlock.stim_audAzimuth)~=30;
             else
-                keepIdx = currBlock.response_direction & currBlock.is_validTrial & abs(currBlock.stim_audAzimuth)~=30;
-
+                keepIdx = respDirTest & valTrial & abs(currBlock.stim_audAzimuth)~=30;
             end
             currBlock = filterStructRows(currBlock, keepIdx);
             glmData{i,mm} = plts.behaviour.GLMmulti(currBlock, models{mm});

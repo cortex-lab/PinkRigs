@@ -93,6 +93,10 @@ for i = 1:cycles
     paths2Check(isnan(cellfun(@(x) str2double(x(end)), paths2Check))) = [];
 end
 
+% %Load the list of Pip's old mice--this is a wrapper to include older data
+% pipOldList = load('\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers\expList_PipOldMice.mat');
+% pipOldList = pipOldList.expList;
+
 % Identify any duplicate entries (same data on multiple servers)
 [~,uniIdx,pathIdx] = ...
     unique(cellfun(@(x) x(strfind(x, 'Subjects'):end), paths2Check, 'uni', 0));

@@ -22,14 +22,20 @@ function expDefRef = getExpDefRef(expDef)
          
     elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
             contains(expDef, 'multiSpaceWorld_checker')
-%         expDefRef = 'AVprotocol';
         expDefRef = 'multiSpaceTraining';
+        
+    elseif strcmpi(expDef,'multiSpaceWorld') || strcmpi(expDef,'multiSpaceWorldNewNames')
+        expDefRef = 'multiSpaceWorld';
+
     elseif contains(expDef,'postactive')
         expDefRef = 'AVPassive';
+
     elseif contains(expDef,'extended') || contains(expDef,'spatialIntegrationFlora') || contains(expDef,'updatechecker')
         expDefRef = 'AVPassive_extended';
+
     elseif contains(expDef,'Vid')
         expDefRef = 'spontaneous';
+
     else
         error('ExpDef reference does not exist for expDef %s',expDef)
     end

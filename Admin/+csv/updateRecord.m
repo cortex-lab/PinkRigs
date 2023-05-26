@@ -126,13 +126,15 @@ end
 % pink rigs, but this may not be true (e.g. see current exception for
 % FT009). Need to decide how to change this in the future...??
 blk = load(blockPath); blk = blk.block;
-if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'})
+csv.getOldPipMice;
+if ~contains(blk.rigName, 'zelda') && ~contains(subject, ...
+        [{'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'}; oldPipMice])
     return;
 end
 
 % If the block duration is less than 2 mins, or less than 5 mins in the
 % case of a "training" experiment, remove any existing row and "return"
-if blk.duration/60<2
+if ~isfield(blk, 'duration') || blk.duration/60<2
     fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
@@ -159,7 +161,8 @@ ONEContents = ONEContents(cellfun(@(x) ~strcmp(x(1),'.'),{ONEContents.name}'));
 % folder (or one level higher). If so, remove any existing row and "return"
 dateFoldContents = dir([fileparts(expFoldContents(1).folder)])';
 dateFoldContents = dateFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{dateFoldContents.name}'));
-if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
+if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}'])) || ...
+        any(strcmpi('auto2020PaperExclude.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Ignoring experiment due to .txt file %s \n', expFoldContents(1).folder)
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
@@ -367,7 +370,7 @@ nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 %% This section deals with the event and spike extraction status
 
 % Assign status for events extraction
-if strcmpi(nDat.alignBlock, '1')
+if strcmpi(nDat.alignBlock, '1') || contains(subject, oldPipMice)
     if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
         nDat.extractEvents = '1';
@@ -423,6 +426,7 @@ nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 % or the parent folder, then replace all cases of "2" with a "NaN" as the
 % presence of the files indicates that those errors have been checked and
 % could not be resolved.
+% NOTE: Old mice from Coen&Sit have all errors validated
 if any(strcmpi('AllErrorsValidated.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Errors have been validated for %s \n', expFoldContents(1).folder)
     allFields = fields(nDat);

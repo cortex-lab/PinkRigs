@@ -13,7 +13,7 @@ function sortedByTrial = indexByTrial(trialTimes, prmTimes, prmValues, timesToSu
 %Set default values
 if ~exist('prmValues', 'var') || isempty(prmValues); prmValues = prmTimes; end
 if ~all(diff(prmTimes(~isnan(prmTimes)))>=0) 
-    warning('Input times are not monotonic so will be sorted');
+%     warning('Input times are not monotonic so will be sorted');
     [~, srtIdx] = sort(prmTimes);
     prmTimes = prmTimes(srtIdx, :);
     prmValues = prmValues(srtIdx, :);    

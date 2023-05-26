@@ -89,7 +89,7 @@ for mm = 1:numel(params.subject)
 
     % Remove the expDefs that don't match
     if ~strcmp(params.expDef{mm},'all')
-        mouseExps = mouseExps(contains(mouseExps.expDef, params.expDef{mm}),:);
+        mouseExps = mouseExps(cellfun(@(x) any(strcmpi(params.expDef{mm},x)), mouseExps.expDef),:);
     end
     if isempty(mouseExps); continue; end
 
