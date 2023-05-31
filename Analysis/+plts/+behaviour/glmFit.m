@@ -127,6 +127,7 @@ for mm = 1:numel(models)
         refIdx = min([i length(params.useCurrentAxes)]);
         if ~params.onlyPlt{refIdx}
             currBlock = extracted.data{i};
+            currBlock.response_direction(isnan(currBlock.response_direction)) = 0;
 
             % Add previous choices and rewards
             currBlock.previous_respDirection = [0; currBlock.response_direction(1:end-1)];
