@@ -62,8 +62,8 @@ end
 % Check if servers are all accessible before updating anything
 serverLocations = getServersList;
 if ~all(cellfun(@(x) exist(x, 'dir'), serverLocations))
-    error('No server access so cannot update (%d)', ...
-        serverLocations{~cellfun(@(x) exist(x, 'dir'), serverLocations)>1});
+    error('No server access so cannot update: %s\n', ...
+        serverLocations{~cellfun(@(x) exist(x, 'dir'), serverLocations)==1});
 end
 csvData = [];
 
