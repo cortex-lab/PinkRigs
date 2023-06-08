@@ -1843,14 +1843,16 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
         if type(exp_info['expNum']) is not int:
             exp_info['expNum'] = int(exp_info['expNum'])
-            if exp_info['expNum'] > 100:
-                print('Skipping exp %.f' % exp_info['expNum'])
-                continue
 
         exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
                                   exp_info['expDate'], str(exp_info['expNum']))
         # look for video files
         video_files = glob.glob(os.path.join(exp_folder, '*%s' % video_ext))
+        excluded_fov_names = ['eyeCamLeft', 'eyeCamRight', 'bellyCam']
+        excluded_fov_in_exp_folder = ['bellyCam' in x for x in video_files]
+        if np.sum(excluded_fov_in_exp_folder) > 0:
+            print('Skipping %s because bellyCam is in it' % exp_folder)
+            continue
 
         if len(video_files) == 0:
             print('WARNING: no video files found in %s' % exp_folder)
@@ -1884,6 +1886,10 @@ def batch_process_facemap(output_format='flat', sessions=None,
         # video_files = [os.path.join(exp_folder, '2021-10-29_2_AH002_eye_compressed_crf0.mp4')]
 
         for video_fpath, video_fov in zip(video_files, video_file_fov_names):
+
+            if video_fov in excluded_fov_names:
+                print('Skipping %s' % video_fpath)
+                continue
 
             if num_videos_ran == num_videos_to_run_per_call:
                 # print('Max video run per call (%.f) reached, stopping.' % num_videos_to_run_per_call)
