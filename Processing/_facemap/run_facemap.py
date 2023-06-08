@@ -1827,6 +1827,7 @@ def batch_process_facemap(output_format='flat', sessions=None,
     file_skipped = 0
     tot_video_files = 0
 
+
     for row_idx, exp_info in all_mouse_info.iterrows():
         # get list of files from the exp folder
         if load_from_server:
@@ -1842,6 +1843,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
 
         if type(exp_info['expNum']) is not int:
             exp_info['expNum'] = int(exp_info['expNum'])
+            if exp_info['expNum'] > 100:
+                print('Skipping exp %.f' % exp_info['expNum'])
+                continue
 
         exp_folder = os.path.join(exp_info['main_folder'], exp_info['subject'],
                                   exp_info['expDate'], str(exp_info['expNum']))
@@ -2014,6 +2018,9 @@ def batch_process_facemap(output_format='flat', sessions=None,
                         projectName = 'pinkrigsFrontCam'
                     elif 'sideCam' in video_fpath:
                         projectName = 'pinkrigsSideCam'
+                    else:
+                        print('%s is not supported, skipping...' % video_fpath)
+                        continue
 
                     project_folder_search = glob.glob(os.path.join(working_directory, '%s-Tim*' % projectName))
                     project_folder = project_folder_search[0]
@@ -2504,4 +2511,4 @@ def main(**csv_kwargs):
             continue_running = False
 
 if __name__ == '__main__':
-    main(subject='all', expDate='last1000')
+    main(subject='EB014', expDate='all')
