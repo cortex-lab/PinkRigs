@@ -1,8 +1,16 @@
 
 import numpy as np 
-from Analysis.neural.utils.spike_dat import get_binned_rasters
 import matplotlib.pyplot as plt
+import pandas as pd
+from pathlib import Path
+import sys,glob
 
+pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+pinkRig_path = Path(pinkRig_path[0])
+sys.path.insert(0, (pinkRig_path.__str__()))
+from Analysis.neural.utils.spike_dat import get_binned_rasters
+from Admin.csv_queryExp import load_data
+from Analysis.neural.utils.data_manager import get_recorded_channel_position
 
 def plot_sempsth(m,sem,t_bin,ax,errbar_kwargs={'color': 'blue', 'alpha': 0.5}):    
     #ax.fill_between(np.arange(0,m.size,1), m - sem, m + sem,**errbar_kwargs)
@@ -413,3 +421,87 @@ def plot_driftMap(spikes,ax=None):
     for b in range(nColorBins-1):
         idx = (spikes.amps>=colorBins[b]) & (spikes.amps<colorBins[b+1])
         ax.plot(spikes.times[idx],spikes.depths[idx],'.',color=colors[b+1],markersize=1)
+
+
+def plot_anatmaps_longitudinal_(subject='AV025',probe = 'probe0',savefigs=False):
+    """
+    function to plot anatomy/drift maps of a given subject over time 
+    # this uses all the spontaneuous and sparseNoise
+
+    Parameters: 
+    -----------
+    mysubject: str
+        subject name
+    probe: str
+        probe0/1
+    savefigs: bool
+        whether to save fig,default path is in subject/histology/driftMaps
+    """
+
+    data_dict = {
+    probe:{'spikes':'all'},
+    '%s_raw' % probe:{'channels':'all'},
+    }
+
+    sn_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='sparseNoise')
+    spont_recs=load_data(data_name_dict=data_dict,subject=subject,expDef='spontaneous')
+    all_rec = pd.concat((sn_recs,spont_recs))
+
+    savefigs = True
+    # keep recordings with successful 
+    is_sorted = [bool(rec[probe].spikes) for _,rec in all_rec.iterrows()]
+    all_rec= all_rec[is_sorted]
+    all_rec = all_rec[['subject','expDate','expNum','expFolder',probe,'%s_raw' % probe]]  
+
+    shank_range,depth_range = zip(*[get_recorded_channel_position(rec['%s_raw' % probe].channels) for _,rec in all_rec.iterrows()])
+
+    all_rec = all_rec.assign(
+        shank_range = shank_range,
+        depth_range = depth_range
+    )
+    # throw away recordings that are not single shank 
+    is_single_shank = [(rec.shank_range[1] - rec.shank_range[0])<35 for _,rec in all_rec.iterrows()]
+    all_rec = all_rec[is_single_shank]
+
+    # calculate all combinations that exists
+    depths = all_rec.depth_range.unique()
+    shanks = all_rec.shank_range.unique()
+
+    shanks_x,depths_x = np.meshgrid(shanks,depths)
+    shanks_x,depths_x = np.ravel(shanks_x),np.ravel(depths_x)
+
+    # generate figures
+    for myloc in range(shanks_x.size):
+        same_range = all_rec[(all_rec.shank_range==shanks_x[myloc]) & (all_rec.depth_range == depths_x[myloc])]
+
+        fig,ax = plt.subplots(1,same_range.shape[0],figsize=(20,4),sharey=True)
+        fig.patch.set_facecolor('xkcd:white')
+
+        for cax,(_,rec) in zip(ax,same_range.iterrows()):
+            spikes = rec[probe].spikes
+            plot_driftMap(spikes,ax = cax) 
+            off_excepty(cax)  
+            cax.set_title(rec.expDate)
+
+        plt.suptitle(
+            '%s,shank %.0f,depth range: %s um' % (rec.subject,spikes._av_shankIDs[0],depths_x[myloc])
+        )
+        plt.show()
+        if savefigs:
+            # prep path   
+            savepath = (Path(rec.expFolder)).parents[1]
+            savepath = savepath / 'histology/driftMaps'
+            savepath.mkdir(parents=True,exist_ok=True) 
+
+            namestring = '%s_%s_shank%.0f_botrow%.0f.png' % (
+                rec.subject,
+                probe,
+                spikes._av_shankIDs[0],
+                depths_x[myloc][0]/15  # as 15 um is the spacing
+            )
+            # save 
+            fig.savefig(
+                (savepath / namestring), 
+                dpi = 300,
+                bbox_inches = 'tight'
+                )

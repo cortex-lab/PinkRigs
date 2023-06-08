@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 
-subjects = ['AV029','AV031','AV033'] # list of subjects that we intent to query 
+subjects = ['AV029','AV031','AV033','AV036','AV038'] # list of subjects that we intent to query 
 from Admin.csv_queryExp import queryCSV
 
 recordings = queryCSV(subject=subjects,expDate='last1')

@@ -6,7 +6,7 @@ import collections,itertools
 
 
 # import PinkRig utilities 
-from Admin.csv_queryExp import load_ephys_independent_probes,simplify_recdat,Bunch
+from Admin.csv_queryExp import load_data,Bunch
 from Analysis.neural.utils.spike_dat import bincount2D
 from Analysis.pyutils.video_dat import digitise_motion_energy
 from Analysis.pyutils.plotting import off_axes
@@ -1113,10 +1113,7 @@ def get_subselected_trials(events,trialtype,rt_min=None,rt_max=None,spl = None, 
 
 class events_list():
     """
-    helper class to operate kernels on events-like structures
-    1) helps indentifify each trial as a class
-    2) then helps to 
-      selected event times, their names and their called diag values
+    helper class to concatenate selected event times, their names and their called diag values
 
     function to mediate event selection
     """
@@ -1131,157 +1128,18 @@ class events_list():
         # splits already to crossval sets
         # then the below functions are actually the kernel events -- so bas
 
-    def parse_events(self,ev,contrasts,spls,vis_azimuths,aud_azimuths, choice_types = None, rt_params = None, classify_rt = False, min_trial = 2, include_unisensory_aud = True, include_unisensory_vis = False):
+    def parse_events(self):
         """
-        function that preselects all events before it is classified which kernel is active on each
+        function that
           1) excludes events that we don't intend to fit at all
           2) identifies events into sub-categories such that 
             a.) during balanced cross-validation we are able to allocate trialtypes into both train & test sets
-            b.) we are able to equalise how many of each of these trial type go into the model at all -- it is e.g. unfair to fill the model with a lot of correct choices and few incorrect choices when wanting to fit 'choice'     
-
-        Parameters: 
-        min_trial: int
-            if we rebalance across trial types this is the minimum trial no. we require from each trial type.   
-
-
-        could call various rebalancing strategies. 
-                strict: all trialtypes ought to have the same n
-                loose: just equalise certain types (e.g. same # of choices but doesn't matter which trial type)
+            b.) we are able to equalise how many of each of these trial type go into the model at all -- it is e.g. unfair to fill the model with a lot of correct choices and few incorrect choices when wanting to fit 'choice'        
         """
-
-        # keep trials or not based on global criteria 
-
-        ev_ = ev.copy()
-
-        to_keep_trials = ev.is_validTrial.astype('bool')
-        
-        if rt_params['rt_min']: 
-             to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
-        
-        if rt_params['rt_max']: 
-             to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
-
-         # and if there is anything else wrong with the trial, like the pd did not get detected..? 
-
-         # and if loose rebalancing strategy is called for choices i.e. something that just factors bias away 
-
-        ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-
-
-        ##### TRIAL SORTING #########
-        # create the global criteria 
-        if hasattr(ev,'timeline_choiceMoveDir'):
-            # active
-            ev.choiceType = ev.timeline_choiceMoveDir
-            ev.choiceType[np.isnan(ev.choiceType)] = 0
-            if not choice_types:
-                choice_types = np.unique(ev.choiceType) 
-
-        else:
-            # passive (animal did not go)
-            ev.choiceType = np.zeros(ev.is_validTrial.size).astype('int')
-            choice_types = [0]
-        
-        if classify_rt:
-            # option to balance whether trial types are dominantly long/short in a certain trial class
-            pass
-
-        if include_unisensory_aud:                 
-            # in unisensory cases the spl/contrast is set to 0 as expected, however the azimuths are also set to nan -- not the easiest to query...
-            ev.stim_visAzimuth[np.isnan(ev.stim_visAzimuth)] =-1000 
-
-            vis_azimuths.append(-1000)
-            vis_azimuths.sort()
-            
-            spls.append(0)
-            spls.sort()             
-        
-        if include_unisensory_vis:
-            ev.stim_audAzimuth[np.isnan(ev.stim_audAzimuth)] =-1000
-
-            aud_azimuths.append(-1000)
-            aud_azimuths.sort()
-
-            contrasts.append(0)
-            contrasts.sort()
-
-        # separate trials into trial classes
-        trial_classes = {}
-        for idx,(c,spl,v_azi,a_azi,choice) in enumerate(itertools.product(contrasts,spls,vis_azimuths,aud_azimuths,choice_types)):
-            # create a dict
-            is_this_trial = ((ev.stim_visContrast == c) &
-                            (ev.stim_audAmplitude == spl) &
-                            (ev.stim_visAzimuth == v_azi) & 
-                            (ev.stim_audAzimuth == a_azi) & 
-                            (ev.choiceType == choice))
-            
-
-            trial_classes[idx] =Bunch ({'is_this_trial':is_this_trial,
-                                        'contrast':c,
-                                        'spl':spl,
-                                        'vis_azimuths':v_azi,
-                                        'aud_azimuth':a_azi,
-                                        'choice_type': choice,
-                                        'n_trials':is_this_trial.sum()})
-            
-        
-            
-        # check how balanced the data is....
-        print('attempting to rebalance trials ...')
-        trial_class_IDs  = np.array(list(trial_classes.keys()))
-        n_in_class = np.array([trial_classes[idx].n_trials for idx in trial_class_IDs])
-
-        # some requested classes don't actually need to be fitted ...
-        print('%.0d/%0d requested trial types have 0 trials in it...' % ((n_in_class==0).sum(),len(trial_classes)))
-
-
-        min_test  = ((n_in_class>0) & (n_in_class<min_trial))
-
-        if min_test.sum()>0:
-            print('some types do not pass the minimum trial requirement. Lower min requirement or pass more data.')
-            #trial_class_IDs[min_test]
-
-        # allocate each trialType to train/test set   
-        kept_trial_class_IDs = trial_class_IDs[(n_in_class>=min_trial)]
-        trial_classes = Bunch({k:trial_classes[k] for k in kept_trial_class_IDs})
-
-
-        for k in kept_trial_class_IDs: 
-            curr_trial_idx = np.where(trial_classes[k].is_this_trial)[0]
-
-            np.random.seed(0)
-            np.random.shuffle(curr_trial_idx)
-            middle_index = curr_trial_idx.size//2 
-            train_idx = curr_trial_idx[:middle_index]
-            test_idx = curr_trial_idx[middle_index:] 
-            cv_inds = np.empty(trial_classes[k].is_this_trial.size) * np.nan
-
-            cv_inds[train_idx] = 1 
-            cv_inds[test_idx] =  2
-
-            #train=(cv_inds[train_idx,:]*1).sum(axis=0).astype('int')
-            #test =(cv_inds[test_idx,:]*2).sum(axis=0).astype('int')
-            trial_classes[k]['cv_inds'] = cv_inds
-       
-        # pass on events to the kernels        
-
-        trial_classes = Bunch(trial_classes)
-
-        to_keep_trials = np.sum(np.array([trial_classes[idx].is_this_trial for idx in kept_trial_class_IDs]),axis=0).astype('bool')
-        ev.cv_set = np.nansum(np.array([trial_classes[idx].cv_inds for idx in kept_trial_class_IDs]),axis=0) # no. of trials allocated to each class can be still slightly uneven if the trial numbers are odd
-
-        ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-
-        print('%.0d trials/%.0d trials are kept.' % (ev.is_validTrial.sum(),ev_.is_validTrial.sum()))
-        # determine possible kernel on/offset for each -- if we make toeplitz differently to what I am doing rn.
-        return ev
-
-    def is_kernel_active(self):
-        pass 
-
+        pass
     def add_to_event_list(self,events,onset_sel_key,is_selected,feature_name_string,diag_values=[1]):
         """
-        function that allows to classify whether each event belongs to a certain kernel
+        function that allows to parse events into kernel types
         i.e. adds to 
         """
         ev_times_ = events[onset_sel_key][is_selected]
@@ -1308,18 +1166,16 @@ class events_list():
 
     def trial_indexing(self):
         """
-        ? longer story, but this class might also deal with things like how long is a kernel active for on a particular trial... l8er
+        ? longer story
         """
         pass 
-
-
 
 class kernel_model(): 
     def __init__(self,t_bin = 0.005, smoothing = 0.025):
         self.t_bin = t_bin
         self.smoothing = smoothing
 
-    def load_and_format_data(self,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None,  
+    def load_and_format_data(self,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None, probe='probe0',  
                             contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None,
                             t_support_stim = [-0.05,0.35],
                             t_support_movement =[-.2,0.1],
@@ -1349,28 +1205,19 @@ class kernel_model():
         self.digitise_cam = digitise_cam
         # load from PinkRigs pipeline
 
-        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
-        other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
+        data_dict = {'events':{'_av_trials':'table'},probe:{'spikes':['times','clusters']},'frontcam':{'camera':'all'},'eyeCam':{'camera':'all'}}
 
-        rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
-        
-        loaded_ok = False
+        recdat = load_data(data_name_dict = data_dict,**kwargs)
 
-        if rec.shape[0] == 1:            
-            rec =  rec.iloc[0]
+        if recdat.shape[0]!=1:
+            print('several exps loaded: please be more specific')
+        else: 
             print('successful loading.')
             print('binning events and spikes... This might take a while.')
-            loaded_ok = True
-        else:
-            print('recordings are ambiguously defined. Please recall.')
-        
-
-        ev,spikes,_,_,self.cam = simplify_recdat(rec,probe='probe')
-
-        if loaded_ok:
             # prepare spike data  - bin and smooth 
 
             ################# SPIKE DATA ###########################
+            spikes = recdat.iloc[0][probe].spikes  
             # subselect neurons 
             if subselect_neurons: 
                 subselect_neurons = np.array(subselect_neurons)
@@ -1384,19 +1231,19 @@ class kernel_model():
             ############## EVENTS DATA #########################
 
             # extract and digitise approproate events  
+            ev = recdat.iloc[0].events._av_trials
+            self.events  = ev
 
-
-
-            if 'postactive' in rec.expDef:
+            if 'postactive' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
-            elif 'spatialIntegrationFlora' in rec.expDef:
+            elif 'spatialIntegrationFlora' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
-            elif 'Passive' in rec.expDef:
+            elif 'Passive' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
-            elif 'ckeckerboard_updatechecker' in rec.expDef:
+            elif 'ckeckerboard_updatechecker' in recdat.expDef.iloc[0]:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
             else: 
@@ -1406,22 +1253,14 @@ class kernel_model():
             extracted_ev = events_list()
 
             # keeep events only based on certain criteria
-            ev = extracted_ev.parse_events(ev,contrasts=contrasts,spls=spls,vis_azimuths=vis_azimuths,aud_azimuths=aud_azimuths,rt_params=rt_params,classify_rt=False,include_unisensory_vis=True,include_unisensory_aud=True)
 
-            self.events  = ev
-
-            # for kernel selection we don't create kernels with 0 contrasts/spl ...
-            vis_azimuths = [v for v in vis_azimuths if v>-100] # throw away -1000 that is used to call unisensory
-            aud_azimuths = [a for a in aud_azimuths if a>-100] # throw away -1000 that is used to call unisensory
-
-            contrasts = [c for c in contrasts if c>0]
-            spls = [p for p in spls if p>0]
-
-            # classify into kernels
             if 'vis' in event_types:   
                 #onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
                 onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
+                if not contrasts: 
+                    print('contrast is not passed. setting highest contrast only.')
+                    contrasts = [np.max(ev.stim_visContrast)]     
 
                 if not azimuths or 'dir' in azimuths: # if the kernel is just directional, we don't add azimuths specifically
                     azimuths = [None]
@@ -1558,16 +1397,13 @@ class kernel_model():
             if 'move' not in event_types:
                 trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)]
             else: 
-                #trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)] # this is also something that one might want to calculate trial-by-trial
+                trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)]
 
-                trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.timeline_choiceMoveOn+t_support_movement[1]+0.05)] # this is being unfair because it is basically not counting the 
+                #trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.timeline_choiceMoveOn+t_support_movement[1])] # this is being unfair because it is basically not counting the 
            
             trial_indices = np.concatenate(trial_indices).reshape((-1,self.tscale.size))
             fitted_trial_idxs = np.unique(extracted_ev.fitted_trials_idx)
 
-
-
-            ## KERNELS THAT DO NOT HAVE A TEMPORAL ELEMENT 
 
             # add other kernels that are not fitted over time (baseline and camera)
             if 'baseline' in event_types:
@@ -1635,21 +1471,30 @@ class kernel_model():
                 # add a baseline to the feature matrix
                     self.feature_matrix = np.concatenate((self.feature_matrix,my_kernel[:,np.newaxis]),axis=1)
                     self.feature_column_dict[feature_name_string] = np.array([self.feature_matrix.shape[1]-1])
-
-
-
-
-            ########### SETTING UP CROSS_VALIDATION ########        
+                    
             # creating training and test set for cross-validation - to do: balance trial types...
-            train=(trial_indices[ev.cv_set==1,:]*1).sum(axis=0).astype('int') # same issue -- trial indices are calculated for everything....
-            test =(trial_indices[ev.cv_set==2,:]*2).sum(axis=0).astype('int')
+            np.random.seed(0)
+            np.random.shuffle(fitted_trial_idxs)
+            middle_index = fitted_trial_idxs.size//2
+
+            
+            train_idx = fitted_trial_idxs[:middle_index]
+            test_idx = fitted_trial_idxs[middle_index:]
+
+
+            train=(trial_indices[train_idx,:]*1).sum(axis=0).astype('int')
+            test =(trial_indices[test_idx,:]*2).sum(axis=0).astype('int')
 
 
             self.split_group_vector=(train+test) # by definition to no timepoint can belong to two trials hence its ok to save to sum
             
-            self.is_training_set = ev.cv_set==1
-            self.is_test_set = ev.cv_set==2   
+            training_set= np.zeros(ev.is_blankTrial.size)         
+            training_set[train_idx] = 1
+            self.is_training_set = training_set.astype('bool')
 
+            test_set= np.zeros(ev.is_blankTrial.size)         
+            test_set[test_idx] = 1
+            self.is_test_set = test_set.astype('bool')      
 
     def fit(self,**fit_kwargs):   
         feature_matrix_,R_,a,split_group_vector_=remove_all_zero_rows(self.feature_matrix,self.R.T,group_vector=self.split_group_vector) 
@@ -1849,7 +1694,8 @@ class kernel_model():
         if plot_train or plot_pred_train:
             trial_set = self.is_training_set            
             on_time = on_times[(trial_set & is_sel)]
-            if on_time.size>=1:
+
+            if on_time.size>2:
                 if plot_train:
                     dat = self.get_raster(on_time,spike_type = 'data',**raster_kwargs)
                     bin_range = dat.tscale
@@ -1870,7 +1716,7 @@ class kernel_model():
             trial_set = self.is_test_set            
             on_time = on_times[(trial_set & is_sel)]
 
-            if on_time.size>=1:
+            if on_time.size>2:
                 if plot_test:
                     dat = self.get_raster(on_time,spike_type = 'data',**raster_kwargs)
                     bin_range = dat.tscale
@@ -1914,8 +1760,8 @@ class kernel_model():
         stim_aud_azimuth = self.events.stim_audAzimuth
         stim_vis_azimuth = self.events.stim_visAzimuth
 
-        # stim_aud_azimuth[np.isnan(stim_aud_azimuth)] =-1000
-        # stim_vis_azimuth[np.isnan(stim_vis_azimuth)] =-1000
+        stim_aud_azimuth[np.isnan(stim_aud_azimuth)] =-1000
+        stim_vis_azimuth[np.isnan(stim_vis_azimuth)] =-1000
         
         if plotted_aud_azimuth is None: 
             plotted_aud_azimuth = np.unique(stim_aud_azimuth)
@@ -1926,15 +1772,15 @@ class kernel_model():
         n_vis_pos = plotted_vis_azimuth.size
 
         if plot_stim & plot_move: 
-            fig,ax=plt.subplots(n_aud_pos,n_vis_pos*2,figsize=(20,10),sharex=True,sharey=True) 
-            stim_plot_inds = np.arange(0,n_vis_pos*2,2)
-            move_plot_inds = np.arange(0,n_vis_pos*2,2)+1
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos*2,figsize=(20,10),sharex=True,sharey=True) 
+            stim_plot_inds = np.arange(0,n_aud_pos*2+1,2)
+            move_plot_inds = np.arange(0,n_aud_pos*2+1,2)+1
         elif plot_stim and not plot_move:
-            fig,ax=plt.subplots(n_aud_pos,n_vis_pos,figsize=(10,10),sharex=True,sharey=True)    
-            stim_plot_inds = np.arange(0,n_vis_pos,1)  
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos,figsize=(10,10),sharex=True,sharey=True)    
+            stim_plot_inds = np.arange(0,n_aud_pos+1,1)  
         elif plot_move and not plot_stim:
-            fig,ax=plt.subplots(n_aud_pos,n_vis_pos,figsize=(10,10),sharex=True,sharey=True)    
-            move_plot_inds = np.arange(0,n_vis_pos,1)        
+            fig,ax=plt.subplots(n_vis_pos,n_aud_pos,figsize=(10,10),sharex=True,sharey=True)    
+            move_plot_inds = np.arange(0,n_aud_pos+1,1)        
 
         fig.patch.set_facecolor('xkcd:white')
 
@@ -1970,10 +1816,10 @@ class kernel_model():
                     is_selected_trial = (self.events[trialtype]==1) & (stim_aud_azimuth==a)  & (stim_vis_azimuth==v) 
                     
                     if sep_choice:
-                        is_selected_trial = is_selected_trial & (self.events.choiceType==mydir+1)
+                        is_selected_trial = is_selected_trial & (self.events.timeline_choiceMoveDir==mydir+1)
 
-                    if plot_stim: 
-                        myax = ax[n_aud_pos-1-i,stim_plot_inds[j]]
+                    if plot_stim:                        
+                        myax = ax[n_vis_pos - 1 - i,stim_plot_inds[j]]
                         if (self.sess_type=='passive') & ('vis' in trialtype):
                             # we align to the fake auditory onset 
                             AVdiff=self.events.timeline_audPeriodOn-self.events.timeline_visPeriodOn
@@ -2003,8 +1849,8 @@ class kernel_model():
                             myax.set_ylabel(a)       
 
                     if plot_move:
-                        myax = ax[n_aud_pos -1 - i,move_plot_inds[j]]
-                        rkw = {'t_before': 0.2,'t_after': 0.2,'sort_idx': None}
+                        myax = ax[n_vis_pos - 1 - i,move_plot_inds[j]]
+                        rkw = {'t_before': 0.6,'t_after': 0.1,'sort_idx': None}
                         self.plot_pred_helper(self.events.timeline_choiceMoveOn,is_selected_trial,nrnID_idx,myax,
                                             c=plot_colors[mydir],raster_kwargs=rkw,
                                             **plot_cond_kwargs)
@@ -2015,7 +1861,7 @@ class kernel_model():
 
                     ax[-1,-1].hlines(-0.1,0.25,0.35,'k')
 
-    def plot_prediction_rasters(self,nrnID,raster_kwargs = None ,visual_azimuth = None, auditory_azimuth = None, contrast = 1, spl = .1,sort_rt = True): 
+    def plot_prediction_rasters(self,nrnID,raster_kwargs = None ,visual_azimuth = None, auditory_azimuth = None, contrast = 1, spl = .1): 
         """
         this fuction plots the prediction in a raster format
 
@@ -2034,16 +1880,6 @@ class kernel_model():
 
         """
         # calculate index of neuron from the ID number
-        
-        if type(visual_azimuth) is not list:
-            visual_azimuth = [visual_azimuth]
-        if type(auditory_azimuth) is not list: 
-            auditory_azimuth = [auditory_azimuth]
-        if type(contrast) is not list: 
-            contrast = [contrast]
-        if type(spl) is not list: 
-            spl = [spl]
-        
         nrnID_idx = np.where(self.clusIDs==nrnID)[0][0]
 
         if not raster_kwargs:
@@ -2081,25 +1917,22 @@ class kernel_model():
 
             fig,ax = plt.subplots(no_plots,len(visual_azimuth),figsize=(16,12),sharex=True)   
 
-            for idx,(v,a,c,p) in enumerate(zip(visual_azimuth,auditory_azimuth,contrast,spl)): 
+            for idx,(v,a) in enumerate(zip(visual_azimuth,auditory_azimuth)): 
                 if np.isnan(v): 
                     is_called_vis = np.isnan(self.events.stim_visAzimuth)
                 else:
-                    is_called_vis = (self.events.stim_visAzimuth == v) & ((self.events.stim_visContrast*100).astype('int')==c*100) 
+                    is_called_vis = (self.events.stim_visAzimuth == v) & ((self.events.stim_visContrast*100).astype('int')==contrast*100) 
 
                 if np.isnan(a):    
                     is_called_aud = np.isnan(self.events.stim_audAzimuth)
                 else:
-                    is_called_aud = (self.events.stim_audAzimuth == a) & (np.round((self.events.stim_audAmplitude*100)).astype('int')==p*100)  
+                    is_called_aud = (self.events.stim_audAzimuth == a) & (np.round((self.events.stim_audAmplitude*100)).astype('int')==spl*100)  
 
                 if ~np.isnan(a):
                     on_time = self.events.timeline_audPeriodOn[(is_called_vis & is_called_aud)]
                 else: 
                     on_time = self.events.timeline_visPeriodOn[(is_called_vis & is_called_aud)]
 
-                if hasattr(self.events,'rt') & sort_rt: 
-                    rts  = self.events.rt[(is_called_vis & is_called_aud)]
-                    on_time = on_time[np.argsort(rts)]
 
                 if plot_cam:
                     for n_cam_idx,camname in enumerate(self.cam_values.keys()):                        
@@ -2133,23 +1966,7 @@ class kernel_model():
                 off_axes(ax[-1,idx])
 
         fig.show()
-
-
-    def calculate_kernels(self):
-        model = self.fit_results['test_model']
-
-        if type(model).__name__=='ReducedRankRegressor':
-            fits = np.dot(model.regressor_model.coef_,model.A)
-        else: 
-            fits = model.coef_
-
-        kernel_dict = {}
-        for i,feature in enumerate(self.feature_column_dict):
-            kernel = fits[:,self.feature_column_dict[feature]]
-            kernel_dict[feature] = kernel
-
-        return kernel_dict
-
+      
     def plot_kernels(self,nrnID):
         nrn_idx = np.where(self.clusIDs==nrnID)[0] # 
 

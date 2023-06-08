@@ -12,7 +12,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'FT031'
+dat_type = 'AV025'
 dat_keys = get_data_bunch(dat_type)
 
 #from Admin.csv_queryExp import queryCSV
@@ -21,8 +21,8 @@ dat_keys = get_data_bunch(dat_type)
 # dat_keys['probe']='probe0'
 # %%
 csv_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual\%s\%s' % (dat_type,'summary_data.csv'))
-recompute = False 
-# %%
+recompute = True 
+
 all_dfs = []
 if csv_path.is_file() & (not recompute):
     clusInfo = pd.read_csv(csv_path)
@@ -61,8 +61,20 @@ allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 
 score_thr = 0.05
+
+# %%
+fig,ax = plt.subplots(1,1,figsize=(2,10))
+my_hemi = -1
+ax.hist(clusInfo.depths[(clusInfo.hemi==my_hemi)],orientation='horizontal',bins=50,color='grey',alpha=0.5)
+ax.hist(clusInfo.depths[(clusInfo.score>score_thr) & (clusInfo.hemi==my_hemi)],orientation='horizontal',bins=25,alpha=0.7,color='lightseagreen')
+off_topspines(ax)
+ax.set_xlabel('# neurons')
+ax.set_ylabel('distance from tip (um)')
+ax.legend(['all','visRFs'])
+
+# %%
 dots_to_plot = allen_pos_apdvml[clusInfo.score>score_thr]
-dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = -120,vmax=120,n_bins=15,cmap='coolwarm')
+dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = -150,vmax=150,n_bins=35,cmap='coolwarm')
 
 
 # %%
@@ -74,8 +86,9 @@ scene.add_brain_region("SCs",alpha=0.05,color='grey')
 sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
 scene.add_brain_region("VISp",alpha=0.05)
 #scene.add_brain_region("RSP",alpha=0.05)
-#dots_to_plot = allen_pos_apdvml[clusInfo._av_KSLabels==2]
+dots_to_plot_all = allen_pos_apdvml[clusInfo._av_KSLabels==2]
 scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
+scene.add(Points(dots_to_plot_all, colors='k', radius=8, alpha=0.5))
 
 # for p,c in zip(dots_to_plot,dot_colors):
 #    scene.add(Points(p[np.newaxis,:]), colors=c, radius=30, alpha=0.8)

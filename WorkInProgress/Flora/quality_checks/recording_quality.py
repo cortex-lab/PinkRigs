@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 subject = 'AV025'
 expDate = '2022-11-07:2022-11-08'
-probe = 'probe1'
+probe = 'probe0'
 raw_probe = probe + '_raw'
 data_dict = {probe:{'clusters':'all'},raw_probe:{'clusters':'all'}}
 recordings = load_data(subject = subject,expDate= expDate,expDef='sparseNoise',data_name_dict=data_dict)
@@ -29,7 +29,7 @@ def plot_cluster_locations(rec,probe,ax,only_good=True):
             color='k',alpha=.5,markersize = 5)
 
 fig,ax = plt.subplots(1,1,figsize=(10,5))
-[plot_cluster_locations(rec,probe,ax,only_good=False) for _,rec in recordings.iterrows()]
+[plot_cluster_locations(rec,probe,ax,only_good=True) for _,rec in recordings.iterrows()]
 ax.set_xlabel('xpos')
 ax.set_ylabel('depth')
 plt.show()

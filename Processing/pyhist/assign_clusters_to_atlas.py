@@ -164,7 +164,7 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         # get the channels of interest and subselect
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
 
-        if channel_localCoordinates.shape[0]==384:
+        if chan_pos.shape[0]==384:
             pass
         else:
             sel_idx = coordinate_matching(channel_localCoordinates,chan_pos)
@@ -187,12 +187,16 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         stub = re.split('[.]',a.__str__())[-2]
         clus_channels = np.load(one_path / ('clusters.channels.%s.npy' % stub))
         # get corresponding values for each cluster. 
-        allen_xyz_clus = np.array([allen_xyz[clus_ch,:][:,np.newaxis] for clus_ch in clus_channels])	
+
+        # 
+
+
+        allen_xyz_clus = np.array([allen_xyz[clus_ch,:][:,np.newaxis] for clus_ch in clus_channels])	#
         region_ID_clus = np.array([region_ID[clus_ch] for clus_ch in clus_channels])
         region_acronym_clus = np.array([region_acronym[clus_ch] for clus_ch in clus_channels])
         
         allen_xyz_clus = allen_xyz_clus[:,:,0]
-        # allen_xyz_clus[region_ID_clus==0] = np.nan  # some units can be in "void" (I imagine mostly noise)
+        allen_xyz_clus[region_ID_clus==0] = np.nan  # some units can be in "void" (I imagine mostly noise)
 
 
         allencoords_ccf_apdvml = atlas.xyz2ccf(allen_xyz_clus/1e6,ccf_order='apdvml') 

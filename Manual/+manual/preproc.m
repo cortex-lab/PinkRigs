@@ -1,9 +1,10 @@
 close all
 
 clear params
-params.subject = {'AV030'};
-params.expDate = {'2022-12-07'}; 
-%params.expDef = 'm'; 
+params.subject = {'AV025'};
+params.expDate = {['2022-11-07']}; 
+params.expDef = 'multiSpaceWorld_checker_training'; 
+
 %
 % preproc.extractExpData(exp2checkList,'recompute',{['events']});
 %params.checkAlignEphys = '2'; 
@@ -15,6 +16,6 @@ exp2checkList = csv.queryExp(params);
 preproc.align.main(exp2checkList,'recompute',{'ephys'});
 
 %% Just run preprocessing
-preproc.extractExpData(exp2checkList,'recompute',{['events']},'process',{['events']}); % here spk does not work 
+preproc.extractExpData(exp2checkList,'recompute',{['spikes']},'process',{['spikes']}); % here spk does not work 
 
 

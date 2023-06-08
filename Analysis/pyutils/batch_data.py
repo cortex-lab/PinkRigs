@@ -110,6 +110,30 @@ def get_data_bunch(namekey):
             ('FT027','2021-09-13',1,'probe0'),
         ]
 
+    elif namekey == 'trained-passive':
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('FT008','2021-01-15',5,'probe0'),
+            ('FT008','2021-01-15',5,'probe1'), 
+             #('FT008','2021-01-16',8,'probe0'),
+            # ('FT008','2021-01-16',9,'probe0'),
+            ('FT009','2021-01-19',5,'probe0'), # video
+            ('FT009','2021-01-20',7,'probe0'), # video 
+            ('FT009','2021-01-20',8,'probe0'),
+            ('FT010','2021-03-16',7,'probe0'),
+            ('FT010','2021-03-16',7,'probe1'),
+            ('FT010','2021-03-16',8,'probe0'),
+            ('FT010','2021-03-16',8,'probe1'),
+            ('FT011','2021-03-23',6,'probe0'), # video 
+           # ('FT011','2021-03-24',6,'probe0'),
+           # ('FT011','2021-03-24',7,'probe0'),
+            ('FT022','2021-07-20',1,'probe0'), #
+            ('FT019','2021-07-07',2,'probe0'),
+            ('FT025','2021-07-19',4,'probe0'),
+            ('FT027','2021-09-13',1,'probe0'),
+        ]
+
+
     elif namekey == 'naive-acute-rfs':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [

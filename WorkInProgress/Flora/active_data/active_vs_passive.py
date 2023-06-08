@@ -14,15 +14,15 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # use easiser set of code, i.e. just load the events and look and L-R for all neurons at 60 deg  
 
-mname = 'AV030'
-expDate = '2022-12-07'
-probe = 'probe1'
+mname = 'AV034'
+expDate = '2022-12-08'
+probe = 'probe0'
 
 raster_kwargs = {
                 'pre_time':0.2,
-                'post_time':0.10, 
+                'post_time':0.50, 
                 'bin_size':0.01,
-                'smoothing':0,
+                'smoothing':0.025,
                 'return_fr':True,
                 'baseline_subtract': False, 
         }
@@ -31,9 +31,11 @@ raster_kwargs = {
 ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'all'}
 other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
 
-session_types = ['postactive','multiSpaceWorld']
+session_types = ['multiSpaceWorld','postactive']
 psths = []
 
+
+type = 'vis'
 for sess in session_types:
     session = { 
         'subject':mname,
@@ -51,13 +53,24 @@ for sess in session_types:
     events,spikes,clusters,_,cam = simplify_recdat(recordings,probe='probe')
     azimuths = [-60,60]
     for azi in azimuths:
-        if 'multiSpaceWorld' in recordings.expDef:
-            to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1) & events.is_validTrial & (events.first_move_time>raster_kwargs['post_time'])) 
-        else:
-            to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1))
+        if 'aud' in type:
+            if 'multiSpaceWorld' in recordings.expDef:
+                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1) & events.is_validTrial & (events.first_move_time>raster_kwargs['post_time'])) 
+            else:
+                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1))
+            t_on = events.timeline_audPeriodOn[to_keep_trials]
+
+        if 'vis' in type:
+            if 'multiSpaceWorld' in recordings.expDef:
+                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.1) & (events.stim_visContrast==0.2) & events.is_validTrial) 
+                n_ms = to_keep_trials.sum()
+            else:
+                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.1) & (events.stim_visContrast==0.2))           
+            t_on = events.timeline_visPeriodOn[to_keep_trials]
+            t_on = t_on[:n_ms]
 
         clus_ids = recordings.probe.clusters._av_IDs.astype('int') 
-        t_on = events.timeline_audPeriodOn[to_keep_trials]
+
         r = get_binned_rasters(spikes.times,spikes.clusters,clus_ids,t_on,**raster_kwargs)
         # # so we need to break here so that we perorm getting binned rasters only once...
         #stim = r.rasters[:,:,r.tscale>=0]

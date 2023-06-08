@@ -4,7 +4,7 @@ from pathlib import Path
 from scipy.stats import median_abs_deviation as mad
 import datetime 
 
-from Analysis.pyutils.video_dat import get_move_raster
+#from Analysis.pyutils.video_dat import get_move_raster
 
 # ONE loader from the PinkRig Pipeline
 from Admin.csv_queryExp import get_csv_location,load_data
@@ -424,7 +424,7 @@ def get_behavior_quality_scores(savepath=None,trim_bad=False,n_go_thr = 200,perf
     return out_dat
 
 
-def get_sessions_with_units(expdef_namestring,savepath=None,trim_bad = False,**kwargs): 
+def get_sessions_with_units(savepath=None,trim_bad = False,**kwargs): 
     """
     this function aims to  get the valid postactive experiments postImplant
     with the aim that you are then able to sort according to crietria
@@ -446,7 +446,7 @@ def get_sessions_with_units(expdef_namestring,savepath=None,trim_bad = False,**k
     'probe1_raw':{'channels':'localCoordinates'}
     }
 
-    kwargs['expDef'] = expdef_namestring
+    #kwargs['expDef'] = expdef_namestring
     recdat = load_data(data_name_dict = data_dict,**kwargs)
     # from recdat drop recordings that are too short
     out_dat = recdat[['subject','expDate','expNum','rigName','expDuration']]    
@@ -479,7 +479,7 @@ def get_sessions_with_units(expdef_namestring,savepath=None,trim_bad = False,**k
         out_dat.to_csv(savepath)
 
     if trim_bad:
-        print('have to implement some arbitrary threshold measures for selectinf data for analysis.')
+        print('have to implement some arbitrary threshold measures for selecting data for analysis.')
 
     print('almost done.')
 

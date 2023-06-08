@@ -11,7 +11,7 @@ recordings = queryCSV(subject = 'all',expDate='last1',expDef='multiSpaceWorld_ch
 recordings = recordings[recordings.existSideCam=='1']
 
 # Source path
-destination = r"C:\Users\Flora\Documents\testcam"
+destination = Path(r"C:\Users\Flora\Documents\testcam")
 
 # %%
 for _,rec in recordings.iterrows():
@@ -39,4 +39,19 @@ for _,rec in recordings.iterrows():
         print("Error occurred while copying %s." % camfilename)
 
 
+# %%
+
+from distutils.dir_util import copy_tree
+for _,rec in recordings.iterrows():
+
+    my_expFolder = Path(rec.expFolder)
+    folders = my_expFolder.parts[1:]
+
+    from_directory = my_expFolder / 'ONE_preproc'
+    to_directory = destination / ('%s/%s/%s' % (folders[0],folders[1],folders[2]))
+    to_directory = to_directory / 'ONE_preproc'
+
+    to_directory.mkdir(parents=True,exist_ok=True)
+
+    copy_tree(from_directory.__str__(), to_directory.__str__())
 # %%
