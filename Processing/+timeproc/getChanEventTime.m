@@ -113,7 +113,14 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                 [~, laserOnEnd, laserOffEnd] = schmittTimes(timelineTime, chan, tlSyncThresh);
                 [~, laserOffStart, laserOnStart] = schmittTimes(flip(timelineTime), flip(chan), tlSyncThresh);
                 laserOnStart = sort(laserOnStart); 
-                laserOffStart  = sort(laserOffStart);                 
+                laserOffStart  = sort(laserOffStart);    
+
+                % sometimes the laser starts but does not come off 
+                if (numel(laserOnStart)-numel(laserOffStart))==1
+                    laserOnStart(end) = [];
+                    laserOnEnd(end) = []; 
+                end
+
                 evTimes = [laserOnStart,laserOnEnd,laserOffStart,laserOffEnd];
 
                 % throw away events that are point processes and most

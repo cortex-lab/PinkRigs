@@ -95,7 +95,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None, unwrap_independent_probes=False):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -116,7 +116,15 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
     checkEvents: None\str
         returns match to string if not none ('1', or '2')  
     checkSpikes: None/str
-        returns match to string if not none ('1', or '2')    
+        returns match to string if not none ('1', or '2')  
+
+    unwrap_independent_probes: bool
+        returns exp2checkList with a probe tag where so each row is probe as opposed to a session  
+
+    check_curation: bool
+        only applies if unwrap_independent_probes is True
+        whether the data has been curated in phy or not.
+
     Returns: 
     ----
     exp2checkList : pandas DataFrame 
@@ -207,6 +215,36 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
             exp2checkList = exp2checkList[exp2checkList['alignFrontCam'].notna() & exp2checkList['fMapFrontCam'].notna()]
             to_keep_column = np.array([(checkFrontCam in rec.alignFrontCam) & (checkFrontCam in rec.fMapFrontCam) for _,rec in exp2checkList.iterrows()])
             exp2checkList = exp2checkList[to_keep_column]        
+
+        if unwrap_independent_probes:
+            expected_probe_no = ((exp2checkList.extractSpikes.str.len()/2)+0.5)
+            expected_probe_no[np.isnan(expected_probe_no)] = 0 
+            expected_probe_no = expected_probe_no.astype(int)
+
+            exp2checkList['expected_probe_no'] = expected_probe_no
+
+            rec_list = []
+            for _,rec in exp2checkList.iterrows():
+                for p_no in range(rec.expected_probe_no):
+                    string_idx =(p_no)*2
+                    if (rec.extractSpikes[int(string_idx)]=='1'):
+                        myrec = rec[['subject','expDate','expNum','expDef','expDuration','rigName','expFolder']]
+                        myrec['probe'] = 'probe%s' % p_no
+                        ephysPath = rec['ephysPathProbe%s' % p_no]
+                        myrec['ephysPath'] = ephysPath
+
+                        curated_fileMark = Path(ephysPath)
+                        curated_fileMark = curated_fileMark / 'pyKS\output\cluster_info.tsv'
+                        myrec['is_curated'] = curated_fileMark.is_file()
+                        
+                        rec_list.append(myrec)
+
+
+
+                exp2checkList = pd.DataFrame(rec_list, columns =['subject','expDate','expNum','expDef','expDuration','rigName','expFolder','probe','ephysPath','is_curated']) 
+
+
+
 
     return exp2checkList
 
@@ -516,3 +554,7 @@ def load_active_and_passive(rec_info):
     dat = Bunch(dat)
 
     return dat
+
+
+def queryGood():
+    pass

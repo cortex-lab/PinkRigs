@@ -1,9 +1,9 @@
 close all
 
 clear params
-params.subject = {'AV025'};
-params.expDate = {['2022-11-07']}; 
-params.expDef = 'multiSpaceWorld_checker_training'; 
+params.subject = {'FT038';'FT039'};
+params.expDate = {['postImplant']}; 
+params.expDef = 'p'; 
 
 %
 % preproc.extractExpData(exp2checkList,'recompute',{['events']});

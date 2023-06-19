@@ -6,9 +6,9 @@ from Admin.csv_queryExp import load_data
 import numpy as np 
 import matplotlib.pyplot as plt 
 
-subject = 'AV025'
-expDate = '2022-11-07:2022-11-08'
-probe = 'probe0'
+subject = 'AV030'
+expDate = '2022-12-06:2022-12-07'
+probe = 'probe1'
 raw_probe = probe + '_raw'
 data_dict = {probe:{'clusters':'all'},raw_probe:{'clusters':'all'}}
 recordings = load_data(subject = subject,expDate= expDate,expDef='sparseNoise',data_name_dict=data_dict)

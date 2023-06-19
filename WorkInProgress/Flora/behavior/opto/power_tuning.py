@@ -7,15 +7,15 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
-my_subject = 'AV038'
+my_subject = 'AV041'
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-03-28',
+    expDate = '2023-06-13',
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
 # %% 
-ev,_,_,_ = zip(*[simplify_recdat(rec) for _,rec in recordings.iterrows()])
+ev,_,_,_,_ = zip(*[simplify_recdat(rec) for _,rec in recordings.iterrows()])
 ev_keys = list(ev[0].keys())
 ev = Bunch({k:np.concatenate([e[k] for e in ev]) for k in ev_keys})
             

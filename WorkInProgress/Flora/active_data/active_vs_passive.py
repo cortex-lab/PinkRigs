@@ -14,8 +14,8 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # use easiser set of code, i.e. just load the events and look and L-R for all neurons at 60 deg  
 
-mname = 'AV034'
-expDate = '2022-12-08'
+mname = 'AV030'
+expDate = '2022-12-07'
 probe = 'probe0'
 
 raster_kwargs = {

@@ -4,7 +4,7 @@ import shutil,re
 from pathlib import Path
 import numpy as np
 
-my_folder = r'Y:\AV025\histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
+my_folder = r'Z:\AV008\histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
 my_folder = Path(my_folder)
 swap_SN = False  
 swap_order = True

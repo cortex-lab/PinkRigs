@@ -17,7 +17,7 @@ from Analysis.pyutils.plotting import my_rasterPSTH,off_axes
 
 
 column_names = ['subject','expDate','expNum','probe']
-rec = [('FT009','2021-01-19',5,'probe0')]
+rec = [('AV025','2022-11-07',4,'probe0')]
 cID = 34
 rec = pd.DataFrame(rec,columns= column_names)
  #%%
@@ -34,7 +34,7 @@ recordings = load_data(
 
 ev,spikes,_,_,_ = simplify_recdat(recordings.iloc[0],probe=probe)
 b,v,a,_ = postactive(ev)
-
+# %%
 azimuths =np.array([-90,-60,-30,0,30,60,90])  # which azimuths to plot 
 sel_contrast = v.contrast.max().values
 sel_spl = a.SPL.max().values

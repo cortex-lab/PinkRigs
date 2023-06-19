@@ -11,10 +11,10 @@ from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
 from Analysis.pyutils.ev_dat import getTrialNames
 
-my_subject = ['AV046']
+my_subject = ['AV041']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-06-05',
+    expDate = '2023-06-14',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'all'}}
@@ -69,7 +69,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(ev.is_validTrial & ev.i
 # %% non log plot
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 for i,a in enumerate(aud_azimuths):
-    to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ev.is_laserTrial
+    to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ev.is_laserTrial 
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
     rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
@@ -139,14 +139,22 @@ choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
 df['powerXchoiceDir'] = ev_.laser_power * choice_signed
 # make a single array of trialtypes
 
-fig,ax = plt.subplots(1,1,figsize=(15,15))
+fig,ax = plt.subplots(1,1,figsize=(8,5))
+fig.patch.set_facecolor('xkcd:white')
+
 sns.boxenplot(data=df, 
               x="trialNames",
-              y="rt", 
-              hue="powerXchoiceDir",
-              orient='v',
-              palette = "coolwarm")
+              y="rt", order = ['blank','auditory','visual','coherent','conflict'],
+              hue="powerXchoiceDir", dodge=True, linewidth=.5,
+              orient='v', trust_alpha=0.5, saturation=1,
+              palette = "coolwarm",outlier_prop=0.00001,showfliers=False, width=0.7)
 
 ax.set_ylabel('reaction time (s)')
+plt.legend([],[], frameon=False)
+off_topspines(ax)
+mypath = r'C:\Users\Flora\Pictures\LakeConf'
+savename = mypath + '\\' + 'optoRTs.svg'
+
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 # %%

@@ -29,8 +29,8 @@ for sess in dat_params_sess_type.keys():
     curr_params = dat_params_sess_type[sess]
     kernels = kernel_model(t_bin=0.005,smoothing=0.025)
     kernels.load_and_format_data(
-        subject = 'AV034',
-        expDate = '2022-12-08', 
+        subject = 'AV030',
+        expDate = '2022-12-07', 
         expDef = sess,
         probe = 'probe0',
         subselect_neurons=None,
@@ -62,8 +62,8 @@ import matplotlib.pyplot as plt
 
 fig,ax = plt.subplots(1,1)
 
-kernel_name = 'vis_kernel_contrast_0.40_azimuth_60'
-nrnID= 59
+kernel_name = 'aud_kernel_spl_0.10_azimuth_60'
+nrnID= 330
 for sess in dat_params_sess_type.keys():
     nrnIdx = np.where(results[sess]['clusIDs']==nrnID)[0][0]
     ax.plot(

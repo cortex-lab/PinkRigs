@@ -203,7 +203,7 @@ def call_bombcell_params():
         "max_percentage_spikes_missing":20,
         "min_spike_num":300,
         "max_refractory_period_violations":10,
-        "min_amp":10,
+        "min_amp":5,
     }
 
     return metric_thresholds
@@ -223,11 +223,11 @@ def bombcell_sort_units(clusdat,max_peaks,max_throughs,
     ix = ~ (
         (clusdat.nPeaks>max_peaks) | 
         (clusdat.nTroughs>max_throughs) |
-        (clusdat.somatic>=is_somatic) | 
+        (clusdat.isSomatic>=is_somatic) | 
         (clusdat.spatialDecaySlope<=min_spatial_decay_slope) |
-        (clusdat.waveformDuration<min_waveform_duration) |
-        (clusdat.waveformDuration>max_waveform_duration) |
-        (clusdat.waveformBaseline>=max_waveform_baseline_fraction)
+        (clusdat.waveformDuration_peakTrough<min_waveform_duration) |
+        (clusdat.waveformDuration_peakTrough>max_waveform_duration) |
+        (clusdat.waveformBaselineFlatness>=max_waveform_baseline_fraction)
     ) 
 
     clusdat['bombcell_class'][ix]='noise'
@@ -235,10 +235,10 @@ def bombcell_sort_units(clusdat,max_peaks,max_throughs,
     # assign well isolated units 
     ix = (
         (clusdat.bombcell_class != 'noise') &
-        (clusdat.Spknum>min_spike_num) &
-        (clusdat.Fp <= max_refractory_period_violations) &
+        (clusdat.nSpikes>min_spike_num) &
+        (clusdat.fractionRPVs_estimatedTauR <= max_refractory_period_violations) &
         (clusdat.rawAmplitude>min_amp) &
-        (clusdat.percSpikesMissing>max_percentage_spikes_missing)
+        (clusdat.percentageSpikesMissing_symmetric>max_percentage_spikes_missing)
     )
 
     clusdat['bombcell_class'][ix]='good'

@@ -1131,7 +1131,13 @@ class events_list():
         # splits already to crossval sets
         # then the below functions are actually the kernel events -- so bas
 
-    def parse_events(self,ev,contrasts,spls,vis_azimuths,aud_azimuths, choice_types = None, rt_params = None, classify_rt = False, min_trial = 2, include_unisensory_aud = True, include_unisensory_vis = False):
+    def parse_events(self,ev,contrasts,spls,vis_azimuths,aud_azimuths,
+                     choice_types = None, 
+                     rt_params = None, 
+                     classify_rt = False, 
+                     min_trial = 2, 
+                     include_unisensory_aud = True, 
+                     include_unisensory_vis = False):
         """
         function that preselects all events before it is classified which kernel is active on each
           1) excludes events that we don't intend to fit at all
@@ -1273,7 +1279,40 @@ class events_list():
         ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 
         print('%.0d trials/%.0d trials are kept.' % (ev.is_validTrial.sum(),ev_.is_validTrial.sum()))
-        # determine possible kernel on/offset for each -- if we make toeplitz differently to what I am doing rn.
+
+        # recalculate kernel_trialOn and kernel_trialOff, taking into account some all the things that possibly go into the kernel
+
+
+        return ev
+    
+    def calculate_trialOnOff(self,ev,t_support_stim,t_support_movement=None):
+       
+       # for each event we take the start of any possible kernel support
+        #onset_times = ev.block_stimOn
+
+        onset_times = np.nanmin(np.array([ev.timeline_audPeriodOn,ev.timeline_visPeriodOn]),axis=0) # if and when we make onsets related to audPeriod etc.
+
+        # establish whether there is a choice or not 
+        if hasattr(ev,'timeline_choiceMoveOn') & (t_support_movement is not None): 
+            ev.kernel_earliestTime = np.nanmin(
+                                            np.array([
+                                                onset_times+t_support_stim[0],
+                                                onset_times+t_support_movement[0]
+                                            ])
+                                        ,axis=0)
+            
+            ev.kernel_latestTime = np.nanmax(
+                                            np.array([
+                                                onset_times+t_support_stim[1],
+                                                ev.timeline_choiceMoveOn+t_support_movement[1]
+                                            ])
+                                        ,axis=0)
+
+        else:
+            ev.kernel_earliestTime = onset_times+t_support_stim[0]
+
+            ev.kernel_latestTime  = onset_times+t_support_stim[1]
+       
         return ev
 
     def is_kernel_active(self):
@@ -1406,7 +1445,24 @@ class kernel_model():
             extracted_ev = events_list()
 
             # keeep events only based on certain criteria
-            ev = extracted_ev.parse_events(ev,contrasts=contrasts,spls=spls,vis_azimuths=vis_azimuths,aud_azimuths=aud_azimuths,rt_params=rt_params,classify_rt=False,include_unisensory_vis=True,include_unisensory_aud=True)
+            ev = extracted_ev.parse_events(
+                ev,
+                contrasts=contrasts,
+                spls=spls,
+                vis_azimuths=vis_azimuths,
+                aud_azimuths=aud_azimuths,
+                rt_params=rt_params,
+                classify_rt=False,
+                include_unisensory_vis=True,
+                include_unisensory_aud=True
+                )
+            
+            if 'move' in event_types:
+                ev  = extracted_ev.calculate_trialOnOff(ev,t_support_stim=t_support_stim,t_support_movement=t_support_movement)
+            else: 
+                ev  = extracted_ev.calculate_trialOnOff(ev,t_support_stim=t_support_stim,t_support_movement=None)
+
+
 
             self.events  = ev
 
@@ -1419,8 +1475,8 @@ class kernel_model():
 
             # classify into kernels
             if 'vis' in event_types:   
-                #onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
-                onset_sel_key  = 'block_stimOn'
+                onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
+                #onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
 
                 if not azimuths or 'dir' in azimuths: # if the kernel is just directional, we don't add azimuths specifically
@@ -1444,8 +1500,8 @@ class kernel_model():
                             extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector)
 
             if 'aud' in event_types:   
-                #onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this  
-                onset_sel_key  = 'block_stimOn'
+                onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this  
+                #onset_sel_key  = 'block_stimOn'
                 azimuths = aud_azimuths
 
                 if not azimuths or 'dir' in azimuths: 
@@ -1555,13 +1611,8 @@ class kernel_model():
                 self.feature_column_dict[ev_name] = np.array(range(kernel_end_idx[ix],kernel_end_idx[ix+1]))
 
 
-            if 'move' not in event_types:
-                trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)]
-            else: 
-                #trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.block_stimOn+t_support_stim[1]+.05)] # this is also something that one might want to calculate trial-by-trial
+            trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.kernel_earliestTime-self.t_bin,ev.kernel_latestTime+self.t_bin)]
 
-                trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.block_stimOn+t_support_stim[0]-self.t_bin,ev.timeline_choiceMoveOn+t_support_movement[1]+0.05)] # this is being unfair because it is basically not counting the 
-           
             trial_indices = np.concatenate(trial_indices).reshape((-1,self.tscale.size))
             fitted_trial_idxs = np.unique(extracted_ev.fitted_trials_idx)
 

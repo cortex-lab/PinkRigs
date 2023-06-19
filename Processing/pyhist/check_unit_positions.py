@@ -14,7 +14,7 @@ from Admin.csv_queryExp import queryCSV,load_data
 from Analysis.neural.utils.data_manager import get_sessions_with_units,get_highest_yield_unique_ephys
 
 #recordings = queryCSV(subject = 'AV034',expDate='2022-12-07')
-my_probe = 'probe1'
+my_probe = 'probe0'
 
 data_dict = {
 'probe0':{'clusters':'all'},
@@ -24,8 +24,8 @@ data_dict = {
 }
 
 #kwargs['expDef'] = expdef_namestring
-recdat = load_data(subject='AV025', expDate = '2022-11-07:2022-11-08',data_name_dict = data_dict)
-recdat = recdat[(recdat.extractSpikes=='1,1')]
+recdat = load_data(subject='AV005', expDate = '2022-05-11:2022-05-13',data_name_dict = data_dict)
+recdat = recdat[(recdat.extractSpikes=='1')]
 #recordings = get_sessions_with_units(subject='AV034', expDef = 'postactive')
 
 # recordings = recordings[(recordings.extractEvents=='1') & (recordings.extractSpikes=='1')]
@@ -48,7 +48,7 @@ fig,ax  = plt.subplots(1,1)
 
 for _,rec in recdat.iterrows():
     probe = rec[my_probe].clusters
-    dv = probe.mlapdv[:,0]
+    dv = probe.mlapdv[:,2]
     ax.plot(probe.depths,dv,'.')
 
 # %%

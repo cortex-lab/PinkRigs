@@ -9,77 +9,55 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
-from Admin.csv_queryExp import queryCSV
-
-
-subject_set = 'AV025'
-my_expDef = 'postactive'
-probe = 'probe1'
-recordings = queryCSV(subject = subject_set,expDate='postImplant',expDef=my_expDef)
-
-
-recordings = recordings[(recordings.extractEvents=='1') & (recordings.extractSpikes=='1,1')]
-recordings  = recordings[['subject','expDate','expNum']]
-recordings['probe'] = probe
-
-dataset = subject_set + my_expDef + probe
-
-fit_tag = 'stimChoice'
-
-if 'AV025' in subject_set:
-    recordings = recordings.iloc[1:-1]
-
-if 'AV034' in subject_set: 
-    recordings = recordings.iloc[:-2]
-# %%
-
-#  
-rerun_sig_test= False 
-recompute_csv = True 
-recompute_pos_model = False 
+#%%
+subject_set = ['AV025','AV030','AV034']
+my_expDef = 'multiSpaceWorld_checker_training'
+subject_string = ''.join(subject_set)
+dataset = subject_string + my_expDef
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
-from Analysis.neural.utils.data_manager import load_cluster_info
-from Analysis.neural.src.movements import movement_correlation
 
-
-# load the ap pref azimuth model 
-modelpath = Path(r'C:\Users\Flora\Documents\Github\PinkRigs\WorkInProgress\Flora\anatomy')
-modelpath = modelpath / 'aphemi_preferred_azimuth.pickle'
-if modelpath.is_file():
-    openpickle = open(modelpath,'rb')
-    pos_azimuth_fun = pickle.load(openpickle)
-else: 
-    print('position to azimuth mapping does not exist.')
-
-m = movement_correlation()
-# 
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 csv_path = interim_data_folder / dataset 
-csv_path.mkdir(parents=True,exist_ok=True)
+fit_tag = 'stimChoice'
+foldertag = r'kernel_model\%s' % fit_tag
+kernel_fit_results = interim_data_folder / dataset  / foldertag 
+
+
+subfolders = [item for item in kernel_fit_results.iterdir() if item.is_dir()]
+
+recordings = [tuple(s.name.split('_')) for s in subfolders]
+recordings = pd.DataFrame(recordings,columns=['subject','expDate','expNum','probe'])
+
+
+# %%
+from Analysis.neural.utils.data_manager import load_cluster_info
+
+#%%
+
+recompute_csv = True
+
 csv_path = csv_path / 'summary_data.csv'
 
 tuning_types = ['vis','aud']
 cv_names = ['train','test']
 if not csv_path.is_file() or recompute_csv:
     all_dfs = []
-    for _,session in recordings.iterrows():
+    for (_,session),results_folder in zip(recordings.iterrows(),subfolders):
     # get generic info on clusters 
         print(*session)
 
         ################## MAXTEST #################################
         clusInfo = load_cluster_info(**session)
         ################### KERNEL FIT RESULTS #############################
-        foldertag = r'kernel_model\%s' % fit_tag
-        csvname = '%s_%s_%s_%s.csv' % tuple(session)
-        kernel_fit_results = interim_data_folder / dataset  / foldertag / csvname
+
+        ve_results = results_folder / 'variance_explained_batchKernel.csv'
+
 
         kernel_events_to_save = ['aud', 'baseline', 'move_kernel', 'vis','move_kernel_dir']
         for k in kernel_events_to_save:
             tag = 'kernelVE_%s' % k 
-            if kernel_fit_results.is_file():
-                kernel_fits = pd.read_csv(kernel_fit_results)
+            if ve_results.is_file():
+                kernel_fits = pd.read_csv(ve_results)
                 kernel_events_to_save  = np.unique(kernel_fits.event)
                 # match neurons 
                 curr_set = kernel_fits[(kernel_fits.event==k) & (kernel_fits.cv_number==1)]             

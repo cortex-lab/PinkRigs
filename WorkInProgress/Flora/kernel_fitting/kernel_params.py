@@ -4,9 +4,9 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
     if call_data:
         dat_params = {
             't_support_stim':[-0.05,0.6],   
-            't_support_movement':[-0.15,0.1],
-            'rt_params':{'rt_min': None, 'rt_max': None},
-            'event_types': ['aud','vis','baseline'], # 
+            't_support_movement':[-0.1,0.1],
+            'rt_params':{'rt_min': .1, 'rt_max': .6},
+            'event_types': ['aud','vis','baseline','move'], # 
             'contrasts': [0.1,0.2,0.4],
             'spls': [0.1],
             'vis_azimuths': [-60,60], 

@@ -12,9 +12,9 @@ dat_params,fit_params,eval_params = get_params()
 nrn_list = [111]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'AV025',
-    expDate = '2022-11-07', 
-    expDef = 'multiSpaceWorld',
+    subject = 'AV034',
+    expDate = '2022-12-07', 
+    expDef = 'postactive',
     probe = 'probe0',
     subselect_neurons=None,
     **dat_params
@@ -34,7 +34,7 @@ kernel_shapes = kernels.calculate_kernels()
 # %% 
 # look at the VE over the trial if it was computed
 import matplotlib.pyplot as plt
-n = 28
+n = 339
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
@@ -48,11 +48,11 @@ color_dict = {
 kernels.plot_prediction(
     nrnID=n,
     plot_stim = True, 
-    plot_move=False, 
-    sep_choice=False,
+    plot_move=True, 
+    sep_choice=True,
     plotted_vis_azimuth = np.array([-1000,-60,60]),
     plotted_aud_azimuth = np.array([-60,0,60]),
-    plot_train = False,
+    plot_train = True,
     plot_test = True,
     plot_pred_train = False,
     plot_pred_test = True,
@@ -89,8 +89,36 @@ kernels.fit_evaluate(get_prediciton=True,**fit_params)
 
 # %%
 kernels.plot_kernels(n)
+
+
 # %%
 
-kernels.plot_prediction_rasters(111,visual_azimuth=[-1000,60],auditory_azimuth=[60,60],contrast=[0,0.4],spl=[0.1,0.1]) # %%
+kernels.plot_prediction_rasters(n,visual_azimuth=[-1000,60],auditory_azimuth=[60,60],contrast=[0,0.4],spl=[0.1,0.1]) # %%
 
+# %%
+import seaborn as sns
+ks = kernels.kernel_significance
+
+sns.stripplot(
+    data=ks[ks.neuron==n], x="VE", y="event", hue="cv_number",
+    dodge=True, alpha=.7, zorder=1, legend=False
+)
+
+
+# %%
+
+ks = variance_explained
+
+sns.stripplot(
+    data=ks[ks.neuron==n], x="VE", y="event", hue="cv_number",
+    dodge=True, alpha=.7, zorder=1, legend=False
+)
+
+# %%
+
+
+sns.stripplot(
+    data=variance_explained[variance_explained.event=='aud'], x="VE", y="cv_number",
+    dodge=True, alpha=.7, zorder=1, legend=False
+)
 # %%
