@@ -1,5 +1,12 @@
 function cleanEmptyFoldersInDirectory(directory2clean)
-% Clean up empty folders
+%% Clean up empty folders in a directory
+%
+% Parameters:
+% ------------
+% directory2clean (required): string
+%   The directory to clean: all empty folders in this directory and the
+%   sub-directories will be deleted
+
 folderList = dir([directory2clean '\**\*']);
 folderList = folderList(~ismember({folderList(:).name} ,{'.','..'}));
 

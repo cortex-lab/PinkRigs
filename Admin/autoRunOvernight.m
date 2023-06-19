@@ -28,10 +28,10 @@ function autoRunOvernight
         
                 fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
                 % update environment
-                eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
+                eveningFacemapPath = [githubPath '\Processing\_facemap\run_facemap.py'];
                 [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
                     'cd ' githubPath ' && ' ...
-                    'python ' eveningFacemapPath ' &&' ...
+                    'start /affinity F python ' eveningFacemapPath ' &&' ...
                     'conda deactivate']);
                 printMessage(statusFacemap,resultFacemap,fid)
                 % 'conda env update --file facemap_environment.yaml --prune' ' &&' ...
@@ -55,7 +55,7 @@ function autoRunOvernight
         
                 fprintf(fid,'Running "runFacemap" (%s)... \n',datestr(now));
                 % update environment
-                eveningFacemapPath = [githubPath '\Analysis\\+vidproc\_facemap\run_facemap.py'];
+                eveningFacemapPath = [githubPath '\Processing\_facemap\run_facemap.py'];
                 [statusFacemap, resultFacemap] = system(['activate facemap && ' ...
                     'cd ' githubPath ' && ' ...
                     'python ' eveningFacemapPath ' &&' ...
@@ -81,7 +81,7 @@ function autoRunOvernight
                     % Get plot of the mice trained today.
                     expList = csv.queryExp('expDate', 0, 'expDef', 'training');
                     if ~isempty(expList)
-                        plt.behaviour.boxPlots(expList, 'sepPlots', 1)
+                        plts.behaviour.boxPlots(expList, 'sepPlots', 1)
                         saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
                         close(gcf)
                     end
@@ -102,7 +102,7 @@ function autoRunOvernight
                 end
     
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);
@@ -110,10 +110,10 @@ function autoRunOvernight
     
                 % run at all times 
                 fprintf(fid,'Creating the ibl format (%s)... \n',datestr(now));
-                checkScriptPath = [githubPath '\Analysis\+kilo\python_\convert_to_ibl_format.py'];
+                checkScriptPath = [githubPath '\Processing\pykilo\convert_to_ibl_format.py'];
                 checkWhichMice = 'all';
                 whichKS = 'pyKS';
-                checkWhichDates = 'last300';
+                checkWhichDates = 'previous1000';
                 [statusIBL,resultIBL] = system(['activate iblenv && ' ...
                     'python ' checkScriptPath ' ' checkWhichMice ' ' whichKS ' ' checkWhichDates ' && ' ...
                     'conda deactivate']);
@@ -130,7 +130,10 @@ function autoRunOvernight
         
                     % Alignment
                     preproc.align.main('expDate', 7, 'checkAlignAny', '0')
-        
+
+                    % Extracting data
+                    preproc.runBombcell('expDate', 7)
+
                     % Extracting data
                     preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
     
@@ -151,7 +154,7 @@ function autoRunOvernight
                 dbstop if error % temporarily, to debug
                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
                 githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
-                runpyKS = [githubPath '\Analysis\+kilo\python_\run_pyKS.py'];
+                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
                     'python ' runpyKS ' ' Kilo_runFor ' && ' ...
                     'conda deactivate']);

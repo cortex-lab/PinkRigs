@@ -89,7 +89,7 @@ for mm = 1:numel(params.subject)
 
     % Remove the expDefs that don't match
     if ~strcmp(params.expDef{mm},'all')
-        mouseExps = mouseExps(contains(mouseExps.expDef, params.expDef{mm}),:);
+        mouseExps = mouseExps(cellfun(@(x) any(strcmpi(params.expDef{mm},x)), mouseExps.expDef),:);
     end
     if isempty(mouseExps); continue; end
 
@@ -117,12 +117,17 @@ for mm = 1:numel(params.subject)
     chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
     chkVals{5} = num2str(params.checkAlignMic{mm});
     chkVals{6} = num2str(params.checkAlignEphys{mm});
+    keepIdx = zeros(height(mouseExps),1)>0;
     for i = find(~contains(chkVals, 'ignore'))'
         if isempty(i); continue; end
         if strcmpi(chkVals{i}(1), '~')
-            mouseExps = mouseExps(~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end)),:);
+            keepIdx = keepIdx + ~contains(mouseExps.(alignFields{i}), chkVals{i}(2:end));
         else
-            mouseExps = mouseExps(contains(mouseExps.(alignFields{i}), chkVals{i}),:);
+            keepIdx = keepIdx + contains(mouseExps.(alignFields{i}), chkVals{i});
+        end
+        if i ~= 2 && i ~=3
+            mouseExps = mouseExps(keepIdx>0,:);
+            keepIdx = zeros(height(mouseExps),1)>0;
         end
     end
     if isempty(mouseExps); continue; end

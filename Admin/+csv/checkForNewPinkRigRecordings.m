@@ -36,12 +36,6 @@ csvData = params.mainCSV{1};
 % Sorts mice alphabetically. Any changes are saved.
 activeMice = cellfun(@(x) x==1 || strcmp(x, '1'),csvData.IsActive);
 csvData.IsActive = num2cell(num2str(activeMice));
-csvDataSort = sortrows(csvData, 'Subject', 'ascend');
-csvDataSort = sortrows(csvDataSort, 'IsActive', 'descend');
-if any(~strcmp(csvDataSort.Subject, csvData.Subject))
-    csvLocation = csv.getLocation('main');
-    csv.writeClean(csvDataSort, csvLocation, 1)
-end
 
 % For each mouse that needs to be updated (default is 'active' mice),
 % generate a list of folders to check. 
@@ -92,12 +86,16 @@ for i = 1:cycles
     if cycles - i == 1
         paths2Check(finalDigits~=10) = [];
     elseif cycles-i == 0
-        paths2Check(finalDigits>2) = [];
+        paths2Check(finalDigits>3) = [];
     end
 
     % Remove paths where the final digit isn't a number
     paths2Check(isnan(cellfun(@(x) str2double(x(end)), paths2Check))) = [];
 end
+
+% %Load the list of Pip's old mice--this is a wrapper to include older data
+% pipOldList = load('\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers\expList_PipOldMice.mat');
+% pipOldList = pipOldList.expList;
 
 % Identify any duplicate entries (same data on multiple servers)
 [~,uniIdx,pathIdx] = ...
@@ -170,5 +168,5 @@ for i = 1:length(mice2Update)
     % Concatenate the new records with the current subjects existing csv
     combinedData = csv.insertNewData(newRecords, currSub);    
     % Overwrite the old csv with the combined data
-    csv.writeClean(combinedData, csvPathMouse, 0);
+    csv.writeTable(combinedData, csvPathMouse);
 end

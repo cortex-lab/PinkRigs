@@ -10,5 +10,5 @@ if strcmpi(getComputerType, 'stim')
     changeToOldPTB;
     fprintf('Changed to old version of PTB \n');
 
-    addpath('\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs');
+    addpath('\\znas.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs');
 end

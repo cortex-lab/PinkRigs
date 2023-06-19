@@ -1,20 +1,24 @@
 function checkOrChangePinkRigsFunc(oldName, newName, fileExt)
-%% Checks, and optionally changes, the name 
+%% Checks, and optionally changes, the instances of a string in the respository 
 % 
-% NOTE: It's likely the "clean" aspect of this function will only ever be
-% used when writing to the "main" mouse csv. If it isn't used, all the
-% empy cells in that csv will have NaN or NaT. This is difficult to read
+% NOTE: if there is only one input, MATLAB will return a list of all
+% functions that contain the named string. 
+% 
+% CAUTION With >1 inputs, MATLAB will attempt to REPLACE all instances of
+% the string with the new name across the entire PinkRigs repo.
 %
 % Parameters:
 % ------------
-% csvData (required): table
-%   the data (table) to be written
+% oldName (required): string
+%   the name of the function to be checked
 %
-% csvLocation (required): string
-%   the location where the csv will be saved
+% newName (optional): string
+%   the name that all instances of "oldName" in the repo should be replaced
+%   with--across all functions in the repo with the specified extension 
 %
-% removeNaN (default = 0): logical
-%   if 1 all cases of NaN and NaT should be removed
+% fileExt (default = '.m'): string
+%   Only files ending in "fileExt" will be checked/modified. Can use '*' to
+%   include all files, but this has only been tested with .m so far...
 
 
 if ~exist('fileExt', 'var'); fileExt = '.m'; end

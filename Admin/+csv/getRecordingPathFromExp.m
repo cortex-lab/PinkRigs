@@ -32,7 +32,7 @@ function recList = getRecordingPathFromExp(varargin)
         pathStub = fullfile(expFolder, [expDate '_' expNum '_' subject]);
         alignmentFile = [pathStub '_alignment.mat'];
     
-        alignment = load(alignmentFile, 'ephys');
+        alignment = load(alignmentFile, 'ephys'); %%%%%
 
         if ~isempty(fieldnames(alignment))
             if ~strcmp(alignment.ephys,'error')

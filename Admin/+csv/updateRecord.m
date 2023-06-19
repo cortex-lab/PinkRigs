@@ -35,7 +35,7 @@ if isempty(varargin); csvData = []; return; end
 % "saveData": logical--whether the updated csv entry should be saved
 % "queryExp": logical--whether to run csv.queryExp and update returned rows
 varargin = ['subject', {'active'}, varargin]; % For clarity--default anyway
-varargin = ['expDate', 1, varargin];
+varargin = ['expDate', 'all', varargin];
 varargin = ['expNum', {'all'}, varargin];
 varargin = ['saveData', {1}, varargin];
 varargin = ['queryExp', {1}, varargin];
@@ -62,8 +62,8 @@ end
 % Check if servers are all accessible before updating anything
 serverLocations = getServersList;
 if ~all(cellfun(@(x) exist(x, 'dir'), serverLocations))
-    error('No server access so cannot update (%d)', ...
-        serverLocations{~cellfun(@(x) exist(x, 'dir'), serverLocations)>1});
+    error('No server access so cannot update: %s\n', ...
+        serverLocations{~cellfun(@(x) exist(x, 'dir'), serverLocations)==1});
 end
 csvData = [];
 
@@ -100,11 +100,12 @@ nDat.alignEphys = {}; % alignment status for ephys
 nDat.fMapFrontCam = {}; % facemap status for front cam
 nDat.fMapSideCam = {}; % facemap status for side cam
 nDat.fMapEyeCam = {}; % facemap status for eye cam
-nDat.issortedKS2 = {}; % logical--is there a Kilosort output yet
 nDat.issortedPyKS = {}; % logical--is there a PyKilosort output yet
 nDat.extractSpikes = {}; % extraction status for spikes
 nDat.extractEvents = {}; % extraction status for events
 nDat.expFolder = {}; % the experiment folder
+nDat.ephysPathProbe0 = {}; % the experiment folder
+nDat.ephysPathProbe1 = {}; % the experiment folder
 
 % If a mouse csv doesn't exist, write empty data to a csv and create it
 if ~exist(csvPathMouse, 'file') && saveData
@@ -125,13 +126,15 @@ end
 % pink rigs, but this may not be true (e.g. see current exception for
 % FT009). Need to decide how to change this in the future...??
 blk = load(blockPath); blk = blk.block;
-if ~contains(blk.rigName, 'zelda') && ~contains(subject, {'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'})
+csv.getOldPipMice;
+if ~contains(blk.rigName, 'zelda') && ~contains(subject, ...
+        [{'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'}; oldPipMice])
     return;
 end
 
 % If the block duration is less than 2 mins, or less than 5 mins in the
 % case of a "training" experiment, remove any existing row and "return"
-if blk.duration/60<2
+if ~isfield(blk, 'duration') || blk.duration/60<2
     fprintf('Block < 2 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
@@ -158,7 +161,8 @@ ONEContents = ONEContents(cellfun(@(x) ~strcmp(x(1),'.'),{ONEContents.name}'));
 % folder (or one level higher). If so, remove any existing row and "return"
 dateFoldContents = dir([fileparts(expFoldContents(1).folder)])';
 dateFoldContents = dateFoldContents(cellfun(@(x) ~strcmp(x(1),'.'),{dateFoldContents.name}'));
-if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
+if any(strcmpi('IgnoreExperiment.txt', [{expFoldContents.name}'; {dateFoldContents.name}'])) || ...
+        any(strcmpi('auto2020PaperExclude.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Ignoring experiment due to .txt file %s \n', expFoldContents(1).folder)
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
@@ -181,22 +185,19 @@ nDat.existEphys = num2str(exist(fullfile(fileparts(expPath), 'ephys'), 'dir')>0)
 nDat.expFolder = {fileparts(blockPath)};
 
 %% This section deals with the "alignment" and "facemap" status
-% alignBlkFrontSideEyeMicEphys is a string with 6 comma-separated
-% entries to indicate the alignment status of the block, front/side/eye
-% cameras, ephys, and microphone. Note that this begins as a vector of 6
-% values and is converted to a string later
-
 % Get the path of the alignment file. If so, check the alignment status
 alignFile = contains({expFoldContents.name}', [nameStub '_alignment.mat']);
-
-%%%%%
 
 probeInfo = csv.checkProbeUse(subject, 'all', 0, params.mainCSV{1});
 
 % check for acute recordings .... 
 if strcmpi(probeInfo.probeType{1}, 'Acute')
     alignment = load([fullfile(expFoldContents(alignFile).folder,nameStub) '_alignment.mat']);
-    potentialProbes = length(alignment.ephys);
+    if isfield(alignment,'ephys') 
+        potentialProbes = length(alignment.ephys);
+    else
+        potentialProbes = 0;
+    end
 elseif strcmpi(probeInfo.implantDate, 'none') || datenum(expDate)<datenum(probeInfo.implantDate{1})
     potentialProbes = 0;
 else
@@ -205,7 +206,6 @@ end
 
 
 % Initialize "issorted" with zeros
-nDat.issortedKS2 = zeros(1, potentialProbes);
 nDat.issortedPyKS = zeros(1, potentialProbes);
 
 
@@ -271,6 +271,15 @@ else
     end
 end
 
+nDat.ephysPathProbe0 = 'NaN';
+nDat.ephysPathProbe1 = 'NaN';
+if nDat.alignEphys(1) == 1
+    nDat.ephysPathProbe0 = alignment.ephys(1).ephysPath;    
+end
+if numel(nDat.alignEphys) == 2 && nDat.alignEphys(2) == 1
+    nDat.ephysPathProbe1 = alignment.ephys(2).ephysPath;    
+end
+
 %Populate alignCamera entries
 for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
     if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
@@ -323,7 +332,7 @@ if ~strcmpi(nDat.existMic, '1') && round(now-blk.endDateTime)<7 && nDat.existTim
     nDat.alignMic = '0';
 elseif ~strcmpi(nDat.existMic, '1') || ~strcmpi(nDat.existTimeline, '1')
     % Issue a "NaN" if corresponding file or timeline doesn't exist
-    nDat.alignMic = NaN;
+    nDat.alignMic = 'NaN';
 elseif any(contains({ONEContents.name}', '_av_mic.times.npy', 'ignorecase', 1))
     % Issue a "1" if an ONE file is detected
     nDat.alignMic = '1';
@@ -336,28 +345,6 @@ end
 
 
 %% This section deals with "sorted" status
-% This loop checks the issortedKS2 fields if ephys alignment is good ("1")
-nDat.issortedKS2 = zeros(1, potentialProbes);
-for pIdx = find(nDat.alignEphys == 1)
-    % If ephys alignment is "good" check if sorting files exist. If
-    % they do, then give a "1" to issortedKS2 or issortedPyKS.
-    ephysPath = alignment.ephys(pIdx).ephysPath;
-    if ~isempty(dir([ephysPath '\**\*rez.mat']))
-        % Issue a "1" if "results" file for KS2 exists
-        nDat.issortedKS2(pIdx) = 1;
-    elseif ~isempty(dir([ephysPath '\KSerror.json']))
-        % Issue a "2" if error file is in folder
-        nDat.issortedKS2(pIdx) = 2;
-    else
-        % Issue a "0" if no error, but sorting doesn't exist yet
-        nDat.issortedKS2(pIdx) = 0;
-    end
-end
-% Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.issortedKS2(isnan(nDat.alignEphys)) = nan;
-nDat.issortedKS2(nDat.alignEphys == 0) = 0;
-nDat.issortedKS2(nDat.alignEphys == 2) = 0;
-
 % This loop checks the issortedPyKS fields if ephys alignment is good ("1")
 nDat.issortedPyKS = zeros(1, potentialProbes);
 for pIdx = find(nDat.alignEphys == 1)
@@ -380,13 +367,10 @@ nDat.issortedPyKS(isnan(nDat.alignEphys)) = nan;
 nDat.issortedPyKS(nDat.alignEphys == 0) = 0;
 nDat.issortedPyKS(nDat.alignEphys == 2) = 0;
 
-%% This section deals with the "preProcSpkEV" status
-% preProcSpkEV is a string with 2 comma-separated entries to indicate the
-% preproc statuse for "ev" (which are the events extracted from the block
-% and timelines) and "spk" which is the spike output from the sorting
+%% This section deals with the event and spike extraction status
 
 % Assign status for events extraction
-if strcmpi(nDat.alignBlock, '1')
+if strcmpi(nDat.alignBlock, '1') || contains(subject, oldPipMice)
     if any(cellfun(@(x) ~isempty(regexp(x, '_av_trials.*.pqt')), {ONEContents.name}')) %#ok<RGXP1> 
         % Issue a "1" if .pqt output is in in folder
         nDat.extractEvents = '1';
@@ -413,7 +397,7 @@ end
 
 % Assign status for spike extraction.
 nDat.extractSpikes = zeros(1, potentialProbes);
-for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
+for pIdx = find(nDat.issortedPyKS == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedKS2 or issortedPyKS.
     probeStr = ['probe' num2str(pIdx-1)];
@@ -430,30 +414,32 @@ for pIdx = find(nDat.issortedPyKS == 1 | nDat.issortedKS2 == 1)
     end
 end
 % Assign "nan" or "0" if ephys alignment isn't "1" accordingly
-nDat.extractSpikes(isnan(nDat.issortedPyKS) & isnan(nDat.issortedKS2)) = nan;
-nDat.extractSpikes(ismember(nDat.issortedPyKS,[0 2]) & ismember(nDat.issortedKS2,[0 2])) = 0; % shouldn't be needed?
+nDat.extractSpikes(isnan(nDat.issortedPyKS)) = nan;
 
-%% This section is a final cleanup and dealing with some edge cases
+
+% % Change probe-related fields from vectors to comma-separated strings
+nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
+nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
+nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If a file called "AllErrorsValidated.txt" is detected in the exp folder,
 % or the parent folder, then replace all cases of "2" with a "NaN" as the
 % presence of the files indicates that those errors have been checked and
 % could not be resolved.
+% NOTE: Old mice from Coen&Sit have all errors validated
 if any(strcmpi('AllErrorsValidated.txt', [{expFoldContents.name}'; {dateFoldContents.name}']))
     fprintf('Errors have been validated for %s \n', expFoldContents(1).folder)
-    %%% NEED TO DO THIS %%%%%
+    allFields = fields(nDat);
+    errorFields = allFields(contains(allFields, {'align'; 'issorted'; 'extract'; 'fMap'}));
+    for i = 1:length(errorFields)
+        nDat.(errorFields{i}) = strrep(nDat.(errorFields{i}), '2', 'NaN');
+    end
 end
-
-% % Change probe-related fields from vectors to comma-separated strings
-nDat.alignEphys = regexprep(num2str(nDat.alignEphys),'\s+',',');
-nDat.issortedKS2 = regexprep(num2str(nDat.issortedKS2),'\s+',',');
-nDat.issortedPyKS = regexprep(num2str(nDat.issortedPyKS),'\s+',',');
-nDat.extractSpikes = regexprep(num2str(nDat.extractSpikes),'\s+',',');
 
 % If "saveData" then insert the new data into the existing csv
 csvData = struct2table(nDat, 'AsArray', 1);
 if saveData
     combinedData = csv.insertNewData(csvData, subject);
-    csv.writeClean(combinedData, csvPathMouse, 0);
+    csv.writeTable(combinedData, csvPathMouse);
 end
 end

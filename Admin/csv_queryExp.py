@@ -14,8 +14,35 @@ pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
 sys.path.insert(0, (pinkRig_path.__str__()))
 
-def get_server_location(): 
-    return Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+def get_csv_location(which):
+    """
+    func equivalent to getLocation in matlab
+
+    """
+    server = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+    if 'main' in which: 
+        SHEET_ID = '1NKPxYThbLy97iPQG8Wk2w3KJXC6ys7PesHp_08by3sg'
+        SHEET_NAME = 'Sheet1'
+        csvpath = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
+    elif 'ibl_queue' in which:
+        csvpath = server/ r'Helpers/ibl_formatting_queue.csv'
+    elif 'pyKS_queue' in which: 
+        csvpath = server / r'Helpers/pykilosort_queue.csv'
+    elif 'training_email' in which:
+        csvpath = server / r'Helpers\AVrigEmail.txt'
+    else:
+        csvpath = server / ('%s.csv' % which) 
+     
+    return csvpath
+
+def get_server_list():
+    server_list = [
+        Path(r'\\zinu.cortexlab.net\Subjects'), 
+        Path(r'\\zaru.cortexlab.net\Subjects'),
+        Path(r'\\znas.cortexlab.net\Subjects')
+    ]
+
+    return server_list
 
 def check_date_selection(date_selection,dateList):
     """
@@ -34,9 +61,9 @@ def check_date_selection(date_selection,dateList):
     """
     date_range = []
     date_range_called = False # when a from to type of date range called. Otherwise date_selection is treated as list of dates 
-    if 'last' in date_selection:
+    if 'previous' in date_selection:
         date_range_called = True 
-        date_selection = date_selection.split('last')[1]
+        date_selection = date_selection.split('previous')[1]
         date_range.append(datetime.datetime.today() - datetime.timedelta(days=int(date_selection)))
         date_range.append(datetime.datetime.today())
     else:
@@ -68,7 +95,7 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -83,15 +110,20 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         selected expdef or portion of the string of the the expdef name
     expNum: str/list 
         selected expNum
-    
+    checkIsSortedPyKS: None/str    
+        if '2' only outputs
+
+    checkEvents: None\str
+        returns match to string if not none ('1', or '2')  
+    checkSpikes: None/str
+        returns match to string if not none ('1', or '2')    
     Returns: 
     ----
     exp2checkList : pandas DataFrame 
         concatenated csv of requested experiments and its params 
     """
 
-    root = get_server_location()
-    mainCSVLoc = root / '!MouseList.csv' 
+    mainCSVLoc = get_csv_location('main') 
     mouseList=pd.read_csv(mainCSVLoc)
     # look for selected mice
     if 'allActive' in subject:
@@ -104,7 +136,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         mouse2checkList = mouseList[mouseList.Subject.isin(subject)]['Subject']
     exp2checkList = []
     for mm in mouse2checkList:
-        mouse_csv = root / (mm  + '.csv')
+        mouse_csv = get_csv_location(mm)
         if mouse_csv.is_file():
             expList = pd.read_csv(mouse_csv,dtype='str')
             expList.expDate=[date.replace('_','-').lower() for date in expList.expDate.values]
@@ -112,7 +144,6 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
                 expList = expList[expList.expDef.str.contains(expDef)]
             if 'all' not in expDate: 
                 # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
-
                 if ('postImplant' in expDate):
                     implant_date  = mouseList[mouseList.Subject == mm].P0_implantDate
                     # check whether mouse was implanted at all or not.
@@ -124,18 +155,25 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
                     else: 
                         print('%s was not implanted or did not have the requested type of exps.' % mm)
                         selected_dates = np.zeros(expList.expDate.size).astype('bool')
+                    
+                    expList = expList[selected_dates]
+
+                elif ('last' in expDate):
+                    # this only selects the last experiment done on the given animal
+                    how_many_days = int(expDate.split('last')[1]) 
+                    expList = expList.iloc[-how_many_days:]
 
                 else:  
-                    selected_dates = check_date_selection(expDate,expList.expDate)
-
-                expList = expList[selected_dates]
+                    selected_dates = check_date_selection(expDate,expList.expDate)                    
+                    expList = expList[selected_dates]
+                    
             if expNum:
                 expNum = (np.array(expNum)).astype('str')
                 _,idx,_ = np.intersect1d(expList.expNum.to_numpy(),expNum,return_indices=True)
                 expList = expList.iloc[idx]  
             
             # add mouse name to list
-            expList['Subject'] = mm
+            expList['subject'] = mm
 
             exp2checkList.append(expList)
 
@@ -148,6 +186,27 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None):
         print('you did not call any experiments.')
         exp2checkList = None
     
+    if len(exp2checkList)>0:
+        if checkIsSortedPyKS is not None:
+            # nan means we should not have ephys. So we drop nan columns
+            exp2checkList = exp2checkList[exp2checkList['issortedPyKS'].notna()]
+            to_keep_column = np.array([checkIsSortedPyKS in rec.issortedPyKS for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
+        
+        if checkEvents is not None:
+            exp2checkList = exp2checkList[exp2checkList['extractEvents'].notna()]
+            to_keep_column = np.array([checkEvents in rec.extractEvents for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
+
+        if checkSpikes is not None:
+            exp2checkList = exp2checkList[exp2checkList['extractSpikes'].notna()]
+            to_keep_column = np.array([checkSpikes in rec.extractSpikes for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]
+
+        if checkFrontCam is not None: 
+            exp2checkList = exp2checkList[exp2checkList['alignFrontCam'].notna() & exp2checkList['fMapFrontCam'].notna()]
+            to_keep_column = np.array([(checkFrontCam in rec.alignFrontCam) & (checkFrontCam in rec.fMapFrontCam) for _,rec in exp2checkList.iterrows()])
+            exp2checkList = exp2checkList[to_keep_column]        
 
     return exp2checkList
 
@@ -308,25 +367,87 @@ def load_data(data_name_dict=None,**kwargs):
                 objects = Bunch(objects)
                 recordings.loc[idx][collection] = objects
 
+    # merge probes 
+    # an optional argument for when there are numerous datasets available for probes, we just merge the data
     return recordings
 
-def simplify_recdat(recording,probe='probe0'): 
+def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},add_dict = None,raw_ephys_dict = None,**kwargs):
     """
+    This is a helper function to single probe data. 
+    Parameters:
+    -----------
+    probe: str
+        probe ID: either probe0 or probe1
+    ephys_dict: dict -- a must
+        what you want to call from probe from the ONE folder
+    raw_ephys_dict: None/dict
+        what you want to call from the raw IBL folder 
+    add_dict: None/dict
+        anything else (ONE) you want to call -- events/camera etc.
+    additional kwargs: usual input of load data/queryCSV
+        such as subject,expDate,expNum
+    """
+    d = {probe:ephys_dict} # requirement to call some ephys
+    # add any additional dicts
+    if raw_ephys_dict: 
+        d.update({('%s_raw' % probe):raw_ephys_dict})
+    if add_dict:
+        d.update(add_dict)
+
+    r=load_data(data_name_dict=d,**kwargs)
+
+    r=r.rename(columns={probe:'probe'})
+    r=r.rename(columns={('%s_raw' % probe):'ibl'})
+
+    return r
+
+def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['frontCam','eyeCam','sideCam']): 
+    """
+    this is the most standarising loader. Allows standardisation of numerous sessions etc. 
     spits out the event,spike etc bunches with one line
     allows for quicker calling of data in a single experiment
+    also allows calculations of extra parameters that vary session to session, utilised for mutliSpaceWorld 
+    such that 
+    A) we calculate reaction times 
+    B) we reverse opto to do ipsi.contra calculations. In this case, 
+        stim_audAzimuth/stim_visAzimuth: +ve: ipsi, -ve contra
+        timeline_choiceMoveDir 1 contra, 2 ipsi
+
     Parameters: 
     -----------
     recording: pd.Series
         details of recording as outputted by load date
+    probe:
+    reverse_opto:bool
+    cam_hierarchy: list
+        we load a single camera's data. Cam_hierarchy will determine which one exactly.I.e. if 1st exist, load 1st, if not load2nd etc.
+        so cam_hierarchy is a list of names. 
+
     Retruns:
     --------
         Bunch,Bunch,Bunch,Bunch
         for ev,spikes,clusters & channels
         if it does not exist, we will out None
     """
-    ev,spikes,clusters,channels = None,None,None,None
+    ev,spikes,clusters,channels,cam = None,None,None,None,None
+
     if hasattr(recording,'events'):
         ev = recording.events._av_trials
+        if hasattr(ev,'stim_visContrast'):
+            ev.stim_visContrast = np.round(ev.stim_visContrast,2)
+        if hasattr(ev,'stim_audAmplitude'):
+            ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
+        if hasattr(ev,'timeline_choiceMoveOn'):
+            ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+            ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+        if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
+            ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
+            ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition).astype('int')
+            if reverse_opto & ~(np.unique(ev.laser_power_signed>0).any()): 
+                # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
+                ev.stim_audAzimuth = ev.stim_audAzimuth * -1 
+                ev.stim_visAzimuth = ev.stim_visAzimuth * -1 
+                ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5                    
 
     if hasattr(recording,probe):
         p_dat = recording[probe]
@@ -339,7 +460,17 @@ def simplify_recdat(recording,probe='probe0'):
         if hasattr(p_dat,'channels'):
             channels = p_dat.channels
 
-    return (ev,spikes,clusters,channels)
+    cam_checks = np.array([hasattr(recording,cam) for cam in cam_hierarchy])
+    if cam_checks.any(): 
+        cam_idx = np.where(cam_checks)[0][0]
+        used_camname = cam_hierarchy[cam_idx]
+        cam = recording[used_camname].camera
+
+        if hasattr(cam,'ROIMotionEnergy'):
+            if cam.ROIMotionEnergy.ndim==2:
+                cam.ROIMotionEnergy = (cam.ROIMotionEnergy[:,0])    
+
+    return (ev,spikes,clusters,channels,cam)
 
 def get_recorded_channel_position(channels):
     """
@@ -354,3 +485,34 @@ def get_recorded_channel_position(channels):
         yrange = (np.min(ycoords),np.max(ycoords))
 
     return (xrange,yrange)
+
+def load_active_and_passive(rec_info):
+    """
+    function to load active and passive data together using load_ephys_independent probes (i.e. can call one probe at a time) 
+
+    Parameters: 
+    -----------
+    rec_info (dict)
+        will be passed as kwarg to load_ephys_independent probes
+    
+    Return: Bunch
+
+    """
+    ephys_dict =  {'spikes': 'all','clusters':'all'}
+    other_ = {'events': {'_av_trials': 'table'}}
+
+    session_types = ['postactive','multiSpaceWorld']
+
+    dat  = {}
+    for sess in session_types:
+        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,expDef = sess, **rec_info)
+
+        # select the longest etc. recording (there might be several)
+        recordings = recordings.iloc[np.argmax(recordings.expDuration)]
+
+        events,spikes,clusters,_,cam = simplify_recdat(recordings,probe='probe')
+        d = Bunch({'events': events,'spikes':spikes,'clusters':clusters}) 
+        dat[sess] = d 
+    dat = Bunch(dat)
+
+    return dat

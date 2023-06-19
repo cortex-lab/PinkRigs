@@ -19,10 +19,27 @@ opts = detectImportOptions(csvPath, 'Delimiter',',');
 opts = setvartype(opts, 'char');
 
 % Read the csv
-csvData = readtable(csvPath, opts');
+if ~contains(csvPath, 'docs.google.com')
+    csvData = readtable(csvPath, opts');
 
-dateColumns = find(contains(opts.VariableNames,'Date'));
-for dd = 1:numel(dateColumns)
-    csvData.(opts.VariableNames{dateColumns(dd)}) = cellfun(@(x) strrep(x, '_', '-'), csvData.(opts.VariableNames{dateColumns(dd)}), 'uni', 0);
+    dateColumns = find(contains(opts.VariableNames,'Date'));
+    for dd = 1:numel(dateColumns)
+        csvData.(opts.VariableNames{dateColumns(dd)}) = cellfun(@(x) strrep(x, '_', '-'), csvData.(opts.VariableNames{dateColumns(dd)}), 'uni', 0);
+    end
+else
+    docID = csvPath(strfind(csvPath, 'spreadsheets/d/')+15:strfind(csvPath, '/edit?')-1);
+    try
+        csvData = csv.getGoogleSpreadsheet(docID);
+    catch
+        % Internet access issue?
+        pause(10)
+        csvData = csv.getGoogleSpreadsheet(docID);
+    end
+    variableNames = csvData(1,:);
+    csvData = cell2table(csvData(2:end,:), 'VariableNames', variableNames);
+    dVars = variableNames(contains(variableNames, 'Date'));
+    for i  =1:length(dVars)
+        csvData.(dVars{i}) = cellfun(@(x) strrep(x, '_', '-'), csvData.(dVars{i}), 'uni', 0);
+    end
 end
 end

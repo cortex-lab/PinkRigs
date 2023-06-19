@@ -28,6 +28,11 @@ volatile bool syncTrigger;
 volatile int syncCount;
 volatile bool syncLive;
 
+volatile int flipperState;
+volatile int flipperForceCount;
+volatile int flipperPrev;
+
+
 // PID parameters for Peltier (P = 5, I = 5, D = 1 as a guess)
 PID myPID(&CurrTemp, &PeltierPWM, &TargetTemp,5,5,1, REVERSE);
 
@@ -58,6 +63,8 @@ void setup(void)
   syncTrigger = 0;
   syncCount = 0;
   syncLive = 1;
+  flipperForceCount = 0;
+  flipperPrev = 0;
 
   cli();//stop interrupts
 
@@ -78,9 +85,22 @@ sei();//allow interrupts
 
 }
 
-ISR(TIMER1_COMPA_vect){ // flipper code, runs at 100Hz
+ISR(TIMER1_COMPA_vect){ // flipper code, runs at 10Hz
+
     if(digitalRead(FLIPPER_ENABLE_PIN)){
-      int flipperState = random(0,2);
+      flipperState = random(0,2);
+      if (flipperForceCount > 9 && flipperState==flipperPrev){
+        flipperState = (flipperState-1)*-1;
+      }
+      if (flipperState == flipperPrev){
+        flipperForceCount = flipperForceCount + 1;
+        }
+
+      if (flipperState != flipperPrev){
+        flipperPrev = flipperState;
+        flipperForceCount = 0;
+      }
+
       digitalWrite(FLIPPER_OUT_PIN, flipperState);
       digitalWrite(LED_STATUS_PIN, flipperState);
     }  
@@ -88,6 +108,7 @@ ISR(TIMER1_COMPA_vect){ // flipper code, runs at 100Hz
     digitalWrite(FLIPPER_OUT_PIN,LOW);
     digitalWrite(LED_STATUS_PIN, LOW);
     }
+
 
  if(syncTrigger != digitalRead(FLIPPER_ENABLE_PIN)){
     Serial.println("Detected Trigger");

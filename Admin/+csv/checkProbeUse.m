@@ -130,7 +130,7 @@ function probeInfo = checkProbeUse(queryData, implantSelect, mkPlt, csvData)
                 miceMat(pp,datenum(implantDate{i}{pp},'yyyy-mm-dd')-minDate+1:datenum(explantDate{i}{pp},'yyyy-mm-dd')-minDate+1) = pp;
             end
             imagesc(miceMat);
-            colormap(plt.general.redBlueMap)
+            colormap(plts.general.redBlueMap)
             caxis([-max(cellfun(@numel, subjects)) max(cellfun(@numel, subjects))])
     
             % add animal names
