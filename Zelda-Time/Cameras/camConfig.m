@@ -38,54 +38,76 @@ function list = camConfig()
 
 % Fetch hostname (to get specific serial number + z4 has a different set of cameras)
 rig = hostname;
-rigNum = str2num(rig(end));
-switch rigNum
-    case 1
-        devSerialNum = [21170896 21073073 20539980]; % eye/front/side
-        camClass = @BlackflyS;
-    case 2
-        devSerialNum = [21015743 21015748 21192459]; % eye/front/side
-        camClass = @BlackflyS;
-    case 3
-        devSerialNum = [21170898 21015749 21015745]; % eye/front/side
-        camClass = @BlackflyS;
-    case 4
-        devSerialNum = [20440046 20442682 20442672]; % eye/front/side
-        camClass = @Camera;
-end
 
 % Build camera properties
 list = struct;
 
-i = 1;
-list(i).Name = 'eyeCam';
-list(i).DeviceSerialNumber = num2str(devSerialNum(1));
-list(i).FrameRate = 30;
-list(i).LocalPort = 1003;
-list(i).CompressionRatio = 10;
-list(i).cameraClass = camClass;
-list(i).liveViewOn = false;
-list(i).closingDelay = (i-1)*5+10; % to avoid closing jam?
-list(i).copyToServer = false;
-
-i = i + 1;
-list(i).Name = 'frontCam';
-list(i).DeviceSerialNumber = num2str(devSerialNum(2));
-list(i).FrameRate = 30;
-list(i).LocalPort = 1004;
-list(i).CompressionRatio = 10;
-list(i).cameraClass = camClass;
-list(i).liveViewOn = false;
-list(i).closingDelay = (i-1)*5+10;
-list(i).copyToServer = false;
-
-i = i + 1;
-list(i).Name = 'sideCam';
-list(i).DeviceSerialNumber = num2str(devSerialNum(3));
-list(i).FrameRate = 30;
-list(i).LocalPort = 1005;
-list(i).CompressionRatio = 10;
-list(i).cameraClass = camClass;
-list(i).liveViewOn = true;
-list(i).closingDelay = (i-1)*5+10;
-list(i).copyToServer = false;
+if contains(rig,'zelda')
+    rigNum = str2num(rig(end));
+    switch rigNum
+        case 1
+            devSerialNum = [21170896 21073073 20539980]; % eye/front/side
+            camClass = @BlackflyS;
+        case 2
+            devSerialNum = [21015743 21015748 21192459]; % eye/front/side
+            camClass = @BlackflyS;
+        case 3
+            devSerialNum = [21170898 21015749 21015745]; % eye/front/side
+            camClass = @BlackflyS;
+        case 4
+            devSerialNum = [20440046 20442682 20442672]; % eye/front/side
+            camClass = @Camera;
+    end
+    i = 1;
+    list(i).Name = 'eyeCam';
+    list(i).DeviceSerialNumber = num2str(devSerialNum(1));
+    list(i).FrameRate = 30;
+    list(i).LocalPort = 1003;
+    list(i).CompressionRatio = 10;
+    list(i).cameraClass = camClass;
+    list(i).liveViewOn = false;
+    list(i).closingDelay = (i-1)*5+10; % to avoid closing jam?
+    list(i).copyToServer = false;
+    
+    i = i + 1;
+    list(i).Name = 'frontCam';
+    list(i).DeviceSerialNumber = num2str(devSerialNum(2));
+    list(i).FrameRate = 30;
+    list(i).LocalPort = 1004;
+    list(i).CompressionRatio = 10;
+    list(i).cameraClass = camClass;
+    list(i).liveViewOn = false;
+    list(i).closingDelay = (i-1)*5+10;
+    list(i).copyToServer = false;
+    
+    i = i + 1;
+    list(i).Name = 'sideCam';
+    list(i).DeviceSerialNumber = num2str(devSerialNum(3));
+    list(i).FrameRate = 30;
+    list(i).LocalPort = 1005;
+    list(i).CompressionRatio = 10;
+    list(i).cameraClass = camClass;
+    list(i).liveViewOn = true;
+    list(i).closingDelay = (i-1)*5+10;
+    list(i).copyToServer = false;
+    
+elseif contains(rig,'poppy')
+    devSerialNum = [21015740]; % eye/front/side
+    camClass = @BlackflyS;
+    
+    % Build camera properties
+    i = 1;
+    list(i).Name = 'topCam';
+    list(i).DeviceSerialNumber = num2str(devSerialNum(1));
+    list(i).FrameRate = 60;
+    list(i).LocalPort = 1003;
+    list(i).CompressionRatio = 10;
+    list(i).cameraClass = camClass;
+    list(i).liveViewOn = true;
+    list(i).closingDelay = (i-1)*5+10; % to avoid closing jam?
+    list(i).copyToServer = false;
+    
+else
+    warning('Not sure what the cameras are for this rig...')
+    return
+end
