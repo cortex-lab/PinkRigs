@@ -30,7 +30,6 @@ probeSNAll = cellfun(@(x) x{2}, recInfo, 'UniformOutput', false);
 
 subjects = unique(subjectsAll);
 colAni = brewermap(numel(subjects),'paired');
-colAni(contains(subjects,'AV009'),:) = [0.4157    0.2392    0.6039]; 
 
 % Get probe info
 probeSNUni = unique(probeSNAll);
@@ -39,7 +38,9 @@ markersProbes = ["o","+","*",".","x","_","|","square","diamond","^","v",">","<",
     "o","square","diamond","^","v",">","<","pentagram","hexagram"];
 filledProbes = [ones(1,15), zeros(1,9)];
 markersProbes = markersProbes(1:numel(probeSNUni));
+markersProbes(:) = 'o';
 filledProbes = filledProbes(1:numel(probeSNUni));
+filledProbes(:) = 1;
 colProbes = winter(numel(probeSNUni));
 colProbes(:) = 0.5;
 
@@ -50,88 +51,133 @@ fullProbeScan = {{'0__2880'}, {'1__2880'}, {'2__2880'}, {'3__2880'}, ...
 % BC params
 e.folder = ''; e.name = ''; % hack
 paramBC = bc_qualityParamValues(e, '');
+paramBC.extractRaw = 0;
 
-%% Plot depth raster for full probe
+% Example subject
+ssEx = find(contains(subjects,'AV009'));
+exSubjectIdx = contains(subjectsAll,subjects(ssEx));
+probes = unique(probeSNAll(exSubjectIdx));
+colAni(ssEx,:) = [0.4157    0.2392    0.6039]; 
 
-ss = find(contains(subjects,'AV009'));
-pp = 1;
+%% Anat example subject
 
-subjectIdx = contains(subjectsAll,subjects(ss));
-probes = unique(probeSNAll(subjectIdx));
+plotAtlasSliceSchematics(630,[],8,[],[]) % anterior probe
+plotAtlasSliceSchematics(470,[],8,[],[]) % posterior probe
 
-fullProbeScanSpec = cellfun(@(x) [subjects{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
+%% Plot raw traces
 
-meas = cell(1,numel(fullProbeScanSpec));
-for rr = 1:numel(fullProbeScanSpec)
-    recIdx = find(strcmp(recLocAll,fullProbeScanSpec{rr}));
-    daysSinceImplant{rr} = expInfoAll(recIdx,:).daysSinceImplant; % just to plot the same
-    d = split(fullProbeScan{rr},'__');
-    depthBins{rr} = str2num(d{2}) + (0:20:2880);
-    meas{rr} = nan(numel(recIdx),numel(depthBins{rr})-1);
-    for dd = 1:numel(recIdx)
-        probeName = fieldnames(expInfoAll(recIdx(dd),:).dataSpikes{1});
-        clusters = expInfoAll(recIdx(dd),:).dataSpikes{1}.(probeName{1}).clusters;
-        for depth = 1:numel(depthBins{rr})-1
-            depthNeuronIdx = (clusters.depths > depthBins{rr}(depth)) & (clusters.depths < depthBins{rr}(depth+1));
-            unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
-            meas{rr}(dd,depth) = sum(clusters.qualityMetrics.firing_rate(depthNeuronIdx & (unitType == 1)));
-%             meas{rr}(dd,depth) = nanmean(clusters.qualityMetrics.amp_median(depthNeuronIdx & (unitType == 1)));
-        end
+% Some parameters
+bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
+day2pltList = {16 88 14 88};
+depthWinList = {[800 1000] [800 1000] [3650 3850] [3650 3850]};
+
+% Extract data
+data = cell(1,numel(bankSelList));
+chanPos = cell(1,numel(bankSelList));
+for ll = 1:numel(bankSelList)
+    bankSel = bankSelList{ll};
+    day2plt = day2pltList{ll};
+
+    recIdx = find(exSubjectIdx & cell2mat(expInfoAll.daysSinceImplant)' == day2plt & contains(recLocAll, bankSel));
+    recIdx = recIdx(1); % in case there are two
+    expInfo = expInfoAll(recIdx,:);
+    probeName = fieldnames(expInfo.dataSpikes{1});
+    rec = expInfo.(sprintf('ephysPathP%s',probeName{1}(2:end))){1};
+    d = dir(fullfile(rec,'*.cbin'));
+    fileName = fullfile(d.folder,d.name);
+
+    % Get raw data snippet
+    startTime = 2*60;
+    winSize = .5;
+    process = 1;
+    data{ll} = readRawDataChunk(fileName,startTime,winSize,process);
+    data{ll} = data{ll}(:,1:384);
+
+    % Get recording location
+    [chanPos{ll}, elecPos, shank, probeSN] = getRecordingSites(d.name,d.folder);
+    [~,chanIdx] = sort(chanPos{ll}(:,2));
+
+    % See if can find the spikes
+    spikes = csv.loadData(expInfo,dataType=probeName{1},object='spikes');
+    spikes = spikes.dataSpikes{1}.(probeName{1}).spikes;
+    a = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
+    alignment = load(fullfile(a.folder,a.name));
+    probeAlign = contains({alignment.ephys.ephysPath},rec);
+    spikes.times = preproc.align.event2Timeline(spikes.times, alignment.ephys(probeAlign).timelineTimes, alignment.ephys(probeAlign).originTimes);
+    clusters = csv.loadData(expInfo,dataType=probeName,object='clusters');
+    clusters = clusters.dataSpikes{1}.(probeName{1}).clusters;
+    figure; hold all
+    imagesc(startTime:1/cbinMeta.sample_rate:(startTime+winSize), 1:384, data{ll}(:,chanIdx)');
+    for clu = unique(spikes.clusters)'
+        sp = spikes.times(spikes.times > startTime & spikes.times < startTime + winSize & spikes.clusters == clu);
+        scatter(sp,ones(1,numel(sp))*find(double(clusters.channels(clusters.IDs == clu))+1 == chanIdx),40,'k')
     end
 end
 
-fun = @(x) x.^0.5;
-colors = winter(5);
-figure('Position', [680   282   441   685], 'Name', [subjects{ss} '__' probes{pp}]);
-for rr = 1:numel(fullProbeScanSpec)
-    ax(rr) = subplot(2,4,rr);
-    imagesc(cell2mat(daysSinceImplant{rr}),depthBins{rr},fun(meas{rr}'))
-    set(gca,'YDir','normal')
-    % c = [linspace(1,colors(mod(rr-1,4)+1,1),64)', linspace(1,colors(mod(rr-1,4)+1,2),64)', linspace(1,colors(mod(rr-1,4)+1,3),64)'];
-    % colormap(ax(rr),c)
-    c = colormap("gray"); c = flipud(c);
-    colormap(c)
-    clim([0 fun(20)]);
+% Plot it
+figure('Position',[600 200 numel(bankSelList)*200 700])
+for ll = 1:numel(bankSelList)
+    bankSel = bankSelList{ll};
+    day2plt = day2pltList{ll};
+    depthWin = depthWinList{ll};
+
+    % Plot within a certain depth
+    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2));
+    subplot(1, numel(bankSelList), ll); hold all
+    for cc = 1:numel(chanIdx)
+        plot((1:winSize*30000)/30000,ones(1,size(data,1))*50*(chanPos{ll}(chanIdx(cc),2)-chanPos{ll}(chanIdx(1),2)) + double(data{ll}(:,chanIdx(cc)))','k')
+    end
+    xlim([0 0.05])
+    title(bankSel)
 end
 
-% anat
-% plotAtlasSliceSchematics(630,[],8,[],[])
-% plotAtlasSliceSchematics(470,[],8,[],[])
+%% Plot depth raster for full probe
 
-%% Plot raw traces?
+for pp = 1:numel(probes)
+    fullProbeScanSpec = cellfun(@(x) [subjects{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
 
-expInfo = expInfoAll(subjectIdx & cell2mat(expInfoAll.daysSinceImplant)' == 16 & contains(recLocAll, sprintf('%s__1__2880',probes{pp})),:);
-probeName = fieldnames(expInfo.dataSpikes{1});
-rec = expInfo.(sprintf('ephysPathP%s',probeName{1}(2:end))){1};
-d = dir(fullfile(rec,'*.cbin'));
-fileName = fullfile(d.folder,d.name);
+    meas = cell(1,numel(fullProbeScanSpec));
+    for rr = 1:numel(fullProbeScanSpec)
+        recIdx = find(strcmp(recLocAll,fullProbeScanSpec{rr}));
+        daysSinceImplant{rr} = expInfoAll(recIdx,:).daysSinceImplant; % just to plot the same
+        d = split(fullProbeScan{rr},'__');
+        depthBins{rr} = str2num(d{2}) + (0:20:2880);
+        meas{rr} = nan(numel(recIdx),numel(depthBins{rr})-1);
+        for dd = 1:numel(recIdx)
+            probeName = fieldnames(expInfoAll(recIdx(dd),:).dataSpikes{1});
+            clusters = expInfoAll(recIdx(dd),:).dataSpikes{1}.(probeName{1}).clusters;
+            for depth = 1:numel(depthBins{rr})-1
+                depthNeuronIdx = (clusters.depths > depthBins{rr}(depth)) & (clusters.depths < depthBins{rr}(depth+1));
+                unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
+                meas{rr}(dd,depth) = sum(clusters.qualityMetrics.firing_rate(depthNeuronIdx & (unitType == 1)));
+                %             meas{rr}(dd,depth) = nanmean(clusters.qualityMetrics.amp_median(depthNeuronIdx & (unitType == 1)));
+            end
+        end
+    end
 
+    fun = @(x) x.^0.5;
+    colors = winter(5);
+    figure('Position', [680   282   441   685], 'Name', [subjects{ss} '__' probes{pp}]);
+    for rr = 1:numel(fullProbeScanSpec)
+        ax(rr) = subplot(2,4,rr);
+        imagesc(cell2mat(daysSinceImplant{rr}),depthBins{rr},fun(meas{rr}'))
+        set(gca,'YDir','normal')
+        % c = [linspace(1,colors(mod(rr-1,4)+1,1),64)', linspace(1,colors(mod(rr-1,4)+1,2),64)', linspace(1,colors(mod(rr-1,4)+1,3),64)'];
+        % colormap(ax(rr),c)
+        c = colormap("gray"); c = flipud(c);
+        colormap(c)
+        clim([0 fun(20)]);
 
-% Get raw data snippet
-startTime = 5*60;
-winSize = 3;
-data = readRawDataChunk(fileName,startTime,winSize,process);
-
-
-% Get recording location
-[chanPos, elecPos, shank, probeSN] = getRecordingSites(d.name,d.folder);
-[~,chanIdx] = sort(chanPos(:,2));
-
-% See if can find the spikes
-spikes = csv.loadData(expInfo,dataType=probeName{1},object='spikes');
-spikes = spikes.dataSpikes{1}.(probeName{1}).spikes;
-a = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
-alignment = load(fullfile(a.folder,a.name));
-probeAlign = contains({alignment.ephys.ephysPath},rec);
-spikes.times = preproc.align.event2Timeline(spikes.times, alignment.ephys(probeAlign).timelineTimes, alignment.ephys(probeAlign).originTimes);
-clusters = csv.loadData(expInfo,dataType=probeName,object='clusters');
-clusters = clusters.dataSpikes{1}.(probeName{1}).clusters;
-figure; hold all
-imagesc(startTime:1/cbinMeta.sample_rate:(startTime+winSize), allChannelIndices, data(:,chanIdx)');
-for clu = unique(spikes.clusters)'
-    sp = spikes.times(spikes.times > startTime & spikes.times < startTime + winSize & spikes.clusters == clu);
-%     if ~isempty(sp); vline(sp); end
-    scatter(sp,ones(1,numel(sp))*double(clusters.channels(clusters.IDs == clu)),40,'k')
+        % Plot boxes around zoom in
+        for ll = 1:numel(bankSelList)
+            bankSel = bankSelList{ll};
+            day2plt = day2pltList{ll};
+            depthWin = depthWinList{ll};
+            if contains(fullProbeScanSpec{rr}, bankSel)
+                rectangle('Position', [day2plt-1 depthWin(1) 2 diff(depthWin)],'LineWidth',3,'EdgeColor',colAni(ssEx,:))
+            end
+        end
+    end
 end
 
 
@@ -139,7 +185,7 @@ end
 
 ampBinEdges = 10.^(-5:0.01:-2);
 ampBins = ampBinEdges(1:end-1)*10.^0.005;
-H = nan(numel(ampBinEdges)-1,max(days(subjectIdx))+1,numel(fullProbeScanSpec));
+H = nan(numel(ampBinEdges)-1,max(days(exSubjectIdx))+1,numel(fullProbeScanSpec));
 for rr = 1:numel(fullProbeScanSpec)
     recIdx = strcmp(recLocAll,fullProbeScanSpec{rr});
     daysUni = unique(days(recIdx));
@@ -216,14 +262,14 @@ hold all
 % Find those that match location
 % Do it by subject and probe so that it's easier to do the whole probe
 % thing...?
-% subjectsToInspect = {'AV009'};
-subjectsToInspect = subjects;
+subjectsToInspect = {'AV009'};
+% subjectsToInspect = subjects;
 colAniToInspect = colAni(ismember(subjects,subjectsToInspect),:);
 dlim = 2;
-pltIndivBank = 0;
-pltIndivProbe = 0;
-pltAllProbes = 1;
-pltData = 0;
+pltIndivBank = 1;
+pltIndivProbe = 1;
+pltAllProbes = 0;
+pltData = 1;
 pltFit = 1;
 
 recLocSlope = cell(1,1);
@@ -250,13 +296,15 @@ for ss = 1:numel(subjectsToInspect)
         recLoc = unique(recLocGood);
         for rr = 1:numel(recLoc)
             recIdx = find(strcmp(recLocAll,recLoc{rr}));
-            if numel(unique(days(recIdx)))>1 && qm(recIdx(1)) > 10
+            if numel(unique(days(recIdx)))>1 && max(qm(recIdx)) > 10
 
                 recLocSlope{ss,pp}{rr} = recLoc{rr};
 
                 % Compute the slope
                 X = [ones(numel(recIdx),1), days(recIdx)'];
-                b{ss,pp}(rr,:) = (X\log10(qm(recIdx)'));
+                tmp = qm(recIdx);
+                tmp(tmp == 0) = 0.1;
+                b{ss,pp}(rr,:) = (X\log10(tmp'));
 
                 if pltIndivBank && pp == 1
                     if pltData; plot(days(recIdx), qm(recIdx),'color',[colAniToInspect(ss,:) .2]);
