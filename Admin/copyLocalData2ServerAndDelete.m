@@ -25,7 +25,7 @@ if ~exist('fid', 'var'); fid = []; end
 log = ''; % Save log in case in string in case needs to output
 
 % find all folders with a relevant file like timeline
-files2Check = {'Timeline.mat';'block.mat';'eyeCam*';'frontCam*';'sideCam*';'mic.mat'};
+files2Check = {'Timeline.mat';'block.mat';'eyeCam*';'frontCam*';'sideCam*';'topCam*';'mic.mat'};
 localDat = cell2mat(cellfun(@(x) dir([localFolder '\**\*' x]), files2Check, 'uni', 0));
 localDat(strcmp({localDat.folder}, localFolder)) = [];
 %% push the data to server
