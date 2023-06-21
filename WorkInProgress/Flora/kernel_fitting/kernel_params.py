@@ -4,8 +4,8 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
     if call_data:
         dat_params = {
             't_support_stim':[-0.05,0.6],   
-            't_support_movement':[-0.1,0.1],
-            'rt_params':{'rt_min': .1, 'rt_max': .6},
+            't_support_movement':[-0.2,0.1],
+            'rt_params':{'rt_min': .1, 'rt_max': None},
             'event_types': ['aud','vis','baseline','move'], # 
             'contrasts': [0.1,0.2,0.4],
             'spls': [0.1],
@@ -14,7 +14,8 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
             # 'vis_azimuths': [-90,-60,-30,0,30,60,90],
             # 'aud_azimuths': [-90,-60,-30,0,30,60,90],
             'digitise_cam': False,
-            'zscore_cam': 'mad'
+            'zscore_cam': 'mad',
+            'turn_stim_off' : True
             }
 
     if call_fit:

@@ -12,10 +12,10 @@ dat_params,fit_params,eval_params = get_params()
 nrn_list = [111]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'AV034',
-    expDate = '2022-12-07', 
-    expDef = 'postactive',
-    probe = 'probe0',
+    subject = 'AV030',
+    expDate = '2022-12-09', 
+    expDef = 'multiSpaceWorld',
+    probe = 'probe1',
     subselect_neurons=None,
     **dat_params
 )
@@ -34,7 +34,7 @@ kernel_shapes = kernels.calculate_kernels()
 # %% 
 # look at the VE over the trial if it was computed
 import matplotlib.pyplot as plt
-n = 339
+n = 215
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
@@ -91,7 +91,7 @@ kernels.fit_evaluate(get_prediciton=True,**fit_params)
 kernels.plot_kernels(n)
 
 
-# %%
+  # %%
 
 kernels.plot_prediction_rasters(n,visual_azimuth=[-1000,60],auditory_azimuth=[60,60],contrast=[0,0.4],spl=[0.1,0.1]) # %%
 

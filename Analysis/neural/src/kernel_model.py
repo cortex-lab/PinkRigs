@@ -35,12 +35,12 @@ from matplotlib.colors import LogNorm
 
 #make toeplitz matrix 
 def make_event_toeplitz(event_time_vector, event_bins,
-                        diag_value_vector=None):
+                        diag_value_vector=None,off_time_vector=None):
     """
     Obtains feature matrix for doing regression.
     INPUT
     -----------
-    event_time_vector : (numpy ndarrau)
+    event_time_vector : (numpy ndarray)
         binary vector where 1 correspond to the time bin that the event occured
     event_bins        : (numpy ndarray)
         time bins before and after the event that we want to model neural activity
@@ -49,6 +49,10 @@ def make_event_toeplitz(event_time_vector, event_bins,
         vector of the same shape as event_time_vector, to specify the value to fill the diagonal
         for each event, defaults to all 1s.
         (this is often used for (-1, 0, 1) fill values for choice kernels)
+
+    off_time_vector : (numpy ndarray),optional
+        number of indices between onsets determined by event_time_vector
+
     OUTPUT
     ----------
     full_event_toeplitz : (numpy ndarray)
@@ -80,9 +84,16 @@ def make_event_toeplitz(event_time_vector, event_bins,
         print('Error: event time index has %.f elements, but diagonal value vector has %.f elements'
                 % (np.shape(event_time_indices)[0], np.shape(diag_value_vector)[0]))
 
+    if off_time_vector is None: 
+        offset_indices = (np.ones(event_time_indices.size)*max(event_bins)).astype('int')
+    else: 
+        offset_indices = off_time_vector
+        offset_indices[offset_indices>max(event_bins)] = max(event_bins)
+
+    
     # Still requires for loop... which annoys me.
-    for diag_index, diag_value in zip(event_time_indices, diag_value_vector):
-        np.fill_diagonal(post_event_toeplitz[diag_index:, :], diag_value)
+    for diag_index, offset_index, diag_value in zip(event_time_indices, offset_indices, diag_value_vector):
+        np.fill_diagonal(post_event_toeplitz[diag_index:, :(offset_index+1)], diag_value) # easiest is to make variable indices by introducing an offset bin here so  np.fill_diagonal(post_event_toeplitz[diag_index:, :offsetIdx],1)
 
     pre_event_toeplitz = np.zeros(shape=(len(event_time_vector),
                                             len(np.where(event_bins <= 0)[0])
@@ -1122,7 +1133,8 @@ class events_list():
     """
     
     def __init__(self):
-        self.times = []     
+        self.ontimes = []   
+        self.offtimes = [] # can be filled or not depending on whether selected even is of an event period or is a single shot event  
         self.names = [] # same length as the thing in ev_times
         self.fitted_trials_idx= [] 
         self.diag_values = {} # if the diag value is not 1 then the diag values dict should contain the ev_type_name and the corresponding vector. 
@@ -1160,6 +1172,13 @@ class events_list():
         ev_ = ev.copy()
 
         to_keep_trials = ev.is_validTrial.astype('bool')
+
+        # if it is active data, also exclude trials where firstmove was made prior to choiceMove
+        if hasattr(ev,'timeline_firstMoveOn'):
+            no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
+            no_premature_wheel = no_premature_wheel + np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
+            to_keep_trials = to_keep_trials & no_premature_wheel
+
         
         if rt_params['rt_min']: 
              to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
@@ -1318,7 +1337,7 @@ class events_list():
     def is_kernel_active(self):
         pass 
 
-    def add_to_event_list(self,events,onset_sel_key,is_selected,feature_name_string,diag_values=[1]):
+    def add_to_event_list(self,events,onset_sel_key,is_selected,feature_name_string,diag_values=[1],offset_sel_key=None):
         """
         function that allows to classify whether each event belongs to a certain kernel
         i.e. adds to 
@@ -1327,7 +1346,12 @@ class events_list():
         onset_type_ = np.empty(ev_times_.size,dtype="object") 
         onset_type_[:] = feature_name_string
 
-        self.times.append(ev_times_)        
+        self.ontimes.append(ev_times_)   
+        if offset_sel_key is not None:
+            self.offtimes.append(events[offset_sel_key][is_selected]) 
+        else: 
+            self.offtimes.append(np.empty((ev_times_.size))*np.nan)
+
         self.names.append(onset_type_) 
         self.fitted_trials_idx.append(np.where(is_selected)[0])
 
@@ -1341,7 +1365,8 @@ class events_list():
         after adding all the necessary information to lists, concatente them into a single array
        
         """
-        self.times = np.concatenate(self.times)
+        self.ontimes = np.concatenate(self.ontimes)
+        self.offtimes = np.concatenate(self.offtimes)
         self.names = np.concatenate(self.names)
         self.fitted_trials_idx  = np.concatenate(self.fitted_trials_idx)
 
@@ -1364,6 +1389,7 @@ class kernel_model():
                             t_support_movement =[-.2,0.1],
                             digitise_cam=False,
                             zscore_cam = False,
+                            turn_stim_off = False,
                             **kwargs):         
 
         """
@@ -1391,8 +1417,14 @@ class kernel_model():
         ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
         other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
 
+        # if 'ActivePassive'in kwargs['expDef']: 
+        #     print('concatenating active and passive recordings...')
+        #     kwargs.pop('expDef')
+            
+# # 
+#         else:
         rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
-        
+    
         loaded_ok = False
 
         if rec.shape[0] == 1:            
@@ -1476,6 +1508,8 @@ class kernel_model():
             # classify into kernels
             if 'vis' in event_types:   
                 onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
+                offset_sel_key = 'timeline_visPeriodOff'
+
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
 
@@ -1491,16 +1525,17 @@ class kernel_model():
                     if my_azimuth!=None:
                         feature_name_string += '_azimuth_%.0f' % my_azimuth
 
-                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)
+                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
                     if vis_azimuths:
                         if 'dir' in vis_azimuths: 
                             diag_value_vector = np.sign(ev.stim_visAzimuth[is_selected])
                             feature_name_string = feature_name_string + '_dir'
-                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector)
+                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
 
             if 'aud' in event_types:   
-                onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this  
+                onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this 
+                offset_sel_key = 'timeline_audPeriodOff' 
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = aud_azimuths
 
@@ -1516,13 +1551,13 @@ class kernel_model():
                     if my_azimuth!=None:
                         feature_name_string += '_azimuth_%.0f' % my_azimuth
 
-                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)
+                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
                     if aud_azimuths: 
                         if 'dir' in aud_azimuths: 
                             diag_value_vector = np.sign(ev.stim_audAzimuth[is_selected])
                             feature_name_string = feature_name_string + '_dir'
-                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector)
+                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
 
             if 'coherent-nl-temporal' in event_types:
                 onset_sel_key  = 'block_stimOn'
@@ -1576,23 +1611,39 @@ class kernel_model():
 
             extracted_ev.finish_and_concat()
 
-            self.events_digitised,_,event_names_ = bincount2D(extracted_ev.times,extracted_ev.names,xbin=self.t_bin,xlim = [np.min(self.tscale), np.max(self.tscale)])
+            self.events_digitised,_,event_names_ = bincount2D(extracted_ev.ontimes,extracted_ev.names,xbin=self.t_bin,xlim = [np.min(self.tscale), np.max(self.tscale)])
+
+            self.offsets_digistised,_,offset_events = bincount2D(extracted_ev.offtimes[~np.isnan(extracted_ev.offtimes)],extracted_ev.names[~np.isnan(extracted_ev.offtimes)],xbin=self.t_bin,xlim = [np.min(self.tscale), np.max(self.tscale)])
 
             # create feature matrix 
 
             # get the different bin ranges for each event in event_digitised 
+            # which is what optinally we are gonna make a long form thing with offsets 
+
             stim_bin_range = np.arange(t_support_stim[0]/self.t_bin,t_support_stim[1]/self.t_bin).astype('int') 
             move_bin_range = np.arange(t_support_movement[0]/self.t_bin,t_support_movement[1]/self.t_bin).astype('int') 
 
             bin_ranges = {}
+            offset_indices = {}
             for event_name in event_names_:
                 if 'move' in event_name: 
                     bin_ranges[event_name]  = move_bin_range
                 else:
                     bin_ranges[event_name] = stim_bin_range
 
+                if (event_name in offset_events) & turn_stim_off:
+                    on_idx = np.where(event_names_==event_name)[0][0]
+                    dig_on = self.events_digitised[on_idx,:]
+                    
+                    off_idx = np.where(offset_events==event_name)[0][0]
+                    dig_off = self.offsets_digistised[off_idx,:]
+                    offset_indices[event_name] = np.where(dig_off==1)[0]-np.where(dig_on==1)[0]
+                else: 
+                    offset_indices[event_name] = None
+
+
             # make feature matrix from the digitised events
-            toeplitz = [make_event_toeplitz(event_,bin_ranges[ev_name],diag_value_vector=extracted_ev.diag_values[ev_name]) for event_,ev_name in zip(self.events_digitised,event_names_)]
+            toeplitz = [make_event_toeplitz(event_,bin_ranges[ev_name],diag_value_vector=extracted_ev.diag_values[ev_name],off_time_vector=offset_indices[ev_name]) for event_,ev_name in zip(self.events_digitised,event_names_)]
             toeplitz = np.concatenate(toeplitz,axis=1)
 
 

@@ -15,8 +15,8 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 # use easiser set of code, i.e. just load the events and look and L-R for all neurons at 60 deg  
 
 mname = 'AV030'
-expDate = '2022-12-07'
-probe = 'probe0'
+expDate = '2022-12-09'
+probe = 'probe1'
 
 raster_kwargs = {
                 'pre_time':0.2,
@@ -35,7 +35,7 @@ session_types = ['multiSpaceWorld','postactive']
 psths = []
 
 
-type = 'vis'
+type = 'aud'
 for sess in session_types:
     session = { 
         'subject':mname,
@@ -84,7 +84,7 @@ psths = np.concatenate(psths)
 
 # %% 
 # plot things just to check 
-nID=28
+nID=208
 nID = np.where(clus_ids==nID)[0][0]
 color_list = ['blue','red','blue','red']
 linestype_list = ['--','--','-','-']

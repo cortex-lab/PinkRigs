@@ -1,12 +1,12 @@
 clear params
-params.subject  = {['AV036']};
+params.subject  = {['AV046']};
 params.expDate = {['all']}; 
 
 %params.expNum = '3'; 
-params.expDef = 'm'; 
+params.expDef = 't'; 
 params.checkEvents = '1'; 
 %params.expNum = '1'; 
-params.expDate = {['2023-04-04:2023-04-28']}; 
+params.expDate = {['2023-06-13:2023-06-20']}; 
 exp2checkList = csv.queryExp(params);
 
 %%

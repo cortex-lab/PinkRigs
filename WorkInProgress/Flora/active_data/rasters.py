@@ -11,9 +11,9 @@ from Admin.csv_queryExp import load_active_and_passive
 from Analysis.pyutils.ev_dat import index_trialtype_perazimuth
 
 session = { 
-    'subject':'AV034',
-    'expDate': '2022-12-07',
-    'probe': 'probe0'
+    'subject':'AV030',
+    'expDate': '2022-12-09',
+    'probe': 'probe1'
 }
 sessName = '%s_%s_%s' % tuple(session.values())
 dat = load_active_and_passive(session)
@@ -40,7 +40,7 @@ def plot_raster_withmovementonset(spikes,leftchoicestims,rightchoicestims,choice
                     [leftchoicestims,
                     rightchoicestims],
                     neuronID,  # Identity of the cluster we plot 
-                    event_colors=['blue','red'],rasterlw=1,**plot_kwargs)
+                    event_colors=['blue','red'],rasterlw=2,**plot_kwargs)
 
     
     my_rasterPSTH(choicemove_times,  # Spike times first
@@ -48,7 +48,7 @@ def plot_raster_withmovementonset(spikes,leftchoicestims,rightchoicestims,choice
                     [leftchoicestims,
                     rightchoicestims],
                     1,  # Identity of the cluster we plot,
-                    event_colors=['black','black'],rasterlw=3,**plot_kwargs)
+                    event_colors=['black','black'],rasterlw=3.5,**plot_kwargs)
     
     off_axes(ax) 
     ax.set_ylim([-1000,10])
@@ -142,51 +142,75 @@ def visazimuth_check(ev,v,trialtype):
     return visazimcheck
 
 # %%
-nrnID = 118
+nrnID = 208
 spk = dat.multiSpaceWorld.spikes
 ev = dat.multiSpaceWorld.events
 
 movesort = True
-plot_type = 'psth'
+plot_type = 'raster'
 plot_passive = True
+plotted_vis_azimuth = np.array([-1000,-60,60])
+plotted_aud_azimuth = np.array([-60,0,60])
 
+ev.stim_audAzimuth[np.isnan(ev.stim_audAzimuth)] =-1000
+ev.stim_visAzimuth[np.isnan(ev.stim_visAzimuth)] =-1000
 
-plotted_vis_azimuth = [-60,0,60]
-plotted_aud_azimuth = [-60,0,60]
+n_aud_pos = plotted_aud_azimuth.size
+n_vis_pos = plotted_vis_azimuth.size
+
+       
+stim_aud_azimuth = ev.stim_audAzimuth
+stim_vis_azimuth = ev.stim_visAzimuth
+
+# stim_aud_azimuth[np.isnan(stim_aud_azimuth)] =-1000
+# stim_vis_azimuth[np.isnan(stim_vis_azimuth)] =-1000
+
+if plotted_aud_azimuth is None: 
+    plotted_aud_azimuth = np.unique(stim_aud_azimuth)
+if plotted_vis_azimuth is None: 
+    plotted_vis_azimuth = np.unique(stim_vis_azimuth)
+
+n_aud_pos = plotted_aud_azimuth.size
+n_vis_pos = plotted_vis_azimuth.size
+
+if 'raster' in plot_type:
+    fig,ax=plt.subplots(n_aud_pos,n_vis_pos,figsize=(15,15),sharex=True,sharey=True)    
+    stim_plot_inds = np.arange(0,n_vis_pos,1)  
+elif 'psth' in plot_type: 
+    fig,ax=plt.subplots(n_aud_pos,n_vis_pos*2,figsize=(20,10),sharex=True,sharey=True) 
+    stim_plot_inds = np.arange(0,n_vis_pos*2,2)
+    move_plot_inds = np.arange(0,n_vis_pos*2,2)+1        
+
+fig.patch.set_facecolor('xkcd:white')
+
 viscontrasts = (np.unique(ev.stim_visContrast)*100).astype('int')
 viscontrasts = viscontrasts[viscontrasts>0]
-viscontrasts = viscontrasts[-2]
+viscontrasts = viscontrasts[-1]
 
 
 viscontrasts = np.append(0,viscontrasts)
 n_contrasts = (viscontrasts>0).sum()
 
-plotted_vis_azimuth = np.append(np.append(np.ones(n_contrasts)*(-60),[0]),np.ones(n_contrasts)*(60)).astype('int')
+plotted_vis_azimuth = np.append(np.append(np.ones(n_contrasts)*(-60),[-1000]),np.ones(n_contrasts)*(60)).astype('int')
 plotted_vis_contrasts = np.abs(np.unique(np.array([viscontrasts,viscontrasts*-1])))
+
 vazi,aazi=np.meshgrid(plotted_vis_azimuth,plotted_aud_azimuth)
 
-if 'raster' in plot_type:
-    fig,ax=plt.subplots(vazi.shape[0],vazi.shape[1],figsize=(15,15),sharex=True)
-elif 'psth' in plot_type: 
-    fig= plt.figure(figsize=(8, 8))
-    #gs0 = gridspec.GridSpec(vazi.shape[0],vazi.shape[1]*2)
-    fig,ax=plt.subplots(vazi.shape[0],vazi.shape[1]*2,figsize=(10,10),sharex=True,sharey=True)
-
-
-fig.patch.set_facecolor('xkcd:white')
-fig.tight_layout()
-rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
 for i,m in enumerate(vazi):
     for j,_ in enumerate(m):
         v = vazi[i,j]
         a = aazi[i,j]
-        trialtype=index_trialtype_perazimuth(a,v)
-        
-        # check visual azimuths for 
-        #visazimcheck = visazimuth_check(ev,v,trialtype)
-        
-        leftmove_idx = (ev.stim_audAzimuth==a) & visazimuth_check(ev,v,trialtype) & ((ev.stim_visContrast*100).astype('int')==plotted_vis_contrasts[j]) & (ev.timeline_choiceMoveDir==1) & (ev[trialtype]==1)
-        rightmove_idx = (ev.stim_audAzimuth==a) & visazimuth_check(ev,v,trialtype)  & ((ev.stim_visContrast*100).astype('int')==plotted_vis_contrasts[j]) & (ev.timeline_choiceMoveDir==2) & (ev[trialtype]==1)
+        trialtype=index_trialtype_perazimuth(a,v,'active')
+
+        # if 'aud' in trialtype:
+        #     visazimcheck =np.isnan(self.events.stim_visAzimuth)
+        # elif 'blank' in trialtype:
+        #     visazimcheck =np.isnan(self.events.stim_visAzimuth)
+        # else:
+        #     visazimcheck = (self.events.stim_visAzimuth==v)
+
+        leftmove_idx = (ev.stim_audAzimuth==a) & (ev.stim_visAzimuth==v) & ((ev.stim_visContrast*100).astype('int')==plotted_vis_contrasts[j]) & (ev.timeline_choiceMoveDir==1) & (ev[trialtype]==1) & ((ev.timeline_choiceMoveOn-ev.timeline_firstMoveOn)==0)
+        rightmove_idx = (ev.stim_audAzimuth==a) & (ev.stim_visAzimuth==v)  & ((ev.stim_visContrast*100).astype('int')==plotted_vis_contrasts[j]) & (ev.timeline_choiceMoveDir==2) & (ev[trialtype]==1) & ((ev.timeline_choiceMoveOn-ev.timeline_firstMoveOn)==0)
 
         passive_idx  = (
             (dat.postactive.events.stim_audAzimuth==a) & 
@@ -212,13 +236,13 @@ for i,m in enumerate(vazi):
                                     rightstims,ev.timeline_choiceMoveOn,
                                     [nrnID],ax[i,j])
             
-            raster_kwargs['event_colors'] = ['grey']        
-            my_rasterPSTH(dat.postactive.spikes.times,  # Spike times first
-                    dat.postactive.spikes.clusters,  # Then cluster ids
-                    [passive_stims],
-                    nrnID,  # Identity of the cluster we plot 
-                    ax=ax[i,j],**raster_kwargs)
-            off_axes(ax[i,j]) 
+            # raster_kwargs['event_colors'] = ['grey']        
+            # my_rasterPSTH(dat.postactive.spikes.times,  # Spike times first
+            #         dat.postactive.spikes.clusters,  # Then cluster ids
+            #         [passive_stims],
+            #         nrnID,  # Identity of the cluster we plot 
+            #         ax=ax[i,j],**raster_kwargs)
+            # off_axes(ax[i,j]) 
 
         elif 'psth' in plot_type:
             psth_kwargs = plot_shadlen(spk,leftstims,rightstims,leftmove,rightmove,[nrnID],ax[i,j*2],ax[i,j*2+1])
@@ -231,7 +255,45 @@ for i,m in enumerate(vazi):
                     ax=ax[i,j*2],**psth_kwargs)
             off_axes(ax[i,j*2])
             
+
+            ax[-1,-1].hlines(-0.1,0.25,0.35,'k')
+
 name = sessName + '_neuron_%.0d' % nrnID         
 fig.suptitle(name)
+
+#%
+# %%
+
+
+fig,ax=plt.subplots(1,1,figsize=(10,10),sharex=True,sharey=True) 
+a=60
+v=-1000
+c = 0
+leftmove_idx = (ev.stim_audAzimuth==a) & (ev.stim_visAzimuth==v) & (ev.stim_visContrast==0) & (ev.timeline_choiceMoveDir==1) 
+rightmove_idx = (ev.stim_audAzimuth==a) & (ev.stim_visAzimuth==v)  & (ev.stim_visContrast==0) & (ev.timeline_choiceMoveDir==2)
+
+passive_idx  = (
+    (dat.postactive.events.stim_audAzimuth==a) & 
+    visazimuth_check(dat.postactive.events,v,trialtype) & 
+    (dat.postactive.events.stim_visContrast==plotted_vis_contrasts[j]/100)
+)
+
+leftstims = ev['timeline_audPeriodOn'][leftmove_idx]
+rightstims = ev['timeline_audPeriodOn'][rightmove_idx]
+passive_stims = dat.postactive.events.timeline_audPeriodOn[passive_idx]
+
+leftmove = ev.timeline_choiceMoveOn[leftmove_idx]
+rightmove = ev.timeline_choiceMoveOn[rightmove_idx]
+
+if movesort: 
+    leftstims = leftstims[np.argsort(leftmove-leftstims)]
+    rightstims = rightstims[np.argsort(rightmove-rightstims)]
+
+if 'raster' in plot_type:            
+
+    raster_kwargs = plot_raster_withmovementonset(spk,
+                            leftstims,
+                            rightstims,ev.timeline_choiceMoveOn,
+                            [nrnID],ax=ax)
 
 # %%
