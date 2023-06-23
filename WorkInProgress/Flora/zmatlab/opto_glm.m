@@ -80,7 +80,7 @@ for s=1:numel(extracted.data)
            %
 
 % figure;  orifit.prmFits(4)
-    	   orifit.prmFits(4) = controlfit.prmFits(4);
+    	   %orifit.prmFits(4) = controlfit.prmFits(4);
            plotParams.LineStyle = '--';
            plotParams.DotStyle = 'o';
            plotParams.MarkerSize = 8; 
