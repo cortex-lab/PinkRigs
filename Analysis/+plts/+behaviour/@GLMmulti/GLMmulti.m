@@ -48,6 +48,10 @@ classdef GLMmulti < matlab.mixin.Copyable
             inputBlockData.origMax = [max(abs(inputBlockData.stim_visDiff)) max(abs(inputBlockData.stim_audDiff))];
             inputBlockData.stim_visDiff = inputBlockData.stim_visDiff./inputBlockData.origMax(1);
             inputBlockData.stim_audDiff = inputBlockData.stim_audDiff./inputBlockData.origMax(2);
+            % Add previous choices and rewards
+            inputBlockData.previous_respDirection = [0; inputBlockData.response_direction(1:end-1)];
+            inputBlockData.previous_respFeedback = [0; inputBlockData.response_feedback(1:end-1)];
+
             obj.dataBlock = inputBlockData;
             obj.dataBlock.selectedTrials = ones(size(inputBlockData.stim_audDiff,1),1);
             tab = tabulate(obj.dataBlock.response_direction)/100;
