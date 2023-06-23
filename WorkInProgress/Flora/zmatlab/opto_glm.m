@@ -1,15 +1,17 @@
-clear all;,
-params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
-%params.subject  = {['AV038']};
-params.expDef = 'm'; 
+clear all;
+%
+%params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
+params.subject  = {['AV033']};
+params.expDef = 't'; 
 params.checkEvents = '1'; 
-params.expDate = {['2022-04-24:2023-04-28']}; 
+params.expDate = {['2022-04-04:2023-04-28']}; 
 exp2checkList = csv.queryExp(params);
+
 params = csv.inputValidation(exp2checkList);
 extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',0,'combHemispheres',0,'combDates',1,'combPowers',1); 
 
 % plot the control vs the opto on the same plot for each 'extracted'
-
+    
 
 %%
 % fit and plot each set of data
@@ -32,7 +34,7 @@ opto_fit_sets = logical([
 ]);
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
-plot_model_pred(2) = 1; 
+plot_model_pred(3) = 1; 
 shouldPlot = 1; 
 plotfit = 1; % whether to connect the data or plot actual fits
 plotParams.plottype = 'log'; 
@@ -75,6 +77,10 @@ for s=1:numel(extracted.data)
         opto_fit_params(s,model_idx,:) = orifit.prmFits;
 
         if shouldPlot && plot_model_pred(model_idx)
+           %
+
+% figure;  orifit.prmFits(4)
+    	   orifit.prmFits(4) = controlfit.prmFits(4);
            plotParams.LineStyle = '--';
            plotParams.DotStyle = 'o';
            plotParams.MarkerSize = 8; 
