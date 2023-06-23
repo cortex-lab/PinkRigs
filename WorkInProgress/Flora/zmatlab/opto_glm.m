@@ -84,7 +84,7 @@ for s=1:numel(extracted.data)
            plotParams.LineStyle = '--';
            plotParams.DotStyle = 'o';
            plotParams.MarkerSize = 8; 
-           plot_optofit(orifit,plotParams,plotfit)
+           plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
         end
 
     end
@@ -136,7 +136,7 @@ xlabel('bias,control fit')
 ylabel('bias,full fit')
 ylim([-5,5])
 %%
-function plot_optofit(glmData,plotParams,plotfit)
+function plot_optofit(glmData,plotParams,plotfit, fixedContrastPower)
 plottype = plotParams.plottype; 
 params2use = mean(glmData.prmFits,1);   
 pHatCalculated = glmData.calculatepHat(params2use,'eval');
@@ -153,7 +153,10 @@ plotOpt.Marker = 'none';
 currBlock = glmData.dataBlock; 
 %contrastPower = params.contrastPower{refIdx};
 
-if strcmp(plottype, 'log')
+if strcmp(plottype, 'log') && exist('fixedContrastPower', 'var')
+    contrastPower = fixedContrastPower;
+    plotData = log10(plotData./(1-plotData));
+elseif strcmp(plottype, 'log')
     tempFit = plts.behaviour.GLMmulti(currBlock, 'simpLogSplitVSplitA');
     tempFit.fit;
     tempParams = mean(tempFit.prmFits,1);
