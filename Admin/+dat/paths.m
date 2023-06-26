@@ -37,7 +37,7 @@ lugaroName = '\\lugaro.cortexlab.net'; % for tape backup
 % Path to base folder that contains the Rigbox code
 p.rigbox = fileparts(which('addRigboxPaths'));
 % Repository for local copy of everything generated on this rig
-p.localRepository = 'C:\LocalExpData';
+p.localRepository = 'D:\LocalExpData';
 
 % Under the new system of having data grouped by subject
 % rather than data type, all experimental data are saved here.
