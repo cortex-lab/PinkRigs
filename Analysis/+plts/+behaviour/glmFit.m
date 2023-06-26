@@ -130,8 +130,8 @@ for mm = 1:numel(models)
             currBlock.response_direction(isnan(currBlock.response_direction)) = 0;
 
             % Add previous choices and rewards
-%             currBlock.previous_respDirection = [0; currBlock.response_direction(1:end-1)];
-%             currBlock.previous_respFeedback = [0; currBlock.response_feedback(1:end-1)];
+            currBlock.previous_respDirection = [0; currBlock.response_direction(1:end-1)];
+            currBlock.previous_respFeedback = [0; currBlock.response_feedback(1:end-1)];
 
             respDirTest = (~isnan(currBlock.response_direction).*currBlock.response_direction>0)>0;
             valTrial = (~isnan(currBlock.is_validTrial).*currBlock.is_validTrial)>0;

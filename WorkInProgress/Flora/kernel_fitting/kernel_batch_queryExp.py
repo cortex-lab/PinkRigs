@@ -11,7 +11,7 @@ from Analysis.pyutils.io import save_dict_to_json
 from Admin.csv_queryExp import queryCSV
 
 
-subject_set = ['AV025','AV030','AV034']
+subject_set = ['AV005']
 my_expDef = 'multiSpaceWorld_checker_training'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef

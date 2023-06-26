@@ -1,9 +1,9 @@
 close all
 
 clear params
-params.subject = {'FT038';'FT039'};
-params.expDate = {['postImplant']}; 
-params.expDef = 'p'; 
+params.subject = {'AV045'};
+params.expDate = {['2023-05-17']}; 
+params.expDef = 't'; 
 
 %
 % preproc.extractExpData(exp2checkList,'recompute',{['events']});
@@ -13,9 +13,9 @@ params.expDef = 'p';
 exp2checkList = csv.queryExp(params);
 
 %% Just run alignment
-preproc.align.main(exp2checkList,'recompute',{'ephys'});
+preproc.align.main(exp2checkList,'recompute',{'sideCam'});
 
 %% Just run preprocessing
-preproc.extractExpData(exp2checkList,'recompute',{['spikes']},'process',{['spikes']}); % here spk does not work 
+preproc.extractExpData(exp2checkList,'recompute',{['events']},'process',{['events']}); % here spk does not work 
 
 

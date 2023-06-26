@@ -359,7 +359,7 @@ def groupKFoldRandom(groups, n=2, seed=None):
 
 def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evaluation_method='fit-all', cv_split=10,
                           tune_hyper_parameter=True, split_group_vector=None, preprocessing_method=None,
-                          rank=10, ridge_alpha=10, rr_regulariser=None, dev_test_random_seed=None, cv_random_seed=None, test_size=0.2,
+                          rank=10, ridge_alpha=10, rr_regulariser=None, l1_ratio=None,  dev_test_random_seed=None, cv_random_seed=None, test_size=0.2,
                           save_path=None, check_neg_weights=True, time_bins=None, save_X=False):
     """
     Fits kernel regression to neural data.
@@ -418,7 +418,7 @@ def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evalu
         assert len(split_group_vector) == np.shape(X)[0]
 
     # List of supported methods that fits into the sklearn workflow
-    sklearn_compatible_methods = ['KernelRidge', 'Ridge', 'ReducedRankRegression',
+    sklearn_compatible_methods = ['KernelRidge', 'Ridge','Lasso','ReducedRankRegression',
                                   'ReduceThenElasticNetCV', 'ReduceThenRidgeCV',
                                   'nnegElasticNet', 'DummyRegressorMean']
     other_methods = ['ReduceThenRidge', 'ReduceThenElasticNet']
@@ -439,6 +439,8 @@ def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evalu
                 print('ysd')
                 # the column of 1s is already included in design matrix, so no need to fit intercept.
                 clf = sklinear.Ridge(alpha=ridge_alpha, fit_intercept=fit_intercept, solver='auto')
+            elif method == 'Lasso':
+                clf = sklinear.Lasso(alpha=ridge_alpha, fit_intercept=fit_intercept, solver='auto')
             elif method == 'nnegElasticNet':
                 clf = sklinear.ElasticNet(alpha=1.0, fit_intercept=fit_intercept,
                                           positive=True)
@@ -448,7 +450,7 @@ def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evalu
                 clf = ReducedRankRegressor(rank=rank,alpha=ridge_alpha, regressor='Ridge', reg=rr_regulariser)
                 # parameters to tune are (1) rank (2) alpha for the ridge
             elif method == 'ReduceThenElasticNetCV':
-                clf = ReducedRankRegressor(regressor='ElasticNet')
+                clf = ReducedRankRegressor(rank=rank,alpha=ridge_alpha,regressor='ElasticNet',reg=rr_regulariser,l1_ratio=l1_ratio) 
             elif method == 'DummyRegressorMean':
                 clf = skldummy.DummyRegressor(strategy='mean')
             else:
@@ -515,6 +517,12 @@ def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evalu
                 scoring_method = sklmetrics.make_scorer(sklmetrics.r2_score,
                                                         multioutput='variance_weighted',
                                                         greater_is_better=True)
+            elif method == 'Lasso': 
+                model = sklinear.Lasso(alpha=ridge_alpha, fit_intercept=fit_intercept)
+                param_grid = [{'alpha': np.logspace(-4, 4, num=10)}]
+                scoring_method = sklmetrics.make_scorer(sklmetrics.r2_score,
+                                                        multioutput='variance_weighted',
+                                                        greater_is_better=True)
             elif method == 'ReducedRankRegression':
                 model = ReducedRankRegressor()
                 param_grid = [{'rank': np.linspace(2, 200, 10).astype(int),
@@ -531,7 +539,7 @@ def fit_kernel_regression(X, Y, method='KernelRidge', fit_intercept=False, evalu
                                                         multioutput='variance_weighted',
                                                         greater_is_better=True)
             elif method == 'ReduceThenElasticNetCV':
-                model = ReducedRankRegressor(regressor='ElasticNet')
+                model = ReducedRankRegressor(regressor='ElasticNet',alpha=ridge_alpha,rank=rank,reg=rr_regulariser)
                 param_grid = [{'rank': np.linspace(1, 50, 10).astype(int),
                                'alpha': np.logspace(-4, 4, num=10),
                                'l1_ratio': np.linspace(0.1, 1, num=10)}]
@@ -1384,12 +1392,13 @@ class kernel_model():
         self.smoothing = smoothing
 
     def load_and_format_data(self,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None,  
-                            contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None,
+                            contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None, 
                             t_support_stim = [-0.05,0.35],
                             t_support_movement =[-.2,0.1],
                             digitise_cam=False,
                             zscore_cam = False,
-                            turn_stim_off = False,
+                            turn_stim_off = None,
+                            stim_dir_kernel = False,
                             **kwargs):         
 
         """
@@ -1398,16 +1407,24 @@ class kernel_model():
         these parameters should determine which type of kernel is added 
         contrast: list: float
             determines which contrast values are used. If None all contrasts are equalised. 
-        vis_azimuths: list/str
+        vis_azimuths: list
             if list: determines at which azimuths the kernels ought to be called at. Only applicable to onset kernels. 
             if None: only applicable to onset kernels: all azimuths are equalised 
-            if str: 'dir' the L/R direction kernel ought to be called 
         aud_azimuths: list/str
-            same as vis azimuths just for aud stimuli
+            same as vis azimuths just for aud stimuli 
         t_support_stim: list, len(list)=2
             time raange at which the stimulus kernels are supported 
         t_support_movement: list, len(list) =2
             time range at which the movement kernels are supported
+        digitise_cam: bool
+        zscore_cam: bool 
+        turn_stim_off: None/str
+            when to offset stimulus kennels. Options: 
+                 - None (kenel length is defined by t_support_stim)
+                 - 'stimOff' wheenver the stimulus comes off or at the end of t_support_stim
+                 - 'moveEnd' when the movement kernel stops being supported as well
+        stim_dir_kernel: bool
+            whether separate kernels by azimuths or to add a direction kernel for L/R (and aud center as the always on kernel) 
 
         """
 
@@ -1513,7 +1530,7 @@ class kernel_model():
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
 
-                if not azimuths or 'dir' in azimuths: # if the kernel is just directional, we don't add azimuths specifically
+                if stim_dir_kernel: # if the kernel is just directional, we don't add azimuths specifically
                     azimuths = [None]
 
                 for my_contrast,my_azimuth in itertools.product(contrasts, azimuths): 
@@ -1523,23 +1540,22 @@ class kernel_model():
                     
                     feature_name_string = 'vis_kernel' + '_contrast_%.2f' % my_contrast
                     if my_azimuth!=None:
-                        feature_name_string += '_azimuth_%.0f' % my_azimuth
+                        feature_name_string += '_azimuth_%.0f' % my_azimuth                  
+                        extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
-                    extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
-
-                    if vis_azimuths:
-                        if 'dir' in vis_azimuths: 
-                            diag_value_vector = np.sign(ev.stim_visAzimuth[is_selected])
-                            feature_name_string = feature_name_string + '_dir'
-                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
+                    else:
+                        # this is when the kernel is directional, hopefully. 
+                        diag_value_vector = np.sign(ev.stim_visAzimuth[is_selected])
+                        feature_name_string = feature_name_string + '_dir'
+                        extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
 
             if 'aud' in event_types:   
-                onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this 
+                onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this
                 offset_sel_key = 'timeline_audPeriodOff' 
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = aud_azimuths
 
-                if not azimuths or 'dir' in azimuths: 
+                if stim_dir_kernel: 
                     azimuths = [None]
 
                 for my_spl,my_azimuth in itertools.product(spls,azimuths): 
@@ -1551,13 +1567,13 @@ class kernel_model():
                     if my_azimuth!=None:
                         feature_name_string += '_azimuth_%.0f' % my_azimuth
 
+                    # add all auditory trials as onset kernel even when direction kernels are called
                     extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
-                    if aud_azimuths: 
-                        if 'dir' in aud_azimuths: 
-                            diag_value_vector = np.sign(ev.stim_audAzimuth[is_selected])
-                            feature_name_string = feature_name_string + '_dir'
-                            extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
+                    if stim_dir_kernel: 
+                        diag_value_vector = np.sign(ev.stim_audAzimuth[is_selected])
+                        feature_name_string = feature_name_string + '_dir'
+                        extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
 
             if 'coherent-nl-temporal' in event_types:
                 onset_sel_key  = 'block_stimOn'
@@ -1631,13 +1647,41 @@ class kernel_model():
                 else:
                     bin_ranges[event_name] = stim_bin_range
 
-                if (event_name in offset_events) & turn_stim_off:
+
+
+                if ('stimOff' in turn_stim_off) & (event_name in offset_events):
                     on_idx = np.where(event_names_==event_name)[0][0]
                     dig_on = self.events_digitised[on_idx,:]
                     
                     off_idx = np.where(offset_events==event_name)[0][0]
                     dig_off = self.offsets_digistised[off_idx,:]
                     offset_indices[event_name] = np.where(dig_off==1)[0]-np.where(dig_on==1)[0]
+
+                elif ('moveEnd' in turn_stim_off) & (('aud' in event_name) or ('vis' in event_name)): 
+                    on_idx = np.where(event_names_==event_name)[0][0]
+                    dig_on = self.events_digitised[on_idx,:]
+                    onsets = np.where(dig_on==1)[0] 
+
+                    off_idx = np.where(offset_events==event_name)[0][0]
+                    dig_off = self.offsets_digistised[off_idx,:]
+
+                     
+                    offsets = np.where(dig_off==1)[0]  
+
+                    move_on = self.events_digitised[event_names_=='move_kernel',:][0,:]
+                    move_end_idx = np.where(move_on==1)[0]+np.floor(t_support_movement[1]/self.t_bin)  
+
+                    # determine whether there was a movement
+                    move_offsets = [] 
+                    for on, off in zip(onsets,offsets):
+                        is_move = (move_end_idx>on) & (move_end_idx<off)                        
+                        
+                        if is_move.sum()==1:
+                            move_offsets.append(int(move_end_idx[is_move][0]-on))
+                        else:
+                            move_offsets.append(off-on)
+                    offset_indices[event_name] = np.array(move_offsets)
+
                 else: 
                     offset_indices[event_name] = None
 

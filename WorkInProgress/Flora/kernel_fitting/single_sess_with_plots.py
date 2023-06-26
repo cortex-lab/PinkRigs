@@ -34,7 +34,7 @@ kernel_shapes = kernels.calculate_kernels()
 # %% 
 # look at the VE over the trial if it was computed
 import matplotlib.pyplot as plt
-n = 215
+n = 280
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})

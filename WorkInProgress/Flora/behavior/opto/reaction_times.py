@@ -14,7 +14,7 @@ from Analysis.pyutils.ev_dat import getTrialNames
 my_subject = ['AV047']
 recordings = load_data(
     subject = my_subject,
-    expDate = ['2023-06-15','2023-06-20'],
+    expDate = '2023-06-03:2023-06-20',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'all'}}
@@ -69,7 +69,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(ev.is_validTrial & ev.i
 # %% non log plot
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 for i,a in enumerate(aud_azimuths):
-    to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ev.is_laserTrial 
+    to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ev.is_laserTrial & (ev.laser_power==17)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
     rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
@@ -83,7 +83,7 @@ for i,a in enumerate(aud_azimuths):
 
 ax.set_ylabel('log[p(ipsi)/p(contra)]')
 ax.set_xlabel('contrasts')
-ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(ev.is_validTrial & ev.is_laserTrial)))
+ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(ev.is_validTrial & ev.is_laserTrial  & (ev.laser_power==17))))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))

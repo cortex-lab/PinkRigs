@@ -247,4 +247,4 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
 
 
 if __name__ == "__main__":  
-   plot_triggerred_data(subject='AV030')
+   plot_triggerred_data(subject='AV005')

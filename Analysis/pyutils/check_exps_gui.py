@@ -133,5 +133,5 @@ def main(**kwargs):
     viewer = Viewer(**kwargs)
     sys.exit(app.exec_())
 
-main(subject='AV030')
+main(subject='AV005')
 

@@ -133,8 +133,8 @@ fig.show()
 
 # %%
 fig,ax = plt.subplots(1,1,figsize=(4,4))
-x = gSC.kernelVE_aud
-y = gSC.kernelVE_move_kernel_dir
+x = clusGood.kernelVE_aud
+y = clusGood.kernelVE_move_kernel_dir
 
 ax.plot(x,y,'ko',alpha=0.3)
 ax.set_title('r = %.2f' % np.corrcoef(x[(~np.isnan(x)) & (~np.isnan(y))],y[(~np.isnan(x)) & (~np.isnan(y))])[0,1])

@@ -9,22 +9,27 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
             'event_types': ['aud','vis','baseline','move'], # 
             'contrasts': [0.1,0.2,0.4],
             'spls': [0.1],
+            # 'vis_azimuths': 'dir', 
+            # 'aud_azimuths': 'dir',            
             'vis_azimuths': [-60,60], 
             'aud_azimuths': [-60,0,60],
             # 'vis_azimuths': [-90,-60,-30,0,30,60,90],
             # 'aud_azimuths': [-90,-60,-30,0,30,60,90],
             'digitise_cam': False,
             'zscore_cam': 'mad',
-            'turn_stim_off' : True
+            'turn_stim_off' : 'moveEnd',
+            'stim_dir_kernel': True
             }
 
     if call_fit:
         fit_params = {
-            'method':'Ridge',
-            'ridge_alpha':1,
+            'method':'ReduceThenElasticNetCV',
+            #'method':'ReduceThenRidgeCV',            
+            'ridge_alpha':.001,
             'tune_hyper_parameter':False,
-            'rank':10,
-            'rr_regulariser':0
+            'rank':20,
+            'rr_regulariser':0, 
+            'l1_ratio':.2 
         }
 
     if call_eval:
