@@ -39,7 +39,8 @@ function extractedExperiments = queryExp(varargin)
 
 
 % Assign defaults for params not contained in "inputValidation"
-checkFields = {'checkTimeline', ...
+checkFields = {'rig', ...
+    'checkTimeline', ...
     'checkAlignAny', ...
     'checkAlignEphys', ...
     'checkAlignBlock', ...
@@ -98,6 +99,14 @@ for mm = 1:numel(params.subject)
         mouseExps = mouseExps(strcmp(mouseExps.expNum, params.expNum{mm}),:);
     end
     if isempty(mouseExps); continue; end
+
+    % Remove rig that don't match
+    if ~strcmp(params.rig{mm}, 'ignore')
+        if ~strcmp(params.rig{mm},'all')
+            mouseExps = mouseExps(contains(mouseExps.rigName, params.rig{mm}),:);
+        end
+        if isempty(mouseExps); continue; end
+    end
 
     % Get exp with matching timeline status
     if ~strcmp(params.checkTimeline{mm}, 'ignore')
