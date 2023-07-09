@@ -1,14 +1,16 @@
 clear all;
 %
-params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029']};
-%params.subject  = {['AV033']};
+% params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029'];['AV041'];['AV046'];['AV047']};
+params.subject  = {['AV036'];['AV031']};
 params.expDef = 't'; 
 params.checkEvents = '1';
-params.expDate = {['2022-04-04:2023-04-28']}; 
+params.expDate = {['2022-07-01:2023-07-03']}; 
 exp2checkList = csv.queryExp(params);
 
 params = csv.inputValidation(exp2checkList);
-extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',0,'combHemispheres',0,'combDates',1,'combPowers',1); 
+% extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',1,'selHemispheres','uni1','combDates',1,'selPowers',10); 
+extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',1,'combDates',1,'selPowers','high'); 
+
 
 % plot the control vs the opto on the same plot for each 'extracted'
     

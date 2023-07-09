@@ -34,7 +34,7 @@ kernel_shapes = kernels.calculate_kernels()
 # %% 
 # look at the VE over the trial if it was computed
 import matplotlib.pyplot as plt
-n = 280
+n = 31
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
@@ -78,6 +78,7 @@ kernels.plot_prediction(
 # ax.legend([r.event for _,r in ve_n.iterrows() if 'baseline' not in r.event])
 # ax.set_xlabel('time during trial')
 # ax.set_ylabel('VE,test')
+
 # %% 
 # look at the average predictions data and prediction. 
 # literally do the equivalent of the AVmodel plot.

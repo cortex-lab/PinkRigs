@@ -1,5 +1,5 @@
 # %% 
-import sys
+import sys,shutil
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from pathlib import Path
 import numpy as np
@@ -11,7 +11,7 @@ from Analysis.pyutils.io import save_dict_to_json
 from Admin.csv_queryExp import queryCSV
 
 
-subject_set = ['AV005']
+subject_set = ['AV025','AV030','AV034']
 my_expDef = 'multiSpaceWorld_checker_training'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
@@ -57,6 +57,9 @@ for _,rec_info in recordings.iterrows():
 
         # create a folder 
         curr_save_path  = save_path / nametag
+        # remove it if it already existed
+        if curr_save_path.is_dir():
+            shutil.rmtree(curr_save_path)
         curr_save_path.mkdir(parents=True,exist_ok=True)
 
         variance_explained.to_csv((curr_save_path / ('variance_explained_batchKernel.csv')))

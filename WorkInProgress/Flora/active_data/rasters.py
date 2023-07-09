@@ -142,12 +142,12 @@ def visazimuth_check(ev,v,trialtype):
     return visazimcheck
 
 # %%
-nrnID = 55
+nrnID = 164
 spk = dat.multiSpaceWorld.spikes
 ev = dat.multiSpaceWorld.events
 
 movesort = True
-plot_type = 'psth'
+plot_type = 'raster'
 plot_passive = True
 plotted_vis_azimuth = np.array([-1000,-60,60])
 plotted_aud_azimuth = np.array([-60,0,60])

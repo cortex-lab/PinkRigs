@@ -5,8 +5,8 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
         dat_params = {
             't_support_stim':[-0.05,0.6],   
             't_support_movement':[-0.2,0.1],
-            'rt_params':{'rt_min': .1, 'rt_max': None},
-            'event_types': ['aud','vis','baseline','move'], # 
+            'rt_params':{'rt_min': .07, 'rt_max': None},
+            'event_types': ['aud','vis','move'], # 
             'contrasts': [0.1,0.2,0.4],
             'spls': [0.1],
             # 'vis_azimuths': 'dir', 
@@ -23,18 +23,18 @@ def get_params(call_data=True,call_fit=True,call_eval=True):
 
     if call_fit:
         fit_params = {
-            'method':'ReduceThenElasticNetCV',
-            #'method':'ReduceThenRidgeCV',            
-            'ridge_alpha':.001,
+            'method':'ReduceThenRidgeCV',
+            #'method':'Ridge',            
+            'ridge_alpha':1,
             'tune_hyper_parameter':False,
-            'rank':20,
+            'rank':10,
             'rr_regulariser':0, 
-            'l1_ratio':.2 
+            'l1_ratio':1
         }
 
     if call_eval:
         eval_params = {
-            'kernel_selection':'stimgroups',
+            'kernel_selection':'dirgroups',
             'sig_metric': ['explained-variance']
         }
 

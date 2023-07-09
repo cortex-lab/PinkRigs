@@ -1179,7 +1179,7 @@ class events_list():
 
         ev_ = ev.copy()
 
-        to_keep_trials = ev.is_validTrial.astype('bool')
+        to_keep_trials = ev.is_validTrial.astype('bool') 
 
         # if it is active data, also exclude trials where firstmove was made prior to choiceMove
         if hasattr(ev,'timeline_firstMoveOn'):
@@ -1849,6 +1849,29 @@ class kernel_model():
                 split_group_vector=split_group_vector_
                 )            
 
+        if 'dirgroups' in kernel_selection: 
+            kernel_names = list(self.feature_column_dict.keys())
+            # merge all aud or vis groups 
+            new_feature_column_dict = {}
+
+            if any(['vis' in k for k in kernel_names]):
+                new_feature_column_dict['vis'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'vis' in k])  
+            if any(['non-linear' in k for k in kernel_names]):
+                new_feature_column_dict['non-linearity'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'non-linear' in k])
+
+            remaining_kernels = [k for k in kernel_names if ('vis' not in k) and ('non-linear' not in k)]            
+            for k in remaining_kernels: 
+                new_feature_column_dict[k] = self.feature_column_dict[k]
+
+            kernel_significance = test_kernel_significance(
+                model,feature_matrix_,R_,
+                new_feature_column_dict,original_feature_column_dict = self.feature_column_dict,
+                num_cv_folds=2, 
+                sig_metric=sig_metric,
+                split_group_vector=split_group_vector_
+                ) 
+
+
         else: 
             kernel_significance = test_kernel_significance(
                 model,feature_matrix_,R_,
@@ -2326,6 +2349,6 @@ class kernel_model():
                     ax[i].plot(kernel,'k')
             ax[i].set_title('%s \n VE,test = %.1f%%' % (feature,test_ve_kernel*100),rotation=45)
 
-            pFT.off_axes(ax[i])
+            pFT.off_topspines(ax[i])
 
         fig.suptitle(nrnID)

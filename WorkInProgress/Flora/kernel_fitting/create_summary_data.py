@@ -53,7 +53,7 @@ if not csv_path.is_file() or recompute_csv:
         ve_results = results_folder / 'variance_explained_batchKernel.csv'
 
 
-        kernel_events_to_save = ['aud', 'baseline', 'move_kernel', 'vis','move_kernel_dir']
+        kernel_events_to_save = ['aud_kernel_spl_0.10','aud_kernel_spl_0.10_dir', 'baseline', 'move_kernel', 'vis','move_kernel_dir']
         for k in kernel_events_to_save:
             tag = 'kernelVE_%s' % k 
             if ve_results.is_file():
@@ -81,6 +81,34 @@ if not csv_path.is_file() or recompute_csv:
 
             else: 
                 clusInfo[tag] = np.nan
+
+
+        # add the average of the kernels
+        clusIDs = np.load(list(results_folder.glob('clusIDs.npy'))[0]) 
+        kernel_files = list(results_folder.glob('*kernel*.npy')) 
+        n_bins = 50
+        for k in kernel_files:
+            my_k = np.load(k)
+            if 'move' in k.stem:
+                my_k = my_k[:,::-1] # reverse along time
+            
+            sumkernel = (my_k[:,:n_bins]).sum(axis=1)
+
+            # I really should make this a function...
+            sumkernel_ = []
+            for c in clusInfo._av_IDs:
+                idx = np.where(clusIDs==c)[0]
+                if len(idx)==1:
+                    sumkernel_.append(sumkernel[idx[0]])
+                else:
+                    sumkernel_.append(np.nan)
+
+            tag = 'kernelSum_' + k.stem
+
+            clusInfo[tag] = sumkernel_
+
+
+
 
 
         all_dfs.append(clusInfo)

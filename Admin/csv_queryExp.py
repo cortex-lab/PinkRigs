@@ -480,7 +480,7 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['
             ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
         if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
             ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
-            ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition).astype('int')
+            ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition)
             if reverse_opto & ~(np.unique(ev.laser_power_signed>0).any()): 
                 # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
                 ev.stim_audAzimuth = ev.stim_audAzimuth * -1 

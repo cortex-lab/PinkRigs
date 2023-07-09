@@ -35,6 +35,10 @@ for k in kernel_names:
     n = k.split('_')[1]
     if len(k.split('_'))==4:
         n = n+'dir'
+
+    if len(k.split('_'))==6:
+        n = n+'dir'
+
     n  = 'is_%s' % (n)
     bool_names.append(n)
     clusInfo[n] = clusInfo[k].values>thr
@@ -52,7 +56,7 @@ clusGood = clusInfo[clusInfo.bombcell_class=='good']
 thr=0.02
 fig,ax = plt.subplots(1,1,figsize=(10,5))
 ax.plot(clusGood._av_xpos,clusGood.depths,'k.',alpha=0.3)
-plt.plot(clusGood._av_xpos[(clusGood.kernelVE_aud>thr)],clusGood.depths[(clusGood.kernelVE_aud>thr)],'m.',alpha=0.3)
+plt.plot(clusGood._av_xpos[(clusGood['kernelVE_aud_kernel_spl_0.10']>thr)],clusGood.depths[(clusGood['kernelVE_aud_kernel_spl_0.10']>thr)],'m.',alpha=0.3)
 
 # %%
 
@@ -91,11 +95,16 @@ cellcount_df = pd.DataFrame({
 
 
 if len(bool_names)==3:
-     my_hue_order = ['vis','aud','baseline']
-     my_palette = ['blue','magenta','grey']
+     my_hue_order = ['vis','aud']
+     my_palette = ['blue','magenta']
+elif len(bool_names)==4:
+     my_hue_order = ['vis','aud','move','movedir']
+     my_palette = ['blue','magenta','black','orange']    
+
 elif len(bool_names)==5:
-     my_hue_order = ['vis','aud','move','movedir','baseline']
-     my_palette = ['blue','magenta','black','orange','grey']    
+     my_hue_order = ['vis','aud','auddir','move','movedir']
+     my_palette = ['blue','plum','magenta','black','orange']    
+
 
 sns.barplot(data = cellcount_df,
             x = 'brain_area',
@@ -110,39 +119,64 @@ off_topspines(ax)
 # %%
 # plot kernelVE against each other
 
-df = gSC[['kernelVE_aud',
-       'kernelVE_baseline', 'kernelVE_vis',]]
+# df = gSC[['kernelVE_aud',
+#        'kernelVE_baseline', 'kernelVE_vis',]]
 #g= sns.pairplot(df)
 
 
 # %%
 
-import plotly.express as px
-import pandas as pd
+# import plotly.express as px
+# import pandas as pd
 
 
-fig = px.scatter(gSC,x='mlhemi', y='dv',color='kernelVE_aud',hover_data=['expFolder','probe','_av_IDs'],range_color=[0,0.05])
-fig.show()
-
-
-# %%
-
-
-
+# fig = px.scatter(gSC,x='mlhemi', y='dv',color='kernelVE_aud',hover_data=['expFolder','probe','_av_IDs'],range_color=[0,0.05])
+# fig.show()
 
 
 # %%
 fig,ax = plt.subplots(1,1,figsize=(4,4))
-x = clusGood.kernelVE_aud
-y = clusGood.kernelVE_move_kernel_dir
+x = gSC['kernelVE_aud_kernel_spl_0.10_dir']
+y = gSC['kernelVE_move_kernel_dir']
 
 ax.plot(x,y,'ko',alpha=0.3)
 ax.set_title('r = %.2f' % np.corrcoef(x[(~np.isnan(x)) & (~np.isnan(y))],y[(~np.isnan(x)) & (~np.isnan(y))])[0,1])
-ax.set_xlim([-.1,.25])
-ax.set_ylim([-.1,.15])
+ax.set_xlim([-.15,.25])
+ax.set_ylim([-.15,.15])
 ax.set_xlabel(x.name)
 ax.set_ylabel(y.name)
 off_topspines(ax)
+
+
+#%%
+plt.rcParams.update({'font.size': 22})
+
+fig,ax = plt.subplots(1,1,figsize=(7,7))
+
+#x_s = 'aud_kernel_spl_0.10_dir'
+x_s = 'move_kernel_dir'
+y_s = 'vis_kernel_contrast_0.40_dir'
+
+x_ve = x_s
+y_ve = y_s
+
+if 'vis_kernel_contrast' in x_ve:
+      x_ve = 'vis'
+if 'vis_kernel_contrast' in y_ve:
+      y_ve = 'vis'
+
+
+gSC['combinedVE'] = gSC[('kernelVE_'+x_ve)] + gSC[('kernelVE_'+y_ve)]
+gSC[('kernelSum_'+x_s+'_hemi')] = gSC[('kernelSum_'+x_s)] * gSC.hemi
+gSC[('kernelSum_'+y_s+'_hemi')] = gSC[('kernelSum_'+y_s)] * gSC.hemi
+
+sns.scatterplot(data=gSC,
+                x=('kernelSum_'+x_s+'_hemi'),
+                y=('kernelSum_'+y_s+'_hemi'),
+                hue='combinedVE',hue_norm=(-0.05,0.3),legend=False,palette='magma_r',ax=ax)
+
+off_topspines(ax)
+
 # g.axes[0,2].set_xlim((-1,1))
 # g.axes[1,2].set_ylim((-1,1))
 # %%
@@ -187,7 +221,7 @@ if 'SC_nrns' in which_figure:
        scene.add(br.actors.Points(apdvml, colors='grey', radius=20, alpha=0.3))
 
        scene.add(br.actors.Points(apdvml[gSC.is_vis], colors='blue', radius=20, alpha=1))
-       scene.add(br.actors.Points(apdvml[gSC.is_aud], colors='magenta', radius=20, alpha=1))
+       scene.add(br.actors.Points(apdvml[gSC.is_auddir], colors='magenta', radius=20, alpha=1))
        if len(bool_names)>3:
               scene.add(br.actors.Points(apdvml[gSC.is_move], colors='k', radius=20, alpha=1))
               scene.add(br.actors.Points(apdvml[gSC.is_movedir], colors='orange', radius=20, alpha=1))

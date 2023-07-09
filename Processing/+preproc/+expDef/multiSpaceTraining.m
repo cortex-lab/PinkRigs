@@ -414,7 +414,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             optoLogExists = false;
         end
         is_laser_On_block = e.is_laserOnValues(eIdx); 
-        laserPos = zeros(1,numel(is_laser_On_block));
+        laserPos = NaN(1,numel(is_laser_On_block));
 
         if isfield(e,'laser_power1Values') && optoLogExists % the Controller way of extracting the data          
          % sometimes there is some issue and we miss issuing a waveform
@@ -446,7 +446,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             
             laserPos(laserPosID==1) = hemisphere1;
             laserPos(laserPosID==2) = hemisphere2;
-            laserPos(laserPosID==12) = -11;   % for bilateral, pretty random... % 
+            laserPos(laserPosID==3) = 0;   % for bilateral, pretty random... %  % will be also 0 but will 
              
             all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
             all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');        
