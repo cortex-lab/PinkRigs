@@ -31,6 +31,8 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
                 implantDates{ss} = '2022-06-29';
             case 'CB015'
                 implantDates{ss} = '2021-09-09';
+            case 'Churchland001'
+                implantDates{ss} = '2022-10-27';
         end
     end
 
