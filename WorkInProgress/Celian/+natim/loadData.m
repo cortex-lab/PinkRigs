@@ -16,7 +16,7 @@ function [data, proc, recPathUni] = loadData(varargin)
     % data: struct (size number of days)
     %   Data structure
     %     spikeData: data array with binned PSTHs for all clusters
-    %       (of size time x stim ID x neurons x repeats)
+    %       (of size stim ID x time x neurons x repeats)
     %     C.XPos: clusters' x position
     %     C.Depth: clusters' depth
     %     C.CluID: clusters' ID
@@ -48,7 +48,7 @@ function [data, proc, recPathUni] = loadData(varargin)
 
     varargin = ['subject', {mice(contains(mice.P0_type, '2.0 - 4shank'),:).Subject}, varargin];
     varargin = ['expDate', {inf}, varargin];
-    varargin = ['expDef', {{{'i'}}}, varargin]; 
+    varargin = [varargin, 'expDef', {{{'i'}}}]; % forced, otherwise can't process
     varargin = [varargin, 'checkEvents', {1}]; % forced, otherwise can't process
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
     varargin = ['proc', {proc}, varargin];

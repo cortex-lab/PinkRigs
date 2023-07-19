@@ -7,8 +7,8 @@ function [corrWCCA, W, pUall] = computeCCA(spikeData,cc2keep)
     % Parameters:
     % -------------------
     % spikeData: cell
-    %   Data array with binned PSTHs for all clusters (of size time x
-    %   stim ID x neurons x repeats)
+    %   Data array with binned PSTHs for all clusters (of stim ID x 
+    % time x neurons x repeats)
     % cc2keep (optional): int
     %   Number of Canonical components to keep
     %

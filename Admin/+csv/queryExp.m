@@ -100,7 +100,7 @@ for mm = 1:numel(params.subject)
     end
     if isempty(mouseExps); continue; end
 
-    % Remove rig that don't match
+    % Remove rigs that don't match
     if ~strcmp(params.rig{mm}, 'ignore')
         if ~strcmp(params.rig{mm},'all')
             mouseExps = mouseExps(contains(mouseExps.rigName, params.rig{mm}),:);
