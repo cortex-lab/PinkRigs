@@ -1,19 +1,7 @@
-clear all;
-%
-% params.subject  = {['AV036'];['AV038'];['AV033'];['AV031'];['AV029'];['AV041'];['AV046'];['AV047']};
-params.subject  = {['AV036'];['AV031']};
-params.expDef = 't'; 
-params.checkEvents = '1';
-params.expDate = {['2022-07-01:2023-07-03']}; 
-exp2checkList = csv.queryExp(params);
-
-params = csv.inputValidation(exp2checkList);
-% extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',1,'selHemispheres','uni1','combDates',1,'selPowers',10); 
-extracted = getOptoData(exp2checkList, 'reverse_opto', 1,'combMice',1,'combDates',1,'selPowers','high'); 
+clc; clear all;
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
 
 
-% plot the control vs the opto on the same plot for each 'extracted'
-    
 
 %%
 % fit and plot each set of data
@@ -24,34 +12,43 @@ opto_fit_sets = logical([
     [0,0,0,0,0,0]; ... 
     [1,1,1,0,1,1]; ...
     [1,0,0,0,0,0]; ...
-    [0,1,0,0,0,0]; ...
+    [1,1,0,0,0,0]; ... 
+    [1,0,1,0,0,0]; ...
+    [1,0,0,0,1,0]; ...
+    [1,0,0,0,0,1]; ...
+    [0,1,0,0,0,0]; ... 
     [0,0,1,0,0,0]; ...
     [0,0,0,0,1,0]; ...
     [0,0,0,0,0,1]; ...
-    [0,1,1,1,1,1]; ...   
-    [1,0,1,1,1,1]; ...    
-    [1,1,0,1,1,1]; ...    
-    [1,1,1,1,0,1]; ...    
-    [1,1,1,1,1,0]; ...    
+    [0,1,1,0,1,1]; ...   
+    [1,0,1,0,1,1]; ...    
+    [1,1,0,0,1,1]; ...    
+    [1,1,1,0,0,1]; ...    
+    [1,1,1,0,1,0]; ...    
 ]);
+
+%%
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
 plot_model_pred(2) = 1; 
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits
-plotParams.plottype = 'log'; 
+plotParams.plottype = 'sigmoid'; 
 for s=1:numel(extracted.data)    
     currBlock = extracted.data{s};
     nTrials(s) = numel(currBlock.is_blankTrial); 
-    keepIdx = currBlock.response_direction & currBlock.is_validTrial & currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
-    optoBlock = filterStructRows(currBlock, keepIdx); 
-    keepIdx = currBlock.response_direction & currBlock.is_validTrial & ~currBlock.is_laserTrial & abs(currBlock.stim_audAzimuth)~=30;
-    controlBlock = filterStructRows(currBlock, keepIdx); 
-    
+    optoBlock = filterStructRows(currBlock, currBlock.is_laserTrial); 
+    controlBlock = filterStructRows(currBlock, ~currBlock.is_laserTrial);
+
+    % 
+    %optoBlock = addFakeTrials(optoBlock);
+    %controlBlock = addFakeTrials(controlBlock);
+
     % fit and plot
     controlfit = plts.behaviour.GLMmulti(controlBlock, 'simpLogSplitVSplitA');
     controlfit.fit; 
+    control_fit_params(s,:)= controlfit.prmFits; 
     
     if shouldPlot
         figure; 
@@ -60,12 +57,12 @@ for s=1:numel(extracted.data)
         plotParams.MarkerSize = 24; 
         plot_optofit(controlfit,plotParams,plotfit)
         hold on; 
-        title(sprintf('%s,%.0d opto,%.0d control trials,%.0f mW, %.0f', ...
+        title(sprintf('%s,%.0d opto,%.0d control trials, %.0f mW, %.0f', ...
             extracted.subject{s},...
             numel(optoBlock.is_blankTrial),... 
-            numel(controlBlock.is_blankTrial),... 
-            extracted.optoParams{s}(1),...
-            extracted.optoParams{s}(2)))
+            numel(controlBlock.is_blankTrial),...
+            extracted.power{s},...
+            extracted.hemisphere{s}))
     end
 
 
@@ -74,10 +71,10 @@ for s=1:numel(extracted.data)
         optoBlock.freeP  = opto_fit_sets(model_idx,:);
         orifit = plts.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA');
         orifit.prmInit = controlfit.prmFits;
-        orifit.fit; 
-        opto_fit_logLik(s,model_idx) = orifit.logLik;
+        orifit.fitCV(5); 
+        opto_fit_logLik(s,model_idx) = mean(orifit.logLik);
         % how the parameters actually change 
-        opto_fit_params(s,model_idx,:) = orifit.prmFits;
+        opto_fit_params(s,model_idx,:) = mean(orifit.prmFits,1);
 
         if shouldPlot && plot_model_pred(model_idx)
            %
@@ -98,22 +95,24 @@ end
 % summary plots for cross-validation 
 % only include things that are more than 2k trials
 paramLabels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'}); 
-opto_fit_logLik_ = opto_fit_logLik(nTrials>2000,:); 
 
 % normalise the log2likelihood
 
- 
-% plot order; 
-% calculate fit improvement by varying each predictor 
-best_deltaR2 = opto_fit_logLik_(:,1) - opto_fit_logLik_(:,2);
-deltaR2 = (opto_fit_logLik_(:,1)-opto_fit_logLik_(:,3:7))./best_deltaR2;
-%
 
-cvR2 = (opto_fit_logLik_(:,2)-opto_fit_logLik_(:,8:12))./best_deltaR2;
+ 
+
+% plot order; % calculate fit improvement by varying each predictor 
+
+best_deltaR2 = opto_fit_logLik(:,1) - opto_fit_logLik(:,2);
+deltaR2 = (opto_fit_logLik(:,1)-opto_fit_logLik(:,3:7))./best_deltaR2;
+
+
+cvR2 = (opto_fit_logLik(:,2)-opto_fit_logLik(:,8:12))./best_deltaR2;
 
 %% individual plots 
 figure; 
 plot(deltaR2');
+
 figure;plot(cvR2'); 
 
 %% plot bar plot of summary 
@@ -127,17 +126,48 @@ hold on;
 bar(paramLabels,median(cvR2),'green'); 
 
 %% 
-% summary plot for how the bias term changes between controlfit and bias
+% compare the actual values for each mice 
+
+figure; 
+
+bar([1,2],median(opto_fit_logLik(:,2:3)),['black']);
+hold on
+for m=1:size(opto_fit_logLik,1)
+    plot([1,2],[opto_fit_logLik(m,2),opto_fit_logLik(m,3)])
+    hold on 
+end 
+[h,p]= ttest(opto_fit_logLik(:,2),opto_fit_logLik(:,3));
+
+%%
+labels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'}); 
+
+figure;
+bar([1,2,3,4,5],median(opto_fit_logLik(:,3:7)),['black']);
+hold on
+for m=1:size(opto_fit_logLik,1)
+    plot([1,2,3,4,5],[opto_fit_logLik(m,3:7)])
+    hold on 
+end 
+
+
+
+%%
+
+%% 
+% summary plot for how the each term changes between controlfit and full
+% refit
 % fit
 
 figure; 
-ptype = 1; 
-plot(opto_fit_params(nTrials>2000,1,ptype),opto_fit_params(nTrials>2000,2,ptype),'o')
-hold on; 
-plot([-5,5],[-5,5],'k--')
-xlabel('bias,control fit')
-ylabel('bias,full fit')
-ylim([-5,5])
+for ptype=1:numel(paramLabels)
+    subplot(1,numel(paramLabels),ptype)
+    plot(opto_fit_params(:,1,ptype),opto_fit_params(:,1,ptype)+opto_fit_params(:,2,ptype),'o')
+    hold on; 
+    plot([-5,5],[-5,5],'k--')
+    xlabel(sprintf('%s,control fit',paramLabels(ptype)))
+    ylabel(sprintf('%s,full fit',paramLabels(ptype)))
+    ylim([-5,5])
+end 
 %%
 function plot_optofit(glmData,plotParams,plotfit, fixedContrastPower)
 plottype = plotParams.plottype; 
@@ -185,6 +215,10 @@ plotOpt.FaceAlpha = 0.1;
 visDiff = currBlock.stim_visDiff;
 audDiff = currBlock.stim_audDiff;
 responseDir = currBlock.response_direction;
+
+% append one trialtype to each condition?
+
+
 [visGrid, audGrid] = meshgrid(unique(visDiff),unique(audDiff));
 maxContrast = max(abs(visGrid(1,:)));
 fracRightTurns = arrayfun(@(x,y) mean(responseDir(ismember([visDiff,audDiff],[x,y],'rows'))==2), visGrid, audGrid);

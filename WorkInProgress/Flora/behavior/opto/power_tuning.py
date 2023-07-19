@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 
-my_subject = 'AV041'
+my_subject = 'AV044'
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-06-13',
+    expDate = '2023-07-10',
     data_name_dict={'events':{'_av_trials':'all'}}
     )
 
@@ -37,7 +37,10 @@ print('keeping vis trials only is:',is_only_vis)
 to_keep_trials =(ev.is_visualTrial | ev.is_blankTrial) & ev.is_validTrial
 ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 ##
-laser_power = (ev_.stim_laser1_power+ev_.stim_laser2_power)*ev_.stim_laserPosition
+
+pos_ = ev_.stim_laserPosition
+pos_[np.isnan(pos_)]=0
+laser_power = (ev_.stim_laser1_power+ev_.stim_laser2_power)*pos_
 laser_power = laser_power.astype('int')
 powers = np.unique(laser_power)
 
@@ -62,7 +65,7 @@ for p_idx in range(len(pR)):
 fig.legend(loc=(0.5,0.005),bbox_to_anchor=(1.001, 1))
 ax.set_xlabel('vis contrast')
 ax.set_ylabel('p(Right)')
-ax.set_ylim([0,1.05])
+ax.set_ylim([-0.05,1.05])
 ax.axhline(0.5,xmin=0,xmax=1,color='k',linestyle='--',alpha=.2)
 ax.axvline(0,ymin=0,ymax=1,color='k',linestyle='--',alpha=.2)
 ax.set_title(my_subject)

@@ -12,7 +12,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'AV005'
+dat_type = 'AV024'
 dat_keys = get_data_bunch(dat_type)
 
 #from Admin.csv_queryExp import queryCSV
