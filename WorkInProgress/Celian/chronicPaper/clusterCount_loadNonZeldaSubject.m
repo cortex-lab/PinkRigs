@@ -33,6 +33,8 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
                 implantDates{ss} = '2021-09-09';
             case 'Churchland001'
                 implantDates{ss} = '2022-10-27';
+            case 'Lignani001'
+                implantDates{ss} = '2023-01-15';
         end
     end
 
@@ -51,6 +53,8 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
         [chanPos,~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
         shankIDs = unique(shanks);
         botRow = min(chanPos(:,2));
+
+        expInfoAll{nn}.ephysPathProbe0 = binFile(1).name;
 
         % Get info
         sp = split(binFile(1).folder,'\');

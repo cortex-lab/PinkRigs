@@ -2,11 +2,12 @@
 
 %% Get data
 
-recompute = 0;
+recompute = 1;
 if recompute
     [clusterNum, recLocAll, days, expInfoAll] = plts.spk.clusterCount(pltIndiv=0,getQM=1,getPos=1);
     expInfoAll = cat(1,expInfoAll{:});
-    [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'EB019','CB015'},1,1);
+    [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'EB019','CB015','Churchland001','Lignani001'},1,1);
+%     [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'Lignani001'},1,1);
     clusterNum = cat(2,clusterNum,clusterNum_add);
     recLocAll = cat(2,recLocAll,recLocAll_add);
     days = cat(2,days,days_add);
@@ -30,6 +31,7 @@ probeSNAll = cellfun(@(x) x{2}, recInfo, 'UniformOutput', false);
 
 subjects = unique(subjectsAll);
 colAni = brewermap(numel(subjects),'paired');
+colAni(:) = 0.5;
 
 % Get probe info
 probeSNUni = unique(probeSNAll);
@@ -54,7 +56,9 @@ paramBC = bc_qualityParamValues(e, '');
 paramBC.extractRaw = 0;
 
 % Example subject
-ssEx = find(contains(subjects,'AV009'));
+% exSubj = 'AV009';
+exSubj = 'Lignani001';
+ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
 probes = unique(probeSNAll(exSubjectIdx));
 colAni(ssEx,:) = [0.4157    0.2392    0.6039]; 
@@ -67,9 +71,15 @@ plotAtlasSliceSchematics(470,[],8,[],[]) % posterior probe
 %% Plot raw traces
 
 % Some parameters
-bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
-day2pltList = {16 88 14 88};
-depthWinList = {[800 1000] [800 1000] [3650 3850] [3650 3850]};
+% bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
+% day2pltList = {16 88 16 88};
+% depthWinList = {[800 900] [800 900] [3650 3750] [3650 3750]};
+bankSelList = {sprintf('%s__0__20',probes{1}) sprintf('%s__0__20',probes{1})};
+day2pltList = {1 2};
+depthWinList = {[0 1000] [0 1000]};
+startTime = 1*60;
+winSize = 3;
+process = 1;
 
 % Extract data
 data = cell(1,numel(bankSelList));
@@ -87,9 +97,6 @@ for ll = 1:numel(bankSelList)
     fileName = fullfile(d.folder,d.name);
 
     % Get raw data snippet
-    startTime = 2*60;
-    winSize = .5;
-    process = 1;
     data{ll} = readRawDataChunk(fileName,startTime,winSize,process);
     data{ll} = data{ll}(:,1:384);
 
@@ -106,8 +113,8 @@ for ll = 1:numel(bankSelList)
     spikes.times = preproc.align.event2Timeline(spikes.times, alignment.ephys(probeAlign).timelineTimes, alignment.ephys(probeAlign).originTimes);
     clusters = csv.loadData(expInfo,dataType=probeName,object='clusters');
     clusters = clusters.dataSpikes{1}.(probeName{1}).clusters;
-    figure; hold all
-    imagesc(startTime:1/cbinMeta.sample_rate:(startTime+winSize), 1:384, data{ll}(:,chanIdx)');
+%     figure; hold all
+%     imagesc(startTime:1/cbinMeta.sample_rate:(startTime+winSize), 1:384, data{ll}(:,chanIdx)');
     for clu = unique(spikes.clusters)'
         sp = spikes.times(spikes.times > startTime & spikes.times < startTime + winSize & spikes.clusters == clu);
         scatter(sp,ones(1,numel(sp))*find(double(clusters.channels(clusters.IDs == clu))+1 == chanIdx),40,'k')
@@ -116,25 +123,29 @@ end
 
 % Plot it
 figure('Position',[600 200 numel(bankSelList)*200 700])
+clear s
 for ll = 1:numel(bankSelList)
     bankSel = bankSelList{ll};
     day2plt = day2pltList{ll};
     depthWin = depthWinList{ll};
 
     % Plot within a certain depth
-    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2));
-    subplot(1, numel(bankSelList), ll); hold all
+    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2) & chanPos{ll}(:,1) == 0);
+    s(ll) = subplot(1, numel(bankSelList), ll); hold all
     for cc = 1:numel(chanIdx)
         plot((1:winSize*30000)/30000,ones(1,size(data,1))*50*(chanPos{ll}(chanIdx(cc),2)-chanPos{ll}(chanIdx(1),2)) + double(data{ll}(:,chanIdx(cc)))','k')
     end
     xlim([0 0.05])
+    ylim([-500 4000])
     title(bankSel)
 end
+linkaxes(s([1 3]),'x')
+linkaxes(s([2 4]),'x')
 
 %% Plot depth raster for full probe
 
 for pp = 1:numel(probes)
-    fullProbeScanSpec = cellfun(@(x) [subjects{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
+    fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
 
     meas = cell(1,numel(fullProbeScanSpec));
     for rr = 1:numel(fullProbeScanSpec)
@@ -157,7 +168,7 @@ for pp = 1:numel(probes)
 
     fun = @(x) x.^0.5;
     colors = winter(5);
-    figure('Position', [680   282   441   685], 'Name', [subjects{ss} '__' probes{pp}]);
+    figure('Position', [680   282   441   685], 'Name', [subjects{ssEx} '__' probes{pp}]);
     for rr = 1:numel(fullProbeScanSpec)
         ax(rr) = subplot(2,4,rr);
         imagesc(cell2mat(daysSinceImplant{rr}),depthBins{rr},fun(meas{rr}'))
@@ -236,9 +247,9 @@ for rr = 1:size(expInfoAll,1)
     probeName = fieldnames(expInfoAll(rr,:).dataSpikes{1});
     clusters = expInfoAll(rr,:).dataSpikes{1}.(probeName{1}).clusters;
     if ~isempty(clusters.qualityMetrics)
-%         idx2Use = strcmp(clusters.qualityMetrics.ks2_label,"good");
-        unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
-        idx2Use = unitType == 1;
+        idx2Use = strcmp(clusters.qualityMetrics.ks2_label,"good");
+%         unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
+%         idx2Use = unitType == 1;
 
 %         qm(rr) = sum(clusters.bc_qualityMetrics.nSpikes(idx2Use)); yRng = [100 20000]; %Total spks/s
 %         qm(rr) = sum(clusters.qualityMetrics.firing_rate(idx2Use)); yRng = [100 20000]; %Total spks/s
@@ -262,8 +273,10 @@ hold all
 % Find those that match location
 % Do it by subject and probe so that it's easier to do the whole probe
 % thing...?
-subjectsToInspect = {'AV009'};
-% subjectsToInspect = subjects;
+% subjectsToInspect = {'Lignani001'};
+% subjectsToInspect = {'Churchland001'};
+% subjectsToInspect = {'AV009'};
+subjectsToInspect = subjects;
 colAniToInspect = colAni(ismember(subjects,subjectsToInspect),:);
 dlim = 2;
 pltIndivBank = 1;
@@ -306,10 +319,12 @@ for ss = 1:numel(subjectsToInspect)
                 tmp(tmp == 0) = 0.1;
                 b{ss,pp}(rr,:) = (X\log10(tmp'));
 
-                if pltIndivBank && pp == 1
-                    if pltData; plot(days(recIdx), qm(recIdx),'color',[colAniToInspect(ss,:) .2]);
-                        scatter(days(recIdx), qm(recIdx),5,colAniToInspect(ss,:),'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2); end
-                    if pltFit; plot(days(recIdx), 10.^(X*b{ss,pp}(rr,:)'), 'color',colAniToInspect(ss,:),'LineWidth',1); end
+                if pltIndivBank % && pp == 1
+                    colHack = [0.8157    0.2392    0.6039];
+                    % fyi colHack = colAniToInspect(ss,:);
+                    if pltData; plot(days(recIdx), qm(recIdx),'color',[colHack .2]);
+                        scatter(days(recIdx), qm(recIdx),5,colHack,'filled','MarkerEdgeAlpha',0.2,'MarkerFaceAlpha',0.2); end
+                    if pltFit; plot(days(recIdx), 10.^(X*b{ss,pp}(rr,:)'), 'color',colHack,'LineWidth',1); end
                 end
             else
                 recLocSlope{ss,pp}{rr} = '';
@@ -358,7 +373,7 @@ for ss = 1:numel(subjectsToInspect)
         qmAllProbes = nanmean(qmProbe(:,probesInUse,ss),2);
         nanday = isnan(qmAllProbes);
         if pltData; plot(daysSub(~nanday),qmAllProbes(~nanday),'-','color',[colAniToInspect(ss,:) .2]);
-        scatter(daysSub(~nanday),qmAllProbes(~nanday),30,colAniToInspect(ss,:),'filled'); end
+        scatter(daysSub(~nanday),qmAllProbes(~nanday),20,colAniToInspect(ss,:),'filled'); end
         X = [ones(numel(daysSub(~nanday)),1), daysSub(~nanday)'];
         ball = (X\log10(qmAllProbes(~nanday)));
         if pltFit; plot(daysSub(~nanday), 10.^(X*ball), 'color',colAniToInspect(ss,:),'LineWidth',2); end
@@ -369,7 +384,7 @@ end
 % plot(daysSub, 10.^(X*[nanmedian(interceptMean(:)); nanmedian(slopeMean(:))]), 'color','k','LineWidth',3)
 
 subj(cell2mat(cellfun(@(x) isempty(x), subj, 'uni', 0))) = {' '};
-
+% 
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 ylabel({'Recorded units'})
@@ -449,7 +464,7 @@ hold all
 % scatter(x,y(idx),40*uses(idx),[0.5 0.5 0.5],'filled');
 % fullProbeIdx = find(contains(subjVec(idx),fullProbeSubj));
 for ff = 1:numel(x)
-    scatter(x(ff),y(idx(ff)),50,'MarkerEdgeColor',colAnitmp(idx(ff),:), ...
+    scatter(x(ff),y(idx(ff)),20,'MarkerEdgeColor',colAnitmp(idx(ff),:), ...
         'MarkerFaceColor',filledProbes(probesIdx(idx(ff)))*colAnitmp(idx(ff),:)+(1-filledProbes(probesIdx(idx(ff)))), ...
         'Marker',markersProbes(probesIdx(idx(ff))));
 end
@@ -469,7 +484,7 @@ x = APpos;
 y = slopeVec;
 % patch([min(x) min(x) max(x) max(x)], [SteinmetzSlopes SteinmetzSlopes(end:-1:1)], ones(1,3)*0.9,  'EdgeColor','none')
 for ff = 1:numel(x)
-    scatter(x(idx(ff)),y(idx(ff)),40,'MarkerEdgeColor',colAnitmp(idx(ff),:), ...
+    scatter(x(idx(ff)),y(idx(ff)),20,'MarkerEdgeColor',colAnitmp(idx(ff),:), ...
         'MarkerFaceColor',filledProbes(probesIdx(idx(ff)))*colAnitmp(idx(ff),:)+(1-filledProbes(probesIdx(idx(ff)))), ...
         'Marker',markersProbes(probesIdx(idx(ff))));
 end
@@ -491,15 +506,21 @@ for pp = 1:numel(probesVecUni)
     end
     probeIdx = probeIdx(sortIdx);
     probeRef = contains(probeSNUni,probesVecUni{pp});
-    scatter(x(probeIdx),y(probeIdx),30,'MarkerEdgeColor',colProbes(probeRef,:), ...
+    scatter(x(probeIdx),y(probeIdx),20,'MarkerEdgeColor',colProbes(probeRef,:), ...
         'MarkerFaceColor',filledProbes(probeRef)*colProbes(probeRef,:)+(1-filledProbes(probeRef)), ...
         'Marker',markersProbes{probeRef});
     plot(x(probeIdx),y(probeIdx),'color',colProbes(probeRef,:));
 end
+% plot example animal
+probeIdx = contains(subjVec,exSubj);
+scatter(x(probeIdx),y(probeIdx),20,'MarkerEdgeColor',colAni(ssEx,:), ...
+    'MarkerFaceColor',filledProbes(probeRef)*colAni(ssEx,:)+(1-filledProbes(probeRef)), ...
+    'Marker',markersProbes{probeRef});
 plot(unique(x),lme.Coefficients.Estimate(1) + ...
     lme.Coefficients.Estimate(contains(lme.CoefficientNames,'uses'))*unique(x),'k','LineWidth',2)
 ylabel({'% change of unit';  ' count (%/day)'})
-xlabel('Probe use')
+xlabel('Probe uses')
+xticks(1:2:7)
 offsetAxes
 
 %% Compute slopes for cortical / subcortical
