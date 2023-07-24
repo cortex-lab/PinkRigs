@@ -2,7 +2,7 @@
 
 %% Get data
 
-recompute = 1;
+recompute = 0;
 if recompute
     [clusterNum, recLocAll, days, expInfoAll] = plts.spk.clusterCount(pltIndiv=0,getQM=1,getPos=1);
     expInfoAll = cat(1,expInfoAll{:});
@@ -16,6 +16,7 @@ if recompute
     expInfoAll_tmp.Properties.VariableNames = expInfoAll.Properties.VariableNames;
     expInfoAll_tmp.dataSpikes = expInfoAll_add.dataSpikes;
     expInfoAll_tmp.daysSinceImplant = num2cell(expInfoAll_add.daysSinceImplant);
+    expInfoAll_tmp.ephysPathProbe0 = expInfoAll_add.ephysPathProbe0;
     expInfoAll = cat(1,expInfoAll,expInfoAll_tmp);
     save('\\znas.cortexlab.net\Lab\Share\Celian\dataForPaper_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'expInfoAll')
 else
@@ -52,12 +53,11 @@ fullProbeScan = {{'0__2880'}, {'1__2880'}, {'2__2880'}, {'3__2880'}, ...
 
 % BC params
 e.folder = ''; e.name = ''; % hack
-paramBC = bc_qualityParamValues(e, '');
-paramBC.extractRaw = 0;
+paramBC = bc_qualityParamValuesForUnitMatch(e, '');
 
 % Example subject
-% exSubj = 'AV009';
-exSubj = 'Lignani001';
+exSubj = 'AV009';
+% exSubj = 'Lignani001';
 ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
 probes = unique(probeSNAll(exSubjectIdx));
@@ -71,12 +71,13 @@ plotAtlasSliceSchematics(470,[],8,[],[]) % posterior probe
 %% Plot raw traces
 
 % Some parameters
-% bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
-% day2pltList = {16 88 16 88};
+bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
+day2pltList = {16 88 16 88};
+depthWinList = {[300 1500] [300 1500] [3000 4200] [3000 4200]};
 % depthWinList = {[800 900] [800 900] [3650 3750] [3650 3750]};
-bankSelList = {sprintf('%s__0__20',probes{1}) sprintf('%s__0__20',probes{1})};
-day2pltList = {1 2};
-depthWinList = {[0 1000] [0 1000]};
+% bankSelList = {sprintf('%s__0__20',probes{1}) sprintf('%s__0__20',probes{1}) sprintf('%s__0__20',probes{1})};
+% day2pltList = {1 2 10};
+% depthWinList = {[1300 2500] [1300 2500] [1300 2500]};
 startTime = 1*60;
 winSize = 3;
 process = 1;
@@ -89,7 +90,7 @@ for ll = 1:numel(bankSelList)
     day2plt = day2pltList{ll};
 
     recIdx = find(exSubjectIdx & cell2mat(expInfoAll.daysSinceImplant)' == day2plt & contains(recLocAll, bankSel));
-    recIdx = recIdx(1); % in case there are two
+    recIdx = recIdx(end); % in case there are two
     expInfo = expInfoAll(recIdx,:);
     probeName = fieldnames(expInfo.dataSpikes{1});
     rec = expInfo.(sprintf('ephysPathP%s',probeName{1}(2:end))){1};
@@ -104,21 +105,22 @@ for ll = 1:numel(bankSelList)
     [chanPos{ll}, elecPos, shank, probeSN] = getRecordingSites(d.name,d.folder);
     [~,chanIdx] = sort(chanPos{ll}(:,2));
 
-    % See if can find the spikes
-    spikes = csv.loadData(expInfo,dataType=probeName{1},object='spikes');
-    spikes = spikes.dataSpikes{1}.(probeName{1}).spikes;
-    a = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
-    alignment = load(fullfile(a.folder,a.name));
-    probeAlign = contains({alignment.ephys.ephysPath},rec);
-    spikes.times = preproc.align.event2Timeline(spikes.times, alignment.ephys(probeAlign).timelineTimes, alignment.ephys(probeAlign).originTimes);
-    clusters = csv.loadData(expInfo,dataType=probeName,object='clusters');
-    clusters = clusters.dataSpikes{1}.(probeName{1}).clusters;
+%     % See if can find the spikes
+%     spikes = csv.loadData(expInfo,dataType=probeName{1},object='spikes');
+%     spikes = spikes.dataSpikes{1}.(probeName{1}).spikes;
+%     a = dir(fullfile(expInfo.expFolder{1},'*alignment.mat'));
+%     alignment = load(fullfile(a.folder,a.name));
+%     probeAlign = contains({alignment.ephys.ephysPath},rec);
+%     spikes.times = preproc.align.event2Timeline(spikes.times, alignment.ephys(probeAlign).timelineTimes, alignment.ephys(probeAlign).originTimes);
+%     clusters = csv.loadData(expInfo,dataType=probeName,object='clusters');
+%     clusters = clusters.dataSpikes{1}.(probeName{1}).clusters;
+
 %     figure; hold all
 %     imagesc(startTime:1/cbinMeta.sample_rate:(startTime+winSize), 1:384, data{ll}(:,chanIdx)');
-    for clu = unique(spikes.clusters)'
-        sp = spikes.times(spikes.times > startTime & spikes.times < startTime + winSize & spikes.clusters == clu);
-        scatter(sp,ones(1,numel(sp))*find(double(clusters.channels(clusters.IDs == clu))+1 == chanIdx),40,'k')
-    end
+%     for clu = unique(spikes.clusters)'
+%         sp = spikes.times(spikes.times > startTime & spikes.times < startTime + winSize & spikes.clusters == clu);
+%         scatter(sp,ones(1,numel(sp))*find(double(clusters.channels(clusters.IDs == clu))+1 == chanIdx),40,'k')
+%     end
 end
 
 % Plot it
@@ -130,7 +132,7 @@ for ll = 1:numel(bankSelList)
     depthWin = depthWinList{ll};
 
     % Plot within a certain depth
-    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2) & chanPos{ll}(:,1) == 0);
+    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2));
     s(ll) = subplot(1, numel(bankSelList), ll); hold all
     for cc = 1:numel(chanIdx)
         plot((1:winSize*30000)/30000,ones(1,size(data,1))*50*(chanPos{ll}(chanIdx(cc),2)-chanPos{ll}(chanIdx(1),2)) + double(data{ll}(:,chanIdx(cc)))','k')
@@ -139,13 +141,53 @@ for ll = 1:numel(bankSelList)
     ylim([-500 4000])
     title(bankSel)
 end
-linkaxes(s([1 3]),'x')
-linkaxes(s([2 4]),'x')
+if numel(day2pltList)>numel(bankSelList)
+    linkaxes(s(1:2:end),'x')
+    linkaxes(s(2:2:end),'x')
+end
+
+figure('Position',[600 200 numel(bankSelList)*200 700])
+clear s
+for ll = 1:numel(bankSelList)
+    bankSel = bankSelList{ll};
+    day2plt = day2pltList{ll};
+    depthWin = depthWinList{ll};
+
+    % Plot within a certain depth
+    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2));
+    s(ll) = subplot(1, numel(bankSelList), ll); hold all
+    imagesc(double(data{ll}(:,chanIdx)))
+    xlim([0 0.05])
+    title(bankSel)
+end
+if numel(day2pltList)>numel(bankSelList)
+    linkaxes(s(1:2:end),'x')
+    linkaxes(s(2:2:end),'x')
+end
+
+figure('Position',[600 200 numel(bankSelList)*200 700])
+clear s
+for ll = 1:numel(bankSelList)
+    bankSel = bankSelList{ll};
+    day2plt = day2pltList{ll};
+    depthWin = depthWinList{ll};
+
+    % Plot within a certain depth
+    chanIdx = find(chanPos{ll}(:,2)>depthWin(1) & chanPos{ll}(:,2)<depthWin(2) & (chanPos{ll}(:,1) == 0 | chanPos{ll}(:,1) == 11));
+    s(ll) = subplot(1, numel(bankSelList), ll); hold all
+    for cc = 1:numel(chanIdx)
+        plot((1:winSize*30000)/30000,ones(1,size(data,1))*30*(chanPos{ll}(chanIdx(cc),2)-chanPos{ll}(chanIdx(1),2)) + 10*double(data{ll}(:,chanIdx(cc)))','k')
+    end
+    xlim([0 0.05])
+%     ylim([-500 4000])
+    title(bankSel)
+end
 
 %% Plot depth raster for full probe
 
 for pp = 1:numel(probes)
-    fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
+    % fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0
+fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
 
     meas = cell(1,numel(fullProbeScanSpec));
     for rr = 1:numel(fullProbeScanSpec)
@@ -247,9 +289,9 @@ for rr = 1:size(expInfoAll,1)
     probeName = fieldnames(expInfoAll(rr,:).dataSpikes{1});
     clusters = expInfoAll(rr,:).dataSpikes{1}.(probeName{1}).clusters;
     if ~isempty(clusters.qualityMetrics)
-        idx2Use = strcmp(clusters.qualityMetrics.ks2_label,"good");
-%         unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
-%         idx2Use = unitType == 1;
+%         idx2Use = strcmp(clusters.qualityMetrics.ks2_label,"good");
+        unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
+        idx2Use = unitType == 1;
 
 %         qm(rr) = sum(clusters.bc_qualityMetrics.nSpikes(idx2Use)); yRng = [100 20000]; %Total spks/s
 %         qm(rr) = sum(clusters.qualityMetrics.firing_rate(idx2Use)); yRng = [100 20000]; %Total spks/s
@@ -279,10 +321,10 @@ hold all
 subjectsToInspect = subjects;
 colAniToInspect = colAni(ismember(subjects,subjectsToInspect),:);
 dlim = 2;
-pltIndivBank = 1;
+pltIndivBank = 0;
 pltIndivProbe = 1;
 pltAllProbes = 0;
-pltData = 1;
+pltData = 0;
 pltFit = 1;
 
 recLocSlope = cell(1,1);
@@ -319,7 +361,7 @@ for ss = 1:numel(subjectsToInspect)
                 tmp(tmp == 0) = 0.1;
                 b{ss,pp}(rr,:) = (X\log10(tmp'));
 
-                if pltIndivBank % && pp == 1
+                if pltIndivBank && pp == 1
                     colHack = [0.8157    0.2392    0.6039];
                     % fyi colHack = colAniToInspect(ss,:);
                     if pltData; plot(days(recIdx), qm(recIdx),'color',[colHack .2]);
