@@ -2,7 +2,7 @@ queuePath = '\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers';
 
 %% Get recordings
 
-subjectList = {'EB014','EB019','CB015'};
+subjectList = {'Lignani001'};
 
 serverLocations = getServersList;
 sorted = [];
@@ -43,6 +43,22 @@ for dd = 1:numel(dtosort)
 end
 csv.writeTable(M,fullfile(queuePath, 'pykilosort_queue.csv'));
 
+%% Change the param.py...
+
+for dd = 1:numel(dtoformat)
+    paramPath = fullfile(dtoformat(dd).folder, 'pyKS','output','params.py');
+    fid = fopen(paramPath);
+    C = textscan(fid,'%s','delimiter','\n');
+    fclose(fid);
+    C{1}{1} = regexprep(C{1}{1},'"../','r"');
+
+    fid = fopen(paramPath,'w');
+    for kk = 1:numel(C{1})
+        fprintf(fid,'%s\n',C{1}{kk});
+    end
+    fclose(fid);
+end
+
 %% Update IBL format queue
 
 M = csv.readTable(fullfile(queuePath, 'ibl_formatting_queue.csv'));
@@ -61,7 +77,7 @@ if ~exist(decompressDataLocal, 'dir')
     mkdir(decompressDataLocal)
 end
 
-recompute = 0;
+recompute = 1;
 for dd = 1:numel(dtoQM)
     % Set paths
     ephysKilosortPath = fullfile(dtoQM(dd).folder,'PyKS','output');
