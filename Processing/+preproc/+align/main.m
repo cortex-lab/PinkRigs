@@ -16,7 +16,7 @@ function main(varargin)
     %% Get parameters and list of mice to check
     % Parameters for processing (can be inputs in varargin)
     varargin = ['recompute', 'none', varargin];
-    varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
+    varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam';'topCam'}}}, varargin];
     varargin = ['process', 'all', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);    

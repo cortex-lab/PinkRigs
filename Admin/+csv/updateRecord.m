@@ -89,17 +89,20 @@ nDat.existTimeline = {}; % exist of timeline file
 nDat.existFrontCam = {}; % exist of frontCam file
 nDat.existSideCam = {}; % exist of sideCam file
 nDat.existEyeCam = {}; % exist of eyeCam file
+nDat.existTopCam = {}; % exist of topCam file
 nDat.existMic = {}; % exist of microphone data file
 nDat.existEphys = {}; % exist ephysFolder
 nDat.alignBlock = {}; % alignment status for block file
 nDat.alignFrontCam = {}; % alignment status for front file
 nDat.alignSideCam = {}; % alignment status for side cam
 nDat.alignEyeCam = {}; % alignment status for eye cam
+nDat.alignTopCam = {}; % alignment status for top cam
 nDat.alignMic = {}; % alignment status for microphone
 nDat.alignEphys = {}; % alignment status for ephys
 nDat.fMapFrontCam = {}; % facemap status for front cam
 nDat.fMapSideCam = {}; % facemap status for side cam
 nDat.fMapEyeCam = {}; % facemap status for eye cam
+nDat.fMapTopCam = {}; % facemap status for top cam
 nDat.issortedPyKS = {}; % logical--is there a PyKilosort output yet
 nDat.extractSpikes = {}; % extraction status for spikes
 nDat.extractEvents = {}; % extraction status for events
@@ -127,7 +130,7 @@ end
 % FT009). Need to decide how to change this in the future...??
 blk = load(blockPath); blk = blk.block;
 csv.getOldPipMice;
-if ~contains(blk.rigName, 'zelda') && ~contains(subject, ...
+if (~contains(blk.rigName, 'zelda') && ~contains(blk.rigName, 'poppy')) && ~contains(subject, ...
         [{'FT008';'FT009';'FT010';'FT011';'FT027';'AV031'}; oldPipMice])
     return;
 end
@@ -176,6 +179,7 @@ nDat.existTimeline = num2str(any(contains({expFoldContents.name}','Timeline.mat'
 nDat.existSideCam = num2str(any(contains({expFoldContents.name}','sideCam.mj2')));
 nDat.existFrontCam = num2str(any(contains({expFoldContents.name}','frontCam.mj2')));
 nDat.existEyeCam = num2str(any(contains({expFoldContents.name}','eyeCam.mj2')));
+nDat.existTopCam = num2str(any(contains({expFoldContents.name}','topCam.mj2')));
 nDat.existMic = num2str(any(contains({expFoldContents.name}','mic.mat')));
 
 % Check if there is an ephys folder
@@ -281,7 +285,7 @@ if numel(nDat.alignEphys) == 2 && nDat.alignEphys(2) == 1
 end
 
 %Populate alignCamera entries
-for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'}'
+for vidName = {'FrontCam'; 'SideCam'; 'EyeCam'; 'TopCam'}'
     if ~strcmpi(nDat.(['exist' vidName{1}]), '1') && round(now-blk.endDateTime)<7 && nDat.existTimeline
         % Issue a "0" if no video, but less than 7 days since recording
         nDat.(['align' vidName{1}]) = '0';

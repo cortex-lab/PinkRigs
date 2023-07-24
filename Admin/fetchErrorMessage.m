@@ -16,7 +16,7 @@ function errorMessages = fetchErrorMessage(varargin)
     % errorMessages: struct
     %   Contains info about all the error messages.
 
-    varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam'}}}, varargin];
+    varargin = ['videoNames', {{{'frontCam';'sideCam';'eyeCam';'topCam'}}}, varargin];
     varargin = ['whichMessage', 'all', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);
