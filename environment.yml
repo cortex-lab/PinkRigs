@@ -181,12 +181,15 @@ dependencies:
     - nptyping==2.4.1
     - numexpr==2.8.4
     - numpy==1.21.5
+    - opencv-python==4.8.0.74
+    - paranoid-scientist==0.2.2
     - pathlib==1.0.1
     - patsy==0.5.3
     - pkgutil-resolve-name==1.3.10
     - plotly==5.13.0
     - plotly-express==0.4.1
     - py==1.11.0
+    - pyddm==0.7.0
     - pyinspect==0.1.0
     - pynrrd==1.0.0
     - pyqt5-sip==4.19.18
