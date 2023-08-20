@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1); 
 
 
 
@@ -224,6 +224,8 @@ maxContrast = max(abs(visGrid(1,:)));
 fracRightTurns = arrayfun(@(x,y) mean(responseDir(ismember([visDiff,audDiff],[x,y],'rows'))==2), visGrid, audGrid);
 
 visValues = abs(visGrid(1,:)).^contrastPower.*sign(visGrid(1,:))./(maxContrast.^contrastPower);
+% instead of creating visValues you use both visGrid and audGrid and the
+% parameters to compute f(s)....
 if strcmp(plottype, 'log')
     fracRightTurns = log10(fracRightTurns./(1-fracRightTurns));
 end

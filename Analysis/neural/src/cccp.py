@@ -22,8 +22,6 @@ def get_mann_whitneyU(x,y,n_shuffles=20):
 
     (reason why I input the entire parameter array is because I want to make the permutation sets the same for each nrn)
 
-
-
     """    
 
     x_y = np.concatenate((x,y),axis=0)

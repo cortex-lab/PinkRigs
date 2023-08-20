@@ -139,6 +139,11 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     trialStEnTimes = [trialStTimes(eIdx)' trialEnTimes(eIdx)'];
 
+
+    quiescentStEndTimes =  preproc.align.event2Timeline(block.events.preStimQuiescentDurationTimes, ...
+        alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+
+
     stimStartBlock = preproc.align.event2Timeline(block.events.stimPeriodOnOffTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     stimStartBlock = stimStartBlock(1:2:end);
@@ -373,34 +378,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     points2Keep(points2Keep > length(wheelDeg)) = [];
     tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' wheelDeg(points2Keep)];
 
-    %%
-    rawFields = fields(tExt);
-    for i = 1:length(rawFields)
-        currField = rawFields{i};
-        currData = tExt.(currField);
-        tExt.(currField) = indexByTrial(trialStEnTimes, currData(:,1), currData);
-        emptyIdx = cellfun(@isempty, tExt.(currField));
-
-        if any(strcmp(currField, {'allMovOnsetsTimDir'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
-            if contains(currField, {'OnOff', 'TimeValue', 'TimDir'}, 'IgnoreCase',1)
-                nColumns = 2;
-            else
-                nColumns = 1;
-            end
-            tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
-            tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
-        end
-        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
-            nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
-            if nColumns == 0; nColumns = size(currData,2); end
-            tExt.(currField)(emptyIdx) = deal({nan*ones(1, nColumns)});
-            tExt.(currField) = single(cell2mat(tExt.(currField)));
-        end
-    end
-    tExt.rewardTimes(cellfun(@length, tExt.rewardTimes)>1) = {nan};
-    tExt.rewardTimes(responseRecorded~=1) = {nan};
-    tExt.rewardTimes = cellfun(@double, tExt.rewardTimes);
-
+   
     %%
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
         disp('opto data...')
@@ -513,6 +491,42 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         power_laser2 = zeros(numel(eIdx),1)';
     end
     laser_times_trial_indexed = single(laser_times_trial_indexed);
+
+    % calculate first movement after laser onset? 
+    if ~all(isnan(is_laser_On),'all')
+        tExt.firstMovePostLaserTimeDir = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(is_laser_On), laser_times_per_trial(is_laser_On), 'uni', 0));
+    else
+        tExt.firstMovePostLaserTimeDir = [nan, nan];
+    end 
+    %%
+
+    rawFields = fields(tExt);
+    for i = 1:length(rawFields)
+        currField = rawFields{i};
+        currData = tExt.(currField);
+        tExt.(currField) = indexByTrial(trialStEnTimes, currData(:,1), currData);
+        emptyIdx = cellfun(@isempty, tExt.(currField));
+
+        if any(strcmp(currField, {'allMovOnsetsTimDir'; 'audStimOnOff'; 'visStimOnOff'; 'rewardTimes';'wheelTraceTimeValue'}))
+            if contains(currField, {'OnOff', 'TimeValue', 'TimDir'}, 'IgnoreCase',1)
+                nColumns = 2;
+            else
+                nColumns = 1;
+            end
+            tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
+            tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
+        end
+        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff';'firstMovePostLaserTimeDir'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
+            nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
+            if nColumns == 0; nColumns = size(currData,2); end
+            tExt.(currField)(emptyIdx) = deal({nan*ones(1, nColumns)});
+            tExt.(currField) = single(cell2mat(tExt.(currField)));
+        end
+    end
+    tExt.rewardTimes(cellfun(@length, tExt.rewardTimes)>1) = {nan};
+    tExt.rewardTimes(responseRecorded~=1) = {nan};
+    tExt.rewardTimes = cellfun(@double, tExt.rewardTimes);
+
     %% Populate n with all fields;
     ev.is_blankTrial = is_blankTrial;
     ev.is_visualTrial = is_visualTrial;
@@ -554,6 +568,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.stim_laserPosition = laserPos'; 
     ev.stim_laser1_power = power_laser1';
     ev.stim_laser2_power = power_laser2';
+    ev.timeline_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir(:,1);
+    ev.timeline_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir(:,2);
 
     ev.stim_correctResponse = single(correctResponse);
     ev.stim_repeatNum = single(repeatNums);
