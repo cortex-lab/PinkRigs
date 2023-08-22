@@ -67,4 +67,7 @@ for i=1:size(paramSet,1)
    opto.power{i,1}=paramSet(i,3); 
 end 
 
+disp(sprintf('*** COMPLETED. Extracted %.0f datasets from %.0f subjects. ***',numel(opto.subject),numel(unique([opto.subject{:}]))))
+
+
 end 

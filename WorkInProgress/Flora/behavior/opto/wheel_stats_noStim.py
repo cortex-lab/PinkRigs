@@ -21,12 +21,15 @@ data_dict = {
 subject = ['AV046','AV047','AV041','AV044','AV036']
 #subject = ['AV047']
 #recordings = query_opto(subject=subject,expDate = 'all',expDef='multiSpace',data_dict=data_dict)
-recordings = load_data(subject=subject,expDate='2022-04-25:2023-08-08',expDef='multiSpace',data_name_dict=data_dict)
+recordings = load_data(subject=subject,expDate='2022-04-25:2023-08-20',expDef='multiSpace',data_name_dict=data_dict)
 recordings = recordings[recordings.extractEvents=='1']
 
-to_keep = [(rec.events._av_trials.is_noStimTrial.sum()>5 & ~(np.isnan(rec.events._av_trials.is_laserTrial).all())) for _,rec in recordings.iterrows()]
+#to_keep = [ ~(np.isnan(rec.events._av_trials.is_laserTrial).all()) for _,rec in recordings.iterrows()]
+
+to_keep = [np.sum(rec.events._av_trials.is_laserTrial)>0 for _,rec in recordings.iterrows()]
 recordings = recordings[to_keep]
 
+# (rec.events._av_trials.is_noStimTrial.sum()>5) &
 
 
 def batch_rasters(rec,return_shuffles=False): 

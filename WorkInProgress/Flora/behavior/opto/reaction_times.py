@@ -14,15 +14,17 @@ from Analysis.pyutils.ev_dat import getTrialNames
 my_subject = ['AV047']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-06-02:2023-07-27',
+    expDate = '2023-05-02:2023-08-20',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'table'}}
     )
 
 # %% 
-ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=True) for _,rec in recordings.iterrows()])
-is_laser_session = [np.sum(e.is_laserTrial)>0 for e in ev]
+ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=False) for _,rec in recordings.iterrows()])
+
+# %%
+is_laser_session = [(np.sum(e.is_laserTrial)>0)  & (e.stim_laserPosition==0).any() for e in ev]
 ev = list(compress(ev,is_laser_session))
 # %%
 ev_keys = list(ev[0].keys())
@@ -56,7 +58,7 @@ aud_azimuths = np.unique(ev.stim_audAzimuth[~np.isnan(ev.stim_audAzimuth)])
 azimuth_colors = plt.cm.coolwarm(np.linspace(0,1,aud_azimuths.size))
 
 
-laser_keep_set = (ev.laser_power==34) & (np.abs(ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial 
+laser_keep_set = (ev.laser_power==20) & (np.abs(ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ~ev.is_laserTrial 
@@ -96,7 +98,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-laser_keep_set = (ev.laser_power==20) & ((ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+laser_keep_set = (ev.laser_power==34) & ((ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
@@ -141,7 +143,10 @@ ax[1].legend(powers)
 import pandas as pd
 import seaborn as sns
 
-to_keep_trials = ev.is_validTrial & (((np.abs(ev.stim_laserPosition))==0)|(np.isnan(ev.stim_laserPosition)))
+to_keep_trials = (ev.is_validTrial &
+                  (((np.abs(ev.stim_laserPosition))==0)|(np.isnan(ev.stim_laserPosition))) & 
+                  (ev.laser_power==34)|(ev.laser_power==0)|(ev.laser_power==20)|(ev.laser_power==10))
+
 ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 df = pd.DataFrame(ev_)
 df['trialNames'] = getTrialNames(ev_)
@@ -163,10 +168,10 @@ sns.boxenplot(data=df,
 ax.set_ylabel('reaction time (s)')
 #plt.legend([],[], frameon=False)
 off_topspines(ax)
-mypath = r'C:\Users\Flora\Pictures\LakeConf'
-savename = mypath + '\\' + 'optoRTs.svg'
+# mypath = r'C:\Users\Flora\Pictures\LakeConf'
+# savename = mypath + '\\' + 'optoRTs.svg'
 
-fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+# fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 # %%
 # summary plot of this matter would include (according to Pip)
@@ -180,3 +185,4 @@ for i,a in enumerate(aud_azimuths):
 
 
 # 
+# %%

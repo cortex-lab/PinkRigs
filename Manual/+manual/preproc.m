@@ -2,7 +2,7 @@ close all
 
 clear params
 params.subject = {['all']};
-params.expDate = {['2023-08-08']}; 
+params.expDate = {['all']}; 
 params.expDef = 't'; 
 
 %
