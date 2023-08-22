@@ -15,25 +15,37 @@ function result = getGoogleSpreadsheet(DOCID)
 % DM, Jan 2013
 %
 
-
-loginURL = 'https://www.google.com'; 
+% Loop to access the google sheet with mouse data. If there is an error,
+% will try 5 times before reporting that the sheet is not accessible.
+loginURL = 'https://www.google.com';
 csvURL = ['https://docs.google.com/spreadsheet/ccc?key=' DOCID '&output=csv&pref=2'];
+loopCount = 1;
+while loopCount <= 5
+    try
+        %Step 1: go to google.com to collect some cookies
+        cookieManager = java.net.CookieManager([], java.net.CookiePolicy.ACCEPT_ALL);
+        java.net.CookieHandler.setDefault(cookieManager);
+        handler = sun.net.www.protocol.https.Handler;
+        connection = java.net.URL([],loginURL,handler).openConnection();
+        connection.getInputStream();
 
-%Step 1: go to google.com to collect some cookies
-cookieManager = java.net.CookieManager([], java.net.CookiePolicy.ACCEPT_ALL);
-java.net.CookieHandler.setDefault(cookieManager);
-handler = sun.net.www.protocol.https.Handler;
-connection = java.net.URL([],loginURL,handler).openConnection();
-connection.getInputStream();
+        %Step 2: go to the spreadsheet export url and download the csv
+        connection2 = java.net.URL([],csvURL,handler).openConnection();
+        result = connection2.getInputStream();
+        result = char(readstream(result));
 
-%Step 2: go to the spreadsheet export url and download the csv
-connection2 = java.net.URL([],csvURL,handler).openConnection();
-result = connection2.getInputStream();
-result = char(readstream(result));
-
-%Step 3: convert the csv to a cell array
-result = parseCsv(result);
-
+        %Step 3: convert the csv to a cell array
+        result = parseCsv(result);
+    catch
+        fprintf('Attempt %d of 5 to access Google Sheet failed \n', loopCount);
+        if loopCount == 5
+            error('Cannot access Google Sheets')
+        else
+            pause(5)
+        end
+    end
+    loopCount = loopCount+1;
+end
 end
 
 function data = parseCsv(data)
