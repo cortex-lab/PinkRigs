@@ -6,8 +6,8 @@ from Admin.csv_queryExp import load_data
 import numpy as np 
 import matplotlib.pyplot as plt 
 
-subject = 'AV030'
-expDate = '2022-12-06:2022-12-07'
+subject = 'AV008'
+expDate = '2022-03-09:2022-03-11'
 probe = 'probe1'
 raw_probe = probe + '_raw'
 data_dict = {probe:{'clusters':'all'},raw_probe:{'clusters':'all'}}
@@ -29,7 +29,7 @@ def plot_cluster_locations(rec,probe,ax,only_good=True):
             color='k',alpha=.5,markersize = 5)
 
 fig,ax = plt.subplots(1,1,figsize=(10,5))
-[plot_cluster_locations(rec,probe,ax,only_good=True) for _,rec in recordings.iterrows()]
+[plot_cluster_locations(rec,probe,ax,only_good=False) for _,rec in recordings.iterrows()]
 ax.set_xlabel('xpos')
 ax.set_ylabel('depth')
 plt.show()

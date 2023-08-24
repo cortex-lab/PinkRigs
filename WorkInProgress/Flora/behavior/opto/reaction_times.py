@@ -14,17 +14,17 @@ from Analysis.pyutils.ev_dat import getTrialNames
 my_subject = ['AV047']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2023-05-02:2023-08-20',
+    expDate = '2022-05-02:2023-08-20',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'table'}}
     )
 
 # %% 
-ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=False) for _,rec in recordings.iterrows()])
+ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=True) for _,rec in recordings.iterrows()])
 
 # %%
-is_laser_session = [(np.sum(e.is_laserTrial)>0)  & (e.stim_laserPosition==0).any() for e in ev]
+is_laser_session = [(np.sum(e.is_laserTrial)>0)  & (np.abs(e.stim_laserPosition)==1).any() for e in ev]
 ev = list(compress(ev,is_laser_session))
 # %%
 ev_keys = list(ev[0].keys())
@@ -76,6 +76,8 @@ for i,a in enumerate(aud_azimuths):
 ax.set_ylabel('log[p(ipsi)/p(contra)]')
 ax.set_xlabel('contrasts')
 ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
+
+plt.show()
 # %% non log plot
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
@@ -98,7 +100,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-laser_keep_set = (ev.laser_power==34) & ((ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+laser_keep_set = (ev.laser_power==10) & ((ev.stim_laserPosition)==-1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
@@ -144,15 +146,15 @@ import pandas as pd
 import seaborn as sns
 
 to_keep_trials = (ev.is_validTrial &
-                  (((np.abs(ev.stim_laserPosition))==0)|(np.isnan(ev.stim_laserPosition))) & 
-                  (ev.laser_power==34)|(ev.laser_power==0)|(ev.laser_power==20)|(ev.laser_power==10))
+                  (((np.abs(ev.stim_laserPosition))==1)|(np.isnan(ev.stim_laserPosition))) & 
+                  (ev.laser_power==34)|(ev.laser_power==0)|(ev.laser_power==17)|(ev.laser_power==10))
 
 ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 df = pd.DataFrame(ev_)
 df['trialNames'] = getTrialNames(ev_)
 
 choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
-df['powerXchoiceDir'] = ev_.laser_power * choice_signed
+df['powerXchoiceDir'] = (ev_.laser_power+1e-10) * choice_signed
 # make a single array of trialtypes
 
 fig,ax = plt.subplots(1,1,figsize=(13,7))

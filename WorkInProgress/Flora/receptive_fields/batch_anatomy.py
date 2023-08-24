@@ -12,7 +12,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'AV024'
+dat_type = 'FT030'
 dat_keys = get_data_bunch(dat_type)
 
 #from Admin.csv_queryExp import queryCSV
@@ -21,7 +21,7 @@ dat_keys = get_data_bunch(dat_type)
 # dat_keys['probe']='probe0'
 # %%
 csv_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual\%s\%s' % (dat_type,'summary_data.csv'))
-recompute = False 
+recompute = True 
 
 all_dfs = []
 if csv_path.is_file() & (not recompute):
