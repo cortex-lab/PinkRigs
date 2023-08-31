@@ -1,6 +1,6 @@
 %% Define base path to generate the IMRO
 
-basePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV005';
+basePath = '\\znas.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\AV005';
 if ~exist(basePath,'dir')
     mkdir(basePath)
 end
