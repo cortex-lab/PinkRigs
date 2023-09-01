@@ -519,8 +519,21 @@ def get_recorded_channel_position(channels):
     else:
         xcoords = channels.localCoordinates[:,0]
         ycoords = channels.localCoordinates[:,1]
+
+        # if the probe is 3B, pyKS for some reason starts indexing from 1 depth higher (not 0)
+        # to be fair that might be more fair, because the tip needs to be calculated to the anatomy 
+        # alas who cares.
+        if np.max(np.diff(ycoords))==20: 
+            # 3B probe
+            ycoords = ycoords-ycoords[0]
+
         xrange = (np.min(xcoords),np.max(xcoords))
         yrange = (np.min(ycoords),np.max(ycoords))
+
+
+
+
+
 
     return (xrange,yrange)
 

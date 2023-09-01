@@ -89,7 +89,7 @@ def combined_condition_U(spike_counts,trialChoice,trialConditions,n_shuffles=50)
 
 class cccp():
     """
-    wrapper around ev structures to perform effiient cccp
+    wrapper around ev structures to perform efficient cccp
     """
     def __init__(self):
         self.vis_azimuths = [-60,60]
@@ -148,8 +148,7 @@ class cccp():
         # regroup events
         # basically if a group does not contain two indices that means only one type of trial is present
         # so only the groups where there are two grouping indices should really be kept and re_ID-ed
-        # and I was thinking we will need a tag but we don't because than e.g. choiceDir will serve as the tag if I did everything right  
-
+        # and I was thinking we will need a tag but we don't because than e.g. choiceDir will serve as the tag if I did everything right 
 
         ev = self.ev.copy()
         ev.newIDs = np.empty(ev.is_blankTrial.size)*np.nan

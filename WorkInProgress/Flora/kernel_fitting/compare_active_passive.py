@@ -29,8 +29,8 @@ for sess in dat_params_sess_type.keys():
     curr_params = dat_params_sess_type[sess]
     kernels = kernel_model(t_bin=0.005,smoothing=0.025)
     kernels.load_and_format_data(
-        subject = 'AV030',
-        expDate = '2022-12-07', 
+        subject = 'FT031',
+        expDate = '2021-12-03', 
         expDef = sess,
         probe = 'probe0',
         subselect_neurons=None,

@@ -1,26 +1,24 @@
 clc; clear all;
 extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
 
-
-
 %
 % fit and plot each set of data
 %
 % fit sets that determine which parameters or combinations of parameters
 % are allowed to change from fitting control trials to fitting opto trials
 opto_fit_sets = logical([
-    [0,0,0,0,0,0]; ... 
+    [0,0,0,0,0,0]; ... %1 
     [1,1,1,0,1,1]; ...
     [1,0,0,0,0,0]; ...
-    [1,1,0,0,0,0]; ... 
-    [1,0,1,0,0,0]; ...
+    [1,1,0,0,0,0]; ... %4
+    [1,0,1,0,0,0]; ... 
     [1,0,0,0,1,0]; ...
     [1,0,0,0,0,1]; ...
-    [0,1,0,0,0,0]; ... 
+    [0,1,0,0,0,0]; ... %8
     [0,0,1,0,0,0]; ...
     [0,0,0,0,1,0]; ...
     [0,0,0,0,0,1]; ...
-    [0,1,1,0,1,1]; ...   
+    [0,1,1,0,1,1]; ...   %12
     [1,0,1,0,1,1]; ...    
     [1,1,0,0,1,1]; ...    
     [1,1,1,0,0,1]; ...    
@@ -30,7 +28,7 @@ opto_fit_sets = logical([
 %%
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
-plot_model_pred(2) = 1; 
+plot_model_pred(3) = 1; 
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits
@@ -53,8 +51,10 @@ for s=1:numel(extracted.data)
     if shouldPlot
         figure; 
         plotParams.LineStyle = '-';
-        plotParams.DotStyle = ['.'];
+        plotParams.DotStyle = '.';
         plotParams.MarkerSize = 24; 
+        plotParams.LineWidth = 3; 
+
         plot_optofit(controlfit,plotParams,plotfit)
         hold on; 
         title(sprintf('%s,%.0d opto,%.0d control trials, %.0f mW, %.0f', ...
@@ -78,12 +78,11 @@ for s=1:numel(extracted.data)
 
         if shouldPlot && plot_model_pred(model_idx)
            %
-
 % figure;  orifit.prmFits(4)
     	   %orifit.prmFits(4) = controlfit.prmFits(4);
            plotParams.LineStyle = '--';
-           plotParams.DotStyle = 'o';
-           plotParams.MarkerSize = 8; 
+           plotParams.DotStyle = '.';
+           plotParams.MarkerSize = 24; 
            plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
         end
 
@@ -130,10 +129,11 @@ bar(paramLabels,median(cvR2),'green');
 
 figure; 
 
-bar([1,2],median(opto_fit_logLik(:,2:3)),['black']);
+
+plot([1,2],median(opto_fit_logLik(:,2:3)),['black']);
 hold on
 for m=1:size(opto_fit_logLik,1)
-    plot([1,2],[opto_fit_logLik(m,2),opto_fit_logLik(m,3)])
+    plot([1,2],[opto_fit_logLik(m,2),opto_fit_logLik(m,3)],'k')
     hold on 
 end 
 [h,p]= ttest(opto_fit_logLik(:,2),opto_fit_logLik(:,3));
@@ -166,4 +166,26 @@ for ptype=1:numel(paramLabels)
     ylim([-5,5])
 end 
 
-%
+%%
+% plot some parameters agains depth/cannula location in SC
+locations = csv.readTable('C:\Users\Flora\Documents\Processed data\Audiovisual\cannula_locations.csv'); 
+
+n = numel(extracted.data); 
+dv = NaN(n,1); acronym = NaN(n,1); 
+loc_subjects = cell2mat([locations.subject]);
+loc_hemishpheres= str2double([locations.hemisphere{:}]);
+% identify the location of each subject/hemishphere
+for s=1:n 
+    subject = extracted.subject{s};
+    hemisphere = extracted.hemisphere{s}; 
+    
+    idx = find(locations.subject==subject & str2double(locations.hemisphere)==hemisphere);
+    
+    if numel(idx)==1 
+        dv(s) = str2double(locations.dv{idx}); 
+    end 
+end 
+
+%%
+% plot the dv location against the 
+figure; plot(deltaR2(:,3),dv,'o'); 

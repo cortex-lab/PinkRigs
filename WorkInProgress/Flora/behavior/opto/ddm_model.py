@@ -24,5 +24,5 @@ m = pyddm.Model(drift=DriftAdditiveBias(aud_coef=pyddm.Fittable(minval=-1, maxva
                     ]),
                 dt=.01, dx=.01, T_dur=4)
 
-pyddm.plot.model_gui(model=m, conditions={"aud_evidence": [-1, -.5, 0, .5, 1], "vis_evidence": [-1, -.5, 0, .5, 1], "stim": [1, 0]})
+pyddm.plot.model_gui(model=m, conditions={"aud_evidence": [-60, 0,60], "vis_evidence": [-40,-20,0,20,40], "stim": [1, 0]})
 # %%

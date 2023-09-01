@@ -2,11 +2,18 @@
 # takes histology folder of requested animals and plots their canulla location if it exists 
 import sys
 import numpy as np
+import pandas as pd 
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 
-subjects = ['AV029','AV031','AV033','AV036','AV038'] # list of subjects that we intent to query 
+# pinkRig modules
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import queryCSV
+from Processing.pyhist.helpers.atlas import AllenAtlas
+from Processing.pyhist.helpers.regions import BrainRegions
+
+atlas,br = AllenAtlas(25),BrainRegions()
+
+subjects = ['AV029','AV031','AV033','AV036','AV038','AV041'] # list of subjects that we intent to query 
 
 recordings = queryCSV(subject=subjects,expDate='last1')
 
@@ -14,8 +21,42 @@ stub = r'Histology\registration\brainreg_output\manual_segmentation\standard_spa
 histology_folders = [
     (Path(r.expFolder).parents[1] / stub) for _,r in recordings.iterrows()
 ]
-# Add brain regions
+
 # %%
+
+# save summary anatomical data: subject,ap,dv,ml,hemisphere(-1:Left,1:Right),regionAcronym 
+
+data = pd.DataFrame()
+for idx,m in enumerate(histology_folders):
+    cannulae_list = list(m.glob('*.npy'))
+    for c in cannulae_list:
+        subject = m.parents[5].name
+        track = np.load(c)
+        # canulla tip point (because I always start tracking at the tip)
+        tip_ccf = track[0]
+        # assert the position of these tip points in allen atlas space location
+        region_id = atlas.get_labels(atlas.ccf2xyz(track[0],ccf_order='apdvml'))
+        region_acronym=br.id2acronym(region_id) # get the parent of that 
+
+        data = data.append(
+            {'subject':subject,
+            'ap':tip_ccf[0], 
+            'dv':tip_ccf[1],
+            'ml':tip_ccf[2], 
+            'hemisphere':-int(np.sign(tip_ccf[2]-5600)), 
+            'region_id':region_id, 
+            'region_acronym':region_acronym[0],
+            'parent1':br.acronym2acronym(region_acronym, mapping='Beryl')[0]},ignore_index=True
+        )
+
+# save this as a file
+data.to_csv(r'C:\Users\Flora\Documents\Processed data\Audiovisual\cannula_locations.csv')
+
+
+# %%
+
+# %%
+# show tracks in brainrender
 import brainrender as br
 from Analysis.pyutils.plotting import brainrender_scattermap
 n_mice = len(histology_folders)
@@ -30,6 +71,7 @@ for idx,m in enumerate(histology_folders):
     for c in cannulae_list:
         track = np.load(c)
         scene.add(br.actors.Points(track, colors=mouse_colors[idx], radius=60, alpha=0.5))
+        scene.add(br.actors.Points(track[0][np.newaxis,:], colors=mouse_colors[idx], radius=120, alpha=0.5))
 
 scene.render()
 

@@ -14,9 +14,9 @@ from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 # use easiser set of code, i.e. just load the events and look and L-R for all neurons at 60 deg  
 
-mname = 'AV030'
-expDate = '2022-12-09'
-probe = 'probe1'
+mname = 'FT031'
+expDate = '2021-12-03'
+probe = 'probe0'
 
 raster_kwargs = {
                 'pre_time':0.2,
@@ -35,7 +35,7 @@ session_types = ['multiSpaceWorld','postactive']
 psths = []
 
 
-type = 'aud'
+type = 'vis'
 for sess in session_types:
     session = { 
         'subject':mname,
@@ -55,17 +55,17 @@ for sess in session_types:
     for azi in azimuths:
         if 'aud' in type:
             if 'multiSpaceWorld' in recordings.expDef:
-                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1) & events.is_validTrial & (events.first_move_time>raster_kwargs['post_time'])) 
+                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.25) & events.is_validTrial & (events.first_move_time>raster_kwargs['post_time'])) 
             else:
-                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.1))
+                to_keep_trials = (events.is_auditoryTrial & (events.stim_audAzimuth==azi) & (events.stim_audAmplitude==0.25))
             t_on = events.timeline_audPeriodOn[to_keep_trials]
 
         if 'vis' in type:
             if 'multiSpaceWorld' in recordings.expDef:
-                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.1) & (events.stim_visContrast==0.2) & events.is_validTrial) 
+                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.25) & (events.stim_visContrast==0.25) & events.is_validTrial) 
                 n_ms = to_keep_trials.sum()
             else:
-                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.1) & (events.stim_visContrast==0.2))           
+                to_keep_trials = (events.is_coherentTrial & (events.stim_visAzimuth==azi) & (events.stim_audAmplitude==0.25) & (events.stim_visContrast==0.25))           
             t_on = events.timeline_visPeriodOn[to_keep_trials]
             t_on = t_on[:n_ms]
 
@@ -84,7 +84,7 @@ psths = np.concatenate(psths)
 
 # %% 
 # plot things just to check 
-nID=208
+nID=590
 nID = np.where(clus_ids==nID)[0][0]
 color_list = ['blue','red','blue','red']
 linestype_list = ['--','--','-','-']
@@ -101,7 +101,7 @@ active = np.max(np.abs(psths[2,:,:]-psths[3,:,:]),axis=1)
 
 # %%
 is_good  = clusters.missed_spikes_est < 0.05
-plt.plot(passive[is_good],active[is_good],'o')
+plt.plot(passive[is_good],active[is_good],'o',alpha=.5)
 plt.plot([0,60],[0,60],'k--')
 plt.xlabel('passive max|audL-audR|')
 plt.ylabel('active max|audL-audR|')
