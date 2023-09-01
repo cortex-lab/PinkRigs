@@ -2,7 +2,7 @@ queuePath = '\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers';
 
 %% Get recordings
 
-subjectList = {'Lignani001'};
+subjectList = {'AL032'};
 
 serverLocations = getServersList;
 sorted = [];
@@ -11,6 +11,19 @@ D = {};
 for subject = subjectList
     for server = serverLocations'
         d = dir(fullfile(server{1}, subject{1},'**','*ap.*bin'));
+        d(contains(lower({d.folder}),'stitched')) = [];
+        d(contains(lower({d.folder}),'catgt')) = [];
+        d(contains(lower({d.folder}),'everything')) = [];
+        d(contains(lower({d.folder}),'everything')) = [];
+        [c,ia,ic] = unique({d.folder});
+        dupidx = find(diff(ic)==0);
+        for dd = 1:numel(dupidx)
+            dupindices = find(strcmp({d.folder},d(dupidx(dd)).folder));
+            [~,i] = max([d(dupindices).bytes]);
+            d(setdiff(dupindices,dupindices(i))) = [];
+        end
+
+        dupidx = [dupidx(dd) dupidx(dd)+1];
 
         sorted_tmp = false(1,numel(d));
         iblformatted_tmp = false(1,numel(d));
@@ -77,18 +90,19 @@ if ~exist(decompressDataLocal, 'dir')
     mkdir(decompressDataLocal)
 end
 
-recompute = 1;
+recompute = 0;
 for dd = 1:numel(dtoQM)
     % Set paths
     ephysKilosortPath = fullfile(dtoQM(dd).folder,'PyKS','output');
     ephysDirPath = dtoQM(dd).folder;
-    ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
-    if numel(ephysRawDir)>1
-        idx = find(contains({ephysRawDir.name},'.cbin'));
-        if ~isempty(idx) && numel(idx)==1
-            ephysRawDir = ephysRawDir(idx);
-        end
-    end
+    ephysRawDir = dtoQM(dd);
+%     ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
+%     if numel(ephysRawDir)>1
+%         idx = find(contains({ephysRawDir.name},'.cbin'));
+%         if ~isempty(idx) && numel(idx)==1
+%             ephysRawDir = ephysRawDir(idx);
+%         end
+%     end
     ephysMetaDir = dir(fullfile(ephysDirPath,'*ap.meta')); % used in bc_qualityParamValues
     savePath = fullfile(ephysKilosortPath,'qMetrics');
 
