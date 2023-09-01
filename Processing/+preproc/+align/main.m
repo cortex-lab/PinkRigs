@@ -49,7 +49,7 @@ function main(varargin)
             notAlignedYet.(lower(i{1}(6:end))) = expInfo.(i{1});
         end
 
-        %If there is no timeline. All alignment is NaN
+        % If there is no timeline. All alignment is NaN
         if strcmp(expInfo.existTimeline, '0')
             if ~all(structfun(@(x) strcmpi(x,'nan'), notAlignedYet))
                 [block, ephys, mic] = deal(nan);
