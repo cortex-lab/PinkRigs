@@ -12,17 +12,17 @@ from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
 from Analysis.pyutils.ev_dat import getTrialNames
 
-my_subject = ['AV041']
+my_subject = ['AV036']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2022-05-02:2023-08-20',
+    expDate = '2022-05-02:2023-09-20',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'table'}}
     )
 
 # %% 
-ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=False) for _,rec in recordings.iterrows()])
+ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=True) for _,rec in recordings.iterrows()])
 
 # %%
 is_laser_session = [(np.sum(e.is_laserTrial)>0)  & (np.abs(e.stim_laserPosition)==1).any() for e in ev]
@@ -190,14 +190,14 @@ choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
 df['powerXchoiceDir'] = (ev_.laser_power+1e-10) * choice_signed
 # make a single array of trialtypes
 
-fig,ax = plt.subplots(1,1,figsize=(13,7))
+fig,ax = plt.subplots(1,1,figsize=(7,13))
 fig.patch.set_facecolor('xkcd:white')
 
-sns.boxenplot(data=df, 
-              x="trialNames",
-              y="rt", order = ['blank','auditory','visual','coherent','conflict'],
+sns.violinplot(data=df, 
+              x="rt",
+              y="trialNames", order = ['blank','auditory','visual','coherent','conflict'],
               hue="powerXchoiceDir", dodge=True, linewidth=.5,
-              orient='v', trust_alpha=0.5, saturation=1,
+              orient='h', trust_alpha=0.5, saturation=1,
               palette = "coolwarm",outlier_prop=0.00001,showfliers=False, width=0.7)
 
 ax.set_ylabel('reaction time (s)')
@@ -207,7 +207,17 @@ off_topspines(ax)
 # savename = mypath + '\\' + 'optoRTs.svg'
 
 # fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+# %%
 
+import joypy
+from matplotlib import cm
+
+labels=[-17,-10,-0,0,10,17]
+trialtypes = ['blank','auditory','visual','coherent','conflict']
+fig,ax = plt.subplots(len(trialtypes),1)
+for idx,tt in enumerate(trialtypes):
+    joypy.joyplot(data=df[df.trialNames==tt],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax[idx],kind='normalized_counts',bins=0)
+fig.show()
 # %%
 # summary plot of this matter would include (according to Pip)
 # for 10mW & 17 mW

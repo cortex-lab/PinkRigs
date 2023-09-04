@@ -8,6 +8,8 @@ import pandas as pd
 import re,inspect,json,os,sys,glob
 import numpy as np
 from pathlib import Path
+from itertools import compress
+
 
 # get PinkRig handlers 
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
@@ -407,6 +409,8 @@ def load_data(data_name_dict=None,**kwargs):
 
     # merge probes 
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
+
+
     return recordings
 
 def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','clusters']},add_dict = None,raw_ephys_dict = None,**kwargs):
@@ -475,6 +479,14 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['
             ev.stim_visContrast = np.round(ev.stim_visContrast,2)
         if hasattr(ev,'stim_audAmplitude'):
             ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
+            
+            amps = np.unique(ev.stim_audAmplitude)
+
+            if (amps[amps>0]).size ==1:  # if there is only one amp then the usual way of calculating audDiff etc is valid 
+                ev.visDiff = ev.stim_visContrast*np.sign(ev.stim_visAzimuth)
+                ev.visDiff[np.isnan(ev.visDiff)] = 0 
+                ev.audDiff = np.sign(ev.stim_audAzimuth)
+
         if hasattr(ev,'timeline_choiceMoveOn'):
             ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
             ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
@@ -568,6 +580,46 @@ def load_active_and_passive(rec_info):
 
     return dat
 
+
+def concatenate_events(recordings,filter_type=None):
+    """
+    function to concatenate events from pd. df recordings output (i.e. output of load data)
+
+    Parameters:
+    -----------
+    recordings: pd.df 
+        output of csv_queryExp.load_data
+    filter_type: str
+        codenames for criteria to throw sessions away. Options implemented: 
+        'finalStage'
+        'opto'
+
+
+    """
+
+    # maybe I could write some function titled concatenate events
+    ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=False) for _,rec in recordings.iterrows()])
+
+    # write in subject ID and sessionID into the ev in long fofor e in ev]
+    for (i,e),s in zip(enumerate(ev),recordings.subject): 
+        ev[i].sessionID = np.ones(e.is_blankTrial.size) * i 
+        ev[i].subject = np.array([s for x in range(e.is_blankTrial.size)])
+    # filter
+    if filter_type:
+        if 'final_stage' in filter_type:
+            is_kept_session = [e.is_conflictTrial.sum()>5 for e in ev]
+        elif 'opto' in filter_type: 
+            pass 
+    else: 
+        is_kept_session = np.ones(len(ev)).astype('bool')
+
+    ev = list(compress(ev,is_kept_session))
+    # concatenate
+    ev_keys = list(ev[0].keys())
+    ev = Bunch({k:np.concatenate([e[k] for e in ev]) for k in ev_keys})
+
+
+    return ev
 
 def queryGood():
     pass
