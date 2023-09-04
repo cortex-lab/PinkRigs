@@ -12,7 +12,7 @@ if ~exist('patternTag', 'var'); patternTag = 'hs4'; end
 if ~exist('botRow', 'var'); botRow = 0; end
 if ~exist('shankChoice', 'var'); shankChoice = 0; end     % 0-3, needed for patternType 0
 if ~exist('refElec', 'var'); refElec = 0; end             % 0 for external, 1-4 for tip reference on shank 0-3
-if ~exist('savePath', 'var'); savePath = '\\zserver.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\'; end
+if ~exist('savePath', 'var'); savePath = '\\znas.cortexlab.net\code\Rigging\ExpDefinitions\PinkRigs\IMROFiles\'; end
 
 shank = zeros(384,1,'single');
 bank = zeros(384,1,'single');
