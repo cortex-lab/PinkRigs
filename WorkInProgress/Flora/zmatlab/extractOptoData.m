@@ -10,6 +10,7 @@ varargin = ['selHemispheres', {[-1 1]}, varargin]; % whether to merge inhibiton 
 varargin = ['selPowers', {0}, varargin]; % whether to merge unhibiton of 2 hemispheres or not -- only an option if reverse_opto is True 
 varargin = ['balanceTrials', {1}, varargin];
 varargin = ['minN', {600}, varargin];
+varargin = ['includeNoGo', {0}, varargin];
 
 
 params = csv.inputValidation(varargin{:});
@@ -47,7 +48,7 @@ for i=1:numel(extracted.subject)
        extracted.data{i, 1}.stim_visDiff = extracted.data{i, 1}.stim_visDiff * -1 ;
        extracted.data{i, 1}.stim_audDiff = extracted.data{i, 1}.stim_audDiff * -1 ;
        extracted.data{i, 1}.timeline_choiceMoveDir = ((extracted.data{i, 1}.timeline_choiceMoveDir-1.5)*-1)+1.5;
-       swapped = ((extracted.data{i, 1}.response_direction-1.5)*-1)+1.5;
+       swapped = ((extracted.data{i, 1}.response_direction-1.5)*-1)+1.5; % maybe it is response direction we are talking
        swapped(swapped==3) = 0; 
        extracted.data{i, 1}.response_direction = swapped; 
        
@@ -106,18 +107,22 @@ else
     optoExtracted = filterStructRows(optoExtracted, ismember(optoExtracted.laser_power, [0,params.selPowers{1}]));
 end
 
-% thow away control data from sessions when there is no power kept
-optoExtracted = filterStructRows(optoExtracted, ismember(optoExtracted.sessionID, optoExtracted.sessionID(optoExtracted.laser_power~=0)));
+% thow away control data from sessions when there is no power keptoptoExtracted = filterStructRows(optoExtracted, ismember(optoExtracted.sessionID, optoExtracted.sessionID(optoExtracted.laser_power~=0)));
 
 % also throw away invalid trials that don't go into the fitting
-optoExtracted = filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
-    optoExtracted.response_direction & abs(optoExtracted.stim_audAzimuth)~=30));
 
+if params.includeNoGo{1}
+    optoExtracted = filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
+        abs(optoExtracted.stim_audAzimuth)~=30));
+else 
+   optoExtracted = filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
+        optoExtracted.response_direction & abs(optoExtracted.stim_audAzimuth)~=30));
+end 
 
 % save the extracted dataset as a parquet
 savepath = 'C:\Users\Flora\Documents\Processed data\Audiovisual\opto';
 stub = 'full_set';
-saveONEFormat(optoExtracted,savepath,'_opto_trials','table','pqt',stub);
+saveONEFormat(optoExtracted,savepath,'_opto_trials','table','pqt',stub)   ;
 % save some metadata about the extraction
 mySubjects.name=unique_subjects; mySubjects.IDs = subject_indices';
 saveONEFormat(mySubjects,savepath,'_opto_trials','mouseIDs','pqt',stub);

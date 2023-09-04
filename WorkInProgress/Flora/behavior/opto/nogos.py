@@ -1,6 +1,4 @@
 # %%
-
-# %%
 import sys
 import numpy as np
 import pandas as pd
@@ -12,10 +10,10 @@ from Admin.csv_queryExp import load_data,simplify_recdat,Bunch
 from Analysis.pyutils.plotting import off_topspines
 from Analysis.pyutils.ev_dat import getTrialNames
 
-my_subject = ['AV036']
+my_subject = ['AV046']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2022-05-02:2023-09-20',
+    expDate = '2022-05-02:2023-08-31',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'table'}}
@@ -82,7 +80,7 @@ plt.show()
 # %% non log plot
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
-laser_keep_set = (ev.laser_power==17) & (((ev.stim_laserPosition))==-1) & ev.is_validTrial & ev.is_laserTrial 
+laser_keep_set = (ev.laser_power==17) & (np.abs((ev.stim_laserPosition))==1) & ev.is_validTrial & ev.is_laserTrial 
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
@@ -101,7 +99,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-laser_keep_set = (ev.laser_power==17) & ((ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+laser_keep_set = (ev.laser_power==17) & (np.abs(ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
 
 d=pd.DataFrame()
@@ -153,81 +151,52 @@ px.scatter_ternary(d,a='nogo',b='ipsi',c='contra',color='aud_azimuths',
 
 
 # %%
-# reaction times for left vs right choices on opto vs non-opto trials 
-powers = np.unique(ev.laser_power)
-power_colors = plt.cm.coolwarm(np.linspace(0.4,1,powers.size))
-fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
+laser_keep_set = (ev.laser_power==17) & (np.abs(ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
-#powers = np.array([powers[1]])
-for i,p in enumerate(powers): 
-    to_keep_trials = ev.is_validTrial & (ev.laser_power==p) & (np.abs(ev.stim_laserPosition)!=0)
-    ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
+import ternary
 
-    ax[0].hist(ev_.rt[ev_.timeline_choiceMoveDir==1],color=power_colors[i],bins=100,alpha=0.5)#,cumulative=True,alpha=0.5,density=True)
-    ax[1].hist(ev_.rt[ev_.timeline_choiceMoveDir==2],color=power_colors[i],bins=100,alpha=0.5)# ,cumulative=True,alpha=0.5,density=True)
+scale = 1.0
+figure, tax = ternary.figure(scale=scale)
+# figure.set_size_inches(10, 10)
 
-    ax[0].set_title('contra choices')
-    ax[1].set_title('ipsi choices')
-    off_topspines(ax[0])
-    off_topspines(ax[1])
-ax[1].legend(powers)
-# %%
-# look at nogos per trial type
+# Draw Boundary and Gridlines
+tax.boundary(linewidth=2.0)
+tax.gridlines(color="blue", multiple=.1)
 
-# separate reaction times by trial types 
-import pandas as pd
-import seaborn as sns
+# Set Axis labels and Title
+fontsize = 20
+offset = 0.2
+tax.right_corner_label("pIpsi", fontsize=fontsize)
+tax.top_corner_label("pNoGo", fontsize=fontsize)
+tax.left_corner_label("pContra", fontsize=fontsize)
 
-to_keep_trials = (ev.is_validTrial &
-                  (((np.abs(ev.stim_laserPosition))==1)|(np.isnan(ev.stim_laserPosition))) & 
-                  (ev.laser_power==34)|(ev.laser_power==0)|(ev.laser_power==17)|(ev.laser_power==10))
 
-ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-df = pd.DataFrame(ev_)
-df['trialNames'] = getTrialNames(ev_)
-
-choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
-df['powerXchoiceDir'] = (ev_.laser_power+1e-10) * choice_signed
-# make a single array of trialtypes
-
-fig,ax = plt.subplots(1,1,figsize=(7,13))
-fig.patch.set_facecolor('xkcd:white')
-
-sns.violinplot(data=df, 
-              x="rt",
-              y="trialNames", order = ['blank','auditory','visual','coherent','conflict'],
-              hue="powerXchoiceDir", dodge=True, linewidth=.5,
-              orient='h', trust_alpha=0.5, saturation=1,
-              palette = "coolwarm",outlier_prop=0.00001,showfliers=False, width=0.7)
-
-ax.set_ylabel('reaction time (s)')
-#plt.legend([],[], frameon=False)
-off_topspines(ax)
-# mypath = r'C:\Users\Flora\Pictures\LakeConf'
-# savename = mypath + '\\' + 'optoRTs.svg'
-
-# fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
-# %%
-
-import joypy
-from matplotlib import cm
-
-labels=[-17,-10,-0,0,10,17]
-trialtypes = ['blank','auditory','visual','coherent','conflict']
-fig,ax = plt.subplots(len(trialtypes),1)
-for idx,tt in enumerate(trialtypes):
-    joypy.joyplot(data=df[df.trialNames==tt],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax[idx],kind='normalized_counts',bins=0)
-fig.show()
-# %%
-# summary plot of this matter would include (according to Pip)
-# for 10mW & 17 mW
-laser_keep_set = (ev.laser_power==10) & (np.abs(ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial
- 
 for i,a in enumerate(aud_azimuths):
-    to_keep_trials =  laser_keep_set & (ev.stim_audAzimuth==a)
+    to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.rt[ev_.signed_contrast==c] for c in contrasts] 
+    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    frac_no_go = np.array([np.mean(np.isnan(r)) for r in rt_per_c])
+    frac_right= np.array([np.mean((r==1)) for r in rt_per_c])
+
+    d_opto = np.concatenate((frac_right[:,np.newaxis],frac_no_go[:,np.newaxis],(1-frac_right-frac_no_go)[:,np.newaxis]),axis=1)
+
+    to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ~ev.is_laserTrial & ~is_in_nogo_block
+    ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
+    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    frac_no_go = np.array([np.mean(np.isnan(r)) for r in rt_per_c])
+    frac_right= np.array([np.mean((r==1)) for r in rt_per_c])
+
+    d_ctrl = np.concatenate((frac_right[:,np.newaxis],frac_no_go[:,np.newaxis],(1-frac_right-frac_no_go)[:,np.newaxis]),axis=1)
 
 
-# 
+    for p1,p2 in zip(d_ctrl,d_opto):
+    
+        tax.line(p1, p2, linewidth=1., marker=None, color=azimuth_colors[i], linestyle="--")
+        tax.scatter([p1], marker='.', color=azimuth_colors[i])
+
+        tax.scatter([p2], marker='o', color=azimuth_colors[i])
+
+tax.ticks(axis='lbr', multiple=1, linewidth=1, offset=0.025)
+tax.get_axes().axis('off')
+
 # %%

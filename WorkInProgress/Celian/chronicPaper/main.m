@@ -6,7 +6,7 @@ recompute = 0;
 if recompute
     [clusterNum, recLocAll, days, expInfoAll] = plts.spk.clusterCount(pltIndiv=0,getQM=1,getPos=1);
     expInfoAll = cat(1,expInfoAll{:});
-    [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'EB019','CB015','Churchland001','Lignani001'},1,1);
+    [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'EB019','CB015','Churchland001','Lignani001','JF084'},1,1);
 %     [clusterNum_add, recLocAll_add, days_add, expInfoAll_add] = clusterCount_loadNonZeldaSubject({'Lignani001'},1,1);
     clusterNum = cat(2,clusterNum,clusterNum_add);
     recLocAll = cat(2,recLocAll,recLocAll_add);
@@ -56,8 +56,9 @@ e.folder = ''; e.name = ''; % hack
 paramBC = bc_qualityParamValuesForUnitMatch(e, '');
 
 % Example subject
-exSubj = 'AV009';
+% exSubj = 'AV009';
 % exSubj = 'Lignani001';
+exSubj = 'AV049';
 ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
 probes = unique(probeSNAll(exSubjectIdx));
@@ -321,10 +322,10 @@ hold all
 subjectsToInspect = subjects;
 colAniToInspect = colAni(ismember(subjects,subjectsToInspect),:);
 dlim = 2;
-pltIndivBank = 0;
+pltIndivBank = 1;
 pltIndivProbe = 1;
 pltAllProbes = 0;
-pltData = 0;
+pltData = 1;
 pltFit = 1;
 
 recLocSlope = cell(1,1);
@@ -361,7 +362,7 @@ for ss = 1:numel(subjectsToInspect)
                 tmp(tmp == 0) = 0.1;
                 b{ss,pp}(rr,:) = (X\log10(tmp'));
 
-                if pltIndivBank && pp == 1
+                if pltIndivBank %&& pp == 1
                     colHack = [0.8157    0.2392    0.6039];
                     % fyi colHack = colAniToInspect(ss,:);
                     if pltData; plot(days(recIdx), qm(recIdx),'color',[colHack .2]);

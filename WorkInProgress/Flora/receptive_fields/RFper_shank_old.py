@@ -7,10 +7,10 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 import Analysis.neural.src.rf_model as rf 
 from Admin.csv_queryExp import load_data
 from Analysis.pyutils.plotting import off_axes 
-subject = 'AV025'
-probe = 'probe1'
+subject = 'AV014'
+probe = 'probe0'
 data_dict = {'events':{'_av_trials':['squareAzimuth','squareElevation','squareOnTimes']},probe:{'spikes':['times','clusters','depths','_av_shankIDs']}}
-recordings = load_data(subject = subject, expDate = '2022-11-08',data_name_dict=data_dict,expDef='sparseNoise')
+recordings = load_data(subject = subject, expDate = '2022-06-07',data_name_dict=data_dict,expDef='sparseNoise')
 rec = recordings.iloc[0]
 spikes = rec[probe].spikes
 sn_info = rec.events._av_trials
@@ -25,7 +25,7 @@ findRF.bin_spikes_per_loc(spikes)
 a =findRF.binned_spikes_depths['array']
 keep_shank = (a.sum(axis=-1).sum(axis=-1)) > 0 
 
-s = a[keep_shank,:,:][0,:,:]
+s = a[keep_shank,:,:][1,:,:]
 s = s[:,:]
 
 fig,ax = plt.subplots(s.shape[0],1, figsize=(1,15))

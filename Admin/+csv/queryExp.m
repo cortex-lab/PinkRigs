@@ -123,9 +123,9 @@ for mm = 1:numel(params.subject)
     alignFields = csvHeaders(contains(csvHeaders, 'align'));
     chkVals = cell(6,1);
     chkVals{1} = num2str(params.checkAlignBlock{mm});
-    chkVals(2:4) = {num2str(params.checkAlignCam{mm})};
-    chkVals{5} = num2str(params.checkAlignMic{mm});
-    chkVals{6} = num2str(params.checkAlignEphys{mm});
+    chkVals(2:5) = {num2str(params.checkAlignCam{mm})};
+    chkVals{6} = num2str(params.checkAlignMic{mm});
+    chkVals{7} = num2str(params.checkAlignEphys{mm});
     keepIdx = zeros(height(mouseExps),1)>0;
     for i = find(~contains(chkVals, 'ignore'))'
         if isempty(i); continue; end

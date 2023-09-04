@@ -188,11 +188,15 @@ function main(varargin)
 
                 % Align each of them
                 for v = 1:numel(vids2Process)
-
+                    
                     vidName = vids2Process{v};
                     expInfo.vidName = vidName;
                     expInfo.vidInfo{1} = dir(fullfile(expFolder,['*' vidName '.mj2']));
                     
+                    if isempty(expInfo.vidInfo{1})
+                        continue
+                    end
+
                     videoONEFolder = fullfile(expFolder,'ONE_preproc',vidName);
                     initONEFolder(videoONEFolder,'times')
 

@@ -7,6 +7,7 @@ addOptional(p,'sepHemispheres', 1);
 addOptional(p,'sepChoices',0)
 addOptional(p,'reExtract', 0);
 addOptional(p,'addFakeTrial', 0);
+
 parse(p, varargin{:});
 
 params = p.Results; 
@@ -66,5 +67,8 @@ for i=1:size(paramSet,1)
    opto.hemisphere{i,1}=paramSet(i,2); 
    opto.power{i,1}=paramSet(i,3); 
 end 
+
+disp(sprintf('*** COMPLETED. Extracted %.0f datasets from %.0f subjects. ***',numel(opto.subject),numel(unique([opto.subject{:}]))))
+
 
 end 

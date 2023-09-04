@@ -21,21 +21,11 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
 
     KSFolderList = cellfun(@(x) fullfile(x, 'pyKS\output\'), {D.folder}, 'uni', 0);
 
-    % Implantation date?
+    % Implantation date? -- should be able to get it from
     implantDates = cell(1,numel(subjectList));
+    mice = csv.readTable(csv.getLocation('main'));
     for ss = 1:numel(subjectList)
-        switch subjectList{ss}
-            case 'EB014'
-                implantDates{ss} = '2022-04-26';
-            case 'EB019'
-                implantDates{ss} = '2022-06-29';
-            case 'CB015'
-                implantDates{ss} = '2021-09-09';
-            case 'Churchland001'
-                implantDates{ss} = '2022-10-27';
-            case 'Lignani001'
-                implantDates{ss} = '2023-01-11';
-        end
+        implantDates{ss} = mice(strcmp(mice.Subject,subjectList{ss}),:).P0_implantDate{1};
     end
 
     %% Get all info from 
