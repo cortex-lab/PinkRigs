@@ -14,9 +14,9 @@ from Analysis.neural.src.cccp import cccp,get_default_set
 pars = get_default_set()
 
 # loading
-mname = 'AV030'
-expDate = '2022-12-09'
-probe = 'probe1'
+mname = 'FT031'
+expDate = '2021-12-03'
+probe = 'probe0'
 sess='multiSpaceWorld'
 
 session = { 

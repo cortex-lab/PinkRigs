@@ -23,7 +23,7 @@ from Admin.csv_queryExp import queryCSV
 
 #  %%
 rerun_sig_test= False 
-recompute_csv = True 
+recompute_csv = False 
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
@@ -236,6 +236,12 @@ ax.set_xlabel('multisensory enhancement index')
 #     hover_data=['expFolder','probe','_av_IDs']
 #     )
 # fig.show()
+
+#  %%
+
+# %%  creete a ternary plot of the various VE 
+
+# %%
 
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values

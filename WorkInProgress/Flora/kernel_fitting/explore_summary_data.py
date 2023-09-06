@@ -15,7 +15,7 @@ br = BrainRegions()
 from Analysis.pyutils.plotting import brainrender_scattermap
 
 #dat_type = 'AV025AV030AV034postactive'
-dat_type = 'AV025AV030AV034multiSpaceWorld_checker_training'
+dat_type = 'naive-allen'
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 csv_path = interim_data_folder / dat_type / 'summary_data.csv'
@@ -232,3 +232,5 @@ if 'SC_nrns' in which_figure:
 
 
 scene.render()
+
+# %%

@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 
 save_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 
-dataset = 'naive-all'
-fit_tag = 'coherent-nl-fit'
+dataset = 'naive-allen'
+fit_tag = 'additive-fit'
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
 save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
@@ -31,7 +31,7 @@ for _,rec_info in recordings.iterrows():
     raw_probe = ('%s_raw' % probe)
     data_dict = {probe:{'clusters':'all'},raw_probe:{'clusters':'all'}}
     sess = load_data(**(rec_info.iloc[:3]),data_name_dict=data_dict)
-    fit_results = pd.read_csv((save_path / ('%s_%s_%.0f_%s_2022-10-30.csv' % tuple(rec_info))))
+    fit_results = pd.read_csv((save_path / ('%s_%s_%.0f_%s.csv' % tuple(rec_info))))
     clus = sess[probe].iloc[0].clusters
     for k in clus.keys():
         fit_results[k] = [clus[k][np.where(clus.cluster_id==c)[0][0]] for c in fit_results.clusID]
@@ -53,7 +53,6 @@ for _,rec_info in recordings.iterrows():
         # and now assign each for the unit. 
         fit_results['sc_azimuth'] = [d[s][0] for s in fit_results._av_shankID]
         fit_results['sc_elevation'] = [d[s][1] for s in fit_results._av_shankID]
-        fit_results['sc_surface'] = [d[s][2] for s in fit_results._av_shankID]
 
     # add all the recording specific information
     fit_results['subject'] = rec_info.subject

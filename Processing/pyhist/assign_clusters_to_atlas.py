@@ -161,6 +161,9 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         chan_pos,allen_xyz = np.concatenate(chan_pos),np.concatenate(allen_xyz)
         region_ID,region_acronym = np.concatenate(region_ID),np.concatenate(region_acronym) 
 
+        import matplotlib.pyplot as plt
+        
+
         # get the channels of interest and subselect
         channel_localCoordinates = np.load(ibl_format_path / 'channels.localCoordinates.npy')
 

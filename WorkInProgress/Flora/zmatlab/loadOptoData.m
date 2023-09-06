@@ -7,6 +7,7 @@ addOptional(p,'sepHemispheres', 1);
 addOptional(p,'sepChoices',0)
 addOptional(p,'reExtract', 0);
 addOptional(p,'addFakeTrial', 0);
+
 parse(p, varargin{:});
 
 params = p.Results; 
