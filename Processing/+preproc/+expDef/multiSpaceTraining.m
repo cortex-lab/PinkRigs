@@ -141,7 +141,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     if isfield(block.events, 'laserPeriodStartTimes')
     blockLaserStartTimes =  preproc.align.event2Timeline(block.events.laserPeriodStartTimes(eIdx), ...
-        alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+        alignmentBlock.originTimes,alignmentBlock.timelineTimes)';
     else
         blockLaserStartTimes = NaN(numel(is_blankTrial),1); 
     end
