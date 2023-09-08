@@ -139,10 +139,12 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     trialStEnTimes = [trialStTimes(eIdx)' trialEnTimes(eIdx)'];
 
-
-    quiescentStEndTimes =  preproc.align.event2Timeline(block.events.preStimQuiescentDurationTimes, ...
+    if isfield(block.events, 'laserPeriodStartTimes')
+    blockLaserStartTimes =  preproc.align.event2Timeline(block.events.laserPeriodStartTimes(eIdx), ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
-
+    else
+        blockLaserStartTimes = NaN(numel(is_blankTrial),1); 
+    end
 
     stimStartBlock = preproc.align.event2Timeline(block.events.stimPeriodOnOffTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
@@ -303,12 +305,13 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         error(msgText)
     end
 
-    wheelDeg = extractWheelDeg(timeline);
+    wheelDeg = extractWheelDeg(timeline); % in timeline time
     wheelVel = diff([0; wheelDeg])*sR;
 
+    %sumWin = 51; % this is the variable that corresponds to 50ms in the methods
     sumWin = 51;
     if isfield(block.events,'selected_paramsetValues')
-        whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain);
+        whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain); % usually 20 deg at final stage 
     else
         wg = [block.paramsValues.wheelGain];
         whlDecThr = round(60./wg(1));
@@ -539,6 +542,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));
     ev.block_stimOn = single(stimStartBlock);
+    ev.block_laserStartTimes = single(blockLaserStartTimes); 
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);

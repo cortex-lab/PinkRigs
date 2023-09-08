@@ -1,7 +1,7 @@
 close all
 
 clear params
-params.subject = {['FT032']};
+params.subject = {['all']};
 params.expDate = {['all']}; 
 params.expDef = 't'; 
 

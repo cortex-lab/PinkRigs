@@ -13,8 +13,9 @@ from Processing.pyhist.helpers.regions import BrainRegions
 
 atlas,br = AllenAtlas(25),BrainRegions()
 
-subjects = ['AV029','AV031','AV033','AV036','AV038','AV041'] # list of subjects that we intent to query 
+#subjects = ['AV029','AV031','AV033','AV036','AV038','AV041'] # list of subjects that we intent to query 
 
+subjects = ['AV041']
 recordings = queryCSV(subject=subjects,expDate='last1')
 
 stub = r'Histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
@@ -50,10 +51,10 @@ for idx,m in enumerate(histology_folders):
         )
 
 # save this as a file
-data.to_csv(r'C:\Users\Flora\Documents\Processed data\Audiovisual\cannula_locations.csv')
+#data.to_csv(r'C:\Users\Flora\Documents\Processed data\Audiovisual\cannula_locations.csv')
 
 
-# %%
+
 
 # %%
 # show tracks in brainrender

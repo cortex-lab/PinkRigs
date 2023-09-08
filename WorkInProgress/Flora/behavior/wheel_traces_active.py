@@ -10,13 +10,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from Admin.csv_queryExp import load_data
-subject = 'AV034'
+subject = 'AV030'
 data_dict = {
             'events':{'_av_trials':'all'}
                 }
 recordings = load_data(subject = subject, expDate = '2022-12-12',expDef = 'multiSpace',data_name_dict=data_dict)
 # 
 ev = recordings.iloc[0].events['_av_trials']
+
+
+ev = recordings.iloc[0].events['_av_trials']
+
+
 # %%
 %matplotlib inline
 is_go = ~np.isnan(ev.timeline_choiceMoveDir) 
@@ -26,15 +31,19 @@ selected = np.where(is_go & (reaction_times>.05))[0]
 # %%
 # plot single trial 
 fig,ax = plt.subplots(1,1,figsize=(5,5),dpi=300)
-i = selected[6]
+i = selected[15]
+ax.scatter(ev.timeline_wheelTime[i],ev.timeline_wheelValue[i],s=5,color='k') 
 ax.plot(ev.timeline_wheelTime[i],ev.timeline_wheelValue[i],color='k') 
-ax.axvline(ev.timeline_audPeriodOn[i],color='r')
+
+#ax.axvline(ev.timeline_audPeriodOn[i],color='r')
 ax.axvline(ev.timeline_choiceMoveOn[i],color='g')
-ax.axvline(ev.timeline_audPeriodOff[i],color='b')
+#ax.axvline(ev.timeline_audPeriodOff[i],color='b')
+ax.set_xlim([ev.timeline_choiceMoveOn[i]-0.1,ev.timeline_choiceMoveOn[i]+0.1])
+ax.set_xticks([ev.timeline_choiceMoveOn[i]-0.1,ev.timeline_choiceMoveOn[i],ev.timeline_choiceMoveOn[i]+0.1])
 fig.show()
 # %%
 # plot wheel trace starting at choice and baseline subtract
-selected = np.where(is_go & (reaction_times>.05) & (ev.timeline_choiceMoveDir==2))[0]
+selected = np.where(is_go & (reaction_times<.05))[0]# & (ev.timeline_choiceMoveDir==2))[0]
 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
@@ -44,6 +53,8 @@ def plot_bl_subtracted_trace_singe(ev,i,ax,**kwargs):
     ax.plot(ev.timeline_wheelTime[i][choice_move_idx:]-ev.timeline_audPeriodOn[i],ev.timeline_wheelValue[i][choice_move_idx:]-ev.timeline_wheelValue[i][choice_move_idx],**kwargs) 
 
 [plot_bl_subtracted_trace_singe(ev,i,ax,color='k',alpha=.2) for i in selected]
+
+ax.set_xlim([0,0.1])
 # %%
 # get the average wheel trace of selected_trials
 
@@ -52,7 +63,7 @@ def plot_mean_wheel(ev,selected_trials,t=None,ax=None,plot_mean = True,plot_all_
         t=np.arange(-0.1,.2,0.01)
     # hacky way of subtracting the baseline
     bl_subtracted_wheelValue = np.array([i - i[0] for i in ev.timeline_wheelValue])
-    wheelraster = np.interp(ev.timeline_choiceMoveOn[selected_trials,np.newaxis]+t,
+    wheelraster = np.interp(ev.timeline_audPeriodOn[selected_trials,np.newaxis]+t,
                             np.concatenate(ev.timeline_wheelTime[selected_trials]),
                             np.concatenate(bl_subtracted_wheelValue[selected_trials]))
 
@@ -71,25 +82,34 @@ def plot_mean_wheel(ev,selected_trials,t=None,ax=None,plot_mean = True,plot_all_
     if plot_all_trials:         
         [ax.plot(t,wheelraster[i,:]-(wheelraster[i,0:3]).mean(),**meankwargs,alpha=.3,lw=2) for i in range(wheelraster.shape[0])]
 
+    return wheelraster
+
 # %% 
 # plot left vs right 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
 # fast trials 
-selected_right = np.where(is_go & (reaction_times<.1) & (ev.timeline_choiceMoveDir==2))[0]
-plot_mean_wheel(ev,selected_right,ax=ax,color='r',plot_all_trials=False)
+thr=0.05
+selected_right = np.where(is_go & (reaction_times<thr) & (ev.timeline_choiceMoveDir==2) & ev.is_visualTrial)[0]
+raster_r = plot_mean_wheel(ev,selected_right,ax=ax,color='r',plot_all_trials=True)
 
-selected_left = np.where(is_go & (reaction_times<.1) & (ev.timeline_choiceMoveDir==1))[0]
-plot_mean_wheel(ev,selected_left,ax=ax,color='b',plot_all_trials=False)
+selected_left = np.where(is_go & (reaction_times<thr) & (ev.timeline_choiceMoveDir==1) & ev.is_visualTrial)[0]
+raster_l = plot_mean_wheel(ev,selected_left,ax=ax,color='b',plot_all_trials=True)
 
-# slower trials
-selected_right = np.where(is_go & (reaction_times>.1) & (ev.timeline_choiceMoveDir==2))[0]
-plot_mean_wheel(ev,selected_right,ax=ax,color='r',plot_all_trials=False,linestyle='dashed')
 
-selected_left = np.where(is_go & (reaction_times>.1) & (ev.timeline_choiceMoveDir==1))[0]
-plot_mean_wheel(ev,selected_left,ax=ax,color='b',plot_all_trials=False,linestyle='dashed')
+# selected_right = np.where(is_go & (reaction_times<thr) & (ev.timeline_choiceMoveDir==2) & ev.is_coherentTrial)[0]
+# raster_r = plot_mean_wheel(ev,selected_right,ax=ax,color='r',plot_all_trials=True,linestyle='dashed')
+
+# selected_left = np.where(is_go & (reaction_times<thr) & (ev.timeline_choiceMoveDir==1) & ev.is_coherentTrial)[0]
+# raster_l = plot_mean_wheel(ev,selected_left,ax=ax,color='b',plot_all_trials=True,linestyle='dashed')
+# #slower trials
+# selected_right = np.where(is_go & (reaction_times>thr) & (ev.timeline_choiceMoveDir==2))[0]
+# plot_mean_wheel(ev,selected_right,ax=ax,color='r',plot_all_trials=False,linestyle='dashed')
+
+# selected_left = np.where(is_go & (reaction_times>thr) & (ev.timeline_choiceMoveDir==1))[0]
+# plot_mean_wheel(ev,selected_left,ax=ax,color='b',plot_all_trials=False,linestyle='dashed')
 ax.axvline(0,color='k')
-
+ax.set_xlim([0,0.1])
 
 # %%
 # now I will do different speeds of turning towards the right

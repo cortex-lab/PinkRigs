@@ -142,13 +142,13 @@ class cccp():
             grouping_indices = trial_types.groupby(by=['contrast','spl','aud_azimuths','choice_type']).indices
         elif 'ccAP' in test_type: 
             df =  trial_types[trial_types.aud_azimuths!=0]  
-            grouping_indices = (df).groupby(by=['contrast','spl','vis_azimuths','choice_type']).indices
+            grouping_indices = (df).groupby(by=['contrast','spl','vis_azimuths',' ']).indices
             grouping_indices = {g:df.index.values[grouping_indices[g]] for g in grouping_indices.keys()}
 
         # regroup events
         # basically if a group does not contain two indices that means only one type of trial is present
         # so only the groups where there are two grouping indices should really be kept and re_ID-ed
-        # and I was thinking we will need a tag but we don't because than e.g. choiceDir will serve as the tag if I did everything right 
+        # and I was thinking we will need a tag but we don't because than e.g. choiceDir will serve as the tag if I did everything right # OMG so cryptic
 
         ev = self.ev.copy()
         ev.newIDs = np.empty(ev.is_blankTrial.size)*np.nan

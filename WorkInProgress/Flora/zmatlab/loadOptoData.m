@@ -4,6 +4,7 @@ p = inputParser;
 addOptional(p,'balanceTrials',1);
 addOptional(p,'sepMice',1);
 addOptional(p,'sepHemispheres', 1);
+addOptional(p,'sepPowers', 1);
 addOptional(p,'sepChoices',0)
 addOptional(p,'reExtract', 0);
 addOptional(p,'addFakeTrial', 0);
@@ -42,6 +43,10 @@ end
 
 if ~params.sepHemispheres
     events.stim_laserPosition(~isnan(events.stim_laserPosition)) = 1;
+end 
+
+if ~params.sepPowers
+    events.laser_power(~isnan(events.stim_laserPosition)) = 1; 
 end 
 
 subjects = events.subjectID; 

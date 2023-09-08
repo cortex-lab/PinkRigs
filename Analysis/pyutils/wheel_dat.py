@@ -42,7 +42,7 @@ def plot_single_trace(ev,trial_index,blfrom='first',align_time = None,ax=None,**
     
     ax.plot(ev.timeline_wheelTime[trial_index]-bl_time,ev.timeline_wheelValue[trial_index]-baseline,**plotkwargs)
 
-def wheel_raster(ev,selected_trials='all',align_type=None,t=None, bl_subtract=True):
+def wheel_raster(ev,selected_trials='all',align_type=None,t=None,t_bin=0.01, bl_subtract=True):
     """
     Function to create a rasterised version of the wheel deg per trial
 
@@ -62,9 +62,9 @@ def wheel_raster(ev,selected_trials='all',align_type=None,t=None, bl_subtract=Tr
         selected_trials = (np.ones(ev.is_validTrial.size)).astype('bool')
 
     if not t: 
-        t=np.arange(-0.1,1,0.001)
+        t=np.arange(-0.1,1,t_bin)
     else:
-        t=np.arange(t[0],t[1],0.001)
+        t=np.arange(t[0],t[1],t_bin)
 
     if align_type:
         if 'aud' in align_type:
@@ -73,6 +73,10 @@ def wheel_raster(ev,selected_trials='all',align_type=None,t=None, bl_subtract=Tr
             align_time = ev.timeline_laserOn_rampStart
         elif 'laserOff' in align_type:
             align_time = ev.timeline_laserOff_rampEnd
+        elif 'vis' in align_type:
+            align_time = ev.timeline_visPeriodOn
+        elif 'choice' in align_type:
+            align_time = ev.timeline_choiceMoveOn
         else: 
             align_time = ev.timeline_audPeriodOn        
 

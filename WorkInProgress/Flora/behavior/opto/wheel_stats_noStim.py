@@ -21,7 +21,8 @@ data_dict = {
 subject = ['AV046','AV047','AV041','AV044','AV036']
 #subject = ['AV047']
 #recordings = query_opto(subject=subject,expDate = 'all',expDef='multiSpace',data_dict=data_dict)
-recordings = load_data(subject=subject,expDate='2022-04-25:2023-08-20',expDef='multiSpace',data_name_dict=data_dict)
+recordings = load_data(subject=subject,expDate='2022-04-25:2023-09-03',expDef='multiSpace',data_name_dict=data_dict)
+# %%
 recordings = recordings[recordings.extractEvents=='1']
 
 #to_keep = [ ~(np.isnan(rec.events._av_trials.is_laserTrial).all()) for _,rec in recordings.iterrows()]
@@ -36,11 +37,9 @@ def batch_rasters(rec,return_shuffles=False):
     # sort the indices
     print(rec.expFolder)
 
-    ev,_,_,_,_= simplify_recdat(rec,reverse_opto=True)
+    ev,_,_,_,_= simplify_recdat(rec,reverse_opto=False)
     idxs = np.where(
-        ev.is_noStimTrial &
-        ev.is_laserTrial 
-        #np.isnan(ev.timeline_choiceMoveOn)
+        ev.is_noStimTrial         #np.isnan(ev.timeline_choiceMoveOn)
         )[0]
 
 
@@ -51,7 +50,7 @@ def batch_rasters(rec,return_shuffles=False):
     DirMoveLaser = ev.timeline_firstMovePostLaserDir
     dir_noStim = DirMoveLaser[idxs]
     
-    powers = ev.laser_power[idxs]
+    powers = ev.laser_power_signed[idxs]
 
     if return_shuffles: 
         # conditional resampling for each of these 
@@ -74,23 +73,24 @@ def batch_rasters(rec,return_shuffles=False):
         ev,
         selected_trials=idxs, 
         align_type='laserOn',
-        t = [-.1,3]
+        t = [-.1,.5],t_bin=0.001
         )
     
     # reverse raster trace based on location # which is only advisable once you bseline subtracted....
-    posarg = np.tile(np.sign(ev.laser_power_signed[idxs]),(my_wheel.rasters.shape[1],1)).T
-    r = posarg * my_wheel.rasters
-
+    # posarg = np.tile(np.sign(ev.laser_power_signed[idxs]),(my_wheel.rasters.shape[1],1)).T
+    # r = posarg * my_wheel.rasters
+    r = my_wheel.rasters
     expFolders = [rec.expFolder]*powers.size
 
 
-    return r,rt_noStim,powers,shuffle_rts,dir_noStim,expFolders
+    return r,rt_noStim,powers,shuffle_rts,dir_noStim,expFolders,my_wheel.tscale
 
-r,td,p,td_shuff,dirs,expFolders = zip(*[batch_rasters(rec,return_shuffles=False) for _,rec in recordings.iterrows() ])
+r,td,p,td_shuff,dirs,expFolders,tscale = zip(*[batch_rasters(rec,return_shuffles=False) for _,rec in recordings.iterrows() ])
 rasters = np.concatenate(r)
 td = np.concatenate(td)
 p= np.concatenate(p)
 expFolders = np.concatenate(expFolders)
+tscale = tscale[0]
 
 if td_shuff[0] is not None:
     td_shuff = np.concatenate(td_shuff,axis=1)
@@ -98,14 +98,15 @@ dirs = np.concatenate(dirs)
 
 # %%
 
-fig,ax = plt.subplots(1,1)
+# fig,ax = plt.subplots(1,1)
+# plot for shuffling
 
-[ax.hist(x,bins=200,color='k',alpha=.3) for x in td_shuff]
-ax.hist(td,bins=200,color='red',alpha=.3)
+# [ax.hist(x,bins=200,color='k',alpha=.3) for x in td_shuff]
+# ax.hist(td,bins=200,color='red',alpha=.3)
 
 # %%
 _,ax = plt.subplots(1,1,figsize=(6,6)) 
-unique_powers = np.array([5,10,17]) # np.unique(p[p>0])
+unique_powers = np.array([2,5,10,17]) # np.unique(p[p>0])
 colors = plt.cm.viridis(np.linspace(0.2,.8,unique_powers.size))
 for idx,i in enumerate(unique_powers):
     ax.hist(td[p==i],bins=100,cumulative=False,density=False,stacked=False,histtype='bar',alpha=0.6,color=colors[idx],lw=10) 
@@ -114,7 +115,7 @@ for idx,i in enumerate(unique_powers):
 # %%
 fig,ax = plt.subplots(1,1)
 sel_idx = np.argsort(td)
-ax.imshow((rasters[sel_idx,:400]),aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
+ax.imshow((rasters[p==10,:400]),aspect='auto',vmin=-.1,vmax=.1,cmap='coolwarm_r')
 #ax.imshow((rasters[630:830,:]),aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #ax.matshow(rasters[np.argsort(rasters[:,300:].mean(axis=1)),:],aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #off_axes(ax)
@@ -127,4 +128,17 @@ ax.axvline(100,color='lime')
 
 #ax.axvline(100,color='r')
 #ax.set_title('%s,inactivated_side=%s,%.0fmW,align:laser,sort:audOn-laserOn' % (subject)) 
+# %%
+# plot the actual wheel traces
+
+# %%
+unique_powers = np.array([-17,-10,-5,-2,2,5,10,17]) # np.unique(p[p>0])
+colors = plt.cm.viridis(np.linspace(0.2,.8,unique_powers.size))
+for idx,i in enumerate(unique_powers):
+    plt.plot(tscale,np.nanmean(rasters[p==i],axis=0),color=colors[idx])
+# how the trace scales with power (or not)
+# %%
+# 
+[plt.plot(tscale,rasters[i,:],color='k',alpha=.05) for i in np.where(p==-17)[0]]
+
 # %%
