@@ -439,36 +439,53 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     velThresh  = sR*(whlDecThr*0.01)/sumWin;
 
+    % "scan" the velocity traces, with a 50 ms "forward" window (for
+    % sumWin=51). In other words, summing the velocity in the upcoming 50
+    % ms after each point. Every time wheel moves in the "opposite"
+    % direction from the "scan" there is a big penalty and it can't cross
+    % threshold. So basically, looking for "continuous" movements in one
+    % direction as a "choice"
     posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
     negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
+    
+    % detect any periods of movement (summed over 20ms) in any direction
     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
     falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
 
 
-    % I am gonna actially save out the trials that were like this
+    % I am gonna actually save out the trials that were like this
     movedAtStim = zeros(1,numel(is_blankTrial)); 
     movedAtStim(stimFoundIdx) = falseIdx; 
 
+    %find times when wheel crosses the decision threshold between stim on
+    %and stim off times
     choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
     choiceCrsIdx(falseIdx) = nan;
+    % Only trials where a choice is detected in this way are "good"
     gdIdx = ~isnan(choiceCrsIdx);
 
+    % Get the timeline time and direction for the "good" choices
     choiceThreshTime = choiceCrsIdx/sR;
     choiceThreshDirection = choiceThreshTime*nan;
     choiceThreshDirection(gdIdx) = sign(wheelDeg(choiceCrsIdx(gdIdx)) - wheelDeg(choiceCrsIdx(gdIdx)-25));
     choiceThreshDirection(gdIdx) = (((choiceThreshDirection(gdIdx)==-1)+1).*(abs(choiceThreshDirection(gdIdx))))';
 
+    % Look for times when the velocity crosses the threshold AFTER a period
+    % (equal to sumWin) without any threshold crossings
     tstWin = [zeros(1, sumWin-1), 1];
     velThreshPoints = [(strfind((posVelScan'>=velThresh), tstWin)+sumWin-2) -1*(strfind((-1*negVelScan'>=velThresh), tstWin)+sumWin-2)]';
 
+    % Use these crossings as the movement onsets
     [~, srtIdx] = sort(abs(velThreshPoints));
     moveOnsetIdx = abs(velThreshPoints(srtIdx));
     moveOnsetSign = sign(velThreshPoints(srtIdx))';
     moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
 
+    % Indexing onsets into trials
     onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
     onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 
+    % Indexing onsets into trials where there was a stim (i.e. a "choice")
     onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
     onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
 

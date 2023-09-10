@@ -292,4 +292,4 @@ ev.stim_closedLoop = single(ones(length(correctResponse),1));
 ev.response_direction = single(responseCalc);
 ev.response_feedback = single(feedbackValues);
 
-end
+ end
