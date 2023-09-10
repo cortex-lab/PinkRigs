@@ -15,7 +15,7 @@ from Analysis.pyutils.ev_dat import getTrialNames
 my_subject = ['AV036']
 recordings = load_data(
     subject = my_subject,
-    expDate = '2022-05-02:2023-09-20',
+    expDate = '2022-05-02:2023-09-04',
     expDef = 'multiSpaceWorld_checker_training',
     checkEvents = '1', 
     data_name_dict={'events':{'_av_trials':'table'}}
@@ -40,7 +40,7 @@ contrasts = np.unique(ev.signed_contrast[~np.isnan(ev.signed_contrast)])
 
 window_size = 1
 n_trials = ev.timeline_choiceMoveDir.size
-is_nogo = np.isnan(ev.timeline_choiceMoveDir)
+is_nogo = np.isnan(ev.response_direction==0)
 
 indices = np.arange(0,n_trials-window_size)+window_size
 is_in_nogo_block = [is_nogo[t-window_size:t].sum() for t in indices]
@@ -101,7 +101,7 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-laser_keep_set = (ev.laser_power==17) & ((ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+laser_keep_set = (ev.laser_power==10) & ((ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
 
 d=pd.DataFrame()
@@ -162,7 +162,7 @@ fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
 for i,p in enumerate(powers): 
     to_keep_trials = ev.is_validTrial & (ev.laser_power==p) & (np.abs(ev.stim_laserPosition)!=0)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-
+    
     ax[0].hist(ev_.rt[ev_.timeline_choiceMoveDir==1],color=power_colors[i],bins=100,alpha=0.5)#,cumulative=True,alpha=0.5,density=True)
     ax[1].hist(ev_.rt[ev_.timeline_choiceMoveDir==2],color=power_colors[i],bins=100,alpha=0.5)# ,cumulative=True,alpha=0.5,density=True)
 
@@ -189,6 +189,7 @@ df['trialNames'] = getTrialNames(ev_)
 choice_signed = np.sign(ev_.timeline_choiceMoveDir-1.5)
 df['powerXchoiceDir'] = (ev_.laser_power+1e-10) * choice_signed
 # make a single array of trialtypes
+df['rt_laser'] = ev_.block_firstMovePostLaserOn-ev_.timeline_audPeriodOn
 
 fig,ax = plt.subplots(1,1,figsize=(7,13))
 fig.patch.set_facecolor('xkcd:white')
@@ -211,13 +212,15 @@ off_topspines(ax)
 
 import joypy
 from matplotlib import cm
-
+#
+plt.rcParams.update({'font.size': 24})
+plt.rcParams.update({'font.family': 'Calibri Light'})
 labels=[-17,-10,-0,0,10,17]
 trialtypes = ['blank','auditory','visual','coherent','conflict']
-fig,ax = plt.subplots(len(trialtypes),1)
-for idx,tt in enumerate(trialtypes):
-    joypy.joyplot(data=df[df.trialNames==tt],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax[idx],kind='normalized_counts',bins=0)
-fig.show()
+fig,ax = plt.subplots(1,1,figsize=(12,8))
+joypy.joyplot(data=df[df.rt<.8],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax,kind='normalized_counts',bins=200,lw=3)
+ax.set_xlabel('rt from stimulus (s)')
+ax.set_xlim([0,1])
 # %%
 # summary plot of this matter would include (according to Pip)
 # for 10mW & 17 mW

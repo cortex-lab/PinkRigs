@@ -71,6 +71,8 @@ def wheel_raster(ev,selected_trials='all',align_type=None,t=None,t_bin=0.01, bl_
             align_time =  ev.timeline_audPeriodOn
         elif 'laserOn' in align_type:
             align_time = ev.timeline_laserOn_rampStart
+        elif 'blockLaserTime' in align_type:
+            align_time = ev.block_laserStartTimes
         elif 'laserOff' in align_type:
             align_time = ev.timeline_laserOff_rampEnd
         elif 'vis' in align_type:

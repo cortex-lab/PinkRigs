@@ -15,11 +15,11 @@ data_dict = {
             'events':{'_av_trials':'all'}
                 }
 
-subject = ['AV025','AV030','AV034']
+subject = ['AV036']
 
 #subject = ['AV038']
 #recordings = query_opto(subject=subject,expDate = 'all',expDef='multiSpace',data_dict=data_dict)
-recordings = load_data(subject=subject,expDate='2021-05-02:2023-09-20',expDef='multiSpace',data_name_dict=data_dict)
+recordings = load_data(subject=subject,expDate='2021-05-02:2023-09-04',expDef='multiSpace',data_name_dict=data_dict)
 recordings = recordings[recordings.extractEvents=='1']
 # throw away sessions without any laser    
 
@@ -45,7 +45,6 @@ def batch_rasters(rec,**wheel_kwargs):
     idxs = np.where(sort_curr_condition(ev))[0]
     my_wheel = wheel_raster(ev,selected_trials=idxs, **wheel_kwargs)    
     r = my_wheel.rasters     
-
     return r,ev.rt[idxs],ev.rt_aud[idxs],ev.timeline_choiceMoveDir[idxs],my_wheel.tscale
 
 
@@ -97,7 +96,7 @@ ax.set_xlim([0, .05])
 
 # plot the mean wheel tracesl between certan rt bins
 
-rt_bins = np.linspace(0,0.2,5)
+rt_bins = np.linspace(0,0.02,5)
 colors_r = plt.cm.Reds(np.linspace(.5,.9,rt_bins.size-1))
 
 colors_l = plt.cm.Blues(np.linspace(.5,.9,rt_bins.size-1))

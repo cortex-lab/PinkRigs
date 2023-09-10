@@ -2,7 +2,7 @@
 % mouse/power etc
 
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1); 
 
 %%
 plotOpt.toPlot=0; 
@@ -24,7 +24,8 @@ for s=1:numel(extracted.subject)
         ev.laser_stimDiff>nanmedian(ev.laser_stimDiff))),plotOpt); 
 
     fast_ = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
-    ev.laser_stimDiff<nanmedian(ev.laser_stimDiff))),plotOpt); 
+    ev.laser_stimDiff<nanmedian(ev.laser_stimDiff))),plotOpt);
+ 
 
     
     ipsi(s) = nanmean(i,'all');
@@ -35,11 +36,11 @@ for s=1:numel(extracted.subject)
 end
 %%
 figure; 
-plot([1,2],[ipsi;contra]); hold on;
+plot([1,2],[ipsi;contra],'k'); hold on;
 plot([1,2],[0,0],'k--')
 %% plot the actual chronometric curves
 %
-s=3; 
+s=10; 
 plotOpt.toPlot=1; 
 
 ev = extracted.data{s};
@@ -64,9 +65,38 @@ chrono_correct = get_rts(filterStructRows(ev,(ev.response_feedback==1 & ~ev.is_l
 
 %%
 figure;
+all_subjects = [extracted.subject{:}];
+sjs= unique([extracted.subject{:}]);
+powers = [extracted.power{:}];
+colors = ['rgbcmk'];
+for s=1:numel(sjs)
+    
+    idx = (strcmp(all_subjects,sjs(s))) & (powers==10);
+    low=[ipsi(idx);contra(idx)]; 
+    plot([1,2],[ipsi(idx);contra(idx)],color=colors(s),LineStyle='-'); 
+    hold on;
+    idx = (strcmp(all_subjects,sjs(s))) & (powers==17);
+    plot([1,2],[ipsi(idx);contra(idx)],color=colors(s),LineStyle='--'); 
+    high = [ipsi(idx);contra(idx)]; 
+
+    mydiff(s,:) = high-low;
+
+end
+%%
+figure; 
+for s=1:numel(sjs)
+    plot([1,2],[mydiff(s,:)],color='k',LineStyle='-');
+    hold on;
+end 
+%%
+figure; 
 is_high = cellfun(@(x) (x==17),extracted.power); 
 is_low = cellfun(@(x) (x==10),extracted.power); 
-plot([1,2],[ipsi(is_low);contra(is_low)],color='b'); 
+plot([1,2],[ipsi(is_low);contra(is_low)],color='k'); 
+hold on
+plot([1,2],[0,0],'k--')
+
+%%
 hold on 
 plot([1,2],[ipsi(is_high);contra(is_high)],color='r'); 
 [~,p_ic]= ttest(ipsi,contra);

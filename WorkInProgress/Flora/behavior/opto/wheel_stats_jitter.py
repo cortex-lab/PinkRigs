@@ -30,14 +30,12 @@ to_keep = [(rec.events._av_trials.is_noStimTrial.sum()>5) & (np.sum(rec.events._
 recordings = recordings[to_keep]
 # %%
 def sort_curr_condition(ev):
-        passcond = (ev.is_auditoryTrial & ev.is_laserTrial & ev.is_validTrial & (ev.stim_audAzimuth==60) & (~np.isnan(ev.timeline_choiceMoveOn)) &
+        passcond = (ev.is_auditoryTrial & ev.is_laserTrial & ev.is_validTrial & (ev.stim_audAzimuth==60) & (ev.response_dirction!=0) &
                      (((ev.stim_laser1_power+ev.stim_laser2_power)==10)) & (np.abs(ev.stim_laserPosition)==1))  
         return passcond
 
 to_keep = [((sort_curr_condition(rec.events._av_trials)).sum())>1 for _,rec in recordings.iterrows()]
 recordings = recordings[to_keep]
-
-# %%
 
 # %%
 

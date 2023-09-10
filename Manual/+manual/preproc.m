@@ -1,7 +1,8 @@
 close all
 
 clear params
-params.subject = {['all']};
+params.subject = {['AV029'];['AV033'];['AV031'];['AV036'];['AV038'];['AV046'];['AV041'];['AV047'];['AV044']};
+%params.subject = {['AV029']};
 params.expDate = {['all']}; 
 params.expDef = 't'; 
 

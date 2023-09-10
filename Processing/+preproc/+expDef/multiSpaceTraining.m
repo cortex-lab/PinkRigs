@@ -139,13 +139,6 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     trialStEnTimes = [trialStTimes(eIdx)' trialEnTimes(eIdx)'];
 
-    if isfield(block.events, 'laserPeriodStartTimes')
-    blockLaserStartTimes =  preproc.align.event2Timeline(block.events.laserPeriodStartTimes(eIdx), ...
-        alignmentBlock.originTimes,alignmentBlock.timelineTimes)';
-    else
-        blockLaserStartTimes = NaN(numel(is_blankTrial),1); 
-    end
-
     stimStartBlock = preproc.align.event2Timeline(block.events.stimPeriodOnOffTimes, ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
     stimStartBlock = stimStartBlock(1:2:end);
@@ -276,7 +269,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         if (isempty(tExt.visStimOnOff)); tExt.visStimOnOff = [0 0]; end
 
 
-        %% MOVEMENT
+        % response
         responseMadeIdx = responseRecorded ~= 0;
         timelineVisOnset = indexByTrial(trialStEnTimes, tExt.visStimPeriodOnOff(:,1), tExt.visStimPeriodOnOff(:,1));
         timelineVisOnset(cellfun(@isempty, timelineVisOnset)) = deal({nan});
@@ -305,84 +298,19 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         error(msgText)
     end
 
-    wheelDeg = extractWheelDeg(timeline); % in timeline time
-    wheelVel = diff([0; wheelDeg])*sR;
 
-    %sumWin = 51; % this is the variable that corresponds to 50ms in the methods
-    sumWin = 51;
-    if isfield(block.events,'selected_paramsetValues')
-        whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain); % usually 20 deg at final stage 
+    %% LASER RELATED STUFF that gets whether there was a laser and some timings related to the laser
+
+
+    % supposed laser Onset times from block. This includes the fake trials,
+    % and basically should be equal to the end of the quiescent period. 
+    if isfield(block.events, 'laserPeriodStartTimes')
+    blockLaserStartTimes =  preproc.align.event2Timeline(block.events.laserPeriodStartTimes(eIdx), ...
+        alignmentBlock.originTimes,alignmentBlock.timelineTimes)';
     else
-        wg = [block.paramsValues.wheelGain];
-        whlDecThr = round(60./wg(1));
+        blockLaserStartTimes = NaN(numel(is_blankTrial),1); 
     end
 
-    velThresh  = sR*(whlDecThr*0.01)/sumWin;
-
-    posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
-    negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
-    movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
-    falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
-
-    choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
-    choiceCrsIdx(falseIdx) = nan;
-    gdIdx = ~isnan(choiceCrsIdx);
-
-    choiceThreshTime = choiceCrsIdx/sR;
-    choiceThreshDirection = choiceThreshTime*nan;
-    choiceThreshDirection(gdIdx) = sign(wheelDeg(choiceCrsIdx(gdIdx)) - wheelDeg(choiceCrsIdx(gdIdx)-25));
-    choiceThreshDirection(gdIdx) = (((choiceThreshDirection(gdIdx)==-1)+1).*(abs(choiceThreshDirection(gdIdx))))';
-
-    tstWin = [zeros(1, sumWin-1), 1];
-    velThreshPoints = [(strfind((posVelScan'>=velThresh), tstWin)+sumWin-2) -1*(strfind((-1*negVelScan'>=velThresh), tstWin)+sumWin-2)]';
-
-    [~, srtIdx] = sort(abs(velThreshPoints));
-    moveOnsetIdx = abs(velThreshPoints(srtIdx));
-    moveOnsetSign = sign(velThreshPoints(srtIdx))';
-    moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
-
-    onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
-    onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
-
-    onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
-    onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
-
-    %"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
-    %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
-    %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
-    firstMoveTimeDir = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByChoiceTrial, num2cell(stimOnsetIdx/sR), 'uni', 0));
-    choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByChoiceTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
-    choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
-    choiceInitTimeDir = cell2mat(choiceInitTimeDir);
-
-    %SANITY CHECK
-    blockTstValues = responseRecorded(stimFoundIdx);
-    if ~isempty(choiceInitTimeDir)
-        tstIdx = ~isnan(choiceInitTimeDir(:,2));
-        if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
-            error('Why are most of the movements not in the same direction as the response?!?')
-        end
-    end
-
-    if isempty(stimOnsetIdx)
-        tExt.firstMoveTimeDir = [nan, nan];
-        tExt.choiceInitTimeDir = [nan, nan];
-        tExt.choiceThreshTimeDir = [nan, nan];
-    else
-        tExt.firstMoveTimeDir = firstMoveTimeDir;
-        tExt.choiceInitTimeDir = choiceInitTimeDir;
-        tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
-    end
-    tExt.allMovOnsetsTimDir = cell2mat(onsetTimDirByTrial);
-
-    changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
-    trialStEnIdx = (trialStEnTimes*sR);
-    points2Keep = sort([1 changePoints changePoints+1 length(wheelDeg) ceil(trialStEnIdx(:,1))'+1, floor(trialStEnIdx(:,2))'-1]);
-    points2Keep(points2Keep > length(wheelDeg)) = [];
-    tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' wheelDeg(points2Keep)];
-
-   
-    %%
     if isfield(e, 'is_laserOnValues') && any(e.is_laserOnValues>0)
         disp('opto data...')
         dat = csv.loadData(block.expInfo, 'dataType', {{'opto'}});
@@ -495,11 +423,119 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     end
     laser_times_trial_indexed = single(laser_times_trial_indexed);
 
-    % calculate first movement after laser onset? 
-    if ~all(isnan(is_laser_On),'all')
-        tExt.firstMovePostLaserTimeDir = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(is_laser_On), laser_times_per_trial(is_laser_On), 'uni', 0));
+
+    %% WHEEL RELATED STUFF 
+    wheelDeg = extractWheelDeg(timeline); % in timeline time
+    wheelVel = diff([0; wheelDeg])*sR;
+
+    %sumWin = 51; % this is the variable that corresponds to 50ms in the methods
+    sumWin = 51;
+    if isfield(block.events,'selected_paramsetValues')
+        whlDecThr = round(60./block.events.selected_paramsetValues.wheelGain); % usually 20 deg at final stage 
     else
-        tExt.firstMovePostLaserTimeDir = [nan, nan];
+        wg = [block.paramsValues.wheelGain];
+        whlDecThr = round(60./wg(1));
+    end
+
+    velThresh  = sR*(whlDecThr*0.01)/sumWin;
+
+    posVelScan = conv(wheelVel.*double(wheelVel>0) - double(wheelVel<0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
+    negVelScan = conv(wheelVel.*double(wheelVel<0) + double(wheelVel>0)*1e6, [ones(1,sumWin) zeros(1,sumWin-1)]./sumWin, 'same').*(wheelVel~=0);
+    movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
+    falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
+
+
+    % I am gonna actially save out the trials that were like this
+    movedAtStim = zeros(1,numel(is_blankTrial)); 
+    movedAtStim(stimFoundIdx) = falseIdx; 
+
+    choiceCrsIdx = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:(x+y))-wheelDeg(x))>whlDecThr,1)+x]), stimOnsetIdx, round(stimEndIdx));
+    choiceCrsIdx(falseIdx) = nan;
+    gdIdx = ~isnan(choiceCrsIdx);
+
+    choiceThreshTime = choiceCrsIdx/sR;
+    choiceThreshDirection = choiceThreshTime*nan;
+    choiceThreshDirection(gdIdx) = sign(wheelDeg(choiceCrsIdx(gdIdx)) - wheelDeg(choiceCrsIdx(gdIdx)-25));
+    choiceThreshDirection(gdIdx) = (((choiceThreshDirection(gdIdx)==-1)+1).*(abs(choiceThreshDirection(gdIdx))))';
+
+    tstWin = [zeros(1, sumWin-1), 1];
+    velThreshPoints = [(strfind((posVelScan'>=velThresh), tstWin)+sumWin-2) -1*(strfind((-1*negVelScan'>=velThresh), tstWin)+sumWin-2)]';
+
+    [~, srtIdx] = sort(abs(velThreshPoints));
+    moveOnsetIdx = abs(velThreshPoints(srtIdx));
+    moveOnsetSign = sign(velThreshPoints(srtIdx))';
+    moveOnsetDir = (((moveOnsetSign==-1)+1).*(abs(moveOnsetSign)))';
+
+    onsetTimDirByTrial = indexByTrial(trialStEnTimes, moveOnsetIdx/sR, [moveOnsetIdx/sR moveOnsetDir]);
+    onsetTimDirByTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
+
+    onsetTimDirByChoiceTrial = onsetTimDirByTrial(stimFoundIdx);
+    onsetTimDirByChoiceTrial(cellfun(@isempty, onsetTimDirByTrial)) = deal({[nan nan]});
+
+    %"firstMoveTimes" are the first onsets occuring after stimOnset. "largeMoveTimes" are the first onsets occuring after stimOnsetIdx that match the
+    %sign of the threshold crossing defined earlier. Eliminate any that are longer than 1.5s, as these would be timeouts. Also, remove onsets when the
+    %mouse was aready moving at the time of the stimulus onset (impossible to get an accurate movement onset time in this case)
+    firstMoveTimeDir = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByChoiceTrial, num2cell(stimOnsetIdx/sR), 'uni', 0)); 
+    choiceInitTimeDir = cellfun(@(x,y) x(find(x(:,1)<y,1,'last'),:), onsetTimDirByChoiceTrial, num2cell(choiceThreshTime(:,1)), 'uni', 0);
+    choiceInitTimeDir(cellfun(@isempty, choiceInitTimeDir)) = {[nan nan]};
+    choiceInitTimeDir = cell2mat(choiceInitTimeDir);
+
+    %SANITY CHECK
+    blockTstValues = responseRecorded(stimFoundIdx);
+    if ~isempty(choiceInitTimeDir)
+        tstIdx = ~isnan(choiceInitTimeDir(:,2));
+        if mean(choiceInitTimeDir(tstIdx,2) == blockTstValues(tstIdx)) < 0.75
+            error('Why are most of the movements not in the same direction as the response?!?')
+        end
+    end
+
+    if isempty(stimOnsetIdx)
+        tExt.firstMoveTimeDir = [nan, nan];
+        tExt.choiceInitTimeDir = [nan, nan];
+        tExt.choiceThreshTimeDir = [nan, nan];
+    else
+        tExt.firstMoveTimeDir = firstMoveTimeDir;
+        tExt.choiceInitTimeDir = choiceInitTimeDir;
+        tExt.choiceThreshTimeDir = [choiceThreshTime, choiceThreshDirection];
+    end
+    tExt.allMovOnsetsTimDir = cell2mat(onsetTimDirByTrial);
+
+    changePoints = strfind(diff([0,wheelDeg'])==0, [1 0]);
+    trialStEnIdx = (trialStEnTimes*sR);
+    points2Keep = sort([1 changePoints changePoints+1 length(wheelDeg) ceil(trialStEnIdx(:,1))'+1, floor(trialStEnIdx(:,2))'-1]);
+    points2Keep(points2Keep > length(wheelDeg)) = [];
+    tExt.wheelTraceTimeValue = [timelineTime(points2Keep)' wheelDeg(points2Keep)];
+
+   
+    % wheel movment related stuff in relation to the laser 
+    if ~all(isnan(is_laser_On),'all') 
+        % caclulate when there was a movement already at the time of laser
+        % onset 
+        tl_laserOnset = laser_times_trial_indexed(:,1);
+        laserOnsetIdx_tl  = round(tl_laserOnset*sR); % because of the collorary dischange of the laser, at times in these early recordings the LED came on when it wasn't supposed to
+
+        moveAtlaser_tl = zeros(1,numel(is_blankTrial));
+        moveAtlaser_tl(is_laser_On) = (movingScan(laserOnsetIdx_tl(~isnan(laserOnsetIdx_tl)))~=0); %don't want trials when mouse is moving at stim onset  
+        % first movement after laser based on timeline, excluing those that
+        % moved at the time of laser
+        tExt.firstMovePostLaserTimeDir_tl = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(is_laser_On & ~moveAtlaser_tl), num2cell(tl_laserOnset(is_laser_On & ~moveAtlaser_tl)), 'uni', 0));
+        % do the same for block first movement after laser based on block because of the noStim trials -- so that there is a direct comparison 
+
+    else
+        moveAtlaser_tl = zeros(1,numel(is_blankTrial));
+        tExt.firstMovePostLaserTimeDir_tl = [nan, nan];
+    end 
+
+
+
+    if isfield(block.events, 'laserPeriodStartTimes') & ~all(isnan(is_laser_On),'all') 
+        % I had a set of data 
+        laserOnsetIdx_block  = round((blockLaserStartTimes)*sR);
+        moveAtlaser_block = (movingScan(laserOnsetIdx_block(~isnan(laserOnsetIdx_block)))~=0); %don't want trials when mouse is moving at stim onset  
+        tExt.firstMovePostLaserTimeDir_block = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(~moveAtlaser_block), num2cell(blockLaserStartTimes(~moveAtlaser_block)), 'uni', 0));
+    else
+        moveAtlaser_block = zeros(numel(is_blankTrial),1); 
+        tExt.firstMovePostLaserTimeDir_block = [nan, nan];
     end 
     %%
 
@@ -519,7 +555,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
             tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
         end
-        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff';'firstMovePostLaserTimeDir'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
+        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff';'firstMovePostLaserTimeDir_tl';'firstMovePostLaserTimeDir_block'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
             nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
             if nColumns == 0; nColumns = size(currData,2); end
             tExt.(currField)(emptyIdx) = deal({nan*ones(1, nColumns)});
@@ -543,6 +579,11 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.block_trialOff = single(trialStEnTimes(:,2));
     ev.block_stimOn = single(stimStartBlock);
     ev.block_laserStartTimes = single(blockLaserStartTimes); 
+    ev.block_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir_block(:,1);
+    ev.block_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir_block(:,2);
+    ev.block_isMovedAtLaser = logical(moveAtlaser_block); 
+
+
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);
@@ -563,6 +604,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.timeline_allMoveDir  = cellfun(@(x) x(:,2), tExt.allMovOnsetsTimDir, 'uni', 0);
     ev.timeline_wheelTime  = cellfun(@(x) x(:,1), tExt.wheelTraceTimeValue, 'uni', 0);
     ev.timeline_wheelValue  = cellfun(@(x) x(:,2), tExt.wheelTraceTimeValue, 'uni', 0);
+    ev.timeline_isMovedAtStim = logical(movedAtStim'); 
 
     ev.is_laserTrial = is_laser_On';
     ev.timeline_laserOn_rampStart = laser_times_trial_indexed(:,1);
@@ -572,8 +614,10 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.stim_laserPosition = laserPos'; 
     ev.stim_laser1_power = power_laser1';
     ev.stim_laser2_power = power_laser2';
-    ev.timeline_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir(:,1);
-    ev.timeline_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir(:,2);
+    ev.timeline_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir_tl(:,1);
+    ev.timeline_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir_tl(:,2);
+    ev.timeline_isMovedAtLaser = logical(moveAtlaser_tl'); 
+
 
     ev.stim_correctResponse = single(correctResponse);
     ev.stim_repeatNum = single(repeatNums);
