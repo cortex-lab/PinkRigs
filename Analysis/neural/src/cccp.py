@@ -94,7 +94,7 @@ class cccp():
     def __init__(self):
         self.vis_azimuths = [-60,60]
         self.aud_azimuths =[-60,0,60] 
-        self.rt_params = {'rt_min':.1,'rt_max':None}
+        self.rt_params = {'rt_min':.05,'rt_max':.35}
 
     def load_and_format_data(self,**kwargs):
         ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'all'}
@@ -103,7 +103,7 @@ class cccp():
         ev,self.spikes,self.clusters,_,_ = simplify_recdat(recordings.iloc[0],probe='probe')
 
         contrasts = np.unique(ev.stim_visContrast)
-        contrasts = (contrasts[contrasts>0]).tolist()
+        contrasts = (contrasts).tolist()
 
         spls = np.unique(ev.stim_audAmplitude)
         spls = (spls[spls>0]).tolist()
@@ -119,7 +119,7 @@ class cccp():
             classify_choice_types=True)
         
     
-    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',t_before=0.2,t_after=0.05,t_bin=0.05):
+    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',t_before=0.2,t_after=0,t_bin=0.05):
         """
         ccCP = combined condition choice probability
         ccVP = combined condition visual stimulus detction probability
@@ -142,7 +142,7 @@ class cccp():
             grouping_indices = trial_types.groupby(by=['contrast','spl','aud_azimuths','choice_type']).indices
         elif 'ccAP' in test_type: 
             df =  trial_types[trial_types.aud_azimuths!=0]  
-            grouping_indices = (df).groupby(by=['contrast','spl','vis_azimuths',' ']).indices
+            grouping_indices = (df).groupby(by=['contrast','spl','vis_azimuths','choice_type']).indices
             grouping_indices = {g:df.index.values[grouping_indices[g]] for g in grouping_indices.keys()}
 
         # regroup events
@@ -183,8 +183,12 @@ def get_default_set():
         t_bin_universal = 0.025
         
         params = [
-            ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
-            ('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal)
+           # ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
+            #('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal)
+            ('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
+           # ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
+
+
         ]
   
 

@@ -10,7 +10,7 @@ varargin = ['selHemispheres', {[-1 1]}, varargin]; % whether to merge inhibiton 
 varargin = ['selPowers', {0}, varargin]; % whether to merge unhibiton of 2 hemispheres or not -- only an option if reverse_opto is True 
 varargin = ['balanceTrials', {1}, varargin];
 varargin = ['minN', {600}, varargin];
-varargin = ['includeNoGo', {0}, varargin];
+varargin = ['includeNoGo', {0}, varargin]; % 1 include nogo % >1=only include noGo that is not followed by other nogos, with this window size
 
 
 params = csv.inputValidation(varargin{:});
@@ -30,7 +30,13 @@ for i=1:numel(extracted.subject)
     % get mouse ID
     extracted.data{i, 1}.subjectID  = ones(nTrials,1)*subject_indices(strcmp(unique_subjects,extracted.subject{i}));
 
-
+    % calculate whether the nogo is in a block or not
+    
+    if params.includeNoGo{1}>0
+        window_size = params.includeNoGo{1};     
+        isnoGo_block = conv((extracted.data{i, 1}.response_direction==0),ones(window_size,1));
+        extracted.data{i, 1}.isnoGo_block = (isnoGo_block(1:(end-(window_size-1)))>=window_size);
+    end 
     % assert whether that is actully a non-opto session
     laserPowers = extracted.data{i, 1}.laser_power; laserPositions = extracted.data{i, 1}.stim_laserPosition;
     usedPowers = unique(laserPowers);
@@ -111,9 +117,12 @@ end
 
 % also throw away invalid trials that don't go into the fitting
 
-if params.includeNoGo{1}
+if params.includeNoGo{1}==1
     optoExtracted = filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
         abs(optoExtracted.stim_audAzimuth)~=30));
+elseif params.includeNoGo{1}>1
+    optoExtracted =filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
+        ~optoExtracted.isnoGo_block  & abs(optoExtracted.stim_audAzimuth)~=30)); 
 else 
    optoExtracted = filterStructRows(optoExtracted, (optoExtracted.is_validTrial & ...
         optoExtracted.response_direction & abs(optoExtracted.stim_audAzimuth)~=30));

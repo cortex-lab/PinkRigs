@@ -82,6 +82,10 @@ for s=1:numel(sjs)
     mydiff(s,:) = high-low;
 
 end
+
+%%
+
+
 %%
 figure; 
 for s=1:numel(sjs)

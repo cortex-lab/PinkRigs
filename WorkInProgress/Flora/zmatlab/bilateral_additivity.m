@@ -49,7 +49,7 @@ for s=1:size(powerSubjectComb,2)
     % sum the delta bias for each uni 
     dParams = (dParamsR+dParamsL).*freeP_unilateral; 
     % fit control for bi
-    biBlock = extracted.data{(hemispheres==0) & (powers==p)};
+    biBlock = extracted.data{(subjects==subject) & (hemispheres==0) & (powers==p)};
     controlBlock = filterStructRows(biBlock, ~biBlock.is_laserTrial);
     optoBlock = filterStructRows(biBlock, biBlock.is_laserTrial); 
     controlfit = plts.behaviour.GLMmulti(controlBlock, 'simpLogSplitVSplitA');
@@ -76,9 +76,10 @@ for s=1:size(powerSubjectComb,2)
     if should_plot
        figure; 
        plotParams.plottype = 'log'; 
-       plotParams.LineStyle = '--';
-       plotParams.DotStyle = 'o';
-       plotParams.MarkerSize = 8; 
+       plotParams.LineStyle = ':';
+       plotParams.DotStyle = '.';
+
+       plotParams.MarkerSize = 24; 
        plot_optofit(orifit,plotParams,plotfit,controlfit.prmFits(4)); 
        hold on; 
 
@@ -94,8 +95,8 @@ for s=1:size(powerSubjectComb,2)
     orifit.fitCV(5); 
     
     if should_plot
-       plotParams.LineStyle = '-';
-       plotParams.DotStyle = '*';
+       plotParams.LineStyle = '--';
+       plotParams.DotStyle = 'none';
        plotParams.MarkerSize = 8; 
        plot_optofit(orifit,plotParams,plotfit,controlfit.prmFits(4))
     end 
@@ -108,7 +109,9 @@ for s=1:size(powerSubjectComb,2)
 end
 
 %%
-figure; plot(lldelta,llfull,'o'); hold on; plot([0,1],[0,1],'k--');
+figure; plot(lldelta(1:3),llfull(1:3),'.',MarkerSize=30); hold on; 
+plot(lldelta(4:6),llfull(4:6),'.',MarkerSize=30); 
+hold on; plot([0,1],[0,1],'k--');
 xlabel('control+deltaBias')
 ylabel('full')
 title('-veLogLikelihood')

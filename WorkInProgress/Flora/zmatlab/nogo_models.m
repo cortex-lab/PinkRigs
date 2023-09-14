@@ -1,40 +1,54 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
 %%
 
-s = 1 ; 
+%s = 11; 
+
+for s=1:numel(extracted.subject)
 currBlock = extracted.data{s};
 nTrials(s) = numel(currBlock.is_blankTrial); 
 optoBlock = filterStructRows(currBlock, currBlock.is_laserTrial); 
 controlBlock = filterStructRows(currBlock, ~currBlock.is_laserTrial);
 
+
+%
+figure;
+plotOpt.lineStyle = '-'; %plotParams.LineStyle;
+plotOpt.Marker = 'none';
+plotOpt.toPlot = 1;
+
 % well technically all we need is the performance per condition
-[pR,pNG] = get_nogo_performance(controlBlock);
+[pR,pNG] = get_nogo_performance(controlBlock,plotOpt);
 pL= 1-pR-pNG; 
-%% 
+%
+hold on; 
+plotOpt.lineStyle = '--'; %plotParams.LineStyle;
+plotOpt.Marker = '.';
+plotOpt.MarkerSize = 30; 
 
-[pR_,pNG_] = get_nogo_performance(optoBlock); 
+[pR_,pNG_] = get_nogo_performance(optoBlock,plotOpt); 
+ylim([0,.25])
 
-%% 
+%
+% figure; 
+% visStim = [-40,-20,-10,0,10,20,40];
+% audStim = [-60,0,60]; 
+% [visGrid, audGrid] = meshgrid(visStim,audStim);%
+% lineColors = plts.general.selectRedBlueColors(audGrid(:,1));
+% plts.general.rowsOfGrid(visStim, pNG_-pNG, lineColors,plotOpt);
+% 
+title(sprintf('%s,hemisphere:%.0d',extracted.subject{s},extracted.hemisphere{s}))
 
-figure
-%-- Plot the axis system
-[h,hg,htick]=terplot;
-%-- Plot the data ...
-hter1=ternaryc(pR(1:3,:)',pL(1:3,:)',pNG(1:3,:)');
 
-%hter2=ternaryc(pR(2,:),pL(2,:),pNG(2,:));
-
-%hter3=ternaryc(pR(3,:),pL(3,:),pNG(3,:));
-
-% %-- ... and modify the symbol:
-% set(hter1,'marker','o','markerfacecolor','none','markersize',4)
-% set(hter2,'marker','x','markerfacecolor','none','markersize',4)
-
-hlabels=terlabel('pR','pL','pNG');
+diff_(s,:,:) = (pNG_-pNG); 
+end
+%%
+figure; 
+plts.general.rowsOfGrid(visStim, permute(diff_,[2,3,1]), lineColors,plotOpt);
+yline(0)
 %%
 
-function [pR,pNG] = get_nogo_performance(ev)
+function [pR,pNG] = get_nogo_performance(ev,plotOpt)
 % varargin for the visDiff and the audDiff such that we get all the inputs
 
 visDiff = int8(ev.stim_visDiff*100);
@@ -53,6 +67,14 @@ minN =2;
 n_per_cond = cellfun(@(x) numel(x),response_per_condition); 
 pR(n_per_cond<minN) = nan;
 pNG(n_per_cond<minN) = nan;
+
+
+
+
+if plotOpt.toPlot
+lineColors = plts.general.selectRedBlueColors(audGrid(:,1));
+plts.general.rowsOfGrid(visStim, pNG, lineColors,plotOpt);
+end 
 
 end 
 

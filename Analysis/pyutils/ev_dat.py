@@ -350,6 +350,8 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
         trial_classes = {}
         for idx,(c,spl,v_azi,a_azi,choice) in enumerate(itertools.product(contrasts,spls,vis_azimuths,aud_azimuths,choice_types)):
             # create a dict
+
+            print(c,spl,v_azi,a_azi,choice)
             is_this_trial = ((ev.stim_visContrast == c) &
                             (ev.stim_audAmplitude == spl) &
                             (ev.stim_visAzimuth == v_azi) & 
@@ -408,15 +410,7 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
         # pass on events to the kernels        
 
         trial_classes = Bunch(trial_classes)
-
-        # define the ouput
-        
-
-        # 
-
-
-
-        #                         
+                       
         to_keep_trials = np.sum(np.array([trial_classes[idx].is_this_trial for idx in kept_trial_class_IDs]),axis=0).astype('bool')
         
         # add the trial index type

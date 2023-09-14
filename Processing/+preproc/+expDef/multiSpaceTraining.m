@@ -536,23 +536,58 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         % first movement after laser based on timeline, excluing those that
         % moved at the time of laser
         tExt.firstMovePostLaserTimeDir_tl = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(is_laser_On & ~moveAtlaser_tl), num2cell(tl_laserOnset(is_laser_On & ~moveAtlaser_tl)), 'uni', 0));
-        % do the same for block first movement after laser based on block because of the noStim trials -- so that there is a direct comparison 
-
     else
         moveAtlaser_tl = zeros(1,numel(is_blankTrial));
         tExt.firstMovePostLaserTimeDir_tl = [nan, nan];
     end 
 
 
-
+   % similar calculations from block (to estimate the end of the quiescent
+   % period)
     if isfield(block.events, 'laserPeriodStartTimes') & ~all(isnan(is_laser_On),'all') 
         % I had a set of data 
         laserOnsetIdx_block  = round((blockLaserStartTimes)*sR);
         moveAtlaser_block = (movingScan(laserOnsetIdx_block(~isnan(laserOnsetIdx_block)))~=0); %don't want trials when mouse is moving at stim onset  
         tExt.firstMovePostLaserTimeDir_block = cell2mat(cellfun(@(x,y) x(find(x(:,1)>y,1),:), onsetTimDirByTrial(~moveAtlaser_block), num2cell(blockLaserStartTimes(~moveAtlaser_block)), 'uni', 0));
+         
+        % deterimine choice movement after laser onset or the equivalent end of quiescent period (where we include trials
+        % as "choices" the animal was alreay moving at stimulus onset.
+        %find times when wheel crosses the decision threshold between stim on
+        %and stim off times        
+        
+        % take timeline times for when laser on, block times whel laser off
+        % (I did't send a pulse but it is okish)
+        laserOnset_tlOnBlockOff = laserOnsetIdx_block; 
+        laserOnset_tlOnBlockOff(is_laser_On) = laserOnsetIdx_tl(is_laser_On); 
+        % keep only those when a response was actually made
+        laserOnset_tlOnBlockOff = laserOnset_tlOnBlockOff(responseMadeIdx); 
+
+        % for the end period take stimEndIdx (= end of response period, or whenever the stimulus went off,i.e. when response was made earlier)
+        % except when ther are laser only trials/no stimulus. In that case
+        % take the offset of the laser. which is 1.89*sR
+        % There are also the nogo trials which indeed we don't calculate
+        % towards the choices. This is taken care of when calculating stimFoundIndex        
+        tl_laserOffset = laser_times_trial_indexed(:,4);
+        EndPeriodAfterLaserIdx = min([round(timelineStimOnset(responseMadeIdx)*sR)+1.5*sR trialStEnTimes(responseMadeIdx,2)*sR tl_laserOffset(responseMadeIdx)*sR],[],2);
+        
+        % get the threshold crossings, similar to above when it was
+        % calculated in relation to the stimulus. 
+        choiceCrsIdx_l = arrayfun(@(x,y) max([nan find(abs(wheelDeg(x:y)-wheelDeg(x))>whlDecThr,1)+x]), laserOnset_tlOnBlockOff, round(EndPeriodAfterLaserIdx));
+        choiceCrsIdx_l(logical(moveAtlaser_block(responseMadeIdx))) = nan;
+        % Only trials where a choice is detected in this way are "good"
+        gdIdx_l = ~isnan(choiceCrsIdx_l);
+    
+        % Get the timeline time and direction for the "good" choices
+        choiceThreshTime_l = choiceCrsIdx_l/sR;
+        choiceThreshDirection_l = choiceThreshTime_l*nan;
+        choiceThreshDirection_l(gdIdx_l) = sign(wheelDeg(choiceCrsIdx_l(gdIdx_l)) - wheelDeg(choiceCrsIdx_l(gdIdx_l)-25));
+        choiceThreshDirection_l(gdIdx_l) = (((choiceThreshDirection_l(gdIdx_l)==-1)+1).*(abs(choiceThreshDirection_l(gdIdx_l))))';
+        tExt.choiceMovePostLaserTimeDir = [choiceThreshTime_l, choiceThreshDirection_l];    
     else
         moveAtlaser_block = zeros(numel(is_blankTrial),1); 
         tExt.firstMovePostLaserTimeDir_block = [nan, nan];
+        tExt.choiceMovePostLaserTimeDir = [nan,nan]; 
+
     end 
     %%
 
@@ -572,7 +607,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             tExt.(currField)(emptyIdx) = {nan*ones(1,nColumns)};
             tExt.(currField) = cellfun(@single,tExt.(currField), 'uni', 0);
         end
-        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff';'firstMovePostLaserTimeDir_tl';'firstMovePostLaserTimeDir_block'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir'}))
+        if any(strcmp(currField, {'audStimPeriodOnOff'; 'visStimPeriodOnOff'; 'laserTTLPeriodOnOff';'firstMovePostLaserTimeDir_tl';'firstMovePostLaserTimeDir_block'; 'firstMoveTimeDir'; 'choiceInitTimeDir'; 'choiceThreshTimeDir';'choiceMovePostLaserTimeDir'}))
             nColumns = max(cellfun(@(x) size(x,2), tExt.(currField)));
             if nColumns == 0; nColumns = size(currData,2); end
             tExt.(currField)(emptyIdx) = deal({nan*ones(1, nColumns)});
@@ -634,7 +669,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.timeline_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir_tl(:,1);
     ev.timeline_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir_tl(:,2);
     ev.timeline_isMovedAtLaser = logical(moveAtlaser_tl'); 
-
+    ev.timeline_choiceThreshPostLaserOn  = tExt.choiceMovePostLaserTimeDir(:,1);
+    ev.timeline_choiceMovePostLaserDir  = tExt.choiceMovePostLaserTimeDir(:,2);
 
     ev.stim_correctResponse = single(correctResponse);
     ev.stim_repeatNum = single(repeatNums);

@@ -14,8 +14,8 @@ from Analysis.neural.src.cccp import cccp,get_default_set
 pars = get_default_set()
 
 # loading
-mname = 'FT031'
-expDate = '2021-12-03'
+mname = 'AV030'
+expDate = '2022-12-18'
 probe = 'probe0'
 sess='multiSpaceWorld'
 
@@ -28,6 +28,9 @@ session = {
 
 c = cccp()
 c.load_and_format_data(**session)
+
+c.aud_azimuths=[0]
+
 # %%
 
 u,p,_,t = zip(*[c.get_U(**cp) for _,cp in pars.iterrows()])

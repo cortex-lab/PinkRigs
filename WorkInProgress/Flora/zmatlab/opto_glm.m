@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1,'sepPowers',0); 
+extracted = loadOptoData('balanceTrials',1,'sepMice',1,'reExtract',0,'sepHemispheres',16 mice ,'sepPowers',0); 
 
 %
 % fit and plot each set of data
@@ -56,7 +56,7 @@ for s=1:numel(extracted.data)
     if shouldPlot
         figure; 
         plotParams.LineStyle = '-';
-        plotParams.DotStyle = '.';
+        plotParams.DotStyle = 'none';
         plotParams.MarkerSize = 24; 
         plotParams.LineWidth = 3; 
 
