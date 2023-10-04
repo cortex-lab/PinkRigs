@@ -1,7 +1,14 @@
-function [median_rt] = get_rts(ev,plotOpt)
+function [median_rt] = get_rts(ev,rtType,plotOpt)
 % varargin for the visDiff and the audDiff such that we get all the inputs 
 %ev.rt = ev.timeline_choiceMoveOn-min([ev.timeline_audPeriodOn,ev.timeline_visPeriodOn],[],2);
-ev.rt = ev.timeline_choiceMoveOn-ev.timeline_audPeriodOn;
+
+if strcmp('rtAud',rtType)
+    ev.rt = ev.timeline_choiceMoveOn-ev.timeline_audPeriodOn;
+elseif strcmp('rtMin',rtType)
+    ev.rt = ev.timeline_choiceMoveOn-min([ev.timeline_audPeriodOn,ev.timeline_visPeriodOn],[],2);
+elseif strcmp('rtThresh',rtType) % reaction time calculated when decision time is reache
+    ev.rt = ev.timeline_choiceThreshOn - ev.timeline_audPeriodOn; 
+end 
 
 visDiff = int8(ev.stim_visDiff*100);
 audDiff = ev.stim_audDiff;

@@ -2,7 +2,7 @@
 % mouse/power etc
 
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
 
 %%
 plotOpt.toPlot=0; 
@@ -14,17 +14,17 @@ for s=1:numel(extracted.subject)
     % get contra and ipsi trials for laser and non-laser conditions
     ev.laser_stimDiff = min([ev.timeline_audPeriodOn,ev.timeline_visPeriodOn],[],2)-ev.timeline_laserOn_rampStart;
         
-    c = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ev.is_laserTrial)),plotOpt) - ...
-        get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ~ev.is_laserTrial)),plotOpt); 
+    c = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
+        get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
     
-    i = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial)),plotOpt) - ...
-        get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ~ev.is_laserTrial)),plotOpt); 
+    i = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
+        get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
 
     slow_ = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
-        ev.laser_stimDiff>nanmedian(ev.laser_stimDiff))),plotOpt); 
+        ev.laser_stimDiff>nanmedian(ev.laser_stimDiff))),'rtMin',plotOpt); 
 
     fast_ = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
-    ev.laser_stimDiff<nanmedian(ev.laser_stimDiff))),plotOpt);
+    ev.laser_stimDiff<nanmedian(ev.laser_stimDiff))),'rtMin',plotOpt);
  
 
     

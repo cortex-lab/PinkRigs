@@ -10,6 +10,7 @@ from Admin.csv_queryExp import load_ephys_independent_probes,simplify_recdat,Bun
 from Analysis.neural.utils.spike_dat import bincount2D
 from Analysis.pyutils.video_dat import digitise_motion_energy
 from Analysis.pyutils.plotting import off_axes
+from Analysis.pyutils.ev_dat import parse_events
 
 
 # Machine learning / statistics
@@ -1147,170 +1148,6 @@ class events_list():
         self.fitted_trials_idx= [] 
         self.diag_values = {} # if the diag value is not 1 then the diag values dict should contain the ev_type_name and the corresponding vector. 
 
-        # subfunction that selects only event types that one is planning to use (throws away different spls/contrasts/rts)
-        # splits already to crossval sets
-        # then the below functions are actually the kernel events -- so bas
-
-    def parse_events(self,ev,contrasts,spls,vis_azimuths,aud_azimuths,
-                     choice_types = None, 
-                     rt_params = None, 
-                     classify_rt = False, 
-                     min_trial = 2, 
-                     include_unisensory_aud = True, 
-                     include_unisensory_vis = False):
-        """
-        function that preselects all events before it is classified which kernel is active on each
-          1) excludes events that we don't intend to fit at all
-          2) identifies events into sub-categories such that 
-            a.) during balanced cross-validation we are able to allocate trialtypes into both train & test sets
-            b.) we are able to equalise how many of each of these trial type go into the model at all -- it is e.g. unfair to fill the model with a lot of correct choices and few incorrect choices when wanting to fit 'choice'     
-
-        Parameters: 
-        min_trial: int
-            if we rebalance across trial types this is the minimum trial no. we require from each trial type.   
-
-
-        could call various rebalancing strategies. 
-                strict: all trialtypes ought to have the same n
-                loose: just equalise certain types (e.g. same # of choices but doesn't matter which trial type)
-        """
-
-        # keep trials or not based on global criteria 
-
-        ev_ = ev.copy()
-
-        to_keep_trials = ev.is_validTrial.astype('bool') 
-
-        # if it is active data, also exclude trials where firstmove was made prior to choiceMove
-        if hasattr(ev,'timeline_firstMoveOn'):
-            no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
-            no_premature_wheel = no_premature_wheel + np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
-            to_keep_trials = to_keep_trials & no_premature_wheel
-
-        
-        if rt_params['rt_min']: 
-             to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
-        
-        if rt_params['rt_max']: 
-             to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
-
-         # and if there is anything else wrong with the trial, like the pd did not get detected..? 
-
-         # and if loose rebalancing strategy is called for choices i.e. something that just factors bias away 
-
-        ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-
-
-        ##### TRIAL SORTING #########
-        # create the global criteria 
-        if hasattr(ev,'timeline_choiceMoveDir'):
-            # active
-            ev.choiceType = ev.timeline_choiceMoveDir
-            ev.choiceType[np.isnan(ev.choiceType)] = 0
-            if not choice_types:
-                choice_types = np.unique(ev.choiceType) 
-
-        else:
-            # passive (animal did not go)
-            ev.choiceType = np.zeros(ev.is_validTrial.size).astype('int')
-            choice_types = [0]
-        
-        if classify_rt:
-            # option to balance whether trial types are dominantly long/short in a certain trial class
-            pass
-
-        if include_unisensory_aud:                 
-            # in unisensory cases the spl/contrast is set to 0 as expected, however the azimuths are also set to nan -- not the easiest to query...
-            ev.stim_visAzimuth[np.isnan(ev.stim_visAzimuth)] =-1000 
-
-            vis_azimuths.append(-1000)
-            vis_azimuths.sort()
-            
-            spls.append(0)
-            spls.sort()             
-        
-        if include_unisensory_vis:
-            ev.stim_audAzimuth[np.isnan(ev.stim_audAzimuth)] =-1000
-
-            aud_azimuths.append(-1000)
-            aud_azimuths.sort()
-
-            contrasts.append(0)
-            contrasts.sort()
-
-        # separate trials into trial classes
-        trial_classes = {}
-        for idx,(c,spl,v_azi,a_azi,choice) in enumerate(itertools.product(contrasts,spls,vis_azimuths,aud_azimuths,choice_types)):
-            # create a dict
-            is_this_trial = ((ev.stim_visContrast == c) &
-                            (ev.stim_audAmplitude == spl) &
-                            (ev.stim_visAzimuth == v_azi) & 
-                            (ev.stim_audAzimuth == a_azi) & 
-                            (ev.choiceType == choice))
-            
-
-            trial_classes[idx] =Bunch ({'is_this_trial':is_this_trial,
-                                        'contrast':c,
-                                        'spl':spl,
-                                        'vis_azimuths':v_azi,
-                                        'aud_azimuth':a_azi,
-                                        'choice_type': choice,
-                                        'n_trials':is_this_trial.sum()})
-            
-        
-            
-        # check how balanced the data is....
-        print('attempting to rebalance trials ...')
-        trial_class_IDs  = np.array(list(trial_classes.keys()))
-        n_in_class = np.array([trial_classes[idx].n_trials for idx in trial_class_IDs])
-
-        # some requested classes don't actually need to be fitted ...
-        print('%.0d/%0d requested trial types have 0 trials in it...' % ((n_in_class==0).sum(),len(trial_classes)))
-
-
-        min_test  = ((n_in_class>0) & (n_in_class<min_trial))
-
-        if min_test.sum()>0:
-            print('some types do not pass the minimum trial requirement. Lower min requirement or pass more data.')
-            #trial_class_IDs[min_test]
-
-        # allocate each trialType to train/test set   
-        kept_trial_class_IDs = trial_class_IDs[(n_in_class>=min_trial)]
-        trial_classes = Bunch({k:trial_classes[k] for k in kept_trial_class_IDs})
-
-
-        for k in kept_trial_class_IDs: 
-            curr_trial_idx = np.where(trial_classes[k].is_this_trial)[0]
-
-            np.random.seed(0)
-            np.random.shuffle(curr_trial_idx)
-            middle_index = curr_trial_idx.size//2 
-            train_idx = curr_trial_idx[:middle_index]
-            test_idx = curr_trial_idx[middle_index:] 
-            cv_inds = np.empty(trial_classes[k].is_this_trial.size) * np.nan
-
-            cv_inds[train_idx] = 1 
-            cv_inds[test_idx] =  2
-
-            #train=(cv_inds[train_idx,:]*1).sum(axis=0).astype('int')
-            #test =(cv_inds[test_idx,:]*2).sum(axis=0).astype('int')
-            trial_classes[k]['cv_inds'] = cv_inds
-       
-        # pass on events to the kernels        
-
-        trial_classes = Bunch(trial_classes)
-
-        to_keep_trials = np.sum(np.array([trial_classes[idx].is_this_trial for idx in kept_trial_class_IDs]),axis=0).astype('bool')
-        ev.cv_set = np.nansum(np.array([trial_classes[idx].cv_inds for idx in kept_trial_class_IDs]),axis=0) # no. of trials allocated to each class can be still slightly uneven if the trial numbers are odd
-
-        ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-
-        print('%.0d trials/%.0d trials are kept.' % (ev.is_validTrial.sum(),ev_.is_validTrial.sum()))
-
-        # recalculate kernel_trialOn and kernel_trialOff, taking into account some all the things that possibly go into the kernel
-
-
-        return ev
     
     def calculate_trialOnOff(self,ev,t_support_stim,t_support_movement=None):
        
@@ -1405,7 +1242,7 @@ class kernel_model():
         Parameters: 
         -------------------
         these parameters should determine which type of kernel is added 
-        contrast: list: float
+        contrast: list: float / str
             determines which contrast values are used. If None all contrasts are equalised. 
         vis_azimuths: list
             if list: determines at which azimuths the kernels ought to be called at. Only applicable to onset kernels. 
@@ -1416,6 +1253,7 @@ class kernel_model():
             time raange at which the stimulus kernels are supported 
         t_support_movement: list, len(list) =2
             time range at which the movement kernels are supported
+        spl: list/str
         digitise_cam: bool
         zscore_cam: bool 
         turn_stim_off: None/str
@@ -1434,12 +1272,6 @@ class kernel_model():
         ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
         other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
 
-        # if 'ActivePassive'in kwargs['expDef']: 
-        #     print('concatenating active and passive recordings...')
-        #     kwargs.pop('expDef')
-            
-# # 
-#         else:
         rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
     
         loaded_ok = False
@@ -1455,6 +1287,17 @@ class kernel_model():
 
         ev,spikes,_,_,self.cam = simplify_recdat(rec,probe='probe')
 
+        
+        # if contrast/spl values are not specified, call them from the data
+        if isinstance(contrasts,str): 
+            if 'all' in contrasts:
+                c =  np.unique(ev.stim_visContrast)
+                contrasts = (c[c>0]).tolist()
+
+        if isinstance(spls,str):
+                p  = np.unique(ev.stim_audAmplitude)
+                spls = (p[p>0]).tolist()        
+        
         if loaded_ok:
             # prepare spike data  - bin and smooth 
 
@@ -1494,7 +1337,7 @@ class kernel_model():
             extracted_ev = events_list()
 
             # keeep events only based on certain criteria
-            ev = extracted_ev.parse_events(
+            ev,_ = parse_events(
                 ev,
                 contrasts=contrasts,
                 spls=spls,
@@ -1503,7 +1346,9 @@ class kernel_model():
                 rt_params=rt_params,
                 classify_rt=False,
                 include_unisensory_vis=True,
-                include_unisensory_aud=True
+                include_unisensory_aud=True,
+                classify_choice_types = True,
+                add_crossval_idx_per_class = True
                 )
             
             if 'move' in event_types:

@@ -598,8 +598,14 @@ def concatenate_events(recordings,filter_type=None):
 
     """
 
+    should_reverse_opto=False
+
+    if 'optoUniBoth':
+        should_reverse_opto=True    
+
+
     # maybe I could write some function titled concatenate events
-    ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=False) for _,rec in recordings.iterrows()])
+    ev,_,_,_,_ = zip(*[simplify_recdat(rec,reverse_opto=should_reverse_opto) for _,rec in recordings.iterrows()])
 
     # write in subject ID and sessionID into the ev in long fofor e in ev]
     for (i,e),s in zip(enumerate(ev),recordings.subject): 
@@ -609,8 +615,10 @@ def concatenate_events(recordings,filter_type=None):
     if filter_type:
         if 'final_stage' in filter_type:
             is_kept_session = [e.is_conflictTrial.sum()>5 for e in ev]
-        elif 'opto' in filter_type: 
-            pass 
+        elif 'optoUniBoth' in filter_type: 
+            is_kept_session = [(np.sum(e.is_laserTrial)>0)  & (np.abs(e.stim_laserPosition)==1).any() & (e.laser_power==17).any() for e in ev]
+        elif 'optoBi' in filter_type: 
+            is_kept_session = [(np.sum(e.is_laserTrial)>0)  & (np.abs(e.stim_laserPosition)==0).any() for e in ev]    
     else: 
         is_kept_session = np.ones(len(ev)).astype('bool')
 

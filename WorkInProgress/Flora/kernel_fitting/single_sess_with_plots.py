@@ -8,14 +8,14 @@ from Analysis.neural.src.kernel_model import kernel_model
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
 
 from kernel_params import get_params
-dat_params,fit_params,eval_params = get_params()
+dat_params,fit_params,eval_params = get_params() # this function is not input based at all, so it is a bit problematic
 nrn_list = [111]
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'AV030',
-    expDate = '2022-12-09', 
+    subject = 'FT030',
+    expDate = '2021-12-03', 
     expDef = 'multiSpaceWorld',
-    probe = 'probe1',
+    probe = 'probe0',
     subselect_neurons=None,
     **dat_params
 )
@@ -34,7 +34,7 @@ kernel_shapes = kernels.calculate_kernels()
 # %% 
 # look at the VE over the trial if it was computed
 import matplotlib.pyplot as plt
-n = 31
+n = 133
 
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})

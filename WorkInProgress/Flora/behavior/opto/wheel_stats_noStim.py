@@ -75,7 +75,7 @@ def batch_rasters(rec,return_shuffles=False):
         ev,
         selected_trials=idxs, 
         align_type='blockLaserTime',
-        t = [-.1,.5],t_bin=0.001
+        t = [-.1,2.0],t_bin=0.001
         )
     
     # reverse raster trace based on location # which is only advisable once you bseline subtracted....
@@ -125,24 +125,25 @@ fig,ax = plt.subplots(1,1)
 sel_idx = np.argsort(td)
 
 
-selected_l = (p==-10)
-#selected_l = np.isnan(p)
+#selected_l = (p==10)
+selected_l = np.isnan(p)
 
 rasters_sel = rasters[selected_l,:]
 td_selected = td[selected_l]
 n_subsample =np.random.permutation(np.arange(0,np.sum(selected_l),1))
 
-raster_sel_sorted = rasters_sel[n_subsample[:300],:]
-ax.matshow((raster_sel_sorted[np.argsort(td_selected[n_subsample[:300]]),:]),aspect='auto',vmin=-10,vmax=10,cmap='coolwarm_r')
+n_length = 1000
+raster_sel_sorted = rasters_sel[n_subsample[:n_length],:]
+ax.matshow((raster_sel_sorted[np.argsort(td_selected[n_subsample[:n_length]]),:]),aspect='auto',vmin=-10,vmax=10,cmap='coolwarm_r')
 off_axes(ax)
 #ax.imshow((rasters[630:830,:]),aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #ax.matshow(rasters[np.argsort(rasters[:,300:].mean(axis=1)),:],aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #off_axes(ax)
-ax.axvline(100,color='k')
-ax.hlines(300,400,500,color='k',lw=6)
-ax.vlines(0,0,100,color='k',lw=6)
+# ax.axvline(100,color='k')
+# ax.hlines(300,400,500,color='k',lw=6)
+# ax.vlines(0,0,100,color='k',lw=6)
 
-plt.colorbar()
+#plt.colorbar()
 #%%
 plt.rcParams.update({'font.size': 24})
 plt.rcParams.update({'font.family': 'Calibri Light'})
@@ -151,9 +152,12 @@ _,ax = plt.subplots(1,1,figsize=(13,8))
 
 t_thr=1.8
 
-ax.hist(td[np.isnan(p) & (td<t_thr)],bins=75,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='k',lw=10)
+ax.hist(td[np.isnan(p) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='k',lw=10)
 
-ax.hist(td[(np.abs(p)>0) & (td<t_thr)],bins=75,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='lime',lw=10)
+#ax.hist(td[(np.abs(p)>0) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='lime',lw=10)
+
+ax.hist(td[(np.abs(p)==0) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='orange',lw=10)
+
 
 off_topspines(ax)
 ax.set_xlabel('RT from end of quiescent period (s)')
@@ -177,7 +181,7 @@ ax.set_ylabel('rel. density')
 # plot the actual wheel traces
 
 # %%
-unique_powers = np.array([-17,-10,-5,-2,2,5,10,17]) # np.unique(p[p>0])
+unique_powers = np.array([-17,-10,-5-2,2,5,10,17]) # np.unique(p[p>0])
 colors = plt.cm.viridis(np.linspace(0.2,.8,unique_powers.size))
 for idx,i in enumerate(unique_powers):
     plt.plot(tscale,np.nanmean(rasters[p==i],axis=0),color=colors[idx])
@@ -185,8 +189,8 @@ for idx,i in enumerate(unique_powers):
 # %%
 # 
 
-cond_l = (dirs==1) & (p==10)
-cond_r = (dirs==2) & (p==10)
+cond_l = (dirs==1) & (p==0) #& np.isnan(p)
+cond_r = (dirs==2) & (p==0)#& np.isnan(p)
 
 
 rasters_l = rasters[cond_l,:]
@@ -212,8 +216,11 @@ ax.set_ylabel('wheel turn (deg)')
 fig,ax=plt.subplots(1,1,figsize=(5,7))
 sel_s = np.unique(subject_per_trial)
 for s in sel_s:
-    pR=np.nanmean(dirs[[(p==10) & (subject_per_trial==s)]]-1)
-    pL=np.nanmean(dirs[[(p==-10) & (subject_per_trial==s)]]-1)
+   # pR=np.nanmean(dirs[[(p==10) & (subject_per_trial==s)]]-1)
+   # pL=np.nanmean(dirs[[(p==-10) & (subject_per_trial==s)]]-1)
+    pR = np.mean(dirs[[(p==10) & (subject_per_trial==s)]]==2)
+    pL = np.mean(dirs[[(p==-10) & (subject_per_trial==s)]]==2)
+
     ax.plot([1,2],[pL,pR],color='k')
     ax.plot([1,2],[pL,pR],'.',color='k',markersize=20)
 
@@ -223,17 +230,4 @@ ax.set_ylim([0,1])
 ax.axhline(0.5,color='k',linestyle='--')
 off_excepty(ax)
 
-#%%
-import seaborn as sns
-
 # %%
-
-import joypy
-from matplotlib import cm
-
-labels=[-17,-10,-0,0,10,17]
-trialtypes = ['blank','auditory','visual','coherent','conflict']
-fig,ax = plt.subplots(len(trialtypes),1)
-for idx,tt in enumerate(trialtypes):
-    joypy.joyplot(data=df[df.trialNames==tt],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax[idx],kind='normalized_counts',bins=0)
-fig.show()

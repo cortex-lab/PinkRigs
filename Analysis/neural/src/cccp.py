@@ -183,10 +183,10 @@ def get_default_set():
         t_bin_universal = 0.025
         
         params = [
-           # ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
-            #('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal)
-            ('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
-           # ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
+            ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
+            ('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal),
+            #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
+            ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
 
 
         ]

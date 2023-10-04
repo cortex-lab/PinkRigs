@@ -78,7 +78,6 @@ ax.set_ylabel('log[p(ipsi)/p(contra)]')
 ax.set_xlabel('contrasts')
 ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
-plt.show()
 # %% non log plot
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 
@@ -155,22 +154,48 @@ px.scatter_ternary(d,a='nogo',b='ipsi',c='contra',color='aud_azimuths',
 # %%
 # reaction times for left vs right choices on opto vs non-opto trials 
 powers = np.unique(ev.laser_power)
-power_colors = plt.cm.coolwarm(np.linspace(0.4,1,powers.size))
 fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
 
-#powers = np.array([powers[1]])
+powers = np.array([0,5,10,17])
+power_colors = plt.cm.inferno(np.linspace(.2,.8,powers.size))
 for i,p in enumerate(powers): 
-    to_keep_trials = ev.is_validTrial & (ev.laser_power==p) & (np.abs(ev.stim_laserPosition)!=0)
+    to_keep_trials = ev.is_validTrial & (ev.laser_power==p) & (np.abs(ev.stim_laserPosition)!=0) #& ev.is_blankTrial
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
     
-    ax[0].hist(ev_.rt[ev_.timeline_choiceMoveDir==1],color=power_colors[i],bins=100,alpha=0.5)#,cumulative=True,alpha=0.5,density=True)
-    ax[1].hist(ev_.rt[ev_.timeline_choiceMoveDir==2],color=power_colors[i],bins=100,alpha=0.5)# ,cumulative=True,alpha=0.5,density=True)
+    ax[0].hist(ev_.rt[ev_.timeline_choiceMoveDir==1],color=power_colors[i],bins=250,alpha=0.5,density=True,histtype='step',cumulative=True)#,cumulative=True,alpha=0.5,density=True)
+    ax[1].hist(ev_.rt[ev_.timeline_choiceMoveDir==2],color=power_colors[i],bins=250,alpha=0.5,density=True,histtype='step',cumulative=True)# ,cumulative=True,alpha=0.5,density=True)
 
     ax[0].set_title('contra choices')
     ax[1].set_title('ipsi choices')
     off_topspines(ax[0])
     off_topspines(ax[1])
 ax[1].legend(powers)
+
+
+# %%
+
+
+fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
+
+powers = np.array([0,10])
+power_colors = plt.cm.inferno(np.linspace(.2,.8,powers.size))
+for i,p in enumerate(powers): 
+    to_keep_trials = ev.is_validTrial & (ev.laser_power==p) & (np.abs(ev.stim_laserPosition)!=0) #& ev.is_blankTrial
+    ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
+    
+    #ax[0].hist(ev_.rt[ev_.timeline_choiceMoveDir==1],color=power_colors[i],bins=250,alpha=0.5,density=True,histtype='step',cumulative=True)#,cumulative=True,alpha=0.5,density=True)
+    #ax[1].hist(ev_.rt[ev_.timeline_choiceMoveDir==2],color=power_colors[i],bins=250,alpha=0.5,density=True,histtype='step',cumulative=True)# ,cumulative=True,alpha=0.5,density=True)
+    h,bins = np.histogram(ev_.rt[ev_.timeline_choiceMoveDir==1],bins=150)
+    ax[0].plot(bins[1:],h/np.max(h),color=power_colors[i])
+    h,bins = np.histogram(ev_.rt[ev_.timeline_choiceMoveDir==2],bins=150)
+    ax[1].plot(bins[1:],h/np.max(h),color=power_colors[i])
+
+    ax[0].set_title('contra choices')
+    ax[1].set_title('ipsi choices')
+    off_topspines(ax[0])
+    off_topspines(ax[1])
+ax[1].legend(powers)
+plt.show()
 # %%
 # look at nogos per trial type
 
@@ -221,6 +246,7 @@ fig,ax = plt.subplots(1,1,figsize=(12,8))
 joypy.joyplot(data=df[df.rt<.8],column='rt',by='powerXchoiceDir',labels=labels,colormap=cm.coolwarm,ax=ax,kind='normalized_counts',bins=200,lw=3)
 ax.set_xlabel('rt from stimulus (s)')
 ax.set_xlim([0,1])
+plt.show()
 # %%
 # summary plot of this matter would include (according to Pip)
 # for 10mW & 17 mW
@@ -232,5 +258,5 @@ for i,a in enumerate(aud_azimuths):
     rt_per_c = [ev_.rt[ev_.signed_contrast==c] for c in contrasts] 
 
 
-# 
+print('sg')
 # %%
