@@ -50,7 +50,7 @@ def send_email(email_text):
     if exists(figurePath):
         with open(figurePath, 'rb') as fp:
             img = MIMEImage(fp.read())
-            img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday)
+            img.add_header('Content-Disposition',  'attachment',filename='Behavior_' + dateToday + '.png')
             msg.attach(img)
 
     # Send email.
