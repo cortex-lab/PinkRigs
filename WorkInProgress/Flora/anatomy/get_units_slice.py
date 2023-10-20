@@ -9,8 +9,8 @@ from Admin.csv_queryExp import load_data
 from Processing.pyhist.helpers.atlas import AllenAtlas
 atlas = AllenAtlas(25)
 
-mname = 'AV014'
-expDate = '2022-06-16'
+mname = 'AV035'
+expDate = '2022-12-14'
 sess='multiSpaceWorld'
 
 session = { 

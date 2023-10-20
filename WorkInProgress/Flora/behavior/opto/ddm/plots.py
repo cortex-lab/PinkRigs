@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyddm.functions import solve_partial_conditions
 
-
 def plot_diagnostics(model=None,sample = None, conditions=None,data_dt =.025,method=None,myloc=0,ax = None,dkwargs = None,mkwargs =None):
     """
     visually assess the diagnostics of the model fit
@@ -51,8 +50,8 @@ def plot_diagnostics(model=None,sample = None, conditions=None,data_dt =.025,met
         toplabel,bottomlabel = model.choice_names
 
 
-def get_rt_quartiles(m,a,v,correct_only = True):
-    sol = m.solve(conditions={"audDiff": a, "visDiff": v})
+def get_rt_quartiles(m,a,v,o,correct_only = True):
+    sol = m.solve(conditions={"audDiff": a, "visDiff": v,'is_laserTrial':o})
 
     if correct_only:
         correct_side = np.sign(np.sign(a) + np.sign(v)) 
@@ -73,8 +72,8 @@ def get_rt_quartiles(m,a,v,correct_only = True):
 
     return lower,mid,upper 
 
-def get_median_rt(sample,a,v,correct_only=True):
-    dat = sample.subset(audDiff=a,visDiff=v)
+def get_median_rt(sample,a,v,o,correct_only=True):
+    dat = sample.subset(audDiff=a,visDiff=v,is_laserTrial=o)
     l = dat.choice_lower
     r = dat.choice_upper 
 
@@ -94,46 +93,51 @@ def get_median_rt(sample,a,v,correct_only=True):
 
 
 
-def plot_psychometric(model,sample,ax=None,plot_log=False): 
+def plot_psychometric(model,sample,axctrl=None,axopto=None,plot_log=False): 
 
     actual_aud_azimuths = np.sort(np.unique(sample.conditions['audDiff'][0]))
     actual_vis_contrasts =  np.sort(np.unique(sample.conditions['visDiff'][0]))
     aud_azimuths  = np.linspace(-1,1,3)
     vis_contrasts = np.linspace(-1,1,40)
 
-    psychometric,a,v = zip(*[[model.solve(conditions={"audDiff": a, "visDiff": v}).prob('Right'),a,v] for a,v in itertools.product(aud_azimuths,vis_contrasts)])
-    psychometric = np.reshape(np.array(psychometric),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
-    a = np.reshape(np.array(a),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
-    v = np.reshape(np.array(v),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
-    psychometric_actual = [sample.subset(audDiff=a,visDiff=v).prob('Right') for a,v in itertools.product(actual_aud_azimuths,actual_vis_contrasts)]
-    psychometric_actual = np.reshape(np.array(psychometric_actual),(actual_aud_azimuths.size,actual_vis_contrasts.size)) 
-    psychometric_log = np.log10(psychometric/(1-psychometric))
-    #mye = 1e-10
-    psychometric_actual_log = np.log10((psychometric_actual+1e-4)/(1-(psychometric_actual)+1e-4))
+    linestyles= ['-','--']
+    markerstyles = ['o','x']
+    if axctrl is None or axopto is None:         
+        _,(axctrl,axopto) = plt.subplots(2,1,figsize=(20,10))
+    axes = [axctrl,axopto]
 
-    if ax is None:         
-        fig,ax = plt.subplots(1,1,figsize=(20,10))
-
-    colors = ['b','k','r'] # for -1,0,1 aud
-    if plot_log:
-        [ax.plot(vis_contrasts,p,color=c) for p,c in zip(psychometric_log,colors)]
-        [ax.scatter(actual_vis_contrasts,p,color=c,marker='o') for p,c in zip(psychometric_actual_log,colors)]
-        ax.set_ylim([-3,3])
-        ax.axhline(0,color='k',linestyle='--')
-
-    else:
-        [ax.plot(vis_contrasts,p,color=c) for p,c in zip(psychometric,colors)]
-        [ax.scatter(actual_vis_contrasts,p,color=c,marker='o') for p,c in zip(psychometric_actual,colors)]
-        ax.set_ylim([-.05,1.05])
-        ax.axhline(0.5,color='k',linestyle='--')
-
-    ax.axvline(0,color='k',linestyle='--')
-    ax.set_ylabel('p(R)')
-    ax.set_xlabel('contrasts')
-    ax.set_title('psychometric')
+    for isLaser,(line,marker,ax) in enumerate(zip(linestyles,markerstyles,axes)):
+        psychometric,a,v = zip(*[[model.solve(conditions={"audDiff": a, "visDiff": v,'is_laserTrial':isLaser}).prob('Right'),a,v] for a,v in itertools.product(aud_azimuths,vis_contrasts)])
+        psychometric = np.reshape(np.array(psychometric),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
+        a = np.reshape(np.array(a),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
+        v = np.reshape(np.array(v),(aud_azimuths.size,vis_contrasts.size)) # reshape to aud x vis matrix 
+        psychometric_actual = [sample.subset(audDiff=a,visDiff=v,is_laserTrial=isLaser).prob('Right') for a,v in itertools.product(actual_aud_azimuths,actual_vis_contrasts)]
+        psychometric_actual = np.reshape(np.array(psychometric_actual),(actual_aud_azimuths.size,actual_vis_contrasts.size)) 
+        psychometric_log = np.log10(psychometric/(1-psychometric))
+        #mye = 1e-10
+        psychometric_actual_log = np.log10((psychometric_actual+1e-4)/(1-(psychometric_actual)+1e-4))
 
 
-def plot_chronometric(model,sample,ax=None):
+        colors = ['b','k','r'] # for -1,0,1 aud
+        if plot_log:
+            [ax.plot(vis_contrasts,p,color=c,linestyle=line) for p,c in zip(psychometric_log,colors)]
+            [ax.scatter(actual_vis_contrasts,p,color=c,marker=marker) for p,c in zip(psychometric_actual_log,colors)]
+            ax.set_ylim([-3,3])
+            ax.axhline(0,color='k',linestyle='--')
+
+        else:
+            [ax.plot(vis_contrasts,p,color=c,linestyle=line) for p,c in zip(psychometric,colors)]
+            [ax.scatter(actual_vis_contrasts,p,color=c,marker=marker) for p,c in zip(psychometric_actual,colors)]
+            ax.set_ylim([-.05,1.05])
+            ax.axhline(0.5,color='k',linestyle='--')
+
+        ax.axvline(0,color='k',linestyle='--')
+        ax.set_ylabel('p(R)')
+        ax.set_xlabel('contrasts')
+        ax.set_title('psychometric')
+
+
+def plot_chronometric(model,sample,axctrl=None,axopto=None):
 
     actual_aud_azimuths = np.sort(np.unique(sample.conditions['audDiff'][0]))
     actual_vis_contrasts =  np.sort(np.unique(sample.conditions['visDiff'][0]))
@@ -141,26 +145,33 @@ def plot_chronometric(model,sample,ax=None):
     vis_contrasts = np.linspace(-1,1,40)
     colors = ['b','k','r'] # for -1,0,1 aud
 
-    c_l,c_m,c_u = zip(*[get_rt_quartiles(model,a,v,correct_only=False) for a,v in itertools.product(aud_azimuths,vis_contrasts)])
-    c_l = np.reshape(np.array(c_l),(aud_azimuths.size,vis_contrasts.size)) 
-    c_m = np.reshape(np.array(c_m),(aud_azimuths.size,vis_contrasts.size)) 
-    c_u = np.reshape(np.array(c_u),(aud_azimuths.size,vis_contrasts.size)) 
+    linestyles= ['-','--']
+    markerstyles = ['o','x']
+    if axctrl is None or axopto is None:         
+        _,(axctrl,axopto) = plt.subplots(2,1,figsize=(20,10))
+    axes = [axctrl,axopto]
+
+    for isLaser,(line,marker,ax) in enumerate(zip(linestyles,markerstyles,axes)):
+
+        c_l,c_m,c_u = zip(*[get_rt_quartiles(model,a,v,isLaser,correct_only=False) for a,v in itertools.product(aud_azimuths,vis_contrasts)])
+        c_l = np.reshape(np.array(c_l),(aud_azimuths.size,vis_contrasts.size)) 
+        c_m = np.reshape(np.array(c_m),(aud_azimuths.size,vis_contrasts.size)) 
+        c_u = np.reshape(np.array(c_u),(aud_azimuths.size,vis_contrasts.size)) 
 
     # or just this way of calculating the chronometric is wrong ohlala, because this is timing on rightward choices, not timing on correct choices
-    chronometric_actual = [get_median_rt(sample,a,v,correct_only=False) for a,v in itertools.product(actual_aud_azimuths,actual_vis_contrasts)]
-    chronometric_actual =  np.reshape(np.array(chronometric_actual),(actual_aud_azimuths.size,actual_vis_contrasts.size)) 
+        chronometric_actual = [get_median_rt(sample,a,v,isLaser,correct_only=False) for a,v in itertools.product(actual_aud_azimuths,actual_vis_contrasts)]
+        chronometric_actual =  np.reshape(np.array(chronometric_actual),(actual_aud_azimuths.size,actual_vis_contrasts.size)) 
 
 
 
-    if ax is None:         
-        fig,ax = plt.subplots(1,1,figsize=(20,10))
 
-    [ax.fill_between(vis_contrasts, l,u,color=c,alpha=.1) for l,u,c in zip(c_l,c_u,colors)]
-    [ax.scatter(actual_vis_contrasts,chrono,color=c,marker='o') for chrono,c in zip(chronometric_actual,colors)]
 
-    ax.set_ylabel('mean reaction time')
-    ax.set_xlabel('contrasts')
-    ax.set_title('chronometric')
+        [ax.fill_between(vis_contrasts, l,u,color=c,alpha=.1,linestyle=line) for l,u,c in zip(c_l,c_u,colors)]
+        [ax.scatter(actual_vis_contrasts,chrono,color=c,marker=marker) for chrono,c in zip(chronometric_actual,colors)]
+
+        ax.set_ylabel('mean reaction time')
+        ax.set_xlabel('contrasts')
+        ax.set_title('chronometric')
     #ax.set_ylim([0.15,.8])
 
 

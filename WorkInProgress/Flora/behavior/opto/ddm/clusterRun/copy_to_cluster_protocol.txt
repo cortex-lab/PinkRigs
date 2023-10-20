@@ -1,0 +1,41 @@
+# some code to use in the command prompt to copy the data files to cluster
+# as well as my python codes that are not part of pyddm 
+
+# this does not work for me for some reason
+scp testscript.py zcbtfta@myriad.rc.ucl.ac.uk:~/Scratch/
+
+# tar files locally to prepare to transfer for the cluster
+cd C:\Users\Flora\Documents\Processed data\ddm\Opto\Data
+tar -zcvf data.tar.gz forMyriad
+
+
+# transfer all files to cluster
+sftp zcbtfta@myriad.rc.ucl.ac.uk
+lcd C:\Users\Flora\Documents\ProcessedData\ddm\Opto\Data
+put data.tar.gz 
+
+# remove unused output files etc
+rm test.sh*
+
+
+
+# untar 
+tar -zxvf data.tar.gz
+
+
+# test how to get paths on cluster
+# write example code
+# run example model
+# test timings
+# send off big model
+#
+
+# default request is 1 slot, but one needs to request a lot of slots ideally
+
+#  then test whether the script sort of runs and prints i.e. testscript.py 
+# send it to fit a few models
+
+
+# compile the C++ solver
+python setup.py build_ext --inplace
+python setup.py install  

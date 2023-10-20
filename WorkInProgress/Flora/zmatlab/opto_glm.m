@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',1,'sepMice',1,'reExtract',1,'sepHemispheres',0,'sepPowers',0); 
+extracted = loadOptoData('balanceTrials',1,'sepMice',1,'reExtract',0,'sepHemispheres',0,'sepPowers',0); 
 
 %
 % fit and plot each set of data
@@ -22,7 +22,7 @@ opto_fit_sets = logical([
     [1,0,1,0,1,1]; ...    
     [1,1,0,0,1,1]; ...    
     [1,1,1,0,0,1]; ...    
-    [1,1,1,0,1,0]; ...  
+
 %     [0,0,1,0,1,1]; ...   %17
 %     [0,1,0,0,1,1]; ...   %18
 %     [0,1,1,0,0,1]; ...   %19
