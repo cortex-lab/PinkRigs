@@ -16,7 +16,7 @@ function csvLocation = getLocation(subject)
     csvPath = '\\zinu.cortexlab.net\Subjects\PinkRigs\';
     
     if strcmp(subject,'main')
-        csvLocation = 'https://docs.google.com/spreadsheets/d/1NKPxYThbLy97iPQG8Wk2w3KJXC6ys7PesHp_08by3sg/edit?usp=sharing';
+        csvLocation = 'https://docs.google.com/spreadsheets/d/1_hcuWF68PaUFeDBvXAJE0eUmyD9WSQlWtuEqdEuQcVg/edit?usp=sharing';
     else
         csvLocation = fullfile(csvPath, [subject '.csv']);
     end
