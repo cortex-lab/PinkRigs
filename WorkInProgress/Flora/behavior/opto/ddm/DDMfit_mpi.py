@@ -34,13 +34,22 @@ def trainDDMs():
     savepath.mkdir(parents=True,exist_ok=True)
 
     freeP_sets = [
-        'ctrl',
-        'drift_bias'
-        # 'sensory_drift',
-        # 'starting_point',
-        # 'mixture',
-        # 'nondectime',
-        # 'all'
+        'ctrl'
+        # 'all',
+        # 'l_a',
+        # 'l_v', 
+        # 'l_aS',
+        # 'l_vS',
+        # 'l_gamma',
+        # 'l_b',
+        # 'l_d_aR',
+        # 'l_d_aL',
+        # 'l_d_vR',
+        # 'l_d_vL',
+        # 'l_d_b',
+        # 'l_d_nondectime', 
+        # 'l_d_mixturecoef',
+        # 'l_d_x0'
     ] # 7 models
 
     # we will parallelise every animal x set 

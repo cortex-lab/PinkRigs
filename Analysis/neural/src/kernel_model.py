@@ -1494,38 +1494,39 @@ class kernel_model():
 
 
 
-                if ('stimOff' in turn_stim_off) & (event_name in offset_events):
-                    on_idx = np.where(event_names_==event_name)[0][0]
-                    dig_on = self.events_digitised[on_idx,:]
-                    
-                    off_idx = np.where(offset_events==event_name)[0][0]
-                    dig_off = self.offsets_digistised[off_idx,:]
-                    offset_indices[event_name] = np.where(dig_off==1)[0]-np.where(dig_on==1)[0]
-
-                elif ('moveEnd' in turn_stim_off) & (('aud' in event_name) or ('vis' in event_name)): 
-                    on_idx = np.where(event_names_==event_name)[0][0]
-                    dig_on = self.events_digitised[on_idx,:]
-                    onsets = np.where(dig_on==1)[0] 
-
-                    off_idx = np.where(offset_events==event_name)[0][0]
-                    dig_off = self.offsets_digistised[off_idx,:]
-
-                     
-                    offsets = np.where(dig_off==1)[0]  
-
-                    move_on = self.events_digitised[event_names_=='move_kernel',:][0,:]
-                    move_end_idx = np.where(move_on==1)[0]+np.floor(t_support_movement[1]/self.t_bin)  
-
-                    # determine whether there was a movement
-                    move_offsets = [] 
-                    for on, off in zip(onsets,offsets):
-                        is_move = (move_end_idx>on) & (move_end_idx<off)                        
+                if turn_stim_off is not None:
+                    if ('stimOff' in turn_stim_off) & (event_name in offset_events):
+                        on_idx = np.where(event_names_==event_name)[0][0]
+                        dig_on = self.events_digitised[on_idx,:]
                         
-                        if is_move.sum()==1:
-                            move_offsets.append(int(move_end_idx[is_move][0]-on))
-                        else:
-                            move_offsets.append(off-on)
-                    offset_indices[event_name] = np.array(move_offsets)
+                        off_idx = np.where(offset_events==event_name)[0][0]
+                        dig_off = self.offsets_digistised[off_idx,:]
+                        offset_indices[event_name] = np.where(dig_off==1)[0]-np.where(dig_on==1)[0]
+
+                    elif ('moveEnd' in turn_stim_off) & (('aud' in event_name) or ('vis' in event_name)): 
+                        on_idx = np.where(event_names_==event_name)[0][0]
+                        dig_on = self.events_digitised[on_idx,:]
+                        onsets = np.where(dig_on==1)[0] 
+
+                        off_idx = np.where(offset_events==event_name)[0][0]
+                        dig_off = self.offsets_digistised[off_idx,:]
+
+                        
+                        offsets = np.where(dig_off==1)[0]  
+
+                        move_on = self.events_digitised[event_names_=='move_kernel',:][0,:]
+                        move_end_idx = np.where(move_on==1)[0]+np.floor(t_support_movement[1]/self.t_bin)  
+
+                        # determine whether there was a movement
+                        move_offsets = [] 
+                        for on, off in zip(onsets,offsets):
+                            is_move = (move_end_idx>on) & (move_end_idx<off)                        
+                            
+                            if is_move.sum()==1:
+                                move_offsets.append(int(move_end_idx[is_move][0]-on))
+                            else:
+                                move_offsets.append(off-on)
+                        offset_indices[event_name] = np.array(move_offsets)
 
                 else: 
                     offset_indices[event_name] = None
@@ -1581,20 +1582,7 @@ class kernel_model():
                 self.cam_values = {}
                 for camtype in camtype_events:
                     if 'motionEnergy' in camtype:
-                        camera = recdat.iloc[0]['frontcam'].camera
-                        cam_values = camera.ROIMotionEnergy
-
-                        # this is not right as the the ROIAverageFrame is the frame size not the ROI size....
-                        #n_pixels = camera.ROIAverageFrame.size 
-                        #cam_values = cam_values/n_pixels  
-
-                    elif 'pupil' in camtype: 
-                        camera = recdat.iloc[0]['eyeCam'].camera
-                        cam_values = camera.pupil_area_smooth    
-
-
-                    # interpolate to the bins of the spiking
-                    cam_values = np.interp(self.tscale,camera.times,cam_values)
+                        cam_values = np.interp(self.tscale,self.cam.times,self.cam.ROIMotionEnergy)
 
                     # digitise the movement 
                     if digitise_cam:
@@ -1682,9 +1670,10 @@ class kernel_model():
             if any(['non-linear' in k for k in kernel_names]):
                 new_feature_column_dict['non-linearity'] = np.concatenate([self.feature_column_dict[k] for k in kernel_names if 'non-linear' in k])
 
-            remaining_kernels = [k for k in kernel_names if ('aud' not in k) and ('vis' not in k) and ('non-linear' not in k)]            
+            remaining_kernels = [k for k in kernel_names if ('aud' not in k) and ('vis' not in k) and ('non-linear' not in k)]     
+
             for k in remaining_kernels: 
-                new_feature_column_dict[k] = self.feature_column_dict[k]
+                new_feature_column_dict[k] = self.feature_column_dict[k].copy()
 
             kernel_significance = test_kernel_significance(
                 model,feature_matrix_,R_,
@@ -1694,7 +1683,7 @@ class kernel_model():
                 split_group_vector=split_group_vector_
                 )            
 
-        if 'dirgroups' in kernel_selection: 
+        elif 'dirgroups' in kernel_selection: 
             kernel_names = list(self.feature_column_dict.keys())
             # merge all aud or vis groups 
             new_feature_column_dict = {}
@@ -2054,17 +2043,14 @@ class kernel_model():
         if type(auditory_azimuth) is not list: 
             auditory_azimuth = [auditory_azimuth]
         if type(contrast) is not list: 
-            contrast = [contrast]
+            contrast = [contrast for x in range(len(visual_azimuth))]
         if type(spl) is not list: 
-            spl = [spl]
+            spl = [spl for x in range(len(auditory_azimuth))]
         
         nrnID_idx = np.where(self.clusIDs==nrnID)[0][0]
 
         if not raster_kwargs:
            raster_kwargs = {'t_before': 0,'t_after': 0.6,'sort_idx': None} 
-
-        # if len(visual_azimuth)==1: 
-        #     ax = ax [:,np.newaxis]
 
         if (visual_azimuth is None) & (auditory_azimuth is None):
             on_time = self.events.timeline_audPeriodOn[~np.isnan(self.events.timeline_audPeriodOn)]
@@ -2106,7 +2092,7 @@ class kernel_model():
                 else:
                     is_called_aud = (self.events.stim_audAzimuth == a) & (np.round((self.events.stim_audAmplitude*100)).astype('int')==p*100)  
 
-                if ~np.isnan(a):
+                if a!=-1000:
                     on_time = self.events.timeline_audPeriodOn[(is_called_vis & is_called_aud)]
                 else: 
                     on_time = self.events.timeline_visPeriodOn[(is_called_vis & is_called_aud)]

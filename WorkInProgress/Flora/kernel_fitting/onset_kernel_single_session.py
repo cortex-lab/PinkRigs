@@ -8,24 +8,26 @@ from Analysis.neural.src.kernel_model import kernel_model
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
 
 nrn_list = [22,25,50,71,80,207,34,156,325]
+
+
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'FT009',
-    expDate = '2021-01-20', 
+    subject = 'FT008',
+    expDate = '2021-01-15', 
     expDef = 'all',
-    expNum = 8,
+    expNum = 5,
     probe = 'probe0',
-    subselect_neurons=nrn_list,
-    t_support_stim = [-0.05,0.6],
+    subselect_neurons=None,
+    t_support_stim = [-0.05,0.4],
     t_support_movement =[-.6,0.4],
     rt_params = {'rt_min': None, 'rt_max': None},
-    event_types = ['aud','vis','baseline','coherent-non-linearity'],
+    event_types = ['aud','vis','baseline','motionEnergy'],
     contrasts = [1],
     spls = [0.02,.1],
     vis_azimuths = [-90,-60,-30,0,30,60,90],
     aud_azimuths = [-90,-60,-30,0,30,60,90],
     digitise_cam = False,
-    zscore_cam= 'mad' 
+    zscore_cam= False,
 )
 
 
@@ -41,7 +43,7 @@ kernels.fit_evaluate(get_prediciton=True,method='Ridge',ridge_alpha=1,tune_hyper
 
 # %%
 import matplotlib.pyplot as plt
-n = 80
+n = 76
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
@@ -54,7 +56,7 @@ color_dict = {
 
 ve_n = variance_explained[(variance_explained.cv_number==0) & (variance_explained.clusID==n)]
 fig,ax = plt.subplots(1,1,figsize=(7,4))
-stim_bin_range = np.arange(-0.05,0.6,kernels.t_bin)
+stim_bin_range = np.arange(-0.05,0.4,kernels.t_bin)
 [ax.plot(stim_bin_range,r.VE_trial,color=color_dict[r.event],lw=6) for _,r in ve_n.iterrows() if 'baseline' not in r.event]
 # prepare this plot properly
 first_stim_onset = np.min(np.array([kernels.events.timeline_audPeriodOn,kernels.events.timeline_visPeriodOn]),axis=0)
@@ -69,15 +71,17 @@ ax.legend([r.event for _,r in ve_n.iterrows() if 'baseline' not in r.event])
 ax.set_xlabel('time during trial')
 ax.set_ylabel('VE,test')
 # %%
-v_azimuths = [np.nan,np.nan]
-a_azimuths = [90,-90]
-
-raster_kwargs = {'t_before': 0.05,'t_after': 0.3,'sort_idx': None}
-kernels.plot_prediction_rasters(n,visual_azimuth=v_azimuths,auditory_azimuth=a_azimuths,contrast=1,spl=.1,) 
+v_azimuths = [-1000,90]
+v_contrasts = [0,1]
+a_azimuths = [90,-1000]
+a_spls = [.1,0]
+raster_kwargs = {'t_before': 0.05,'t_after': 0.4,'sort_idx': None}
+kernels.plot_prediction_rasters(n,visual_azimuth=v_azimuths,auditory_azimuth=a_azimuths,contrast=v_contrasts,spl=a_spls) 
 kernels.plot_kernels(n)
 
 #kernels.plot_prediction(n,plot_stim=True,plot_move=False,sep_choice=False,plot_train=True,plot_pred=True,plot_test=False)
 #full_feature_matrix = kernels.feature_matrix.copy()
+
 
 # %%
 import matplotlib.pyplot as plt
@@ -115,6 +119,6 @@ else:
 
 kernels.fit_evaluate(get_prediciton=True,method='Ridge',ridge_alpha=1,tune_hyper_parameter=False,rank=10,rr_regulariser=0)
 kernels.plot_kernels(n)
-kernels.plot_prediction(n,plot_stim=True,plot_move=True)
+kernels.plot_prediction(n,plot_stim=True,sep_choice=False,plot_move=False)
 
 # %% 

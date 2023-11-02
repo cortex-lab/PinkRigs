@@ -27,7 +27,7 @@ fit_tag = 'stimChoice'
 recordings = recordings[['subject','expDate','expNum','probe']]
 
 # %%
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
 
 save_path.mkdir(parents=True,exist_ok=True)

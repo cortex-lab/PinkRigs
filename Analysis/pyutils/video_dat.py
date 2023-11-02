@@ -2,7 +2,6 @@ import sys
 import numpy as np 
 import matplotlib.pyplot as plt 
 from matplotlib.colors import LogNorm
-from pylab import cm
 from pathlib import Path
 # for the digitisation
 import scipy.signal as signal
@@ -81,7 +80,7 @@ def get_move_raster(on_times,camt,camv,pre_time=.1,post_time=1,bin_size=.005,sor
             fig,ax = plt.subplots(1,1)
         movement_values = np.median(np.ravel(raster))
         print([movement_values*.65, movement_values*3])
-        ax.imshow(raster,aspect='auto',cmap='Greys',norm=LogNorm(vmin=movement_values*.65, vmax=movement_values*3))
+        ax.matshow(np.repeat(raster,repeats=10,axis=0),aspect='auto',cmap='Greys',norm=LogNorm(vmin=movement_values*.65, vmax=movement_values*3))
         #ax.matshow(raster,aspect='auto',cmap=cm.gray_r, norm=LogNorm(vmin=2500, vmax=12500))
         #ax.matshow(raster, cmap=cm.gray_r,aspect='auto')
         #ax.axvline(zero_bin_idx,color = 'r')

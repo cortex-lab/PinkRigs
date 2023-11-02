@@ -1,10 +1,14 @@
 #!/bin/bash -l
 
-#$ -N AVDDM
-#$ -l h_rt=2:00:00
-#$ -l mem=4G
-# no of cpu slots I am requesting 
-#$ -pe smp 1
+
+# array job style script
+
+#$ -N kernelFit
+#$ -l h_rt=12:00:00
+#$ -l mem=8G
+
+# 11 dataset,15 models/set
+#$ -t 1-1
 
 module purge
 module load gcc-libs/4.9.2
@@ -20,9 +24,9 @@ module load numactl
 module load binutils
 
 
-pip install --upgrade pip
-pip install git+https://github.com/mwshinn/PyDDM.git@dev
-pip install pathos
-pip install psutil 
+pip install numpy
+pip install pandas
+pip install  xarray
 
-mpirun -np 1 python test_installs.py
+
+python kernel_fit_array.py $SGE_TASK_ID

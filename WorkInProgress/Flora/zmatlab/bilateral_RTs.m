@@ -1,14 +1,15 @@
 %%
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1); 
 
 % prepare params so that they can be matched
 powers = [extracted.power{:}]; 
 powers([extracted.hemisphere{:}]==0) = powers([extracted.hemisphere{:}]==0)/2; 
 hemispheres = [extracted.hemisphere{:}]; 
-power_set = [10,17];
+power_set = [10];
 
 subjects = [extracted.subject{:}]; 
+
 unique_subjects = unique(subjects);
 
 powerSubjectComb  = combvec(1:numel(unique_subjects),power_set);
@@ -47,6 +48,6 @@ plot(contra','b');
 xticks([1,2,3])
 xticklabels({'left','bi','right'})
 ylabel('RTopto-RTcontrol')
-legend({'left choice','right choice'})
+%legend({'left choice','right choice'})
 hline(0,'k--')
 %%

@@ -559,11 +559,13 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     #all_clusInfo = all_clusInfo.loc[clusInfo.index]  
     all_clusInfo = clusInfo    
 
+    # should add a nan column for phyclusterID or whatever the new column is ought to be
 
     # also try loading in the shank posititon this is for the naive
     probe_imec = 'imec0' if 'probe0' in probe else 'imec1'
 
     sc_probeloc_path = Path(r'C:\Users\Flora\Documents\Processed data\passiveAV_project')
+
     registration_folder = sc_probeloc_path / rec_kwargs['subject'] / rec_kwargs['expDate']/ 'alf' / probe_imec
     registration_files = list(registration_folder.glob('*.npy')) 
 

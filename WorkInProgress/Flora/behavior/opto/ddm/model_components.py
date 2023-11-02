@@ -19,23 +19,54 @@ import numpy as np
 import pyddm
 
 # each class is a set of parameter components. Each class must contain the following objects: 
+# class DriftAdditiveOpto(pyddm.Drift):
+#     name = "DriftAdditiveSplit"    
+#     required_parameters = [
+#         "aL", "vL","aR","vR","gamma","b", 
+#         "d_aL", "d_vL","d_aR","d_vR" 
+#         ]    
+#     required_conditions = ["audDiff", "visDiff",'is_laserTrial']
 
+#     fittable_minvals = [
+#         .01,.01,.01,.01,0.5,-8,
+#         .01,.01,.01,.01,-8]
+#     fittable_maxvals = [
+#         8,8,8,8,1.5,8, 
+#         8,8,8,8,8]
+#     fixedC = [1,1,1,1,1,0,
+#               0,0,0,0]
+#     freeP = [1,1,1,1,1,0,
+#              0,0,0,0]
+
+#     def get_drift(self, conditions, **kwargs):
+#         visContrast = np.abs(conditions["visDiff"])
+#         visSide = np.sign(conditions["visDiff"])
+#         audSide = np.sign(conditions["audDiff"])
+#         isOpto = conditions['is_laserTrial']
+        
+#         myDrift = ((self.aR + self.d_aR *isOpto) * (audSide>0) - (self.aL + self.d_aL * isOpto) * (audSide<0) + 
+#                    (self.vR + self.d_vR) * (visSide>0) * (visContrast**self.gamma) - (self.vL+self.d_vL*isOpto) * (visSide<0) * (visContrast**self.gamma) +
+#                    (self.b *isOpto))
+
+#         return myDrift
+    
 class DriftAdditiveOpto(pyddm.Drift):
     name = "DriftAdditiveSplit"    
     required_parameters = [
-        "aL", "vL","aR","vR","gamma","b", 
-        "d_aL", "d_vL","d_aR","d_vR" 
+        "a", "v","aS","vS","gamma", "b", #parameters applied to all (6)
+        "d_aR","d_aL", "d_vR","d_vL","d_b"  #opto dependent parameters (5)
         ]    
     required_conditions = ["audDiff", "visDiff",'is_laserTrial']
 
     fittable_minvals = [
-        .01,.01,.01,.01,0.5,-8,
-        .01,.01,.01,.01,-8]
+        .01,.01,-4,-4,0.5,-4,
+        -3,-3,-3,-3,-6]
     fittable_maxvals = [
-        8,8,8,8,1.5,8, 
-        8,8,8,8,8]
+        6,6,4,4,1.5,4, 
+        6,6,6,6,6]
     fixedC = [1,1,1,1,1,0,
-              0,0,0,0]
+              0,0,0,0,0]
+    
     freeP = [1,1,1,1,1,0,
              0,0,0,0]
 
@@ -45,11 +76,32 @@ class DriftAdditiveOpto(pyddm.Drift):
         audSide = np.sign(conditions["audDiff"])
         isOpto = conditions['is_laserTrial']
         
-        myDrift = ((self.aR + self.d_aR *isOpto) * (audSide>0) - (self.aL + self.d_aL * isOpto) * (audSide<0) + 
-                   (self.vR + self.d_vR) * (visSide>0) * (visContrast**self.gamma) - (self.vL+self.d_vL*isOpto) * (visSide<0) * (visContrast**self.gamma) +
-                   (self.b *isOpto))
+        # variables
+        a_R = (audSide>0)
+        a_L = (audSide<0)
+        v_R = (visSide>0) * (visContrast**self.gamma)
+        v_L = (visSide<0) * (visContrast**self.gamma)
+        audComponent = (self.a + self.d_aL * isOpto) * a_R - (self.a + self.aS + self.d_aR * isOpto) * a_L
+        visComponent = (self.v + self.d_vL * isOpto) * v_R - (self.v + self.vS + self.d_vR * isOpto) * v_L
+        biasComponent = self.b + self.d_b* isOpto
+
+        myDrift = audComponent + visComponent + biasComponent
 
         return myDrift
+
+class BoundOpto(pyddm.Bound): 
+    name = 'constant bound that can expland by opto'
+    required_parameters = ["B", "d_B"]
+    required_conditions = ["is_laserTrial"] 
+    fittable_minvals = [.9,0]
+    fittable_maxvals = [1.1,4]
+    fixedC = [1,0]
+
+    def get_bound(self,conditions,*args,**kwargs):
+        isOpto = conditions['is_laserTrial']
+
+        return  self.B + (self.d_B * isOpto)
+
 
 class OverlayNonDecisionOpto(pyddm.OverlayNonDecision):
     name = "Separate non-decision time for aud and vis components"
@@ -83,6 +135,7 @@ class ICPointOpto(pyddm.ICPoint):
         elif start<-.95:
             start =-.95
         return start
+
 
 class OverlayExponentialMixtureOpto(pyddm.Overlay):
     """An exponential mixture distribution where the mixture coef depends on opto
@@ -181,95 +234,260 @@ def get_default_mixture():
 def get_freeP_sets(which = 'ctrl'):
     """
     hardcoded dictionaries that allow sets of parameters to fix vs fit 
+
+    
+    start with 'all'
+
+    Q1 can we get rid of any parameter? 
+    'all'
+    'l_[param_name]' 
+
+    # lets do it sequentially 
+    (some of their combinations)
+    'l_sensoryLR'
+    [
+        "a", "v","aS","vS","gamma","b", #parameters applied to all (6)
+        "d_aR","d_aL", "d_vR","d_vL","d_b"  #opto dependent parameters (5)
+        ]    
+
+    Q1: do we need all the drift parameters?
+    'ctrl'
+    'd_b'
+    'd_x0'
+    'd_x0_d_b'
+    'd_mix_d_b'
+    'd_S_d_b'
+    'd_nondec_d_b'
+
     """
-
-    if 'ctrl' in which: 
-        freePs = {
-            'drift': [1,1,1,1,1,0,
-                      0,0,0,0], 
-            'noise':[1],
-            'bound': [0],
-            'nondectime':[1,0],
-            'mixture':[1,1,0],
-                'IC': [1,0]
-        }
-
-    elif 'drift_bias' in which: 
+    if 'all' in which: 
         freePs = {
             'drift': [1,1,1,1,1,1,
-                      0,0,0,0], 
+                      1,1,1,1,1], 
             'noise':[1],
-            'bound': [0],
+            'bound': [0,0],
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+
+    elif 'l_aS' in which: 
+        freePs = {
+            'drift': [1,1,0,1,1,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_vS' in which: 
+        freePs = {
+            'drift': [1,1,1,0,1,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_gamma' in which: 
+        freePs = {
+            'drift': [1,1,1,1,0,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_b' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,0,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+
+    elif 'l_d_aR' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      0,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_d_aL' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,0,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_d_vR' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,0,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_d_vL' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,1,0,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_d_b' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,1,1,0], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+
+    elif 'l_d_nondectime' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,0],
+            'mixture':[1,1,1],
+                'IC': [1,1]
+        }
+
+    elif 'l_d_mixturecoef' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,0],
+                'IC': [1,1]
+        }
+
+
+    elif 'l_d_x0' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      1,1,1,1,1], 
+            'noise':[1],
+            'bound': [0,0], # never changes
+            'nondectime':[1,1],
+            'mixture':[1,1,1],
+                'IC': [1,0]
+        }
+
+
+    elif 'simplest_control' in which: 
+        freePs = {
+            'drift': [1,1,0,0,0,0,
+                      0,0,0,0,0], 
+            'noise':[1],
+            'bound': [0,0],
             'nondectime':[1,0],
             'mixture':[1,1,0],
                 'IC': [1,0]
         }
 
-    elif 'sensory_drift' in which: 
+    elif 'ctrl' in which: 
         freePs = {
-            'drift': [1,1,1,1,1,0,
-                      1,1,1,1], 
+            'drift': [1,1,1,1,1,1,
+                      0,0,0,0,0], 
             'noise':[1],
-            'bound': [0],
+            'bound': [0,0],
             'nondectime':[1,0],
             'mixture':[1,1,0],
                 'IC': [1,0]
         }
 
-    elif 'starting_point' in which: 
+    elif 'g_d_b' in which: 
         freePs = {
-            'drift': [1,1,1,1,1,0,
-                      0,0,0,0], 
+            'drift': [1,1,1,1,1,1,
+                      0,0,0,0,1], 
             'noise':[1],
-            'bound': [0],
+            'bound': [0,0],
+            'nondectime':[1,0],
+            'mixture':[1,1,0],
+                'IC': [1,0]
+        }
+
+    elif 'g_d_x0' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      0,0,0,0,0], 
+            'noise':[1],
+            'bound': [0,0],
             'nondectime':[1,0],
             'mixture':[1,1,0],
                 'IC': [1,1]
         }
 
-    elif 'mixture' in which: 
-        freePs = {
-            'drift': [1,1,1,1,1,0,
-                      0,0,0,0], 
-            'noise':[1],
-            'bound': [0],
-            'nondectime':[1,0],
-            'mixture':[1,1,1],
-                'IC': [1,0]
-        }
-
-    elif 'nondectime' in which: 
-        freePs = {
-            'drift': [1,1,1,1,1,0,
-                      0,0,0,0], 
-            'noise':[1],
-            'bound': [0],
-            'nondectime':[1,1],
-            'mixture':[1,1,0],
-                'IC': [1,0]
-        }
-
-    elif 'all' in which: 
+    elif 'g_both' in which: 
         freePs = {
             'drift': [1,1,1,1,1,1,
-                      1,1,1,1], 
+                      0,0,0,0,1], 
             'noise':[1],
-            'bound': [0],
-            'nondectime':[1,1],
-            'mixture':[1,1,1],
+            'bound': [0,0],
+            'nondectime':[1,0],
+            'mixture':[1,1,0],
                 'IC': [1,1]
         }
+
+
+    elif 'g_boundx0' in which: 
+        freePs = {
+            'drift': [1,1,1,1,1,1,
+                      0,0,0,0,0], 
+            'noise':[1],
+            'bound': [0,1],
+            'nondectime':[1,0],
+            'mixture':[1,1,0],
+                'IC': [1,1]
+        }
+
 
     elif 'fixed' in which: 
         freePs = {
             'drift': [0,0,0,0,0,0,
-                      0,0,0,0], 
+                      0,0,0,0,0], 
             'noise':[0],
-            'bound': [0],
+            'bound': [0,0],
             'nondectime':[0,0],
             'mixture':[0,0,0],
                 'IC': [0,0]
         }
+
+
 
     return freePs
 

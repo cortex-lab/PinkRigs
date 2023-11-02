@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import time 
 
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
@@ -14,7 +15,7 @@ dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
-
+    
 # dat_type = 'AV028_all'
 # recordings = queryCSV(subject='AV028',expDef='postactive')
 
@@ -22,11 +23,11 @@ from Admin.csv_queryExp import queryCSV
 # dat_keys['probe']='probe0'
 
 #  %%
-rerun_sig_test= False 
-recompute_csv = False 
+rerun_sig_test= False  
+recompute_csv = True  
 recompute_pos_model = False 
 
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
@@ -51,7 +52,7 @@ tuning_curve_params = {
     'trim_type':None, 
     'trim_fraction':None
 }
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 csv_path = interim_data_folder / dat_type 
 csv_path.mkdir(parents=True,exist_ok=True)
 csv_path = csv_path / 'summary_data.csv'
@@ -65,6 +66,8 @@ if not csv_path.is_file() or recompute_csv:
         print(*session)
 
         ################## MAXTEST #################################
+        t0 = time.time()
+        print('',time.time()-t0)
         clusInfo = load_cluster_info(**session)
         # add clus_new_columns to clusters
         # significance of responsivity  
@@ -85,6 +88,8 @@ if not csv_path.is_file() or recompute_csv:
             ) # still, rather slow
         else: 
             p = pd.read_csv(interim_data_sess)
+        
+
         # for each max test get neurons that pass threshold
         bonferroni_p_thr = 0.01/p.columns.size
         is_signifiant_per_cond = p<bonferroni_p_thr
@@ -98,15 +103,22 @@ if not csv_path.is_file() or recompute_csv:
         clusInfo['is_aud']= clusInfo.is_aud_sig & ~clusInfo.is_vis_sig
         clusInfo['is_vis']= ~clusInfo.is_aud_sig & clusInfo.is_vis_sig
 
+        print('loading maxtest took ',time.time()-t0,'s')
+
+
         # predict preferred spatial tuning based on position
         #clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
         
        # azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
         
         ################ MOVEMENT ########################
+        t0 = time.time()
         clusInfo['movement_correlation'],clusInfo['is_movement_correlated'] = m.session_permutation(session,0.05)
+        print('session permutation for movement took ',time.time()-t0,'s')
 
         ################ SPATIAL TUNING ######################
+
+        t0 = time.time()
         azi = azimuthal_tuning(session)
         for t in tuning_types:
             tuning_curve_params['which'] = t
@@ -145,6 +157,8 @@ if not csv_path.is_file() or recompute_csv:
         at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
         clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
 
+        print('azimuthal tuning',time.time()-t0,'s')
+        
         ################### KERNEL FIT RESULTS #############################
         foldertag = r'kernel_model\additive-fit'
         csvname = '%s_%s_%.0f_%s.csv' % tuple(session)
@@ -247,43 +261,43 @@ ax.set_xlabel('multisensory enhancement index')
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 # %%
-_,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
+# _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
 
-maps = {}
-for idx,t in enumerate(tuning_types):
-    print(t)
-    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
-]
-    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
-    print(namekeys)
-    tcs = goodclus.sort_values('x0%s' % t)
-    tcs = tcs[namekeys]
+# maps = {}
+# for idx,t in enumerate(tuning_types):
+#     print(t)
+#     goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+# ]
+#     namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
+#     print(namekeys)
+#     tcs = goodclus.sort_values('x0%s' % t)
+#     tcs = tcs[namekeys]
 
-    tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
-        (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
+#     tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
+#         (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
 
 
-    ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
-    ax[idx].set_ylim([240,0])
-    off_axes(ax[idx])
-# 
-    goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
-    unique_bins = np.unique(goodclus.pos_bin_idx)
-    mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
-    std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
-    maps['%s_mean'% t] = mean_per_pos
-    maps['%s_std' % t ] = std_per_pos
+#     ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
+#     ax[idx].set_ylim([240,0])
+#     off_axes(ax[idx])
+# # 
+#     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
+#     unique_bins = np.unique(goodclus.pos_bin_idx)
+#     mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+#     std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+#     maps['%s_mean'% t] = mean_per_pos
+#     maps['%s_std' % t ] = std_per_pos
 
-print(len(maps['vis_mean']),len(maps['aud_mean']))
-_,ax = plt.subplots(1,1,figsize=(2,2))
-ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
-off_topspines(ax)
-ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
+# print(len(maps['vis_mean']),len(maps['aud_mean']))
+# _,ax = plt.subplots(1,1,figsize=(2,2))
+# ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
+# off_topspines(ax)
+# ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
 
-ax.set_xlim([-90,90])
-ax.set_ylim([-90,90])
-ax.set_xlabel('preferred visual azimuth')
-ax.set_ylabel('preferred auditory azimuth')
+# ax.set_xlim([-90,90])
+# ax.set_ylim([-90,90])
+# ax.set_xlabel('preferred visual azimuth')
+# ax.set_ylabel('preferred auditory azimuth')
 
 # %%
 

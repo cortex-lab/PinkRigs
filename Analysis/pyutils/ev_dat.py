@@ -351,7 +351,6 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
         for idx,(c,spl,v_azi,a_azi,choice) in enumerate(itertools.product(contrasts,spls,vis_azimuths,aud_azimuths,choice_types)):
             # create a dict
 
-            print(c,spl,v_azi,a_azi,choice)
             is_this_trial = ((ev.stim_visContrast == c) &
                             (ev.stim_audAmplitude == spl) &
                             (ev.stim_visAzimuth == v_azi) & 

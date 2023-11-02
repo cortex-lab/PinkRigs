@@ -74,7 +74,32 @@ for idx,m in enumerate(histology_folders):
         scene.add(br.actors.Points(track, colors=mouse_colors[idx], radius=60, alpha=0.5))
         scene.add(br.actors.Points(track[0][np.newaxis,:], colors=mouse_colors[idx], radius=120, alpha=0.5))
 
-scene.render()
+interValue = True 
+pltView = 'coronal'
+pltSlice = True
+if pltSlice:
+    scene.slice("frontal")
+
+
+
+if pltView == "coronal":
+    cam = {
+        "pos": (-36430, 0, -5700),
+        "viewup": (0, -1, 0),
+        "clippingRange": (40360, 64977),
+        "focalPoint": (7319, 2861, -3942),
+        "distance": 43901,
+    }
+elif pltView == "side":
+    cam = {
+        "pos": (11654, -32464, 81761),
+        "viewup": (0, -1, -1),
+        "clippingRange": (32024, 63229),
+        "focalPoint": (7319, 2861, -3942),
+        "distance": 43901,
+    }
+
+scene.render(interactive=interValue,camera=cam,zoom=3.5)
 
 
 # %%

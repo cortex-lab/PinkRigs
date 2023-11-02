@@ -11,9 +11,9 @@ from Admin.csv_queryExp import load_active_and_passive
 from Analysis.pyutils.ev_dat import index_trialtype_perazimuth
 
 session = { 
-    'subject':'AV030',
-    'expDate': '2022-12-09',
-    'probe': 'probe1'
+    'subject':'FT031',
+    'expDate': '2021-12-03',
+    'probe': 'probe0'
 }
 sessName = '%s_%s_%s' % tuple(session.values())
 dat = load_active_and_passive(session)
@@ -23,7 +23,7 @@ from Analysis.pyutils.plotting import my_rasterPSTH,off_axes
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def plot_raster_withmovementonset(spikes,leftchoicestims,rightchoicestims,choicemove_times,neuronID,ax,t_before=.2,t_after=1):
+def plot_raster_withmovementonset(spikes,leftchoicestims,rightchoicestims,choicemove_times,neuronID,ax,t_before=.2,t_after=.5):
     
     plot_kwargs = {
         'pre_time':t_before,
@@ -70,7 +70,7 @@ def plot_shadlen(spikes,leftstim,rightstim,leftmove,rightmove,nrnID,ax,ax1,plot_
     if not plot_kwargs:
         plot_kwargs = {
             'pre_time':.2,
-            'post_time':.3,
+            'post_time':.2,
             'include_PSTH':True,
             'include_raster':False, 
             'n_rasters':leftstim.size+rightstim.size,
@@ -142,7 +142,7 @@ def visazimuth_check(ev,v,trialtype):
     return visazimcheck
 
 # %%
-nrnID = 164
+nrnID = 806
 spk = dat.multiSpaceWorld.spikes
 ev = dat.multiSpaceWorld.events
 

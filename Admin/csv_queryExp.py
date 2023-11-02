@@ -351,10 +351,15 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     return output
 
-def load_data(data_name_dict=None,**kwargs):
+def load_data(recordings=None,data_name_dict=None,**kwargs):
     """
     Paramters: 
     -------------
+    recrordings: pd.df
+        csv that contains the list of recordings to load.
+        In particular the csv ought to contain the column "expFolder" such that points to the parent folder of the ONE_preproc
+        if None, then function uses the queryCSVs
+         
     data_name_dict: str/dict
         if str: specific default dictionaries can be called, not implemented!
             'all'
@@ -376,7 +381,10 @@ def load_data(data_name_dict=None,**kwargs):
     Todo: implement cond loading,default params
         
     """
-    recordings = queryCSV(**kwargs)
+    if recordings is None:
+        recordings = queryCSV(**kwargs)
+    else:
+        recordings = recordings[['subject','expDate','expDef','expFolder']]
 
     if data_name_dict:
 

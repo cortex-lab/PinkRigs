@@ -10,7 +10,7 @@ def get_parameters(freePs=None):
     unit_classes =  {
             'drift': getattr(model_components,'DriftAdditiveOpto'),
             'noise': model_components.get_default_noise(),
-            'bound': model_components.get_default_bound(),
+            'bound': getattr(model_components,'BoundOpto'),
             'nondectime': getattr(model_components,'OverlayNonDecisionOpto'),
             'mixture':getattr(model_components,'OverlayExponentialMixtureOpto'),
             'IC': getattr(model_components,'ICPointOpto')

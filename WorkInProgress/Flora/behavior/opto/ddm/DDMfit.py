@@ -25,15 +25,34 @@ def trainDDMs(refit=False):
     savepath = basepath / drift_class
     savepath.mkdir(parents=True,exist_ok=True)
 
+    # freeP_sets = [
+    #     'ctrl',
+    #     'drift_bias'
+    #     # # 'sensory_drift',
+    #     # 'starting_point'
+    #     # 'mixture',
+    #     # 'nondectime',
+    #     # 'all'
+    # ]
+
     freeP_sets = [
-        'ctrl',
-        'drift_bias'
-        # # 'sensory_drift',
-        # 'starting_point'
-        # 'mixture',
-        # 'nondectime',
-        # 'all'
-    ]
+        'all',
+        'l_a',
+        'l_v', 
+        'l_aS',
+        'l_vS',
+        'l_gamma',
+        'l_b',
+        'l_d_aR',
+        'l_d_aL',
+        'l_d_vR',
+        'l_d_vL',
+        'l_d_b',
+        'l_d_nondectime', 
+        'l_d_mixturecoef',
+        'l_d_x0'
+    ] # (15 models currently)
+
 
     for animal_path in animal_paths:
 
@@ -43,9 +62,9 @@ def trainDDMs(refit=False):
         s = animal_path.stem
 
         Block = cv_split(ev[~np.isnan(ev.rt_laserThresh)],n_splits=2,test_size=.2,random_state=0)
-        Sample_train = pyddm.Sample.from_pandas_dataframe(Block[Block.trainSet], rt_column_name="rt_laserThresh", choice_column_name="response_direction_fixed", choice_names =  ("Right", "Left"))
+        Sample_train = pyddm.Sample.from_pandas_dataframe(Block[Block.trainSet], rt_column_name="RT", choice_column_name="choice", choice_names =  ("Right", "Left"))
         save_pickle(Sample_train,savepath / ('%s_Sample_train.pickle' % s))
-        Sample_test = pyddm.Sample.from_pandas_dataframe(Block[~Block.trainSet], rt_column_name="rt_laserThresh", choice_column_name="response_direction_fixed", choice_names =  ("Right", "Left"))
+        Sample_test = pyddm.Sample.from_pandas_dataframe(Block[~Block.trainSet], rt_column_name="RT", choice_column_name="choice", choice_names =  ("Right", "Left"))
         save_pickle(Sample_test,savepath / ('%s_Sample_test.pickle' % s))
 
         try:

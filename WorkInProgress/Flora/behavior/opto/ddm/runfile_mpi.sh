@@ -1,9 +1,7 @@
-#!/bin/bash -l
-
 #$ -N AVDDM
 #$ -l h_rt=12:00:00
 # no of cpu slots I am requesting 
-#$ -pe mpi 18
+#$ -pe mpi 2
 #$ -l mem=4G
 
 module purge
@@ -21,8 +19,8 @@ module load binutils
 
 
 pip install --upgrade pip
-pip uninstall git+https://github.com/mwshinn/PyDDM.git@dev
+pip install git+https://github.com/mwshinn/PyDDM.git@dev
 pip install pathos
 pip install psutil 
 
-mpirun -np 18 python DDMfit_parallel.py
+mpirun -np 2 python DDMfit_mpi.py

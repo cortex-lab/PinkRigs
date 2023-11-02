@@ -17,8 +17,8 @@ from Analysis.pyutils.plotting import off_topspines
 
 from Admin.csv_queryExp import load_data
 
-subject = 'FT010'
-expDate = '2021-03-16'
+subject = 'FT009'
+expDate = '2021-01-20'
 expNum= 8
 cam = 'frontCam'
 probe = 'probe0'

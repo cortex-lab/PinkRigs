@@ -1,10 +1,14 @@
 #!/bin/bash -l
 
+
+# array job style script
+
 #$ -N AVDDM
-#$ -l h_rt=2:00:00
-#$ -l mem=4G
-# no of cpu slots I am requesting 
-#$ -pe smp 1
+#$ -l h_rt=12:00:00
+#$ -l mem=8G
+
+# 11 dataset,15 models/set
+#$ -t 1-11
 
 module purge
 module load gcc-libs/4.9.2
@@ -25,4 +29,4 @@ pip install git+https://github.com/mwshinn/PyDDM.git@dev
 pip install pathos
 pip install psutil 
 
-mpirun -np 1 python test_installs.py
+python DDMfit_parallelarray.py $SGE_TASK_ID

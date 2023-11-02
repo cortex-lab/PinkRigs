@@ -17,7 +17,7 @@ def get_data_bunch(namekey):
 
     """
     
-    if namekey == 'naive-all': 
+    if namekey == 'naive-total': 
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
             ('FT008','2021-01-15',5,'probe0'),
@@ -57,7 +57,7 @@ def get_data_bunch(namekey):
             ('FT039','2021-11-23',3,'probe0'), 
       ]
 
-    if namekey == 'naive-video-set': 
+    elif namekey == 'naive-video-set': 
         column_names = ['subject','expDate','expNum']
         recordings = [
             ('FT008','2021-01-15',5),

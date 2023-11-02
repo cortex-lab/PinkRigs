@@ -192,6 +192,7 @@ def my_rasterPSTH(spike_times,  # Spike times first
                   error_bars='sem',  # Whether we want Stdev, SEM, or no error
                   include_PSTH=True,
                   include_raster=True,  # adds a raster to the bottom
+                  reverse_raster =False,
                   n_rasters=100, # How many raster traces to include per event set
                   bin_size=0.025,
                   smoothing=0.005,
@@ -260,10 +261,15 @@ def my_rasterPSTH(spike_times,  # Spike times first
         
         clu_spks = spike_times[spike_clusters == cluster_id]
         
-        if n_rasters is None: 
+        if (n_rasters is None) &  (not reverse_raster): 
             tickedges = np.arange(0., -trialcount*tickheight - 1e-5, -tickheight)
-        else:
+        elif (n_rasters is not None) & (not reverse_raster):
             tickedges = np.arange(0., -n_rasters*len(events)*tickheight - 1e-5, -tickheight)
+        elif (n_rasters is None) & reverse_raster:
+            tickedges = np.arange(0., trialcount*tickheight + 1e-5, tickheight)
+        elif (n_rasters is not None) & reverse_raster:
+            tickedges = np.arange(0., n_rasters*len(events)*tickheight + 1e-5, tickheight)
+
         ct=0 # counts how many trials one has plotted overall
         for e,evtgrp in enumerate(events):
             if n_rasters is None:
