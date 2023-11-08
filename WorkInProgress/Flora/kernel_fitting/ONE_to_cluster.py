@@ -9,8 +9,10 @@ from pathlib import Path
 from Admin.csv_queryExp import queryCSV
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.io import save_dict_to_json
+
+
+############## write out ONE folder ##############
 dataset = 'naive-allen'
-fit_tag = 'additive-fit'
 
 recordings = get_data_bunch(dataset)
 unique_ONE_folders = recordings.drop_duplicates(subset=['subject','expDate','expNum'])
@@ -26,27 +28,30 @@ for _,rec_info in unique_ONE_folders.iterrows():
     shutil.copytree(src,trgt)
 # %%
 
-# write corresponding csv??
+############## write out csv ##############
 ss,ed = [],[]
 target_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\kernel_regression\data')
-target_folder = Path(r'/lustre/home/zcbtfta/data')
+c_folder = target_folder
+c_folder = Path(r'/lustre/home/zcbtfta/data')
 
 for _,rec_info in recordings.iterrows(): 
     rec = queryCSV(**rec_info[:3])
     expFolder = rec.iloc[0].expFolder
-    trgt  = Path(target_folder.__str__() + re.split('Subjects',expFolder)[-1])
+    trgt  = Path(c_folder.__str__() + re.split('Subjects',expFolder)[-1])
     ss.append(trgt.__str__())
     ed.append(rec.expDef.values[0])
-# %%
+
 recordings['expFolder'] = ss
 recordings['expDef'] = ed
 
 recordings.to_csv(target_folder / 'recordings.csv',index=False)
 # %%
-
+############## write out code ###################
 # contrstruct code structure to take to the cluster
 target_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\kernel_regression\code')
 
+# clear put previous structure
+shutil.rmtree(target_folder)
 
 # files that we will need
 import Admin.csv_queryExp as qE
@@ -57,5 +62,7 @@ shutil.copy(Path(qE.__file__).parent / '__init__.py',ct)
 
 
 import Analysis
-shutil.copytree(Analysis.__path__[0],(target_folder / 'Analysis'),)
+shutil.copytree(Analysis.__path__[0],(target_folder / 'Analysis'))
+
+
 # %%

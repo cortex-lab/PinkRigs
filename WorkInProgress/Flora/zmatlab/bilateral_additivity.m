@@ -5,7 +5,7 @@ extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemisph
 powers = [extracted.power{:}]; 
 powers([extracted.hemisphere{:}]==0) = powers([extracted.hemisphere{:}]==0)/2; 
 hemispheres = [extracted.hemisphere{:}]; 
-power_set = [10,17];
+power_set = [10];
 subjects = [extracted.subject{:}]; 
 unique_subjects = unique(subjects);
 
@@ -21,6 +21,7 @@ for s=1:size(powerSubjectComb,2)
 
     biBlock = extracted.data{(subjects==subject) & (hemispheres==0) & (powers==p)};
    
+
     % plot ctrl+deltaL+deltaR vs actual bilateral
     plot_additive_pred(biBlock,(dL+dR)); 
 end 
@@ -48,6 +49,10 @@ for s=1:size(powerSubjectComb,2)
     [paramsR,dParamsR] = get_delta_fitted(extracted.data{(subjects==subject) & (hemispheres==1) & (powers==p)},freeP_unilateral);
     % sum the delta bias for each uni 
     dParams = (dParamsR+dParamsL).*freeP_unilateral; 
+
+    dLs(s) = dParamsL(1); 
+    dRs(s) = dParamsR(1); 
+    dParamsum(s) = dParams(1);
     % fit control for bi
     biBlock = extracted.data{(subjects==subject) & (hemispheres==0) & (powers==p)};
     controlBlock = filterStructRows(biBlock, ~biBlock.is_laserTrial);
@@ -74,12 +79,13 @@ for s=1:size(powerSubjectComb,2)
 
 
     if should_plot
-       figure; 
+       f=figure; 
+       f.Position = [10,10,300,300];
        plotParams.plottype = 'log'; 
        plotParams.LineStyle = ':';
        plotParams.DotStyle = '.';
 
-       plotParams.MarkerSize = 24; 
+       plotParams.MarkerSize = 36; 
        plot_optofit(orifit,plotParams,plotfit,controlfit.prmFits(4)); 
        hold on; 
 
@@ -93,13 +99,14 @@ for s=1:size(powerSubjectComb,2)
     orifit = plts.behaviour.GLMmulti(optoBlock, 'simpLogSplitVSplitA');
     orifit.prmInit = controlfit.prmFits;
     orifit.fitCV(5); 
-    
-    if should_plot
-       plotParams.LineStyle = '--';
-       plotParams.DotStyle = 'none';
-       plotParams.MarkerSize = 8; 
-       plot_optofit(orifit,plotParams,plotfit,controlfit.prmFits(4))
-    end 
+    deltaParams = mean(orifit.prmFits,1);
+    dParamsBoth(s)=deltaParams(1);
+%     if should_plot
+%        plotParams.LineStyle = '--';
+%        plotParams.DotStyle = 'none';
+%        plotParams.MarkerSize = 8; 
+%        plot_optofit(orifit,plotParams,plotfit,controlfit.prmFits(4))
+%     end 
 
     llfull(s)=mean(orifit.logLik);
 
@@ -109,12 +116,23 @@ for s=1:size(powerSubjectComb,2)
 end
 
 %%
-figure; plot(lldelta(1:3),llfull(1:3),'.',MarkerSize=30); hold on; 
-plot(lldelta(4:6),llfull(4:6),'.',MarkerSize=30); 
+figure; plot(lldelta(1:2),llfull(1:2),'.',MarkerSize=30); hold on; 
+plot(lldelta(3:4),llfull(3:4),'.',MarkerSize=30); 
 hold on; plot([0,1],[0,1],'k--');
 xlabel('control+deltaBias')
 ylabel('full')
 title('-veLogLikelihood')
+
+%%
+figure;
+plot(dParamsum,dParamsBoth,'.',MarkerSize=30);
+hold on; plot([-3,3],[-3,3],'k--');
+
+hold on; plot(dLs,[0,0,0],'.');
+
+hold on; plot(dRs,[0,0,0],'.');
+
+
 
 %% 
 function [pR] = get_performance(ev)

@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 
 #%%
 subject_set = ['AV025','AV030','AV034']
-my_expDef = 'multiSpaceWorld_checker_training'
+my_expDef = 'postactive'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
 
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 
 csv_path = interim_data_folder / dataset 
 fit_tag = 'stimChoice'
@@ -38,8 +38,6 @@ recompute_csv = True
 
 csv_path = csv_path / 'summary_data.csv'
 
-tuning_types = ['vis','aud']
-cv_names = ['train','test']
 if not csv_path.is_file() or recompute_csv:
     all_dfs = []
     for (_,session),results_folder in zip(recordings.iterrows(),subfolders):
@@ -53,7 +51,8 @@ if not csv_path.is_file() or recompute_csv:
         ve_results = results_folder / 'variance_explained_batchKernel.csv'
 
 
-        kernel_events_to_save = ['aud_kernel_spl_0.10','aud_kernel_spl_0.10_dir', 'baseline', 'move_kernel', 'vis','move_kernel_dir']
+        #kernel_events_to_save = ['aud_kernel_spl_0.10','aud_kernel_spl_0.10_dir', 'baseline', 'move_kernel', 'vis','move_kernel_dir']
+        kernel_events_to_save =  ['aud','vis','motionEnergy']
         for k in kernel_events_to_save:
             tag = 'kernelVE_%s' % k 
             if ve_results.is_file():

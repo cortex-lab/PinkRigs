@@ -13,15 +13,17 @@ from itertools import compress
 
 # get PinkRig handlers 
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
-pinkRig_path = Path(pinkRig_path[0])
-sys.path.insert(0, (pinkRig_path.__str__()))
+
+if len(pinkRig_path)>0:
+    pinkRig_path = Path(pinkRig_path[0])
+    sys.path.insert(0, (pinkRig_path.__str__()))
 
 def get_csv_location(which):
     """
     func equivalent to getLocation in matlab
 
     """
-    server = Path(r'\\zinu.cortexlab.net\Subjects\PinkRigs')
+    server = Path(r'\\znas.cortexlab.net\Code\PinkRigs')
     if 'main' in which: 
         SHEET_ID = '1NKPxYThbLy97iPQG8Wk2w3KJXC6ys7PesHp_08by3sg'
         SHEET_NAME = 'Sheet1'
@@ -33,7 +35,7 @@ def get_csv_location(which):
     elif 'training_email' in which:
         csvpath = server / r'Helpers\AVrigEmail.txt'
     else:
-        csvpath = server / ('%s.csv' % which) 
+        csvpath = server / ('SubjectCSVs/%s.csv' % which) 
      
     return csvpath
 
@@ -97,7 +99,43 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None, unwrap_independent_probes=False):
+def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1): 
+    """
+    utility function to assess whether a recording contains neurons in a target region
+    
+    Parameters:
+    ----------
+    rec: pd.Series
+        typically the output of queryExp.load_data. Must contain probe.clusters
+
+    region_name: str
+        name of the region in AllenAcronym to match. Does not need to be at the exact level in the hierarchy as the Allen name is written out 
+        (e.g. SC will count SCs & SCm)
+    min_fraction: float
+        min fraction of neurons that must be in the region so that the recording passes
+
+    Returns:
+    -------
+        :bool
+        whether rec is in region with region_name or not 
+    """
+
+    clusters = rec.probe.clusters
+
+    # check whether anatomy exists at all
+    if 'mlapdv' not in list(clusters.keys()):
+        is_region = False
+    else:
+        is_in_region = [region_name in x for x in clusters.brainLocationAcronyms_ccf_2017]
+        if np.mean(is_in_region)>min_fraction:
+            is_region=True
+
+        else:
+            is_region = False
+
+    return is_region
+
+def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None):
     """ 
     python version to query experiments based on csvs produced on PinkRigs
 
@@ -119,9 +157,6 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
         returns match to string if not none ('1', or '2')  
     checkSpikes: None/str
         returns match to string if not none ('1', or '2')  
-
-    unwrap_independent_probes: bool
-        returns exp2checkList with a probe tag where so each row is probe as opposed to a session  
 
     check_curation: bool
         only applies if unwrap_independent_probes is True
@@ -217,35 +252,6 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
             exp2checkList = exp2checkList[exp2checkList['alignFrontCam'].notna() & exp2checkList['fMapFrontCam'].notna()]
             to_keep_column = np.array([(checkFrontCam in rec.alignFrontCam) & (checkFrontCam in rec.fMapFrontCam) for _,rec in exp2checkList.iterrows()])
             exp2checkList = exp2checkList[to_keep_column]        
-
-        if unwrap_independent_probes:
-            expected_probe_no = ((exp2checkList.extractSpikes.str.len()/2)+0.5)
-            expected_probe_no[np.isnan(expected_probe_no)] = 0 
-            expected_probe_no = expected_probe_no.astype(int)
-
-            exp2checkList['expected_probe_no'] = expected_probe_no
-
-            rec_list = []
-            for _,rec in exp2checkList.iterrows():
-                for p_no in range(rec.expected_probe_no):
-                    string_idx =(p_no)*2
-                    if (rec.extractSpikes[int(string_idx)]=='1'):
-                        myrec = rec[['subject','expDate','expNum','expDef','expDuration','rigName','expFolder']]
-                        myrec['probe'] = 'probe%s' % p_no
-                        ephysPath = rec['ephysPathProbe%s' % p_no]
-                        myrec['ephysPath'] = ephysPath
-
-                        curated_fileMark = Path(ephysPath)
-                        curated_fileMark = curated_fileMark / 'pyKS\output\cluster_info.tsv'
-                        myrec['is_curated'] = curated_fileMark.is_file()
-                        
-                        rec_list.append(myrec)
-
-
-
-                exp2checkList = pd.DataFrame(rec_list, columns =['subject','expDate','expNum','expDef','expDuration','rigName','expFolder','probe','ephysPath','is_curated']) 
-
-
 
 
     return exp2checkList
@@ -351,7 +357,7 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     return output
 
-def load_data(recordings=None,data_name_dict=None,**kwargs):
+def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=False,region_selection=None,**kwargs):
     """
     Paramters: 
     -------------
@@ -372,7 +378,10 @@ def load_data(recordings=None,data_name_dict=None,**kwargs):
             note: 
             the raw ibl_format folder can also be called for spiking. 
             For this, one needs to give 'probe0_raw' or 'probe1_raw' as the collection namestring. 
-            
+    
+    unwrap_independent_probes: bool
+        returns exp2checkList with a probe tag where so each row is probe as opposed to a session  
+
     Returns: 
     -------------
     pd.DataFrame 
@@ -417,6 +426,40 @@ def load_data(recordings=None,data_name_dict=None,**kwargs):
 
     # merge probes 
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
+        if unwrap_independent_probes:
+            expected_probe_no = ((recordings.extractSpikes.str.len()/2)+0.5)
+            expected_probe_no[np.isnan(expected_probe_no)] = 0 
+            expected_probe_no = expected_probe_no.astype(int)
+
+            recordings['expected_probe_no'] = expected_probe_no
+
+            old_columns = recordings.columns.values
+            keep_columns = np.setdiff1d(old_columns,['ephysPathProbe0','ephysPathProbe1', 'probe0', 'probe1'])
+
+            rec_list = []
+            for _,rec in recordings.iterrows():
+                for p_no in range(rec.expected_probe_no):
+                    string_idx =(p_no)*2
+                    if (rec.extractSpikes[int(string_idx)]=='1'):
+                        myrec = rec[keep_columns]
+                        myrec['probeID'] = 'probe%s' % p_no
+                        myrec['probe'] = rec['probe%s' % p_no]
+                        ephysPath = rec['ephysPathProbe%s' % p_no]
+                        myrec['ephysPath'] = ephysPath
+
+                        curated_fileMark = Path(ephysPath)
+                        curated_fileMark = curated_fileMark / 'pyKS\output\cluster_info.tsv'
+                        myrec['is_curated'] = curated_fileMark.is_file()
+                        
+                        rec_list.append(myrec)
+
+
+
+                recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
+
+            if region_selection is not None:
+                keep_rec_region = [is_rec_in_region(rec,**region_selection) for _,rec in recordings.iterrows()]
+                recordings = recordings[keep_rec_region]
 
 
     return recordings
@@ -451,7 +494,7 @@ def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','
 
     return r
 
-def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['frontCam','eyeCam','sideCam']): 
+def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
     """
     this is the most standarising loader. Allows standardisation of numerous sessions etc. 
     spits out the event,spike etc bunches with one line
@@ -519,7 +562,7 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['
         if hasattr(p_dat,'channels'):
             channels = p_dat.channels
 
-    cam_checks = np.array([hasattr(recording,cam) for cam in cam_hierarchy])
+    cam_checks = np.array([(hasattr(recording[cam].camera,'ROIMotionEnergy')  & hasattr(recording[cam].camera,'times')) if hasattr(recording,cam) else False for cam in cam_hierarchy])
     if cam_checks.any(): 
         cam_idx = np.where(cam_checks)[0][0]
         used_camname = cam_hierarchy[cam_idx]

@@ -12,7 +12,7 @@
 
 module purge
 module load gcc-libs/4.9.2
-module load python3/recommended
+module load python3/3.7 #appears crucial for xarray
 module load compilers/gnu/4.9.2
 module load numactl/2.0.12
 module load binutils/2.29.1/gnu-4.9.2
@@ -23,10 +23,8 @@ module load mpi4py/3.1.4/gnu-4.9.2
 module load numactl
 module load binutils
 
-
-pip install numpy
-pip install pandas
 pip install  xarray
+
 
 
 python kernel_fit_array.py $SGE_TASK_ID

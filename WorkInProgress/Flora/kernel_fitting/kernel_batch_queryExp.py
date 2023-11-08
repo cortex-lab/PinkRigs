@@ -12,15 +12,13 @@ from Admin.csv_queryExp import queryCSV
 
 
 subject_set = ['AV025','AV030','AV034']
-my_expDef = 'multiSpaceWorld_checker_training'
+my_expDef = 'postactive'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
 
 recordings = queryCSV(subject = subject_set,expDate='postImplant',expDef=my_expDef,checkEvents='1',checkSpikes='1',unwrap_independent_probes=True)
 
 # %%
-
-
 
 fit_tag = 'stimChoice'
 

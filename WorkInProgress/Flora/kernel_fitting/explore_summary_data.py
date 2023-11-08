@@ -15,9 +15,10 @@ br = BrainRegions()
 from Analysis.pyutils.plotting import brainrender_scattermap
 
 #dat_type = 'AV025AV030AV034postactive'
-dat_type = 'naive-allen'
+dat_type = 'naive-total'
+#|dat_type = 'trained-passive-cureated'
 
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 csv_path = interim_data_folder / dat_type / 'summary_data.csv'
 clusInfo = pd.read_csv(csv_path)
 clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
@@ -44,19 +45,18 @@ for k in kernel_names:
     clusInfo[n] = clusInfo[k].values>thr
 # %%
 
-from Analysis.neural.utils.spike_dat import call_bombcell_params,bombcell_sort_units
-bc_params = call_bombcell_params()
+from Analysis.neural.utils.spike_dat import bombcell_sort_units
 
-
-clusInfo = bombcell_sort_units(clusInfo,**bc_params)
-clusGood = clusInfo[clusInfo.bombcell_class=='good']
-
+bc_class = bombcell_sort_units(clusInfo)
+#
+clusInfo['is_good'] = bc_class=='good'
+clusGood = clusInfo[clusInfo.is_good]
 # %%
 # plot based just on depth
 thr=0.02
 fig,ax = plt.subplots(1,1,figsize=(10,5))
 ax.plot(clusGood._av_xpos,clusGood.depths,'k.',alpha=0.3)
-plt.plot(clusGood._av_xpos[(clusGood['kernelVE_aud_kernel_spl_0.10']>thr)],clusGood.depths[(clusGood['kernelVE_aud_kernel_spl_0.10']>thr)],'m.',alpha=0.3)
+plt.plot(clusGood._av_xpos[(clusGood['kernelVE_aud']>thr)],clusGood.depths[(clusGood['kernelVE_aud']>thr)],'m.',alpha=0.3)
 
 # %%
 
@@ -135,47 +135,61 @@ off_topspines(ax)
 
 
 # %%
-fig,ax = plt.subplots(1,1,figsize=(4,4))
-x = gSC['kernelVE_aud_kernel_spl_0.10_dir']
-y = gSC['kernelVE_move_kernel_dir']
 
-ax.plot(x,y,'ko',alpha=0.3)
-ax.set_title('r = %.2f' % np.corrcoef(x[(~np.isnan(x)) & (~np.isnan(y))],y[(~np.isnan(x)) & (~np.isnan(y))])[0,1])
-ax.set_xlim([-.15,.25])
-ax.set_ylim([-.15,.15])
+import scipy.stats as ss
+fig,ax = plt.subplots(1,1,figsize=(3,3))
+
+xname = 'aud'
+yname = 'motionEnergy'
+x = gSC['kernelVE_%s' % xname]
+#x = gSC['kernelVE_aud']
+y = gSC['kernelVE_%s' % yname]
+
+ax.scatter(x,y,s=95,alpha=0.7,edgecolors='k',lw=1.5,c='lightgrey')
+#ax.set_title('r = %.2f' % np.corrcoef(x[(~np.isnan(x)) & (~np.isnan(y))],y[(~np.isnan(x)) & (~np.isnan(y))])[0,1])
+isnotnan = ~np.isnan(x) & ~np.isnan(y)
+print(ss.spearmanr(x[isnotnan],y[isnotnan]))
+ax.set_title('Spearman r = %.2f' % ss.spearmanr(x[isnotnan],y[isnotnan]).correlation)
+ax.set_xlim([-.1,.5])
+ax.set_ylim([-.05,.32])
 ax.set_xlabel(x.name)
 ax.set_ylabel(y.name)
 off_topspines(ax)
 
+cpath  = Path(r'C:\Users\Flora\Pictures\SfN2023')
+im_name = dat_type + xname + yname + '.svg'
+savename = cpath / im_name
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 
 #%%
-plt.rcParams.update({'font.size': 22})
+# plt.rcParams.update({'font.size': 22})
 
-fig,ax = plt.subplots(1,1,figsize=(7,7))
+# fig,ax = plt.subplots(1,1,figsize=(7,7))
 
-#x_s = 'aud_kernel_spl_0.10_dir'
-x_s = 'move_kernel_dir'
-y_s = 'vis_kernel_contrast_0.40_dir'
+# #x_s = 'aud_kernel_spl_0.10_dir'
+# x_s = 'aud_kernel_spl_0.10_azimuth_30'
+# y_s = 'vis_kernel_contrast_0.40_azimuth_30'
 
-x_ve = x_s
-y_ve = y_s
+# x_ve = x_s
+# y_ve = y_s
 
-if 'vis_kernel_contrast' in x_ve:
-      x_ve = 'vis'
-if 'vis_kernel_contrast' in y_ve:
-      y_ve = 'vis'
+# if 'vis_kernel_contrast' in x_ve:
+#       x_ve = 'vis'
+# if 'vis_kernel_contrast' in y_ve:
+#       y_ve = 'vis'
 
 
-gSC['combinedVE'] = gSC[('kernelVE_'+x_ve)] + gSC[('kernelVE_'+y_ve)]
-gSC[('kernelSum_'+x_s+'_hemi')] = gSC[('kernelSum_'+x_s)] * gSC.hemi
-gSC[('kernelSum_'+y_s+'_hemi')] = gSC[('kernelSum_'+y_s)] * gSC.hemi
+# gSC['combinedVE'] = gSC[('kernelVE_'+x_ve)] + gSC[('kernelVE_'+y_ve)]
+# gSC[('kernelSum_'+x_s+'_hemi')] = gSC[('kernelSum_'+x_s)] * gSC.hemi
+# gSC[('kernelSum_'+y_s+'_hemi')] = gSC[('kernelSum_'+y_s)] * gSC.hemi
 
-sns.scatterplot(data=gSC,
-                x=('kernelSum_'+x_s+'_hemi'),
-                y=('kernelSum_'+y_s+'_hemi'),
-                hue='combinedVE',hue_norm=(-0.05,0.3),legend=False,palette='magma_r',ax=ax)
+# sns.scatterplot(data=gSC,
+#                 x=('kernelSum_'+x_s+'_hemi'),
+#                 y=('kernelSum_'+y_s+'_hemi'),
+#                 hue='combinedVE',hue_norm=(-0.05,0.3),legend=False,palette='magma_r',ax=ax)
 
-off_topspines(ax)
+# off_topspines(ax)
 
 # g.axes[0,2].set_xlim((-1,1))
 # g.axes[1,2].set_ylim((-1,1))

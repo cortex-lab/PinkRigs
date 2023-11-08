@@ -13,10 +13,10 @@ function csvLocation = getLocation(subject)
     %   Path to the csv.
     
     if iscell(subject); subject = subject{1}; end
-    csvPath = '\\zinu.cortexlab.net\Subjects\PinkRigs\';
+    csvPath = '\\znas.cortexlab.net\Code\PinkRigs\';
     
     if strcmp(subject,'main')
         csvLocation = 'https://docs.google.com/spreadsheets/d/1_hcuWF68PaUFeDBvXAJE0eUmyD9WSQlWtuEqdEuQcVg/edit?usp=sharing';
     else
-        csvLocation = fullfile(csvPath, [subject '.csv']);
+        csvLocation = fullfile(csvPath, ['SubjectCSVs\' subject '.csv']);
     end

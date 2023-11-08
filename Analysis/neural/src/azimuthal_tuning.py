@@ -137,16 +137,7 @@ def svd_across_azimuths(r):
 
     return weight_per_trial, average_weight[np.newaxis,:]
 
-def get_tuning_only(tuning_curves):
-    """
-    helper function to handle the tuning curves dataframe
 
-    """
-
-    isgood = ~tuning_curves.columns.isin(['score','cv_number','preferred_tuning'])
-    tc = tuning_curves.loc[:,isgood]
-
-    return tc
 
 class azimuthal_tuning():
     def __init__(self,rec_info):
@@ -205,6 +196,8 @@ class azimuthal_tuning():
         .azimuthIDs: list of str
             which azimuths we actually included.         
         """
+
+        self.modality = which 
         if not contrast: 
             contrast = np.max(self.vis.contrast.values)
 
@@ -312,6 +305,23 @@ class azimuthal_tuning():
         self.azimuths = np.array([int(re.split('_',azi)[-1]) for azi in self.response_rasters_per_azimuth.azimuthIDs])
         return self.response_rasters_per_azimuth
 
+
+    def get_tuning_only(self,tuning_curves):
+        """
+        helper function to handle the tuning curves dataframe
+
+        """
+        exclusion_list = [
+            '%s_score' % self.modality,
+            '%s_cv_number' % self.modality,
+            '%s_preferred_tuning' % self.modality
+        ]
+
+        isgood = ~tuning_curves.columns.isin(exclusion_list)
+        tc = tuning_curves.loc[:,isgood]
+
+        return tc
+    
     def plot_response_per_azimuth(self,neuronID=1,which='psth'):
         """
         plot the response at each azimuth for give n neuron 
@@ -403,8 +413,8 @@ class azimuthal_tuning():
 
             preferred_tuning_idx = np.argmax(curr_tuning_curves.to_numpy(),axis=1)
 
-            curr_tuning_curves[('preferred_tuning')] = [re.split('_',curr_tuning_curves.columns[i])[-1] for i in preferred_tuning_idx]
-            curr_tuning_curves['cv_number'] = cv
+            curr_tuning_curves[('%s_preferred_tuning' % self.modality)] = [re.split('_',curr_tuning_curves.columns[i])[-1] for i in preferred_tuning_idx]
+            curr_tuning_curves['%s_cv_number' % self.modality] = cv
             curr_tuning_curves = curr_tuning_curves.set_index(self.clus_ids,drop=True)
             tuning_curves.append(curr_tuning_curves)
         
@@ -451,7 +461,7 @@ class azimuthal_tuning():
             tuning_curves = self.get_tuning_curves(cv_split=1,**kwargs)   
 
         # convert tuning curves df to numpy array and fit the training set 
-        tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).values
+        tc_train = self.get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==0]).values
         azimuths = self.azimuths
         # fit each neuron 
         p0 = np.concatenate([self.fitCurve(azimuths,n,curve_type=curve_type,upfactor=100)[np.newaxis,:] for n in tc_train])
@@ -471,11 +481,11 @@ class azimuthal_tuning():
 
     def evaluate_tuning_curve(self,tuning_curves):
         self.predict_tuning_curve()
-        cv_numbers = tuning_curves.cv_number.values
+        cv_numbers = tuning_curves['%s_cv_number' % self.modality].values
         
         score=[]
         for cv_number in np.unique(cv_numbers):
-            tc = get_tuning_only(tuning_curves[tuning_curves.cv_number==cv_number]).values
+            tc = self.get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==cv_number]).values
             score.append([get_VE(actual,predicted) for actual,predicted in zip(tc,self.predictions)])
         score=np.concatenate(score)
         return score
@@ -484,7 +494,7 @@ class azimuthal_tuning():
         tuning_curves = self.get_tuning_curves(**kwargs)   
         self.fit_tuning_curve(tuning_curves=tuning_curves,curve_type=curve_type)
         score = self.evaluate_tuning_curve(tuning_curves)      
-        tuning_curves['score'] = score
+        tuning_curves['%s_score' % self.modality] = score
         return tuning_curves
     
     def get_significant_fits(self,n_shuffles=20,p_threshold=0.05,**kwargs):
@@ -492,13 +502,13 @@ class azimuthal_tuning():
         shuffle_scores = []
         for shuffle_idx in range(n_shuffles): 
             tuning_curves = self.fit_evaluate(cv_split=2,azimuth_shuffle_seed=shuffle_idx,**kwargs)
-            shuffle_scores.append(tuning_curves[tuning_curves.cv_number==1].score.values[np.newaxis,:])
+            shuffle_scores.append(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1]['%s_score' % self.modality].values[np.newaxis,:])
 
         shuffle_scores = np.concatenate(shuffle_scores)
 
         tuning_curves = self.fit_evaluate(cv_split=2,azimuth_shuffle_seed=None,**kwargs)
 
-        actual = tuning_curves[tuning_curves.cv_number==1].score.values
+        actual = tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1]['%s_score' % self.modality].values
 
         actual = np.tile(actual,(n_shuffles,1))
         p_val = (shuffle_scores>actual).sum(axis=0)/n_shuffles
@@ -539,11 +549,11 @@ class azimuthal_tuning():
 
         titlestring = 'neuron %.0d' % neuronID
         if plot_train:
-            tc_train = get_tuning_only(tuning_curves[tuning_curves.cv_number==0]).iloc[neuron_idx].values
+            tc_train = get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==0]).iloc[neuron_idx].values
             ax.plot(azimuths,tc_train,'k')
         
         if plot_test: 
-            tc_test = get_tuning_only(tuning_curves[tuning_curves.cv_number==1]).iloc[neuron_idx].values
+            tc_test = get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1]).iloc[neuron_idx].values
             ax.plot(azimuths,tc_test,'grey')
 
         if plot_pred: 
@@ -557,11 +567,11 @@ class azimuthal_tuning():
             ax.plot(azimuths_upped,t_pred,'darkturquoise')
 
             if plot_train: 
-                ve_string = ' VE,train = %.2f' % tuning_curves[tuning_curves.cv_number==0].iloc[neuron_idx].score
+                ve_string = ' VE,train = %.2f' % tuning_curves[tuning_curves['%s_cv_number' % self.modality]==0].iloc[neuron_idx]['%s_score' % self.modality]
                 titlestring += ve_string
             
             if plot_test: 
-                ve_string = ' VE,test = %.2f' % tuning_curves[tuning_curves.cv_number==1].iloc[neuron_idx].score
+                ve_string = ' VE,test = %.2f' % tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1].iloc[neuron_idx]['%s_score' % self.modality]
                 titlestring += ve_string
 
         
@@ -584,10 +594,10 @@ class azimuthal_tuning():
 
         keys = [c for c in tuning_curves.columns if tuning_type in c and 'preferred' not in c]              
 
-        train = tuning_curves[(tuning_curves.cv_number==0)]
+        train = tuning_curves[(tuning_curves['%s_cv_number' % self.modality]==0)]
         train = train[keys]
 
-        test= tuning_curves[(tuning_curves.cv_number==1)]
+        test= tuning_curves[(tuning_curves['%s_cv_number' % self.modality]==1)]
         test = test[keys]
 
         max_loc = np.argmax(train.values,axis=1)
@@ -598,7 +608,7 @@ class azimuthal_tuning():
 
         selectivity = (max_test-min_test)/(max_test+min_test)
 
-        return selectivity,tuning_curves[(tuning_curves.cv_number==0)].preferred_tuning.values.astype('float')
+        return selectivity,tuning_curves[(tuning_curves['%s_cv_number' % self.modality]==0)].preferred_tuning.values.astype('float')
     
     def calculate_significant_selectivity(self,n_shuffles=100,p_threshold=0.01):
         if 1/n_shuffles>p_threshold:

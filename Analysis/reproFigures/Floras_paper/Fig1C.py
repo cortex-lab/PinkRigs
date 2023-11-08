@@ -11,11 +11,13 @@ import time
 
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
-dat_type = 'naive-allen'
+from Analysis.neural.utils.spike_dat import bombcell_sort_units
+dat_type = 'trained-passive-cureated'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
-    
+
+   
 # dat_type = 'AV028_all'
 # recordings = queryCSV(subject='AV028',expDef='postactive')
 
@@ -43,7 +45,7 @@ if modelpath.is_file():
 else: 
     print('position to azimuth mapping does not exist.')
 
-m = movement_correlation()
+
 # %%
 tuning_curve_params = { 
     'contrast': None, # means I select the max
@@ -112,9 +114,9 @@ if not csv_path.is_file() or recompute_csv:
        # azimuth_pref_estimate = pos_azimuth_fun.predict(clusInfo.aphemi.values.reshape(-1,1))
         
         ################ MOVEMENT ########################
-        t0 = time.time()
-        clusInfo['movement_correlation'],clusInfo['is_movement_correlated'] = m.session_permutation(session,0.05)
-        print('session permutation for movement took ',time.time()-t0,'s')
+        # t0 = time.time()
+        # clusInfo['movement_correlation'],clusInfo['is_movement_correlated'] = m.session_permutation(session,0.05)
+        # print('session permutation for movement took ',time.time()-t0,'s')
 
         ################ SPATIAL TUNING ######################
 
@@ -131,7 +133,7 @@ if not csv_path.is_file() or recompute_csv:
             #tcs=azi.get_tuning_curves(cv_split=2,azimuth_shuffle_seed=None) 
             clusInfo['is_%s_spatial' % t]  = is_selective       
             for i,cv in enumerate(cv_names):
-                clusInfo = pd.concat((clusInfo,tcs[tcs.cv_number==i].add_suffix('_'+ cv)),axis=1) # concatenate the actual tuning curves, test set_only
+                clusInfo = pd.concat((clusInfo,tcs[tcs['%s_cv_number' % t]==i].add_suffix('_'+ cv)),axis=1) # concatenate the actual tuning curves, test set_only
 
             clusInfo = pd.concat((azi.tc_params.add_suffix(t),clusInfo),axis=1)
 
@@ -140,22 +142,22 @@ if not csv_path.is_file() or recompute_csv:
         # azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
         # azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
 
-        azimuth_pref_estimate_aud = np.digitize(clusInfo.x0aud.values,bins=np.arange(-75,105,30),right=False)
-        azimuth_pref_estimate_aud = azi.aud.azimuths.values[azimuth_pref_estimate_aud]
-        azimuth_pref_estimate_aud[azimuth_pref_estimate_aud==0] = np.nan
+        # azimuth_pref_estimate_aud = np.digitize(clusInfo.x0aud.values,bins=np.arange(-75,105,30),right=False)
+        # azimuth_pref_estimate_aud = azi.aud.azimuths.values[azimuth_pref_estimate_aud]
+        # azimuth_pref_estimate_aud[azimuth_pref_estimate_aud==0] = np.nan
 
-        azimuth_pref_estimate_vis = np.digitize(clusInfo.x0vis.values,bins=np.arange(-75,105,30),right=False)
-        azimuth_pref_estimate_vis = azi.aud.azimuths.values[azimuth_pref_estimate_vis]
-        azimuth_pref_estimate_vis[azimuth_pref_estimate_vis==0] = np.nan
+        # azimuth_pref_estimate_vis = np.digitize(clusInfo.x0vis.values,bins=np.arange(-75,105,30),right=False)
+        # azimuth_pref_estimate_vis = azi.aud.azimuths.values[azimuth_pref_estimate_vis]
+        # azimuth_pref_estimate_vis[azimuth_pref_estimate_vis==0] = np.nan
 
-        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
-        clusInfo['enhancement_index_pref'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)    
+        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
+        # clusInfo['enhancement_index_pref'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)    
 
-        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]*-1),axis=1)
-        clusInfo['enhancement_index_antipref,aud'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
+        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]*-1),axis=1)
+        # clusInfo['enhancement_index_antipref,aud'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
 
-        at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
-        clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
+        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
+        # clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
 
         print('azimuthal tuning',time.time()-t0,'s')
         
@@ -205,8 +207,6 @@ if not csv_path.is_file() or recompute_csv:
     #all_dfs = [d.drop(columns=['sc_azimuth', 'sc_elevation', 'sc_surface']) if 'sc_azimuth' in d.columns else d for d in all_dfs]
     clusInfo = pd.concat(all_dfs,axis=0)    
 
-    clusInfo['vis_score_test']  =  clusInfo.score_test.iloc[:,0]
-    clusInfo['aud_score_test']  =  clusInfo.score_test.iloc[:,1]
 
     if csv_path.is_file():
         # save previous
@@ -220,6 +220,12 @@ if not csv_path.is_file() or recompute_csv:
     clusInfo.to_csv(csv_path)
 else:
     clusInfo = pd.read_csv(csv_path)
+
+#%%
+bc_class = bombcell_sort_units(clusInfo)
+#%%
+clusInfo['is_good'] = bc_class!='noise'
+
 
 # %%
 from Analysis.pyutils.plotting import off_exceptx
@@ -355,7 +361,7 @@ scene.add_brain_region("SCs",alpha=0.07,color='sienna')
 #         alpha=1
 #         ))    
 # scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
-t = 'vis'
+t = 'aud'
 from Analysis.pyutils.plotting import brainrender_scattermap
 
 dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]

@@ -1270,7 +1270,9 @@ class kernel_model():
         # load from PinkRigs pipeline
 
         ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
-        other_ = {'events': {'_av_trials': 'table'},'frontCam':{'camera':['times','ROIMotionEnergy']}}
+        other_ = {'events': {'_av_trials': 'table'},
+                'frontCam':{'camera':['times','ROIMotionEnergy']},
+                'sideCam':{'camera':['times','ROIMotionEnergy']}}
 
         rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
     
@@ -1287,6 +1289,9 @@ class kernel_model():
 
         ev,spikes,_,_,self.cam = simplify_recdat(rec,probe='probe')
 
+        if ('motionEnergy' in event_types) & (self.cam is None):
+            print('seems like there is no good video data...')
+            loaded_ok =False
         
         # if contrast/spl values are not specified, call them from the data
         if isinstance(contrasts,str): 
@@ -1628,6 +1633,10 @@ class kernel_model():
             
             self.is_training_set = ev.cv_set==1
             self.is_test_set = ev.cv_set==2   
+    
+        else:
+            print('should break fitting...')
+            self.feature_matrix=None
 
 
     def fit(self,**fit_kwargs):   

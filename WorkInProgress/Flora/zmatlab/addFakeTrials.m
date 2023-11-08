@@ -13,6 +13,7 @@ function [outEV] = addFakeTrials(events)
 
 n = size(v,1); 
 names = fieldnames(events);
+names = names(1:53); % v hackly
 for k=1:numel(names)
     % for each ev 
     event_tagged.(names{k}) = zeros(n,1); 
@@ -22,7 +23,9 @@ event_tagged.stim_audDiff = a;
 event_tagged.response_direction = r; 
 
 % concantenate with events
-dataEvents = {events;event_tagged}; 
+newev = struct2cell(events);
+newev = cell2struct(newev(1:53),names);
+dataEvents = {newev;event_tagged}; 
 for k=1:numel(names)
     a = {horzcat(dataEvents{:}).(names{k})};
     outEV.(names{k}) = vertcat(a{:});   

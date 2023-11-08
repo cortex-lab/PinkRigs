@@ -36,6 +36,7 @@ if ~isfield(opt, 'lineStyle'); opt.lineStyle = '-'; end
 if ~isfield(opt, 'lineWidth'); opt.lineWidth = 3; end
 if ~isfield(opt, 'Marker'); opt.Marker = '.'; end
 if ~isfield(opt, 'MarkerSize'); opt.MarkerSize = 15; end
+if ~isfield(opt, 'MarkerEdgeColor'); opt.MarkerEdgeColor = 'k'; end
 if ~isfield(opt, 'lineColors'); opt.lineColors = lineColors; end
 if ~isfield(opt, 'FaceAlpha'); opt.FaceAlpha = 0.3; end
 if ~isfield(opt, 'EdgeColor'); opt.EdgeColor = 'none'; end

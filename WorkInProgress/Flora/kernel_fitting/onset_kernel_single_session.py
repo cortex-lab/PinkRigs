@@ -12,22 +12,24 @@ nrn_list = [22,25,50,71,80,207,34,156,325]
 
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'FT008',
-    expDate = '2021-01-15', 
+    subject = 'AV025',
+    expDate = '2022-11-10', 
     expDef = 'all',
-    expNum = 5,
+    expNum = 2,
     probe = 'probe0',
     subselect_neurons=None,
-    t_support_stim = [-0.05,0.4],
+    t_support_stim = [-0.05,0.6],
     t_support_movement =[-.6,0.4],
     rt_params = {'rt_min': None, 'rt_max': None},
     event_types = ['aud','vis','baseline','motionEnergy'],
-    contrasts = [1],
-    spls = [0.02,.1],
-    vis_azimuths = [-90,-60,-30,0,30,60,90],
-    aud_azimuths = [-90,-60,-30,0,30,60,90],
+    contrasts = 'all',
+    spls = 'all',
+    #vis_azimuths = [-90,-60,-30,0,30,60,90],
+    #aud_azimuths = [-90,-60,-30,0,30,60,90],
+    vis_azimuths = [-60,0,60],
+    aud_azimuths = [-60,0,60],
     digitise_cam = False,
-    zscore_cam= False,
+    zscore_cam= 'mad'
 )
 
 
@@ -43,7 +45,7 @@ kernels.fit_evaluate(get_prediciton=True,method='Ridge',ridge_alpha=1,tune_hyper
 
 # %%
 import matplotlib.pyplot as plt
-n = 76
+n = 18
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
@@ -56,7 +58,7 @@ color_dict = {
 
 ve_n = variance_explained[(variance_explained.cv_number==0) & (variance_explained.clusID==n)]
 fig,ax = plt.subplots(1,1,figsize=(7,4))
-stim_bin_range = np.arange(-0.05,0.4,kernels.t_bin)
+stim_bin_range = np.arange(-0.05,0.6,kernels.t_bin)
 [ax.plot(stim_bin_range,r.VE_trial,color=color_dict[r.event],lw=6) for _,r in ve_n.iterrows() if 'baseline' not in r.event]
 # prepare this plot properly
 first_stim_onset = np.min(np.array([kernels.events.timeline_audPeriodOn,kernels.events.timeline_visPeriodOn]),axis=0)
@@ -72,9 +74,9 @@ ax.set_xlabel('time during trial')
 ax.set_ylabel('VE,test')
 # %%
 v_azimuths = [-1000,90]
-v_contrasts = [0,1]
+v_contrasts = [0,.4]
 a_azimuths = [90,-1000]
-a_spls = [.1,0]
+a_spls = [.25,0]
 raster_kwargs = {'t_before': 0.05,'t_after': 0.4,'sort_idx': None}
 kernels.plot_prediction_rasters(n,visual_azimuth=v_azimuths,auditory_azimuth=a_azimuths,contrast=v_contrasts,spl=a_spls) 
 kernels.plot_kernels(n)

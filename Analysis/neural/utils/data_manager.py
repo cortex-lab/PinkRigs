@@ -536,8 +536,8 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     clusInfo = pd.DataFrame.from_dict(clusInfo)
     clusInfo = clusInfo.set_index('_av_IDs',drop=False)
 
-
-    if 'mlapdv' in list(clusters.keys()):
+    colnames = list(clusters.keys())
+    if 'mlapdv' in colnames:
         # we could add the raw, but for now, I won't actually
         clusInfo['ml'] = clusters.mlapdv[:,0]
         clusInfo['ap'] = clusters.mlapdv[:,1]
@@ -551,6 +551,9 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         clusInfo['hemi'] = np.nan
         clusInfo['brainLocationAcronyms_ccf_2017'] = 'unregistered'
         clusInfo['brainLocationIds_ccf_2017']  = np.nan   
+
+    if 'phy_clusterID' not in colnames:
+        clusInfo['phy_clusterID'] = clusInfo.cluster_id
 
     # option to read in the raw data as well  
     #clusInfo_ = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}

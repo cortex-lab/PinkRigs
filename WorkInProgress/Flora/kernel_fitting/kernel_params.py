@@ -6,11 +6,13 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dat_set = 'naive'):
                 't_support_stim':[-0.05,0.6],   
                 'rt_params':{'rt_min': None, 'rt_max': None},
                 'event_types': ['aud','vis','baseline','motionEnergy'],
-                'vis_azimuths': [-90,-60,-30,0,30,60,90],
-                'aud_azimuths': [-90,-60,-30,0,30,60,90],
+                # 'vis_azimuths': [-90,-60,-30,0,30,60,90],
+                # 'aud_azimuths': [-90,-60,-30,0,30,60,90],
+                'vis_azimuths': [-60,0,60], 
+                'aud_azimuths': [-60,0,60],
                 'contrasts': 'all',
                 'spls':'all',
-                'zscore_cam': None,
+                'zscore_cam': 'mad',
                 'turn_stim_off' : None
             }
 
@@ -37,8 +39,8 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dat_set = 'naive'):
 
     if call_fit:
         fit_params = {
-            'method':'ReduceThenRidgeCV',
-            #'method':'Ridge',            
+            #'method':'ReduceThenRidgeCV',
+            'method':'Ridge',            
             'ridge_alpha':1,
             'tune_hyper_parameter':False,
             'rank':10,
@@ -48,7 +50,7 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dat_set = 'naive'):
 
     if call_eval:
         eval_params = {
-            'kernel_selection':'dirgroups',
+            'kernel_selection':'stimgroups',
             'sig_metric': ['explained-variance']
         }
 

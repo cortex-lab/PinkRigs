@@ -13,9 +13,9 @@ from Processing.pyhist.helpers.regions import BrainRegions
 
 atlas,br = AllenAtlas(25),BrainRegions()
 
-#subjects = ['AV029','AV031','AV033','AV036','AV038','AV041'] # list of subjects that we intent to query 
+subjects = ['AV029','AV031','AV033','AV036','AV038','AV041','AV044','AV046','AV047'] # list of subjects that we intent to query 
 
-subjects = ['AV041']
+#subjects = ['AV041']
 recordings = queryCSV(subject=subjects,expDate='last1')
 
 stub = r'Histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
@@ -61,7 +61,7 @@ for idx,m in enumerate(histology_folders):
 import brainrender as br
 from Analysis.pyutils.plotting import brainrender_scattermap
 n_mice = len(histology_folders)
-mouse_colors = brainrender_scattermap(np.arange(n_mice),vmin=-1,vmax=n_mice-1,cmap='Accent',n_bins=n_mice)
+mouse_colors = brainrender_scattermap(np.arange(n_mice),vmin=-1,vmax=n_mice-1,cmap='Dark2',n_bins=n_mice)
 
 scene = br.Scene(title="Cannulae locations", inset=False,root=False)
 scene.add_brain_region("SCs",alpha=0.07,color='sienna')

@@ -15,6 +15,7 @@ from Analysis.pyutils.io import save_dict_to_json
 def train_kernel(rank=1):
     dataset = 'naive-allen'
     fit_tag = 'additive-fit'
+    rank = float(rank)
 
     cluster_fit = True
 
@@ -42,7 +43,7 @@ def train_kernel(rank=1):
     for idx,rec_info in recordings.iterrows():
     # print('Now attempting to fit %s %s, expNum = %.0f, %s' % tuple(rec_info))
         results_path = (save_path / ('%s_%s_%.0f_%s.csv' % tuple(rec_info[:4])))
-        if (i==(rank-1)) and not results_path.is_file(): 
+        if (idx==(rank-1)) & (not results_path.is_file()): 
             t0 = time.time()
             df = recordings[idx:idx+1]
             kernels.load_and_format_data(**dat_params,recordings=df,**rec_info[:3])
@@ -57,5 +58,5 @@ def train_kernel(rank=1):
 
 # %%
 if __name__ == "__main__":  
-  train_kernel(rank=sys.argv[1]) 
-  #train_kernel(rank='1') 
+  #train_kernel(rank=sys.argv[1]) 
+  train_kernel(rank='1') 
