@@ -171,22 +171,30 @@ def run_batch_ibl_formatting(run_for=2):
             check_hour = check_time.hour+check_time.minute/60
             if check_hour<(start_hour+run_for): 
                 print('still within my time limit... ')
-                try:
-                    input_dir = Path(rec.ksFolderPath)     
-                    print(input_dir)  
+                # try: 
+                input_dir = Path(rec.ksFolderPath)     
+                print(input_dir)  
+
+                try: # not super elegant
                     output_dir = ks_to_ibl_format(input_dir.parent,ks_folder=input_dir.name,recompute=False)     
+                    success=True
+                except:
+                    success=False
 
-                    
+                if success == 1:
                     queue_csv.doneTag.iloc[idx]= 1
-                    queue_csv.to_csv(queue_csv_file,index = False)
-                except: 
-                    # save error message 
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    save_error_message(output_dir / 'ibl_formatting_error.json',err_type=exc_type,err_message=exc_obj,err_traceback=exc_tb)
-
-                    # update csv                
+                else:
                     queue_csv.doneTag.iloc[idx]= -1
-                    queue_csv.to_csv(queue_csv_file,index = False)  
+
+                queue_csv.to_csv(queue_csv_file,index = False)
+                # except: 
+                #     # save error message 
+                #     exc_type, exc_obj, exc_tb = sys.exc_info()
+                #     save_error_message(output_dir / 'ibl_formatting_error.json',err_type=exc_type,err_message=exc_obj,err_traceback=exc_tb)
+
+                #     # update csv                
+                #     queue_csv.doneTag.iloc[idx]= -1
+                #     queue_csv.to_csv(queue_csv_file,index = False)  
 
 
 def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
@@ -260,8 +268,8 @@ def add_anat_to_ibl_format(ephys_path,ks_folder='pyKS',recompute=True):
 
 
 if __name__ == "__main__":
-   stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
-   #stage_queue(mouse_selection=['FT030','FT031'],ks_folder = 'pyKS', date_selection='previous600')
+   #stage_queue(mouse_selection=sys.argv[1],ks_folder = sys.argv[2],date_selection=sys.argv[3])
+   stage_queue(mouse_selection='all',ks_folder = 'pyKS', date_selection='previous10')
    run_batch_ibl_formatting(run_for=10)
 
 

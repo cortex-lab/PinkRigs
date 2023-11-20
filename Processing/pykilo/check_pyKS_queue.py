@@ -112,5 +112,5 @@ def stage_KS_queue(mouse_selection='',date_selection='last3',resort = False):
         % (len(new_queue[new_queue['sortedTag']==0])))
 
 if __name__ == "__main__":
-   stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])
-   #stage_KS_queue(mouse_selection='EB014',date_selection='last600',resort=False)
+   #stage_KS_queue(mouse_selection=sys.argv[1],date_selection=sys.argv[2])
+   stage_KS_queue(mouse_selection='AV049',date_selection='previous600',resort=False)
