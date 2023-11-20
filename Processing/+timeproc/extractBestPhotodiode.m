@@ -25,6 +25,10 @@ function [timelineRefTimes, chanName] = extractBestPhotodiode(timeline,block)
         timelineRefTimes = [timelineRefTimes; timeproc.getChanEventTime(timeline,'photoDiode')];
         chanName = [chanName; 'photoDiode'];
     end
+    if any(strcmpi({timeline.hw.inputs.name}', 'photoDRaw'))
+        timelineRefTimes = [timelineRefTimes; timeproc.getChanEventTime(timeline,'photoDRaw')];
+        chanName = [chanName; 'photoDRaw'];
+    end
     if any(strcmpi({timeline.hw.inputs.name}', 'photoDThorLabs'))
         timelineRefTimes = [timelineRefTimes; timeproc.getChanEventTime(timeline,'photoDThorLabs')];
         chanName = [chanName; 'photoDThorLabs'];

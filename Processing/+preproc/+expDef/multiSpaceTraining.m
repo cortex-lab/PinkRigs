@@ -234,7 +234,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         end
         tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
 
-        % Could add this in for pasive
+        % Could add this in for passive
         photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
         photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
         if isfield(block.events,'selected_paramsetValues')
