@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',0,'sepPowers',0); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
 
 %
 % fit and plot each set of data
@@ -37,7 +37,7 @@ plot_model_pred(3) = 1;
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits
-plotParams.plottype = 'sigmoid'; 
+plotParams.plottype = 'log'; 
 for s=1:numel(extracted.data)    
     currBlock = extracted.data{s};
     nTrials(s) = numel(currBlock.is_blankTrial); 
@@ -56,8 +56,8 @@ for s=1:numel(extracted.data)
     if shouldPlot
         f=figure; 
         f.Position = [10,10,300,300];
-        plotParams.LineStyle = 'none';
-        plotParams.DotStyle = '.';
+        plotParams.LineStyle = '--';
+        plotParams.DotStyle = 'none';
         plotParams.MarkerEdgeColor = 'k';
         plotParams.MarkerSize = 36; 
         plotParams.LineWidth = 3; 
@@ -85,12 +85,12 @@ for s=1:numel(extracted.data)
 
         if shouldPlot && plot_model_pred(model_idx)
            %
-% figure;  orifit.prmFits(4)
-%     	   orifit.prmFits(4) = controlfit.prmFits(4);
-%            plotParams.LineStyle = '-';
-%            plotParams.DotStyle = '.';
-%            plotParams.MarkerSize = 36; 
-%            plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
+%figure;  orifit.prmFits(4)
+    	   orifit.prmFits(4) = controlfit.prmFits(4);
+           plotParams.LineStyle = '-';
+           plotParams.DotStyle = '.';
+           plotParams.MarkerSize = 36; 
+           plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
         end
 
     end

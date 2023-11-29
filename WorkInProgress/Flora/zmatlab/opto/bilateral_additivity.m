@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'sepDiffPowers',1); 
 
 % prepare params so that they can be matched
 powers = [extracted.power{:}]; 
@@ -8,6 +8,7 @@ hemispheres = [extracted.hemisphere{:}];
 power_set = [10];
 subjects = [extracted.subject{:}]; 
 unique_subjects = unique(subjects);
+
 
 powerSubjectComb  = combvec(1:numel(unique_subjects),power_set); 
 %%

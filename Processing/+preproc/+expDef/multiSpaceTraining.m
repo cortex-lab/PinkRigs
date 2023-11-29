@@ -356,7 +356,31 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             laserPos(laserPosID==1) = hemisphere1;
             laserPos(laserPosID==2) = hemisphere2;
             laserPos(laserPosID==3) = 0;   % for bilateral, pretty random... %  % will be also 0 but will 
-             
+            
+            % laser powers: laser1 will be left,laser 2 will be right from
+            % now on, so swap, laserpower if hemishere1 = 1  
+
+            if (hemisphere1==1) && (hemisphere2==-1) 
+                old_power1 = power_laser1; 
+                old_power2 = power_laser2; 
+                power_laser1 = old_power2;
+                power_laser2 = old_power1; 
+            elseif (hemisphere1==1) && (hemisphere2==1)
+                % this is when both lasers were admined to be plugged in to
+                % R but only really one was plugged in 
+                old_power1 = power_laser1; 
+                old_power2 = power_laser2; 
+                power_laser1 = old_power2*0;
+                power_laser2 = old_power1; 
+            elseif (hemisphere1==-1) && (hemisphere2==-1)
+                % this is when both lasers were admined to be plugged in to
+                % L but only really one was plugged in 
+                old_power1 = power_laser1; 
+                old_power2 = power_laser2; 
+                power_laser1 = old_power2;
+                power_laser2 = old_power1*0; 
+            end 
+
             all_laser1_times  = timeproc.getChanEventTime(timeline,'laserOut1');
             all_laser2_times  = timeproc.getChanEventTime(timeline,'laserOut2');        
             all_laser_times = [all_laser1_times;all_laser2_times];
@@ -379,7 +403,12 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             laserPos(is_laser_On) = hemisphere1; 
             power_laser1 = zeros(1,numel(is_laser_On_block));
             power_laser2 = zeros(1,numel(is_laser_On_block));
-            power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+            if hemisphere1==-1
+                power_laser1(is_laser_On) = str2double(opto.LaserPower_mW);
+            else
+                power_laser2(is_laser_On) = str2double(opto.LaserPower_mW);
+            end
+
 
         elseif isfield(e,'laser_power1Values') && ~optoLogExists  % when no optoLog is saved but we have powers in the block
             is_laser_On = is_laser_On_block;
@@ -392,6 +421,8 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
             laserPos = NaN(numel(eIdx),1)';
 
         end 
+
+        
         laser_times_per_trial = indexByTrial(trialStEnTimes,all_laser_times(:,1)); 
         % the longer ITI is at the end of the trial so most of the time of
         % there is an extra flip, it will happen in that ITI
@@ -634,8 +665,6 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.block_firstMovePostLaserOn = tExt.firstMovePostLaserTimeDir_block(:,1);
     ev.block_firstMovePostLaserDir = tExt.firstMovePostLaserTimeDir_block(:,2);
     ev.block_isMovedAtLaser = logical(moveAtlaser_block); 
-
-
 
     ev.timeline_rewardOn = single(tExt.rewardTimes);
     ev.timeline_audOn = cellfun(@(x) x(:,1), tExt.audStimOnOff, 'uni', 0);

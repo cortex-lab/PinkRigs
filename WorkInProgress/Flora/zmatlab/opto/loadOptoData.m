@@ -8,6 +8,8 @@ addOptional(p,'sepPowers', 1);
 addOptional(p,'sepChoices',0)
 addOptional(p,'reExtract', 0);
 addOptional(p,'addFakeTrial', 0);
+addOptional(p,'sepDiffPowers', 0); % trying to separate the bilateral recordings when the applied power is imbalanced
+
 
 parse(p, varargin{:});
 
@@ -26,6 +28,7 @@ if exist(evPQTPath, 'file')
 end
 
 
+events.diff_power = events.stim_laser1_power-events.stim_laser2_power; 
 
 % get equal number of trials arcoss a bunch of conditions
 if params.balanceTrials
@@ -49,18 +52,27 @@ if ~params.sepPowers
     events.laser_power(~isnan(events.stim_laserPosition)) = 1; 
 end 
 
+if ~params.sepDiffPowers
+    events.diff_power(~isnan(events.stim_laserPosition)) = 0 ; 
+end 
+
 subjects = events.subjectID; 
 hemispheres = events.stim_laserPosition;
 powers = events.laser_power;
-paramSet = unique([subjects(~isnan(hemispheres)), hemispheres(~isnan(hemispheres)) powers(~isnan(hemispheres))], 'rows');
+diffpowers = events.diff_power; 
+
+paramSet = unique([subjects(~isnan(hemispheres)), ...
+    hemispheres(~isnan(hemispheres)) powers(~isnan(hemispheres)) diffpowers(~isnan(hemispheres))], 'rows');
 
 
 for i=1:size(paramSet,1)
    event_subset =filterStructRows(events,events.subjectID==paramSet(i,1) & ...
        ((events.stim_laserPosition==paramSet(i,2))) & ...
-       ((events.laser_power == paramSet(i,3))));
+       ((events.laser_power == paramSet(i,3))) & ...
+       ((events.diff_power == paramSet(i,4))) );
    
    subset_sessions = unique(event_subset.sessionID); % so that controls are from the same sessions
+   sessIDs{i}=subset_sessions;
    event_controls = filterStructRows(events,...
        (ismember(events.sessionID,subset_sessions) & ...
        isnan(events.stim_laserPosition))); 
@@ -70,7 +82,8 @@ for i=1:size(paramSet,1)
    opto.data{i,1} = concatenateEvents({event_subset,event_controls}); 
    opto.subject{i,1}=mouseIDs.name(paramSet(i,1));
    opto.hemisphere{i,1}=paramSet(i,2); 
-   opto.power{i,1}=paramSet(i,3); 
+   opto.power{i,1}=paramSet(i,3);
+   opto.diff_power{i,1} = paramSet(i,4);
 end 
 
 disp(sprintf('*** COMPLETED. Extracted %.0f datasets from %.0f subjects. ***',numel(opto.subject),numel(unique([opto.subject{:}]))))

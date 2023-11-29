@@ -16,7 +16,7 @@ from Analysis.pyutils.io import save_dict_to_json
 from Admin.csv_queryExp import queryCSV,load_ephys_independent_probes,load_data
 
 
-subject_set = ['AV008','AV020','AV014','AV025','AV030','AV034']
+subject_set = ['AV008']
 my_expDef = 'postactive'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef

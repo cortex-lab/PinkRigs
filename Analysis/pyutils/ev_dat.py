@@ -270,14 +270,27 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
             a.) during balanced cross-validation we are able to allocate trialtypes into both train & test sets
             b.) we are able to equalise how many of each of these trial type go into the model at all -- it is e.g. unfair to fill the model with a lot of correct choices and few incorrect choices when wanting to fit 'choice'     
 
+            
+        Default exclusions: 
+                -  invalid trials
+                -  when mouse has a change of mind
+        Optional exclusions: 
+                - RT is not within range defined by rt_params
+
         Parameters: 
+        classify_choice_types: bool
+                - whether to split trials by choice type
+        choice_type: list
+                which choices to split to 
+        rt_params: None/dict
+                if dict, it must contain keys 'rt_min' and 'rt_max'
+                defines ranges of rt bsed on which a trial is included or not
         min_trial: int
             if we rebalance across trial types this is the minimum trial no. we require from each trial type.   
-        
-        originally writtien for kernel model but now I am trying to generalise it for other purposes...
-
-        # todo: 
-        - make the contrast/spl call more general so that one does not need to specify.. (do print)
+        include_unisensory_aud: bool
+        include_unisensory_vis: bool
+        add_crossval_idx_per_class: bool
+            whether to split each trial type individially to training and test set
 
         """
 
@@ -369,12 +382,12 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
         
             
         # check how balanced the data is....
-        print('attempting to rebalance trials ...')
+        #print('attempting to rebalance trials ...')
         trial_class_IDs  = np.array(list(trial_classes.keys()))
         n_in_class = np.array([trial_classes[idx].n_trials for idx in trial_class_IDs])
 
         # some requested classes don't actually need to be fitted ...
-        print('%.0d/%0d requested trial types have 0 trials in it...' % ((n_in_class==0).sum(),len(trial_classes)))
+        #print('%.0d/%0d requested trial types have 0 trials in it...' % ((n_in_class==0).sum(),len(trial_classes)))
 
 
         min_test  = ((n_in_class>0) & (n_in_class<min_trial))
@@ -420,29 +433,29 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
 
         ev  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
 
-        print('%.0d trials/%.0d trials are kept.' % (ev.is_validTrial.sum(),ev_.is_validTrial.sum()))
+        #print('%.0d trials/%.0d trials are kept.' % (ev.is_validTrial.sum(),ev_.is_validTrial.sum()))
 
         # recalculate kernel_trialOn and kernel_trialOff, taking into account some all the things that possibly go into the kernel
         # get the df to annotate the trial classes in long form
         contrasts_,spls_,vis_azimuths_,aud_azimuths_,choice_types_,n_trials_=  zip(*[
-               (trial_classes[idx].contrast,
+        (trial_classes[idx].contrast,
                 trial_classes[idx].spl,
                 trial_classes[idx].vis_azimuths,
                 trial_classes[idx].aud_azimuth,
                 trial_classes[idx].choice_type,
                 trial_classes[idx].n_trials,
                 ) 
-               for idx in kept_trial_class_IDs])
+        for idx in kept_trial_class_IDs])
         
         class_types = pd.DataFrame({
-               'contrast': contrasts_, 
-               'spl':spls_, 
-               'vis_azimuths':vis_azimuths_,
-               'aud_azimuths':aud_azimuths_,
-               'choice_type':choice_types_,
-               'n_trials_':n_trials_
+        'contrast': contrasts_, 
+        'spl':spls_, 
+        'vis_azimuths':vis_azimuths_,
+        'aud_azimuths':aud_azimuths_,
+        'choice_type':choice_types_,
+        'n_trials_':n_trials_
         })
-        
+
 
 
         return ev,class_types

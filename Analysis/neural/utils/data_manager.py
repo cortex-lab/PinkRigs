@@ -512,12 +512,15 @@ def simplify_recdat(recording,probe_dat_type='probe0'):
     return (ev,spikes,clusters,channels)
 
 
-def load_cluster_info(probe = 'probe0',**rec_kwargs): 
+def load_cluster_info(rec = None,probe = 'probe0',**rec_kwargs): 
     """
     function to collect *all* the cluster info we hold into one single dataFrame 
     (including anat files from raw location etc.)
 
-    parameters:   
+    parameters:
+    rec: pd.Series
+        putative output of the load data. If none, we will load the data locally. 
+    probe:   
 
     returns: 
         : pd.DataFrame
@@ -525,12 +528,13 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
     """ # for now I won't call all the data as apparenty the bombcell stuff f*cks things up. 
 
 
+    if rec is None: 
+        data_dict = {
+            probe:{'clusters':'all'}}
+        recording = load_data(data_name_dict=data_dict,**rec_kwargs)   
+        rec = recording.iloc[0]
 
-    data_dict = {
-        probe:{'clusters':'all'}}
-    recording = load_data(data_name_dict=data_dict,**rec_kwargs)
-
-    clusters = recording[probe].iloc[0].clusters
+    clusters = rec[probe].clusters
 
     clusInfo = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     clusInfo = pd.DataFrame.from_dict(clusInfo)
@@ -569,7 +573,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
 
     sc_probeloc_path = Path(r'C:\Users\Flora\Documents\Processed data\passiveAV_project')
 
-    registration_folder = sc_probeloc_path / rec_kwargs['subject'] / rec_kwargs['expDate']/ 'alf' / probe_imec
+    registration_folder = sc_probeloc_path / rec.subject / rec.expDate / 'alf' / probe_imec
     registration_files = list(registration_folder.glob('*.npy')) 
 
     success = 0
@@ -589,7 +593,7 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         print('trying to load a chronic registration ...')
 
         sc_probeloc_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
-        registration_folder = sc_probeloc_path / rec_kwargs['subject'] 
+        registration_folder = sc_probeloc_path / rec.subject
         registration_files = list(registration_folder.glob('%s_*.npy' % probe_imec))
 
         if len(registration_files)==1:
@@ -610,12 +614,12 @@ def load_cluster_info(probe = 'probe0',**rec_kwargs):
         all_clusInfo['sc_elevation'] = np.nan
         all_clusInfo['sc_surface'] = np.nan
     
-    all_clusInfo['probe'] = probe
-    all_clusInfo['expFolder'] = recording.iloc[0].expFolder
-    all_clusInfo['subject'] = recording.iloc[0].subject
-    all_clusInfo['expDate'] = recording.iloc[0].expDate
-    all_clusInfo['expNum'] = recording.iloc[0].expNum
-    all_clusInfo['expDef'] = recording.iloc[0].expDef
+    all_clusInfo['probe'] = rec.probeID
+    all_clusInfo['expFolder'] = rec.expFolder
+    all_clusInfo['subject'] = rec.subject
+    all_clusInfo['expDate'] = rec.expDate
+    all_clusInfo['expNum'] = rec.expNum
+    all_clusInfo['expDef'] = rec.expDef
 
     return all_clusInfo
 

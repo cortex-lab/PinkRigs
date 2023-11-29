@@ -1,4 +1,4 @@
-% get Opto data;;
+ % get Opto data;;
 
 function extractOptoData(varargin)  
 % wrapper around getTrainingData to specifically filter for certain opto
@@ -65,12 +65,9 @@ for i=1:numel(extracted.subject)
     extracted.usedPositions{i,1} = usedPositions;
 end 
 % throw away no laser sessions that ought to not be in opto analysis 
+
 extracted.validSubjects = num2cell(extracted.validSubjects);
-fn = fieldnames(extracted);
-for k=1:numel(fn)
-    d = extracted.(fn{k});
-    extracted.(fn{k}) = {d{~is_no_laser_session' & ~is_power_test_session'}}';         
-end
+extracted  = filterDataStruct(extracted,(~is_no_laser_session' & ~is_power_test_session'));
 
 % concatenate data into one giant structure
 optoExtracted = concatenateEvents(extracted.data); 

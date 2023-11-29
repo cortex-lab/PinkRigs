@@ -494,7 +494,7 @@ def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','
 
     return r
 
-def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
+def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
     """
     this is the most standarising loader. Allows standardisation of numerous sessions etc. 
     spits out the event,spike etc bunches with one line
@@ -510,7 +510,10 @@ def simplify_recdat(recording,probe='probe0',reverse_opto=False,cam_hierarchy=['
     -----------
     recording: pd.Series
         details of recording as outputted by load date
-    probe:
+    probe: str
+        name of the probe in recording pd.Series that we want to spit out. 
+        This works, of probe = 'probe', i.e. when load_data was done by aleady splitting the probes
+        Or if the probes were loaded with their ID 'probe0' or 'probe1'
     reverse_opto:bool
     cam_hierarchy: list
         we load a single camera's data. Cam_hierarchy will determine which one exactly.I.e. if 1st exist, load 1st, if not load2nd etc.

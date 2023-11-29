@@ -20,7 +20,7 @@ clusInfo = pd.read_csv(csv_path)
 clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
 
 
-which_figure = 'kernelVE-vis'
+which_figure = 'kernelVE-aud'
 one_hemisphere = True
 
 
@@ -50,9 +50,10 @@ is_plotted = clusInfo.is_good & clusInfo.is_SC
 ax.scatter(p[is_plotted,2]-5600,-p[is_plotted,1],color='grey',edgecolor='none',s=16,alpha=.2,vmin=0,vmax=.3)
 vmax=.05
 from matplotlib.colors import ListedColormap
+atlas.plot_cslice(np.mean(xyz[is_plotted,1]),volume='boundary',ax=ax,aspect='auto')
 
 
-grey = [.1,.1,.1,1]
+grey = [.05,.05,.05,1]
 green =[.5,1,0,1]
 my_cmap = np.linspace(grey,green,356)
 
@@ -70,7 +71,6 @@ if 'vis' in which_figure:
     is_plotted = clusInfo.is_good & clusInfo.is_SC & (clusInfo.kernelVE_vis>thr)
     plt.scatter(p[is_plotted,2]-5600,-p[is_plotted,1],c=clusInfo.kernelVE_vis[is_plotted],edgecolor='k',cmap=cmap,s=dotsize,alpha=.8,vmin=0,vmax=vmax)
 
-atlas.plot_cslice(np.mean(xyz[is_plotted,1]),volume='boundary',ax=ax,aspect='auto')
 
 ax.set_xlim([0,2400])
 ax.set_ylim([-3200,-600])

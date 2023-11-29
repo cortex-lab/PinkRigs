@@ -25,9 +25,9 @@ rec = [('rs','FT009','2021-01-20',8,'probe0')]
 rec = pd.DataFrame(rec,columns= column_names)
  #%%
  ############ prepare the data ################
-for idx in range(len(rec)):
+for rec_idx in range(len(rec)):
     try:
-        probe =  rec.iloc[idx].probeID   
+        probe =  rec.iloc[rec_idx].probeID   
         recordings = load_data(
             data_name_dict={
                 'events':{'_av_trials':'table'},
@@ -36,7 +36,7 @@ for idx in range(len(rec)):
                 'sideCam':{'camera':'all'}
 
             },
-            **rec.iloc[idx,1:4]
+            **rec.iloc[rec_idx,1:4]
             )
 
         ev,spikes,clusters,_,cam = simplify_recdat(recordings.iloc[0],probe=probe)
@@ -46,13 +46,13 @@ for idx in range(len(rec)):
         mypath = Path(r'D:\TempIms')
 
         save_format = 'svg'
-    
-        for cID in [281]: #clusters._av_IDs:
+
+        for cID in [76,15,89,193,49,4,35,62,99,167,357,281]: #clusters._av_IDs:
 
             ############ rasters aligned to stimulus ############
             
 
-            sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[idx,1:])
+            sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[rec_idx,1:])
             nrn_name = '_av_IDs_%.0f' % cID
             im_name = sessName + nrn_name + '.%s' % save_format
 
@@ -74,7 +74,7 @@ for idx in range(len(rec)):
             }
 
             plot_kwargs = {
-                    'pethlw':2, 'rasterlw':2, 
+                    'pethlw':2, 'rasterlw':1, 
                     'erralpha':.4, 
                     'n_rasters':30,
                     'onset_marker': 'tick','onset_marker_size':10,'onset_marker_color':'grey',
@@ -106,14 +106,15 @@ for idx in range(len(rec)):
 
 
             if cam is not None:
-                
+                ###################### SORTED MOVEMENT vs RASTER #################
+
                 bin_kwargs  = {
                     'pre_time':.1,
-                    'post_time':.2, 
+                    'post_time':.25, 
                     'bin_size': 0.005
                 }
 
-                fig,ax = plt.subplots(1,2,figsize=(8,4),sharey=True)
+                fig,ax = plt.subplots(1,2,figsize=(5,2.5),sharey=True)
                 fig.patch.set_facecolor('xkcd:white')
 
                 cam_values = (cam.ROIMotionEnergy)
@@ -123,7 +124,7 @@ for idx in range(len(rec)):
                                                 sortAmp=True,to_plot=True,**bin_kwargs,baseline_subtract=False,ax=ax[0])
 
                 plot_kwargs = {
-                        'pethlw':2, 'rasterlw':3, 
+                        'pethlw':2, 'rasterlw':1.5, 
                         'erralpha':.4, 
                         'n_rasters':sort_idx.size,
                         'event_colors':['k'],
@@ -134,44 +135,21 @@ for idx in range(len(rec)):
                 my_rasterPSTH(spikes.times,spikes.clusters,
                             [onset_times[sort_idx]],[cID], include_PSTH=False,reverse_raster=True,
                             **bin_kwargs,**plot_kwargs, ax = ax[1], ax1=ax[1])
+                
+
+                off_axes(ax[1])
+                ax[1].hlines(onset_times.size*10+100,0.15,0.2,color='k')
+                ax[1].vlines(-.1,onset_times.size*8-1000,onset_times.size*8,color='k')
+
+                ax[0].hlines(onset_times.size*10+100,50,60,color='k')
+                ax[0].vlines(-.1,onset_times.size*8-1000,onset_times.size*8,color='k')
 
                 cpath = mypath / 'moverasters'
                 if not cpath.is_dir():
                     cpath.mkdir(parents=True,exist_ok=True)
                     
                 savename = cpath / im_name
-                fig.savefig(savename,transparent=False,bbox_inches = "tight",format=save_format,dpi=300)
-
-                ###################### SORTED MOVEMENT vs RASTER #################
-
-                bin_kwargs  = {
-                    'pre_time':.1,
-                    'post_time':.2, 
-                    'bin_size': 0.005
-                }
-
-                fig,ax = plt.subplots(1,2,figsize=(8,4),sharey=True)
-                fig.patch.set_facecolor('xkcd:white')
-
-                cam_values = (cam.ROIMotionEnergy)
-                #cam_values = (cam_values-np.median(cam_values))/median_abs_deviation(cam_values)
-                onset_times = ev.timeline_audPeriodOn[~np.isnan(ev.timeline_audPeriodOn)]#& (ev.stim_audAzimuth==60)]
-                move_raster,_,sort_idx  = get_move_raster(onset_times,cam.times,cam_values,
-                                                sortAmp=True,to_plot=True,**bin_kwargs,baseline_subtract=False,ax=ax[0])
-
-                plot_kwargs = {
-                        'pethlw':2, 'rasterlw':3, 
-                        'erralpha':.4, 
-                        'n_rasters':sort_idx.size,
-                        'event_colors':['k'],
-                        'onset_marker': 'tick','onset_marker_size':10,'onset_marker_color':'red',
-
-                }
-
-                my_rasterPSTH(spikes.times,spikes.clusters,
-                            [onset_times[sort_idx]],[cID], include_PSTH=False,reverse_raster=True,
-                            **bin_kwargs,**plot_kwargs, ax = ax[1], ax1=ax[1]
-                                )
+                fig.savefig(savename,transparent=False,bbox_inches = "tight",format=save_format,dpi=100)
 
     except:
         print('did not work...')
