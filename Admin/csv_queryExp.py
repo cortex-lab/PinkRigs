@@ -18,6 +18,9 @@ if len(pinkRig_path)>0:
     pinkRig_path = Path(pinkRig_path[0])
     sys.path.insert(0, (pinkRig_path.__str__()))
 
+#from Analysis.pyutils.ev_dat import format_events
+
+
 def get_csv_location(which):
     """
     func equivalent to getLocation in matlab
@@ -25,7 +28,7 @@ def get_csv_location(which):
     """
     server = Path(r'\\znas.cortexlab.net\Code\PinkRigs')
     if 'main' in which: 
-        SHEET_ID = '1NKPxYThbLy97iPQG8Wk2w3KJXC6ys7PesHp_08by3sg'
+        SHEET_ID = '1_hcuWF68PaUFeDBvXAJE0eUmyD9WSQlWtuEqdEuQcVg'
         SHEET_NAME = 'Sheet1'
         csvpath = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}'
     elif 'ibl_queue' in which:
@@ -293,6 +296,7 @@ class Bunch(dict):
             raise FileNotFoundError(f"{npz_file}")
         return Bunch(np.load(npz_file))
 
+
 def load_ONE_object(collection_folder,object,attributes='all'): 
     """
     function that loads any ONE object with npy extension
@@ -494,6 +498,35 @@ def load_ephys_independent_probes(probe='probe0',ephys_dict={'spikes':['times','
 
     return r
 
+
+def format_events(ev,reverse_opto=False):                
+        if hasattr(ev,'stim_visContrast'):
+                ev.stim_visContrast = np.round(ev.stim_visContrast,2)
+        if hasattr(ev,'stim_audAmplitude'):
+                ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
+                
+                amps = np.unique(ev.stim_audAmplitude)
+
+                if (amps[amps>0]).size ==1:  # if there is only one amp then the usual way of calculating audDiff etc is valid 
+                        ev.visDiff = ev.stim_visContrast*np.sign(ev.stim_visAzimuth)
+                        ev.visDiff[np.isnan(ev.visDiff)] = 0 
+                        ev.audDiff = np.sign(ev.stim_audAzimuth)
+
+        if hasattr(ev,'timeline_choiceMoveOn'):
+                ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+                ev.rt_aud = ev.timeline_choiceMoveOn - ev.timeline_audPeriodOn
+                ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
+        if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
+                ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
+                ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition)
+                if reverse_opto & ~(np.unique(ev.laser_power_signed>0).any()): 
+                # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
+                        ev.stim_audAzimuth = ev.stim_audAzimuth * -1 
+                        ev.stim_visAzimuth = ev.stim_visAzimuth * -1 
+                        ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5   
+
+        return ev
+
 def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
     """
     this is the most standarising loader. Allows standardisation of numerous sessions etc. 
@@ -529,30 +562,7 @@ def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['s
 
     if hasattr(recording,'events'):
         ev = recording.events._av_trials
-        if hasattr(ev,'stim_visContrast'):
-            ev.stim_visContrast = np.round(ev.stim_visContrast,2)
-        if hasattr(ev,'stim_audAmplitude'):
-            ev.stim_audAmplitude = np.round(ev.stim_audAmplitude,2)
-            
-            amps = np.unique(ev.stim_audAmplitude)
-
-            if (amps[amps>0]).size ==1:  # if there is only one amp then the usual way of calculating audDiff etc is valid 
-                ev.visDiff = ev.stim_visContrast*np.sign(ev.stim_visAzimuth)
-                ev.visDiff[np.isnan(ev.visDiff)] = 0 
-                ev.audDiff = np.sign(ev.stim_audAzimuth)
-
-        if hasattr(ev,'timeline_choiceMoveOn'):
-            ev.rt = ev.timeline_choiceMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
-            ev.rt_aud = ev.timeline_choiceMoveOn - ev.timeline_audPeriodOn
-            ev.first_move_time = ev.timeline_firstMoveOn - np.nanmin(np.concatenate([ev.timeline_audPeriodOn[:,np.newaxis],ev.timeline_visPeriodOn[:,np.newaxis]],axis=1),axis=1)
-        if hasattr(ev,'is_laserTrial') & hasattr(ev,'stim_laser1_power') & hasattr(ev,'stim_laser2_power'): 
-            ev.laser_power = (ev.stim_laser1_power+ev.stim_laser2_power).astype('int')
-            ev.laser_power_signed = (ev.laser_power*ev.stim_laserPosition)
-            if reverse_opto & ~(np.unique(ev.laser_power_signed>0).any()): 
-                # if we call this than if within the session the opto is only on the left then we reverse the azimuth and choices on that session
-                ev.stim_audAzimuth = ev.stim_audAzimuth * -1 
-                ev.stim_visAzimuth = ev.stim_visAzimuth * -1 
-                ev.timeline_choiceMoveDir = ((ev.timeline_choiceMoveDir-1.5)*-1)+1.5                    
+        ev = format_events(ev,reverse_opto=reverse_opto)                 
 
     if hasattr(recording,probe):
         p_dat = recording[probe]
@@ -596,11 +606,6 @@ def get_recorded_channel_position(channels):
 
         xrange = (np.min(xcoords),np.max(xcoords))
         yrange = (np.min(ycoords),np.max(ycoords))
-
-
-
-
-
 
     return (xrange,yrange)
 
@@ -680,7 +685,6 @@ def concatenate_events(recordings,filter_type=None):
     # concatenate
     ev_keys = list(ev[0].keys())
     ev = Bunch({k:np.concatenate([e[k] for e in ev]) for k in ev_keys})
-
 
     return ev
 

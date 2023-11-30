@@ -256,6 +256,9 @@ def getTrialNames(ev):
         return trialNames 
 
 
+
+
+
 def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
                 classify_choice_types=True,choice_types = None, 
                 rt_params = None, 
