@@ -60,7 +60,7 @@ function runBombcell(varargin)
             rawFile = bc_manageDataCompression(ephysRawDir, decompressDataLocal);
 
             % Which quality metric parameters to extract and thresholds
-            param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
+            param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile, ephysKilosortPath);
 
             % Compute quality metrics
             param.plotGlobal = 0;

@@ -1,8 +1,9 @@
-queuePath = '\\zinu.cortexlab.net\Subjects\PinkRigs\Helpers';
+queuePath = '\\znas.cortexlab.net\Code\PinkRigs\Helpers';
 
 %% Get recordings
 
-subjectList = {'AL032'};
+% subjectList = {'AL030', 'AL031', 'AL032', 'AL036'};
+subjectList = {'Wikenheiser001'};
 
 serverLocations = getServersList;
 sorted = [];
@@ -10,7 +11,7 @@ iblformatted = [];
 D = {};
 for subject = subjectList
     for server = serverLocations'
-        d = dir(fullfile(server{1}, subject{1},'**','*ap.*bin'));
+        d = dir(fullfile(server{1}, subject{1},'**','*ap.cbin'));
         d(contains(lower({d.folder}),'stitched')) = [];
         d(contains(lower({d.folder}),'catgt')) = [];
         d(contains(lower({d.folder}),'everything')) = [];
@@ -22,9 +23,7 @@ for subject = subjectList
             [~,i] = max([d(dupindices).bytes]);
             d(setdiff(dupindices,dupindices(i))) = [];
         end
-
-        dupidx = [dupidx(dd) dupidx(dd)+1];
-
+        
         sorted_tmp = false(1,numel(d));
         iblformatted_tmp = false(1,numel(d));
         for dd = 1:numel(d)
@@ -32,7 +31,10 @@ for subject = subjectList
                 sorted_tmp(dd) = true;
             end
             if exist(fullfile(d(dd).folder,'pyKS\output\ibl_format'))
-                iblformatted_tmp(dd) = true;
+                IBLdir = dir(fullfile(d(dd).folder,'pyKS\output\ibl_format'));
+                if ~isempty(IBLdir)
+                    iblformatted_tmp(dd) = true;
+                end
             end
         end
 
@@ -118,10 +120,11 @@ for dd = 1:numel(dtoQM)
         rawFile = bc_manageDataCompression(ephysRawDir, decompressDataLocal);
 
         % Which quality metric parameters to extract and thresholds
-        param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile);
+        param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile, ephysKilosortPath);
 
         % Compute quality metrics
         param.plotGlobal = 0;
+        param.ephysMetaFile = fullfile(ephysRawDir.folder,regexprep(ephysRawDir.name,'ap.*bin','ap.meta'));
         bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
             templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, savePath);
 
