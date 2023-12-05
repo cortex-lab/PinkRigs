@@ -114,9 +114,11 @@ for i = 1:length(copiedAlready)
     if failedCopy(i) == 0
         delete(localFilePaths{i});
     elseif exist(serverFilePaths{i}, 'file')
-        movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
+        delete(serverFilePaths{i}); % will try again on the next round
+        % movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
     end
 end
+
 %% TODO--email list of bad copies to users
 
 log = appendAndPrint(log, sprintf('Done (%s)! \n', datestr(now)), fid);
