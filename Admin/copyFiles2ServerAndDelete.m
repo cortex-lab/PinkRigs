@@ -114,8 +114,8 @@ for i = 1:length(copiedAlready)
     if failedCopy(i) == 0
         delete(localFilePaths{i});
     elseif exist(serverFilePaths{i}, 'file')
-        delete(serverFilePaths{i}); % will try again on the next round
-        % movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']);
+        movefile(serverFilePaths{i}, [serverFilePaths{i} '_FAILEDCOPY']); % easier to discriminate in the recycling bin
+        delete([serverFilePaths{i} '_FAILEDCOPY']); % will try again on the next round
     end
 end
 
