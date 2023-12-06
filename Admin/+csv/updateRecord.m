@@ -142,7 +142,7 @@ if ~isfield(blk, 'duration') || blk.duration/60<2
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
     return;
-elseif blk.duration/60<5 && contains(blk.expDef, {'training'; 'multiSpaceWorld'})
+elseif blk.duration/60<3 && contains(blk.expDef, {'training'; 'multiSpaceWorld'})
     fprintf('Training block < 5 mins for %s %s %s. Skipping... \n', subject, expDate, expNum);
     if saveData; csv.removeDataRow(subject, expDate, expNum); end
     pause(0.01);
