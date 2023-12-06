@@ -27,7 +27,7 @@ for subject = subjectList
         sorted_tmp = false(1,numel(d));
         iblformatted_tmp = false(1,numel(d));
         for dd = 1:numel(d)
-            if exist(fullfile(d(dd).folder,'pyKS\output'))
+            if exist(fullfile(d(dd).folder,'pyKS\output\spike_times.npy'),'file')
                 sorted_tmp(dd) = true;
             end
             if exist(fullfile(d(dd).folder,'pyKS\output\ibl_format'))
@@ -121,6 +121,8 @@ for dd = 1:numel(dtoQM)
 
         % Which quality metric parameters to extract and thresholds
         param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile, ephysKilosortPath);
+        metaContent = importdata(fullfile(ephysMetaDir.folder, ephysMetaDir.name));
+        param.nChannels = str2num(metaContent{contains(metaContent,'nSavedChans')}(13:end));
 
         % Compute quality metrics
         param.plotGlobal = 0;
