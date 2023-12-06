@@ -1,12 +1,8 @@
 # %% 
 
 # prototype glmfit
-
-
 # todo: figure out closs validation
 # figure out: param contribution evaluation
-
-
 
 import sys
 import numpy as np
@@ -25,7 +21,6 @@ class AVSplit():
     """
     example model object that takes certain conditions & parameters and spits out the log odds
     for each class we need to mass the names of the parameters  
-
     subfunctions:   
     """
 
@@ -43,9 +38,9 @@ class AVSplit():
         nTrials = conditions.shape[0]
         if self.is_neural:
             neural_parameters = parameters[self.required_parameters.size:] # each neuron has its own parameter
-            neural_conditions = conditions[:,neural_parameters.size:]
+            neural_conditions = conditions[:,self.required_conditions.size:]
             non_neural_parameters = parameters[:self.required_parameters.size]
-            non_neural_conditions = conditions[:,:neural_parameters.size]
+            non_neural_conditions = conditions[:,:self.required_conditions.size]
             neural_contribution = np.matmul(neural_conditions,neural_parameters)
 
         else: 
@@ -141,10 +136,9 @@ class AVSplit():
             ax.axhline(.5,color='k',ls='--')
 
         ax.axvline(0,color='k',ls='--')
-        plt.show()        
 
 
-def format_av_trials(ev,spikes=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
+def format_av_trials(ev,spikes=None,nID=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
     """
     specific function for the av pipeline such that the _av_trials.table is formatted for the glmFit class
 
@@ -187,7 +181,6 @@ def format_av_trials(ev,spikes=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
     if spikes: 
         # tbd
         rt_params = {'rt_min':.03,'rt_max':1.5}
-        nID  = [140,130]
 
         raster_kwargs = {
                 'pre_time':t,
@@ -202,7 +195,10 @@ def format_av_trials(ev,spikes=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
         resps = np.empty((t_on.size,len(nID)))*np.nan
         r = get_binned_rasters(spikes.times,spikes.clusters,nID,t_on[~np.isnan(t_on)],**raster_kwargs)
         
-        resps[~np.isnan(t_on),:] = zscore(r.rasters[:,:,0],axis=0)
+        zscored = zscore(r.rasters[:,:,0],axis=0)
+        discard_idx =  np.isnan(zscored).any(axis=0)
+
+        resps[~np.isnan(t_on),:] = zscored
         
         # if spikes are used we need to filter extra trials, such as changes of Mind
         no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
@@ -217,8 +213,8 @@ def format_av_trials(ev,spikes=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
                         to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
 
         # some more sophisticated cluster selection as to what goes into the model
-        nrnNames  = ['neuron_%.0d' % n for n in nID]
-        df[nrnNames] = pd.DataFrame(resps)
+        nrnNames  = np.array(['neuron_%.0d' % n for n in nID])[~discard_idx]
+        df[nrnNames] = pd.DataFrame(resps[:,~discard_idx])
 
 
     df = df[to_keep_trials].reset_index(drop=True)
@@ -278,6 +274,8 @@ class glmFit():
         self.conditions = pred_
         self.choices = trials.choice.values
 
+        self.llperiter = []
+
     def generate_param_matrix():
         # used when fitting s everal session types together (i.e. when certain parameters are fixed across sessions while others are modular
         pass 
@@ -301,11 +299,14 @@ class glmFit():
 
         assert (np.setdiff1d(self.predictor_names,model.required_conditions).size==0), 'some of the required predictors have not been passsed'
         # set up parameters and bounds        
-        nParams = len(model.required_parameters) + self.n_neurons
-
-
+        nParams = len(model.required_parameters) + self.n_neurons  # trying to add the regulariser
+        
         model.paramInit = [1] * nParams
-        model.paramBounds =  [(-1000,1000)]  * nParams    
+        model.paramBounds = [(-1000,1000)]  * nParams    
+
+        # add regulariser - for which bounds should be such that penalty cannot be negative.
+        model.paramInit.insert(0,0.0001)
+        model.paramBounds.insert(0,(0,5))
 
         return model
  
@@ -327,11 +328,16 @@ class glmFit():
         # and then we just sum over the likelihoods for this we need a paramgenerator function called here        
         
         assert hasattr(self,'X'),'data input was not initialised correctly'
-
-        pHat_calculated = self.calculatepHat(self.X,testParams) # the probability of each possible response 
+        alpha = 1 # testParams[0]
+        betas = testParams[1:]
+        penalty = np.sum(np.abs(betas[self.model.required_parameters.size:]))*alpha;  # push away from the minimum with increasing by the penalty
+        pHat_calculated = self.calculatepHat(self.X,betas) # the probability of each possible response 
         responseCalc = self.y # the actual response taken        
         # calculate how likely each of these choisen response was given the model
-        logLik = -np.mean(np.log2(pHat_calculated[responseCalc.astype('int'),np.arange(pHat_calculated.shape[1])]))
+        logLik = -np.mean(np.log2(pHat_calculated[responseCalc.astype('int'),np.arange(pHat_calculated.shape[1])])) + penalty
+        print(alpha,penalty,logLik)
+        self.llperiter.append(logLik)
+
         return logLik
        
     def fit(self):
@@ -372,7 +378,7 @@ class glmFit():
         """
         visualise the prediction of the log odds model, given visDiff & audDiff (default visualisation)
         """ 
-        self.model.plot(parameters=self.model.paramFit,conditions=self.conditions,choices=self.choices,ax=None,**plotkwargs)
+        self.model.plot(parameters=self.model.paramFit[1:],conditions=self.conditions,choices=self.choices,**plotkwargs)
  
 
 

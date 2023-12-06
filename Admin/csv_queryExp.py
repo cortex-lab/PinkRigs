@@ -456,11 +456,12 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
                         myrec['is_curated'] = curated_fileMark.is_file()
                         
                         rec_list.append(myrec)
-
+            
 
 
                 recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
 
+        
             if region_selection is not None:
                 keep_rec_region = [is_rec_in_region(rec,**region_selection) for _,rec in recordings.iterrows()]
                 recordings = recordings[keep_rec_region]
