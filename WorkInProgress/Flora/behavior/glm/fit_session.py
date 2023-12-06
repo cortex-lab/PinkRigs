@@ -1,6 +1,6 @@
 
 #%%
-import sys
+import sys,re
 import pandas as pd
 import numpy as np
 
@@ -38,33 +38,71 @@ clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf
 
 goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym=='SCm')]._av_IDs.values
 
-#goodclusIDs = [158,228,122]
+goodclusIDs = [158,228,122]
 #%%
 trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,t=0.1,onset_time='timeline_choiceMoveOn')
-
-
-# %%
-import matplotlib.pyplot as plt 
-fig,ax = plt.subplots(1,1,figsize=(8,8))
-glm = glmFit(trials,model_type='AVSplit')
-glm.fitCV(n_splits=2,test_size=0.3)
-glm.visualise(yscale='sigmoid',ax=ax)
-fig.suptitle('{subject}_{expDate}_{expNum}_{probeID}'.format(**rec))
-ax.set_title('LogLik=%.2f' % glm.model.LogLik)
-# %%
-print(glm.model.paramFit)
-
-#%% 
-import re
-
-fig,ax = plt.subplots(2,1,figsize=(15,5))
-gParams = list(glm.model.required_parameters.copy())
-gParams.insert(0,'lassoLambda')
-ax[0].plot(gParams,glm.model.paramFit[:7],'o-')
+# iterative fitting for each nrn 
 nrn_IDs = [re.split('_',i)[1] for i in trials.columns if 'neuron' in i]
-ax[1].plot(nrn_IDs,glm.model.paramFit[7:])
-ax[1].axhline(0,color='k',ls='--')
-ax[1].set_xlabel('neuronID')
+
+non_neural = trials.iloc[:,:3]
+neural = trials.iloc[:,3:]
+glm = glmFit(non_neural,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0])
+glm.fitCV(n_splits=2,test_size=0.5)
+
+# fit all the neurons 1 by one
+
 #%%
-print(glm.model.LogLik)
-# %%
+n_neurons = neural.shape[1]
+
+best_nrn,ll_best = [],[]
+ll_best = [glm.model.LogLik]
+for i in range(n_neurons):
+    if i==0:
+        base_matrix = non_neural
+        bleed_matrix = neural
+    else:
+        base_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
+        leftover_nrn = np.setdiff1d(neural.columns.values,np.array(best_nrn))
+        bleed_matrix = neural.loc[:,leftover_nrn]
+        
+    ll = []
+    for idx,(neuronName,trial_activity) in enumerate(bleed_matrix.iteritems()):
+        fittable = pd.concat((base_matrix,trial_activity),axis=1)
+        neuralglm = glmFit(fittable,model_type='AVSplit',fixed_parameters = [1,1,1,1,1,1],fixed_paramValues = list(glm.model.allParams))
+        neuralglm.fitCV(n_splits=2,test_size=0.5)
+        ll.append(neuralglm.model.LogLik)
+    
+    curr_best_ll = np.min(np.array(ll))
+    if curr_best_ll>ll_best[i]:
+        print('the situation is not improving, you got to break...')
+    ll_best.append(curr_best_ll)
+    best_nrn.append(bleed_matrix.columns.values[np.argmin(np.array(ll))])
+
+
+
+    
+
+# # %%
+# import matplotlib.pyplot as plt 
+# fig,ax = plt.subplots(1,1,figsize=(8,8))
+
+# glm = glmFit(trials.iloc[:,:4],model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0],fixed_paramValues = [1.5,1,1,1,1,0])
+# #|
+# glm.fitCV(n_splits=2,test_size=0.3)
+# glm.visualise(yscale='sigmoid',ax=ax)
+# fig.suptitle('{subject}_{expDate}_{expNum}_{probeID}'.format(**rec))
+# ax.set_title('LogLik=%.2f' % glm.model.LogLik)
+# # %%
+# print(glm.model.paramFit)
+
+# #%% 
+
+# fig,ax = plt.subplots(2,1,figsize=(15,5))
+# gParams = list(glm.model.required_parameters.copy())
+# ax[0].plot(gParams,glm.model.allParams[:6],'o-')
+# ax[1].plot(nrn_IDs,glm.model.paramFit[6:])
+# ax[1].axhline(0,color='k',ls='--')
+# ax[1].set_xlabel('neuronID')
+# #%%
+# print(glm.model.LogLik)
+# # %%

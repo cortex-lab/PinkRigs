@@ -25,16 +25,43 @@ class AVSplit():
     """
 
     required_parameters = np.array(["aL", "aR","vL","vR","gamma","bias"])
+
     required_conditions = np.array(["audDiff","visDiff"])
 
-    def __init__(self,is_neural=False):
+    def __init__(self,is_neural=False,fixed_parameters = [1,1,1,1,1,1],fixed_paramValues=[1,1,1,1,1,0]):
         """
         optional initialisation for neural model
         """
         self.is_neural = is_neural
+        self.fixed_parameters  = np.array(fixed_parameters)
+        self.fixed_paramsValues = np.array(fixed_paramValues)
+
+    
+    def get_all_params(self,betas):
+        """
+        construct parameter arrays (e.g. that feeds into get_logOdds) from the betas (fittables) and the fixed parameters
+        """
+
+        n_fixed = np.sum(self.fixed_parameters.astype('bool'))
+        n_free = np.sum(~self.fixed_parameters.astype('bool'))
+        if n_fixed:
+
+            free_values = np.zeros(self.fixed_parameters.size)
+            free_values[~self.fixed_parameters.astype('bool')] = betas[:n_free]
+
+            fixed_values = self.fixed_parameters * self.fixed_paramsValues
+
+            all_params  = (free_values + fixed_values) 
+            neural = betas[n_free:]
+            returned_params = np.concatenate((all_params, neural))
+
+        else: 
+            returned_params = betas
+        
+        return returned_params 
 
     def get_logOdds(self,conditions,parameters):
-
+        
         nTrials = conditions.shape[0]
         if self.is_neural:
             neural_parameters = parameters[self.required_parameters.size:] # each neuron has its own parameter
@@ -219,15 +246,13 @@ def format_av_trials(ev,spikes=None,nID=None,t=0.2, onset_time = 'timeline_audPe
 
     df = df[to_keep_trials].reset_index(drop=True)
 
-
-
     return df
   
 
 
 class glmFit(): 
 
-    def __init__(self,trials,model_type='AVSplit',groupby=None):
+    def __init__(self,trials,model_type='AVSplit',groupby=None,alpha  = 0,**logOddsPars):
         """
         function to that checks whether fit can be correctly initialised given the input data.
         Parameters:
@@ -249,6 +274,7 @@ class glmFit():
         predictors = trials.drop('choice',axis='columns')
         self.predictor_names = list(predictors.columns)
 
+        self.alpha = alpha
         
         # sepearate the neural predictors
         is_neural_predictor = np.array(['neuron' in p for p in self.predictor_names])
@@ -261,7 +287,7 @@ class glmFit():
         else:
             self.neurons,self.n_neurons = None,0
 
-        self.model = self.LogOddsModel(model_type,is_neural=is_neural_model)     
+        self.model = self.LogOddsModel(model_type,is_neural=is_neural_model,**logOddsPars)     
         
         # reorder x such that columns are ordered as required by model
         pred_ = np.concatenate([predictors[p].values[:,np.newaxis] for p in self.model.required_conditions  if p!='neuron'],axis=1)
@@ -273,8 +299,6 @@ class glmFit():
 
         self.conditions = pred_
         self.choices = trials.choice.values
-
-        self.llperiter = []
 
     def generate_param_matrix():
         # used when fitting s everal session types together (i.e. when certain parameters are fixed across sessions while others are modular
@@ -292,28 +316,27 @@ class glmFit():
             np.ndarray
             log odds
 
-        todo: redefine model when model contribution is assessed (i.e. fixedparam/freeP business)
+        todo: redefine model when model contribution is assessed (i.e. fixedparam business)
         """
         if model_type=='AVSplit':
             model = AVSplit(**modelkwargs)
 
+        assert (model.fixed_parameters.size==model.fixed_paramsValues.size),'recheck param no. for fixed Params & values '
         assert (np.setdiff1d(self.predictor_names,model.required_conditions).size==0), 'some of the required predictors have not been passsed'
+               
         # set up parameters and bounds        
-        nParams = len(model.required_parameters) + self.n_neurons  # trying to add the regulariser
-        
-        model.paramInit = [1] * nParams
-        model.paramBounds = [(-1000,1000)]  * nParams    
-
-        # add regulariser - for which bounds should be such that penalty cannot be negative.
-        model.paramInit.insert(0,0.0001)
-        model.paramBounds.insert(0,(0,5))
+        nFittableParams = model.required_parameters.size - np.sum(model.fixed_parameters) + self.n_neurons  # trying to add the regulariser        
+        model.paramInit = [1] * nFittableParams
+        model.paramBounds = [(-1000,1000)] * nFittableParams    
 
         return model
  
-    def calculatepHat(self,conditions,params):
+    def calculatepHat(self,conditions,betas):
         """
         calculate the probability of making each possible choice (i.e. [R L])
         """
+        # grab all the parameters for the model
+        params = self.model.get_all_params(betas) 
         logOdds = self.model.get_logOdds(conditions,params)
         pR = np.exp(logOdds) / (1 + np.exp(logOdds))
         pHat = np.array([1-pR,pR])    # because left choice=0 and thus it needs to be 0th index    
@@ -323,21 +346,17 @@ class glmFit():
         self.X = X
         self.y = y
 
-    def get_Likelihood(self,testParams): 
+    def get_Likelihood(self,betas): 
         # this is what could be looped potentially given if there are several dims y becomes 2D & X becomes 3D
         # and then we just sum over the likelihoods for this we need a paramgenerator function called here        
         
         assert hasattr(self,'X'),'data input was not initialised correctly'
-        alpha = 1 # testParams[0]
-        betas = testParams[1:]
+        alpha = 0 
         penalty = np.sum(np.abs(betas[self.model.required_parameters.size:]))*alpha;  # push away from the minimum with increasing by the penalty
         pHat_calculated = self.calculatepHat(self.X,betas) # the probability of each possible response 
         responseCalc = self.y # the actual response taken        
         # calculate how likely each of these choisen response was given the model
         logLik = -np.mean(np.log2(pHat_calculated[responseCalc.astype('int'),np.arange(pHat_calculated.shape[1])])) + penalty
-        print(alpha,penalty,logLik)
-        self.llperiter.append(logLik)
-
         return logLik
        
     def fit(self):
@@ -351,9 +370,10 @@ class glmFit():
             self.init_data_for_LikeLihood(self.conditions,self.choices)
 
         fittingObjective = lambda b: self.get_Likelihood(b)
-        result = minimize(fittingObjective, self.model.paramInit, bounds=self.model.paramBounds)  
-        self.model.paramFit = result.x
+        result = minimize(fittingObjective, self.model.paramInit, bounds=self.model.paramBounds)          
         self.model.LogLik = self.get_Likelihood(result.x)
+        self.model.paramFit = result.x
+        self.model.allParams = self.model.get_all_params(result.x)
     
     def fitCV(self,**kwargs):
 
@@ -361,24 +381,26 @@ class glmFit():
         X = self.conditions
         y = self.choices
 
-        params,logLiks = [],[]
+        fitted_params,params,logLiks = [],[],[]
         for train_index, test_index in sss.split(X,y):
             X_train, X_test = X[train_index], X[test_index]
             y_train, y_test = y[train_index], y[test_index]
             self.init_data_for_LikeLihood(X_train,y_train)
             self.fit()
-            params.append(self.model.paramFit[np.newaxis,:])
+            fitted_params.append(self.model.paramFit[np.newaxis,:])
+            params.append(self.model.allParams[np.newaxis,:])
             self.init_data_for_LikeLihood(X_test,y_test)
             logLiks.append(self.get_Likelihood(self.model.paramFit))
 
         self.model.LogLik=np.mean(logLiks)
-        self.model.paramFit = np.mean(np.concatenate(params),axis=0)  
+        self.model.paramFit = np.mean(np.concatenate(fitted_params),axis=0)  
+        self.model.allParams = np.mean(np.concatenate(params),axis=0)
 
     def visualise(self,**plotkwargs):
         """
         visualise the prediction of the log odds model, given visDiff & audDiff (default visualisation)
         """ 
-        self.model.plot(parameters=self.model.paramFit[1:],conditions=self.conditions,choices=self.choices,**plotkwargs)
+        self.model.plot(parameters=self.model.allParams,conditions=self.conditions,choices=self.choices,**plotkwargs)
  
 
 
