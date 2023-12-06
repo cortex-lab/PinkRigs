@@ -1,4 +1,4 @@
-function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSubject(subjectList,getQM,getPos)
+function [clusterNum, recLoc, chanMap, days, expInfoAll] = clusterCount_loadNonZeldaSubject(subjectList,getQM,getPos)
     %% Get this subject's recordings
     
     serverLocations = getServersList;
@@ -32,17 +32,18 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
 
     clusterNum = nan(1,numel(KSFolderList));
     days = nan(1,numel(KSFolderList));
-    recLocAll = cell(1,numel(KSFolderList));
+    recLoc = cell(1,numel(KSFolderList));
     expInfoAll = cell(1,numel(KSFolderList));
+    chanMap = cell(1,numel(KSFolderList));
     for nn = 1:numel(KSFolderList)
         KSFolder = KSFolderList{nn};
         fprintf('Loading data from folder %s...', KSFolder)
 
         % Get recording location
         binFile = D(nn);
-        [chanPos,~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
+        [chanMap{nn},~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
         shankIDs = unique(shanks);
-        botRow = min(chanPos(:,2));
+        botRow = min(chanMap{nn}(:,2));
 
         expInfoAll{nn}.ephysPathProbe0 = {binFile(1).folder};
 
@@ -55,7 +56,7 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount_loadNonZeldaSu
         % Build tags etc
         days(nn) = datenum(expDate);
         days(nn) = days(nn)-datenum(implantDate);
-        recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
+        recLoc{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
         expInfoAll{nn}.daysSinceImplant = days(nn);
 

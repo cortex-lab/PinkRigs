@@ -1,4 +1,4 @@
-function [clusterNum, recLocAll, days, expInfoAll] = clusterCount(varargin)
+function [clusterNum, recLocAll, chanMapAll, days, expInfoAll] = clusterCount(varargin)
     %% Plot the number of clusters across days for a the specified subject(s).
     %
     % Parameters:
@@ -11,6 +11,8 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount(varargin)
     %   Number of clusters across days.
     % recLocAll: cell of str
     %   Fingerprint of the recording locations
+    % chanMapAll: cell
+    %   Recording locations
     % days: vector
     %   Number of days from implantation
     % qualityMetrics: struct
@@ -37,6 +39,7 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount(varargin)
     nn = 1;
     clusterNum = [];
     recLocAll = cell(1,1);
+    chanMapAll = cell(1,1);
     recPath = cell(1,1);
     days = cell(1,1);
     expInfoAll = cell(1,1);
@@ -52,9 +55,9 @@ function [clusterNum, recLocAll, days, expInfoAll] = clusterCount(varargin)
             if strcmp(expInfo.extractSpikes{1}((pp-1)*2+1),'1')
                 % Get recording location
                 binFile = dir(fullfile(alignment.ephys(pp).ephysPath,'*ap.*bin'));
-                [chanPos,~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
+                [chanMap{nn},~,shanks,probeSN] = getRecordingSites(binFile(1).name,binFile(1).folder);
                 shankIDs = unique(shanks);
-                botRow = min(chanPos(:,2));
+                botRow = min(chanMap{nn}(:,2));
 
                 % Build tags etc
                 days{nn} = datenum(expInfo.expDate);

@@ -116,7 +116,9 @@ function recLocation(varargin)
                     metaData = readMetaData_spikeGLX(binFile(1).name,binFile(1).folder);
 
                     %% Extract info from metadata
-
+                    
+                    %%% MAY NOT BE RIGHT?
+                    
                     % Which probe
                     probeSerialNoExp = str2double(metaData.imDatPrb_sn);
 
