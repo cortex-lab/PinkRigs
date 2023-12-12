@@ -11,7 +11,7 @@ from Admin.csv_queryExp import load_data
 from Analysis.neural.utils.data_manager import load_cluster_info
 from dPrime import get_choicePrime
 
-subject_set = ['AV008','AV014','AV020','AV025','AV030','AV034']
+subject_set = ['AV025']
 my_expDef = 'multiSpaceWorld'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
@@ -20,18 +20,18 @@ dataset = subject_string + my_expDef
 
 ephys_dict = {'spikes':'all','clusters':'all'}
 recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = subject_set,expDate='postImplant',
+                        subject = subject_set,expDate='2022-11-09',
                         expDef=my_expDef,
                         checkEvents='1',
                         checkSpikes='1',
                         unwrap_independent_probes=True,
-                        region_selection={'region_name':'SC','min_fraction':.6})
+                        region_selection={'region_name':'SC','min_fraction':.3})
 #{'region_name':'SC','min_fraction':.3}
 # %%
 triggers = ['timeline_audPeriodOn','timeline_choiceMoveOn']
-t = .2
+t = .15
 
-recordings['choicePrime'] = [get_choicePrime(rec,t=t,rt_min=0.05,contrasts='low4', onset_names= triggers,plot_summary=True,plot_nrns='top5') for _, rec in recordings.iterrows()]
+recordings['choicePrime'] = [get_choicePrime(rec,t=t,rt_min=0.03,contrasts='low5', onset_names= triggers,plot_summary=True,plot_nrns=[101,75,175,103,77,110]) for _, rec in recordings.iterrows()]
 
      
 # %%

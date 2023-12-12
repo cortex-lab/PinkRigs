@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedShuffleSplit
 
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Admin.csv_queryExp import format_events
+from Admin.csv_queryExp import format_events,simplify_recdat
 from Analysis.neural.utils.spike_dat import get_binned_rasters
-
+from Analysis.neural.utils.data_manager import load_cluster_info
 
 class AVSplit(): 
     """
@@ -35,7 +35,6 @@ class AVSplit():
         self.is_neural = is_neural
         self.fixed_parameters  = np.array(fixed_parameters)
         self.fixed_paramsValues = np.array(fixed_paramValues)
-
     
     def get_all_params(self,betas):
         """
@@ -137,6 +136,7 @@ class AVSplit():
                 ax.plot(x,y_pred,color=mycolor,**predpointkwargs)
 
 
+
         #plotting the prediciton psychometric w\o the neural values  
         nPredPoints = 600  
         Vmodel = np.linspace(-1,1,nPredPoints)
@@ -164,8 +164,55 @@ class AVSplit():
 
         ax.axvline(0,color='k',ls='--')
 
+    def plotPred(self,parameters,yscale='log',conditions=None,choices=None,ax=None,colors=['b','grey','red'],predpointkwargs ={'marker':'.','ls':'','markersize':24,'markeredgecolor':'k'}):
+        """
+        plot the model prediction for this specific model
+        if the model has neural components we 0 those out
+        """
+        if ax is None:
+            _,ax = plt.subplots(1,1,figsize=(8,8))
+        
+        if self.is_neural:  
+            non_neural_params = parameters[:self.required_parameters.size]
+            non_neural_conds = conditions[:,:self.required_conditions.size]
+            n_neurons = conditions.shape[1]-self.required_conditions.size
+        else: 
+            non_neural_params,non_neural_conds = parameters,conditions
 
-def format_av_trials(ev,spikes=None,nID=None,t=0.2, onset_time = 'timeline_audPeriodOn'):
+
+        if (conditions is not None) & (choices is not None):
+            visDiff = np.ravel(non_neural_conds[:,self.required_conditions=="visDiff"])
+            audDiff = np.ravel(non_neural_conds[:,self.required_conditions=="audDiff"])
+            Vs = np.unique(visDiff)
+            As = np.unique(audDiff)
+
+            Vmesh,Amesh =np.meshgrid(Vs,As)
+            for v,a,mycolor in zip(Vmesh,Amesh,colors):
+                x = v
+                x = np.sign(x)*np.abs(x)**non_neural_params[self.required_parameters=='gamma']
+                y  = np.array([np.mean(choices[(visDiff==vi) & (audDiff==ai)]) for vi,ai in zip(v,a)])
+                
+                logOdds =self.get_logOdds(conditions,parameters)
+                
+                pR = np.exp(logOdds) / (1 + np.exp(logOdds))
+                
+                #ax.hist(logOdds)
+
+                y_pred = np.array([np.mean(pR[(visDiff==vi) & (audDiff==ai)]) for vi,ai in zip(v,a)])
+                if yscale=='log':
+                    y =np.log(y/(1-y))
+                    y_pred = np.log(y_pred/(1-y_pred))
+
+                ax.plot(y,y_pred,color=mycolor,**predpointkwargs)
+                ax.axline((0,0),slope=1,color='k',linestyle='--')
+                ax.set_xlabel('actual')
+                ax.set_ylabel('predicted')
+                ax.set_title('r = %.2f' % np.corrcoef(y,y_pred)[0,1]) 
+
+        
+
+
+def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset_time = 'timeline_audPeriodOn'):
     """
     specific function for the av pipeline such that the _av_trials.table is formatted for the glmFit class
 
@@ -222,6 +269,7 @@ def format_av_trials(ev,spikes=None,nID=None,t=0.2, onset_time = 'timeline_audPe
         resps = np.empty((t_on.size,len(nID)))*np.nan
         r = get_binned_rasters(spikes.times,spikes.clusters,nID,t_on[~np.isnan(t_on)],**raster_kwargs)
         
+
         zscored = zscore(r.rasters[:,:,0],axis=0)
         discard_idx =  np.isnan(zscored).any(axis=0)
 
@@ -241,7 +289,11 @@ def format_av_trials(ev,spikes=None,nID=None,t=0.2, onset_time = 'timeline_audPe
 
         # some more sophisticated cluster selection as to what goes into the model
         nrnNames  = np.array(['neuron_%.0d' % n for n in nID])[~discard_idx]
-        df[nrnNames] = pd.DataFrame(resps[:,~discard_idx])
+        
+        if single_average:
+            df['neuron'] = pd.DataFrame((resps[:,~discard_idx].mean(axis=1))) 
+        else:
+            df[nrnNames] = pd.DataFrame(resps[:,~discard_idx])
 
 
     df = df[to_keep_trials].reset_index(drop=True)
@@ -327,7 +379,12 @@ class glmFit():
         # set up parameters and bounds        
         nFittableParams = model.required_parameters.size - np.sum(model.fixed_parameters) + self.n_neurons  # trying to add the regulariser        
         model.paramInit = [1] * nFittableParams
-        model.paramBounds = [(-1000,1000)] * nFittableParams    
+        nonNeuralFittables = model.required_parameters[~model.fixed_parameters[:model.required_parameters.size].astype('bool')]
+        model.paramBounds = [(0,3) if m=='gamma' else (None,None) for m in nonNeuralFittables]     
+        if nFittableParams-nonNeuralFittables.size>0:
+            [model.paramBounds.append((None,None)) for i in range(nFittableParams-nonNeuralFittables.size)]
+        # replace the gamma bound ---
+
 
         return model
  
@@ -402,7 +459,93 @@ class glmFit():
         """ 
         self.model.plot(parameters=self.model.allParams,conditions=self.conditions,choices=self.choices,**plotkwargs)
  
+    def plotPrediction(self,**plotkwargs):
+        self.model.plotPred(parameters=self.model.allParams,conditions=self.conditions,choices=self.choices,**plotkwargs)
 
 
+
+
+def search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_choiceMoveOn',ll_thr = 0.005):
+    """
+    iterative search method to add neural predictors to the GLM
+
+    method: 
+    
+    Parameters:
+    -----------
+    rec: pd.Series
+    my_ROI: str 
+        Beryl acronym that identifies the ROI 
+    event_type: str
+        event to align to 
+    ll_thr: 
+        minimum log-likelihood decrease required for a neuron to be added
+    
+    """ 
+
+    ev,spk,_,_,_ = simplify_recdat(rec,probe='probe')
+    clusInfo = load_cluster_info(rec,probe='probe')
+    
+    # my_ROI = 'SCm'
+    # event_type = 'timeline_audPeriodOn'
+
+    import re
+    from Processing.pyhist.helpers.regions import BrainRegions
+    from Analysis.neural.utils.spike_dat import bombcell_sort_units
+
+    br = BrainRegions()
+    bc_class = bombcell_sort_units(clusInfo)
+    clusInfo['is_good'] = bc_class=='good'
+    clusInfo.brainLocationAcronyms_ccf_2017[clusInfo.brainLocationAcronyms_ccf_2017=='unregistered'] = 'void' # this is just so that the berylacronymconversion does something good
+    clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
+    goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym==my_ROI)]._av_IDs.values
+
+    trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,t=0.15,onset_time=event_type)
+    # iterative fitting for each nrn 
+    nrn_IDs = [re.split('_',i)[1] for i in trials.columns if 'neuron' in i]
+
+    non_neural = trials.iloc[:,:3]
+    neural = trials.iloc[:,3:]
+    glm = glmFit(non_neural,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0])
+    glm.fitCV(n_splits=2,test_size=0.5)
+
+    n_neurons = neural.shape[1]
+
+    best_nrn,ll_best = [],[]
+    ll_best = [glm.model.LogLik]
+    for i in range(n_neurons):
+        print('finding #%.0f best neuron' % i)
+        if i==0:
+            base_matrix = non_neural
+            bleed_matrix = neural
+        else:
+            base_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
+            leftover_nrn = np.setdiff1d(neural.columns.values,np.array(best_nrn))
+            bleed_matrix = neural.loc[:,leftover_nrn]
+            
+        ll = []
+        for idx,(neuronName,trial_activity) in enumerate(bleed_matrix.iteritems()):
+            fittable = pd.concat((base_matrix,trial_activity),axis=1)
+            neuralglm = glmFit(fittable,model_type='AVSplit',fixed_parameters = [0,0,0,0,1,0],fixed_paramValues = list(glm.model.allParams))
+            neuralglm.fitCV(n_splits=2,test_size=0.5)
+
+            ll_current = neuralglm.model.LogLik
+            if np.isnan(ll_current) or np.isinf(ll_current):
+                ll_current= 1000
+            ll.append(ll_current)
+        
+        curr_best_ll = np.min(np.array(ll))
+        if curr_best_ll>(ll_best[i]-ll_thr):
+            print('the situation is not improving, you got to break...')
+            break 
+
+        ll_best.append(curr_best_ll)
+        best_nrn.append(bleed_matrix.columns.values[np.argmin(np.array(ll))])
+
+    final_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
+
+    return final_matrix,goodclusIDs
+
+    
 
 # %%
