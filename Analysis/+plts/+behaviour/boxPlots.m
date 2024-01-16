@@ -144,7 +144,7 @@ daspect([1 1 1]); axis xy;
 
 tIdx = ~isnan(plotData);
 if addText
-    txtD = num2cell([xPnts(tIdx), yPnts(tIdx), round(100*plotData(tIdx))/100, triNum(tIdx)],2);
+    txtD = num2cell([vectorize(xPnts(tIdx)), vectorize(yPnts(tIdx)), vectorize(round(100*plotData(tIdx))/100), vectorize(triNum(tIdx))],2);
     cellfun(@(x) text(x(1),x(2), {num2str(x(3)), num2str(x(4))}, 'horizontalalignment', 'center'), txtD)
 end
 
@@ -152,4 +152,8 @@ set(gca, 'xTick', 1:size(plotData,2), 'xTickLabel', boxPlot.xyValues{1}, 'fontsi
 set(gca, 'yTick', 1:size(plotData,1), 'yTickLabel', boxPlot.xyValues{2}, 'fontsize', 14, 'TickLength', [0, 0])
 title(sprintf('%s: %d Tri, %s', boxPlot.subject, boxPlot.totTrials, boxPlot.extraInf), 'fontsize', 11)
 box off;
+end
+
+function v = vectorize(x)
+v = x(:);
 end
