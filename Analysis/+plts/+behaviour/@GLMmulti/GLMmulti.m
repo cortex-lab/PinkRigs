@@ -46,8 +46,8 @@ classdef GLMmulti < matlab.mixin.Copyable
         function obj = GLMmulti(inputBlockData, modelString)
             %% Input dataBlock must be a struct with fields: conditions and responseCalc
             inputBlockData.origMax = [max(abs(inputBlockData.stim_visDiff)) max(abs(inputBlockData.stim_audDiff))];
-            inputBlockData.stim_visDiff = inputBlockData.stim_visDiff./inputBlockData.origMax(1);
-            inputBlockData.stim_audDiff = inputBlockData.stim_audDiff./inputBlockData.origMax(2);
+            inputBlockData.stim_visDiff = inputBlockData.stim_visDiff./max(inputBlockData.origMax(1),1e-15); % to avoid nans
+            inputBlockData.stim_audDiff = inputBlockData.stim_audDiff./max(inputBlockData.origMax(2),1e-15);
             % Add previous choices and rewards
             inputBlockData.previous_respDirection = [0; inputBlockData.response_direction(1:end-1)];
             inputBlockData.previous_respFeedback = [0; inputBlockData.response_feedback(1:end-1)];
