@@ -135,6 +135,23 @@ def get_data_bunch(namekey):
         ]
 
 
+
+    elif namekey == 'trained-active-curated':
+
+        # recordings where I looked at the movement and there seemed to be some sessions with less movement plus independent recordings selected/mouse 
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('AV025','2022-11-08',1,'probe0'),
+            ('AV025','2022-11-08',1,'probe1'),
+            ('AV025','2022-11-10',1,'probe0'),
+            ('AV025','2022-11-10',1,'probe1'),
+            ('AV030','2022-12-07',2,'probe1'), 
+            ('AV034','2022-12-09',1,'probe0'),
+            ('AV034','2022-12-10',1,'probe0'),
+
+        ]
+
+
     elif namekey == 'naive-acute-rfs':
         column_names = ['subject','expDate','expNum','probe']
         recordings = [

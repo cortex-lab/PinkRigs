@@ -15,6 +15,7 @@ my_expDef = 'postactive'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
 
+dataset = 'trained-active-curated'
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 
 csv_path = interim_data_folder / dataset 

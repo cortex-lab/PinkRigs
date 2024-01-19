@@ -11,7 +11,7 @@ from Analysis.neural.utils.data_manager import load_cluster_info
 
 ephys_dict = {'spikes':'all','clusters':'all'}
 recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = 'AV025',expDate='postImplant',
+                        subject = 'AV025',expDate='2022-11-09',
                         expDef='multiSpaceWorld',
                         checkEvents='1',
                         checkSpikes='1',
@@ -22,7 +22,7 @@ recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict
 # %%
 from predChoice import format_av_trials,glmFit
 
-rec = recordings.iloc[4]
+rec = recordings.iloc[0]
 # preselect clusters based on quality metrics
 # 
 # 
@@ -32,7 +32,7 @@ clusInfo = load_cluster_info(rec,probe='probe')
 
 
 my_ROI = 'SCm'
-event_type = 'timeline_audPeriodOn'
+event_type = 'timeline_choiceMoveOn'
 
 
 from Processing.pyhist.helpers.regions import BrainRegions
@@ -55,7 +55,7 @@ glm.fitCV(n_splits=2,test_size=0.5)
 
 n_neurons = neural.shape[1]
 
-thr = 0.005
+thr = 0.01
 best_nrn,ll_best = [],[]
 ll_best = [glm.model.LogLik]
 for i in range(n_neurons):
@@ -142,11 +142,14 @@ for i in range(2):
     ax[1,2].hist(testglm.model.get_logOdds(testglm.conditions,testglm.model.allParams),alpha=0.5,range=(-8,8)) 
 ax[1,2].set_xlabel('LogOdds')
 ax[1,2].set_ylabel('# trials')
+ax[1,2].legend(['non-neural','neural'])
 
-
-
+from Analysis.pyutils.plotting import off_axes
+off_axes(ax[0,2])
 #%%
-# plt.plot((final_matrix['choice']-.5)*2)
-# plt.plot(final_matrix['neuron_135'])
-# plt.xlabel('trial #')
+ns = 'neuron_170'
+plt.plot((final_matrix['choice']))
+plt.plot(final_matrix[ns])
+plt.xlabel('trial #')
+plt.title(ns)
 # %%

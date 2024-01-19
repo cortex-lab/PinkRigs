@@ -538,7 +538,7 @@ def load_cluster_info(rec = None,probe = 'probe0',**rec_kwargs):
 
     clusInfo = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     clusInfo = pd.DataFrame.from_dict(clusInfo)
-    clusInfo = clusInfo.set_index('_av_IDs',drop=False)
+    #clusInfo = clusInfo.set_index('_av_IDs',drop=False)
 
     colnames = list(clusters.keys())
     if 'mlapdv' in colnames:
@@ -614,7 +614,12 @@ def load_cluster_info(rec = None,probe = 'probe0',**rec_kwargs):
         all_clusInfo['sc_elevation'] = np.nan
         all_clusInfo['sc_surface'] = np.nan
     
-    all_clusInfo['probe'] = rec.probeID
+    
+    if 'probeID' in rec.keys():
+        all_clusInfo['probe'] = rec.probeID
+    else: 
+        all_clusInfo['probe'] = probe
+        
     all_clusInfo['expFolder'] = rec.expFolder
     all_clusInfo['subject'] = rec.subject
     all_clusInfo['expDate'] = rec.expDate

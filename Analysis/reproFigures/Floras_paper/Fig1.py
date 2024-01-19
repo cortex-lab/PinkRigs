@@ -12,7 +12,7 @@ import time
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.spike_dat import bombcell_sort_units
-dat_type = 'trained-passive-cureated'
+dat_type = 'trained-active-curated'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
@@ -26,7 +26,7 @@ from Admin.csv_queryExp import queryCSV
 
 #  %%
 rerun_sig_test= False  
-recompute_csv = True  
+recompute_csv = False  
 recompute_pos_model = False 
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
@@ -224,20 +224,20 @@ else:
 #%%
 bc_class = bombcell_sort_units(clusInfo)
 #%%
-clusInfo['is_good'] = bc_class!='noise'
-
+clusInfo['is_good'] = bc_class=='good'
+clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi
 
 # %%
-from Analysis.pyutils.plotting import off_exceptx
-sc_clus = clusInfo[clusInfo.is_SC & clusInfo.is_good & clusInfo.is_aud_spatial & clusInfo.is_vis_spatial]
-ei = sc_clus['enhancement_index_antipref,aud'].values
-_,ax = plt.subplots(1,1,figsize=(3,3))
-ax.hist(
-    ei[~np.isnan(ei) & ~np.isinf(ei)],
-    bins=np.arange(-2,2,0.2)
-)
-off_exceptx(ax)
-ax.set_xlabel('multisensory enhancement index')
+# from Analysis.pyutils.plotting import off_exceptx
+# sc_clus = clusInfo[clusInfo.is_SC & clusInfo.is_good & clusInfo.is_aud_spatial & clusInfo.is_vis_spatial]
+# ei = sc_clus['enhancement_index_antipref,aud'].values
+# _,ax = plt.subplots(1,1,figsize=(3,3))
+# ax.hist(
+#     ei[~np.isnan(ei) & ~np.isinf(ei)],
+#     bins=np.arange(-2,2,0.2)
+# )
+# off_exceptx(ax)
+# ax.set_xlabel('multisensory enhancement index')
 
 # %%
 
@@ -261,49 +261,214 @@ ax.set_xlabel('multisensory enhancement index')
 
 # %%  creete a ternary plot of the various VE 
 
+
 # %%
 
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
+
+# hemispheric reveral of the allen pos
+
+# hemispheric reversal of the preferred tuning 
+clusInfo['ml_r'] = ((clusInfo.ml-5600)*clusInfo.hemi+5600)
+allen_pos_apdvml_r = clusInfo[['ap','dv','ml_r']].values
+allen_pos_apdvml_r_gauss = add_gauss_to_apdvml(allen_pos_apdvml_r.copy(),ml=80,ap=80,dv=0)
+
+
+clusInfo['x0aud_r'] = clusInfo.x0aud * clusInfo.hemi
+clusInfo['x0vis_r'] = clusInfo.x0vis * clusInfo.hemi
+
+from Processing.pyhist.helpers.regions import BrainRegions
+reg = BrainRegions()
+regionNames = clusInfo.brainLocationAcronyms_ccf_2017
+regionNames[regionNames=='unregistered']='void'
+clusInfo['BerylAcronym'] = reg.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
+
+
 # %%
-# _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
+_,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
 
-# maps = {}
-# for idx,t in enumerate(tuning_types):
-#     print(t)
-#     goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
-# ]
-#     namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
-#     print(namekeys)
-#     tcs = goodclus.sort_values('x0%s' % t)
-#     tcs = tcs[namekeys]
+maps = {}
+for idx,t in enumerate(tuning_types):
+    print(t)
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
+    print(namekeys)
+    tcs = goodclus.sort_values('x0%s' % t)
+    tcs = tcs[namekeys]
 
-#     tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
-#         (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
+    tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
+        (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
 
 
-#     ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
-#     ax[idx].set_ylim([240,0])
-#     off_axes(ax[idx])
-# # 
-#     goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,250))
-#     unique_bins = np.unique(goodclus.pos_bin_idx)
-#     mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
-#     std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
-#     maps['%s_mean'% t] = mean_per_pos
-#     maps['%s_std' % t ] = std_per_pos
+    ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
+    ax[idx].set_ylim([240,0])
+    off_axes(ax[idx])
+# 
+    # calculate the means and the stds for the registered maps
+    goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,150))
+    unique_bins = np.unique(goodclus.pos_bin_idx)
+    mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+    std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
+    maps['%s_mean'% t] = mean_per_pos
+    maps['%s_std' % t ] = std_per_pos
 
-# print(len(maps['vis_mean']),len(maps['aud_mean']))
-# _,ax = plt.subplots(1,1,figsize=(2,2))
-# ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
-# off_topspines(ax)
-# ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
+print(len(maps['vis_mean']),len(maps['aud_mean']))
+
+_,ax = plt.subplots(1,1,figsize=(2,2))
+#ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
+ax.errorbar(maps['vis_mean'],maps['aud_mean'],xerr=maps['vis_std'],yerr=maps['aud_std'])
+off_topspines(ax)
+ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
 
 # ax.set_xlim([-90,90])
 # ax.set_ylim([-90,90])
-# ax.set_xlabel('preferred visual azimuth')
-# ax.set_ylabel('preferred auditory azimuth')
+ax.set_xlabel('preferred visual azimuth')
+ax.set_ylabel('preferred auditory azimuth')
+
+# %% 
+# reversed for a single hemisphere
+
+_,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
+
+maps = {}
+for idx,t in enumerate(tuning_types):
+    print(t)
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+]
+    namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
+    print(namekeys)
+    tcs = goodclus.sort_values('x0%s' % t)
+    tcs = tcs[namekeys]
+
+    tcs_norm = pd.DataFrame.div(pd.DataFrame.subtract(tcs,tcs.min(axis=1),axis='rows'),
+        (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
+
+
+    ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
+    ax[idx].set_ylim([240,0])
+    off_axes(ax[idx])
+# 
+    # calculate the means and the stds for the registered maps
+    goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=np.arange(0,1100,150))
+    unique_bins = np.unique(goodclus.pos_bin_idx)
+    mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
+    std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
+    maps['%s_mean'% t] = mean_per_pos
+    maps['%s_std' % t ] = std_per_pos
+
+print(len(maps['vis_mean']),len(maps['aud_mean']))
+
+_,ax = plt.subplots(1,1,figsize=(5,5))
+#ax.scatter(maps['vis_mean'],maps['aud_mean'],marker='o',color='lightblue',edgecolors='k')
+ax.errorbar(maps['vis_mean'],maps['aud_mean'],xerr=maps['vis_std'],yerr=maps['aud_std'],
+            linestyle='None',marker='o',markeredgecolor='k',markersize=12,color='lightgrey',capsize=4,ecolor='grey')
+off_topspines(ax)
+ax.axline((0,0),slope=1,color='k',linestyle='--')
+#ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
+
+# ax.set_xlim([-90,90])
+# ax.set_ylim([-90,90])
+ax.set_xlabel('preferred visual azimuth')
+ax.set_ylabel('preferred auditory azimuth')
+
+# %%
+# plot the sigmas
+_,ax = plt.subplots(1,len(tuning_types),figsize=(5,2.5),sharex=True,sharey=True)
+
+colors = ['blue','magenta']
+for idx,t in enumerate(tuning_types):
+    print(t)
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
+
+    #nonspatial = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & ~clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
+
+    #ax[idx].hist(nonspatial['sigma%s' % t],bins = np.arange(0,120,10),density=True,alpha=.5,color='grey')
+                
+    ax[idx].hist(goodclus['sigma%s' % t],bins = np.arange(0,180,10),density=True,alpha=.7,color=colors[idx])
+    ax[idx].set_title('%.1f' % goodclus['sigma%s' % t].median())
+
+ #%%
+
+from Processing.pyhist.helpers.atlas import AllenAtlas
+from Analysis.pyutils.plotting import brainrender_scattermap
+from scipy import stats 
+
+atlas = AllenAtlas(25)
+
+# bar plots for SCs and SCm
+# for the spatial cells
+_,(ax,ax1) = plt.subplots(1,2,figsize=(7/4,5/4),sharey=True,gridspec_kw={'width_ratios':[5,2]})
+
+_,(ax2) = plt.subplots(1,1,figsize=(5,1))
+
+
+p = allen_pos_apdvml
+xyz = atlas.ccf2xyz(p,ccf_order='apdvml') 
+t= 'vis'
+is_plotted = clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+requested_depth = 2000
+xyz_ref = atlas.ccf2xyz(np.array([allen_pos_apdvml[0,0],requested_depth,allen_pos_apdvml[0,2]]),ccf_order='apdvml')
+
+atlas.plot_hslice(xyz_ref[2],volume='boundary',ax=ax,aspect='auto')
+#atlas.plot_hslice(np.nanmedian(xyz[clusInfo.is_SC,2]),volume='boundary',ax=ax,aspect='auto')
+dots_to_plot = allen_pos_apdvml_r_gauss[is_plotted,:]
+
+dot_colors = brainrender_scattermap(clusInfo['x0%s_r' % t][is_plotted],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+
+ax.scatter(-dots_to_plot[:,2]+5600,-dots_to_plot[:,0]+5400,color=dot_colors,edgecolor='grey',s=20,alpha=.8,vmin=0,vmax=.3) 
+ax.set_ylim([-5000,-2600])
+ax.set_xlim([-2200,0])
+
+goodclus = clusInfo[is_plotted]
+posbins = np.arange(0,1100,150)
+
+goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=posbins)
+unique_bins = np.unique(goodclus.pos_bin_idx)
+mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
+std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
+maps['%s_mean'% t] = mean_per_pos
+maps['%s_std' % t ] = std_per_pos
+
+posbins_plot = -(posbins+8500)+5400
+ax1.errorbar(mean_per_pos,posbins_plot[:-1]+np.diff(posbins_plot)/2,xerr=std_per_pos,
+              linestyle='-',marker='o',markeredgecolor='k',markersize=2,color='lightgrey',capsize=4,ecolor='grey',elinewidth=1)
+ax1.set_xlim([-120,250])
+
+which_figure = '%s_map'% t
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+#plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+# %%
+
+_,(ax2) = plt.subplots(1,1,figsize=(1,5))
+
+t= 'aud'
+
+
+is_plotted = clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+ax2.hist(clusInfo.BerylAcronym[is_plotted])
+
+is_plotted = clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+ax2.hist(clusInfo.BerylAcronym[is_plotted])
+
+is_plotted = clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+ax2.hist(clusInfo.BerylAcronym[is_plotted])
+
+which_figure = '%s_per_layer'% t
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 # %%
 
@@ -325,7 +490,7 @@ import matplotlib.pyplot as plt
 from Analysis.pyutils.plotting import rgb_to_hex
 #azimuths = np.sort(clusInfo.vis_preferred_tuning.unique())
 color_ = plt.cm.coolwarm(np.linspace(0,1,7))
-t = 'aud'
+t = 'vis'
 # plt.scatter(clusInfo.ml,clusInfo.ap,c=clusInfo['%s_preferred_tuning'  % t], lw=0.1, cmap='coolwarm')
 # plt.colorbar()
 color_ = [rgb_to_hex((c[:3]*255).astype('int')) for c in color_]
@@ -338,10 +503,10 @@ import brainrender as br
 import numpy as np
 
 # Add brain regions
-scene = br.Scene(title="SC aud and vis units", inset=False,root=False)
+scene = br.Scene(title="", inset=False,root=False)
 
-scene.add_brain_region("SCs",alpha=0.07,color='sienna')
-#sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
+scene.add_brain_region("SCs",alpha=0.07,color='teal')
+sc = scene.add_brain_region("SCm",alpha=0.04,color='teal')
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_neither & clusInfo.is_good & clusInfo.is_SC,:], colors='grey', radius=20, alpha=0.7))
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_vis & clusInfo.is_good & clusInfo.is_SC,:], colors='b', radius=20, alpha=0.7))
 # scene.add(br.actors.Points(allen_pos_apdvml[clusInfo.is_aud & clusInfo.is_good & clusInfo.is_SC,:], colors='m', radius=20, alpha=0.7))
@@ -361,16 +526,48 @@ scene.add_brain_region("SCs",alpha=0.07,color='sienna')
 #         alpha=1
 #         ))    
 # scene.add(Points(allen_pos_apdvml[~clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good ,:], colors='k', radius=15, alpha=0.1))    
-t = 'aud'
+t = 'vis'
 from Analysis.pyutils.plotting import brainrender_scattermap
 
-dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]
-dot_colors = brainrender_scattermap(clusInfo['x0%s' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+# non-reversed 
+# dots_to_plot = allen_pos_apdvml[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]
+# dot_colors = brainrender_scattermap(clusInfo['x0%s' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+# reversed 
 
-scene.add(br.actors.Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
+aaa = allen_pos_apdvml_r
+aaa [:,1] = requested_depth
+dots_to_plot = allen_pos_apdvml_r[clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]),:]
+dot_colors = brainrender_scattermap(clusInfo['x0%s_r' % t][clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
+
+#scene.add(br.actors.Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
 
 
-scene.render()
+interValue = True 
+pltView = 'coronal'
+pltSlice = True
+if pltSlice:
+    scene.slice("frontal")
+
+
+
+if pltView == "coronal":
+    cam = {
+        "pos": (-36430, 0, -5700),
+        "viewup": (0, -1, 0),
+        "clippingRange": (40360, 64977),
+        "focalPoint": (7319, 2861, -3942),
+        "distance": 43901,
+    }
+elif pltView == "side":
+    cam = {
+        "pos": (11654, -32464, 81761),
+        "viewup": (0, -1, -1),
+        "clippingRange": (32024, 63229),
+        "focalPoint": (7319, 2861, -3942),
+        "distance": 43901,
+    }
+
+scene.render(interactive=interValue,camera=cam,zoom=3.5)
 
 # %%
 # discriminability

@@ -12,12 +12,12 @@ from Admin.csv_queryExp import load_data
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-save_path = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+save_path = Path(r'C:\Users\Flora\Documents\ProcessedDta\Audiovisual')
 
-dataset = 'naive-allen'
+dataset = 'trained-active-curated'
 fit_tag = 'additive-fit'
 
-interim_data_folder = Path(r'C:\Users\Flora\Documents\Processed data\Audiovisual')
+interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
 
 sc_probeloc_path = Path(r'C:\Users\Flora\Documents\Processed data\passiveAV_project')
@@ -77,7 +77,7 @@ df = cluster_info_test[['VE','neuron','event','session_ID']]
 df = df.reset_index(drop=True)
 df = df.pivot(index=['neuron','session_ID'],columns='event')
 # %%
-sns.pairplot(df.VE[['aud','vis','non-linearity']],plot_kws=dict(marker="o",alpha=.7))
+sns.pairplot(df.VE[['aud','vis']],plot_kws=dict(marker="o",alpha=.7))
 # %%
 def get_my_acronym(allen_acronym):    
     if ('SCs' in allen_acronym) or ('SCo' in allen_acronym) or ('SCzo' in allen_acronym):
@@ -93,8 +93,8 @@ def get_my_acronym(allen_acronym):
         
 
 # %% specific to brain regions
-anat_done =cluster_info_test[cluster_info_test.r_brainLocationAcronyms_ccf_2017.notna()]
-anat_done['location'] = [get_my_acronym(c)  for c in anat_done.r_brainLocationAcronyms_ccf_2017.values]
+anat_done =cluster_info_test[cluster_info_test.brainLocationAcronyms_ccf_2017.notna()]
+anat_done['location'] = [get_my_acronym(c)  for c in anat_done.brainLocationAcronyms_ccf_2017.values]
 anat_done = anat_done[['VE','neuron','event','session_ID','location']]
 anat_done = anat_done.reset_index(drop=True)
 anat_done = anat_done.pivot(index=['session_ID','neuron','location'],columns=['event'])
@@ -102,7 +102,7 @@ anat_done=anat_done.VE
 anat_done = anat_done.reset_index()
 # %%
 sns.pairplot(
-    anat_done,vars=['vis','aud','non-linearity'],hue='location',
+    anat_done,vars=['vis','aud','move_kernel'],hue='location',
     kind='scatter',plot_kws=dict(marker="o", alpha=.7,s=24)
     )
 

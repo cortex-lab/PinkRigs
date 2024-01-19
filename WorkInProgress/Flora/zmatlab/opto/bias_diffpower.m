@@ -31,18 +31,21 @@ end
 f=figure; 
 f.Position = [10,10,300,300];
 plot(-[extracted.diff_power{:}],dBias,'.','MarkerEdgeColor','blue','MarkerSize',36);
+
 xlabel('diff(laser power), mW')
 ylabel('actual bias')
 title(extracted.subject{1})
 % calculate the additive delta_bias
 
 %% 
+
 for s=1:numel(dBias)
+
     if extracted.hemisphere{s}==0
 
-        dL = dBias(([extracted.power{:}]==left_power(s)) & ([extracted.hemisphere{:}]==-1)); 
-        dR = dBias(([extracted.power{:}]==right_power(s)) & ([extracted.hemisphere{:}]==1)); 
-        dAdditive(s)= dL + dR ; 
+        dL = dBias(([extracted.subject{:}]==extracted.subject{s}) & ([extracted.power{:}]==left_power(s)) & ([extracted.hemisphere{:}]==-1)); 
+        dR = dBias(([extracted.subject{:}]==extracted.subject{s}) & ([extracted.power{:}]==right_power(s)) & ([extracted.hemisphere{:}]==1)); 
+        dAdditive(s)= dL + dR; 
     else
         dAdditive(s) = dBias(s);
     end 
@@ -57,8 +60,29 @@ f.Position = [10,10,400,400];
 plot(dAdditive,dBias,'.','MarkerSize',36);
 hold on
 text(dAdditive,dBias+.2,power_texts,'FontSize',10);
+
 hold on 
 plot([-4,5],[-4,5],'k--')
 xlabel('dL+dR')
 ylabel('actual bias')
 title(extracted.subject{1})
+
+%%
+% only plot the ones that are not 
+isBi = (dAdditive-dBias)~=0; 
+
+allSubjects = [extracted.subject{:}]; 
+uniqueSubjects = unique(allSubjects);
+c=['r','g','b']; 
+figure; 
+for s=1:numel(uniqueSubjects)
+    currsel = isBi & (allSubjects==uniqueSubjects(s)); 
+    scatter(dAdditive(currsel),dBias(currsel),100,c(s),'filled');
+    hold on
+end
+hold on 
+plot([-2.5,2.5],[-2.5,2.5],'k--')
+plot([0,0],[-2.5,2.5],'k--')
+
+xlabel('dL+dR')
+ylabel('actual bias')

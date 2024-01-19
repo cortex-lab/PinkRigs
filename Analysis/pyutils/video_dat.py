@@ -50,7 +50,7 @@ def get_move_raster(on_times,camt,camv,pre_time=.1,post_time=1,bin_size=.005,sor
         indices over trials by which raster was sorted 
 
     todo: 
-    return mean/mad and bunch output
+        return mean/mad and bunch output
 
     """
     # If requested, input on_times in a sorted fashion
@@ -89,6 +89,35 @@ def get_move_raster(on_times,camt,camv,pre_time=.1,post_time=1,bin_size=.005,sor
 
     return raster,bin_range,sort_idx
 
+
+
+def schmitt(x, thresh, minwid=0):
+    if thresh.size < 2:
+        xmax = np.max(x)
+        xmin = np.min(x)
+        low = (xmax - xmin) * (1 - thresh) / 2
+        high = xmax - low
+        low = xmin + low
+    else:
+        low, high = thresh
+
+    c = (x > high).astype('int') - (x < low).astype('int')
+    c[1:] = c[1:] * (c[1:] != c[:-1])
+    t = np.where(c)[0]
+    t= np.delete(t,1 + np.where(c[t[1:]] == c[t[:-1]])[0])  # remove duplicates (i.e. wherre two 1s or -1s follow each other)
+
+    if minwid >= 1:
+        t = t[t[1:] - t[:-1] >= minwid]
+        t = np.delete(t,[1 + np.where(c[t[1:]] == c[t[:-1]])[0]])  # remove duplicates
+
+
+    y = np.zeros(c.size)
+    y[t] = 2 * c[t]
+    y[t[0]] = c[t[0]]
+    y = np.cumsum(y)
+
+    return y, t
+
 def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_time =.01):
     """
     converts camera motion energy signal to digitised motion on/off
@@ -120,14 +149,24 @@ def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_t
     k_clus  = KMeans(n_clusters=5).fit(camv_filt[:,np.newaxis])
     # remove clusters with less than 2% points
     keep_idx = [(k_clus.labels_==clusIdx).mean()>.02 for clusIdx in np.unique(k_clus.labels_)]
+    # get the center of each of the remainder of the clusters. 
     thresh = k_clus.cluster_centers_[keep_idx,0]
     thresh = np.min(thresh)#+np.ptp(thresh)*0.02 # determine the minimum thershold for crossing
 
-    camv_thr = (camv_filt>thresh).astype('int')
-    df_camv_thr = np.diff(camv_thr)
-    df_camv_thr = np.insert(df_camv_thr,0,df_camv_thr[0])
-    on_times = camt[df_camv_thr>0]
-    off_times = camt[df_camv_thr<0]
+    std_low = np.std(camv_filt[k_clus.labels_==np.argmin(thresh)])
+    low_up_thr = np.array([thresh,thresh+std_low*1.2])
+    # schmitt trigger of the trace
+    camv_thr,_ = schmitt(camv_filt,low_up_thr)
+
+    on_times = camt[1:][(camv_thr[:-1]==-1) & (camv_thr[1:]==1)]        
+    off_times = camt[1:][(camv_thr[:-1]==1) & (camv_thr[1:]==-1)]
+
+    # previous version was detecting simple thrshold crossings...
+    # camv_thr = (camv_filt>thresh).astype('int')
+    # df_camv_thr = np.diff(camv_thr)
+    # df_camv_thr = np.insert(df_camv_thr,0,df_camv_thr[0])
+    # on_times = camt[df_camv_thr>0]
+    # off_times = camt[df_camv_thr<0]
 
     while on_times.size!=off_times.size: 
         # if stating in on state
@@ -138,13 +177,17 @@ def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_t
         else: 
             print('more on off differences than expected...') 
             break
+
+
+
     # getting rid of too short on-periods
     is_sel =(off_times-on_times)>min_off_time
     on_times, off_times = on_times[is_sel],off_times[is_sel]
     # also getting rid of too short off periods
     is_sel =(on_times[1:]-off_times[:-1])>min_on_time
 
-    on_times, off_times = on_times[np.insert(is_sel,0,True)],off_times[np.insert(is_sel,-1,True)]
+    if is_sel.size>0:
+        on_times, off_times = on_times[np.insert(is_sel,0,True)],off_times[np.insert(is_sel,-1,True)]
 
     # digitis e the signal
     digitised = np.concatenate([((camt>=on) & (camt<=off))[:,np.newaxis] for on,off in zip(on_times,off_times)],axis=1)

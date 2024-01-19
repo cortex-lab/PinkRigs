@@ -3,33 +3,31 @@ import sys
 import numpy as np
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Analysis.pyutils.plotting import off_topspines,off_axes
-
 from Analysis.neural.src.kernel_model import kernel_model
+from pathlib import Path
+
 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
 
 nrn_list = [22,25,50,71,80,207,34,156,325]
 
 
+data_ID = {
+     'subject': 'AV034',
+     'expDate': '2022-12-08', 
+     'expNum': 2,
+      'probe': 'probe0' 
+}
+
+
+from kernel_params import get_params
+
+datParams,fitParams,evalParams = get_params(call_data=True,call_fit=True,call_eval=True,dat_set='active')
+
 #nrn_list = [50,140]
 kernels.load_and_format_data(
-    subject = 'AV025',
-    expDate = '2022-11-10', 
     expDef = 'all',
-    expNum = 2,
-    probe = 'probe0',
     subselect_neurons=None,
-    t_support_stim = [-0.05,0.6],
-    t_support_movement =[-.6,0.4],
-    rt_params = {'rt_min': None, 'rt_max': None},
-    event_types = ['aud','vis','baseline','motionEnergy'],
-    contrasts = 'all',
-    spls = 'all',
-    #vis_azimuths = [-90,-60,-30,0,30,60,90],
-    #aud_azimuths = [-90,-60,-30,0,30,60,90],
-    vis_azimuths = [-60,0,60],
-    aud_azimuths = [-60,0,60],
-    digitise_cam = False,
-    zscore_cam= 'mad'
+    **{**data_ID,**datParams}
 )
 
 
@@ -39,13 +37,13 @@ plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':20})
 plt.rcParams['figure.dpi'] = 300
 
-kernels.fit(method='Ridge',ridge_alpha=1,tune_hyper_parameter=False,rank=10,rr_regulariser=0)
-variance_explained = kernels.evaluate(kernel_selection = 'stimgroups',sig_metric = ['explained-variance','explained-variance-temporal'])
-kernels.fit_evaluate(get_prediciton=True,method='Ridge',ridge_alpha=1,tune_hyper_parameter=False,rank=10,rr_regulariser=0)
+
+kernels.fit(**fitParams)
+variance_explained = kernels.evaluate(**evalParams)
+kernels.fit_evaluate(get_prediciton=True,**fitParams)
 
 # %%
-import matplotlib.pyplot as plt
-n = 18
+n = 297
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
@@ -56,9 +54,27 @@ color_dict = {
     'non-linearity':'green'
 }
 
+
+kernels.plot_prediction(n,plot_stim=True,sep_choice=True,plot_move=True,sep_move=False,
+                            plot_train = True, plot_test= False,merge_train_test=True, 
+                            plot_pred_train = True,plot_pred_test = False,plot_colors=['black','steelblue'],
+                            plotted_vis_azimuth=np.array([-1000,-60,60]),plotted_aud_azimuth=np.array([-60,0,60]))
+
+# save out the example neurons
+
+which_figure = 'neuron_%s'% n
+dat_type = '{subject}_{expDate}_{expNum}_{probe}'.format(**data_ID)
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+#plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+# %%
+# temporal kernels
 ve_n = variance_explained[(variance_explained.cv_number==0) & (variance_explained.clusID==n)]
 fig,ax = plt.subplots(1,1,figsize=(7,4))
-stim_bin_range = np.arange(-0.05,0.6,kernels.t_bin)
+stim_bin_range = np.arange(-0.05,0.3,kernels.t_bin)
 [ax.plot(stim_bin_range,r.VE_trial,color=color_dict[r.event],lw=6) for _,r in ve_n.iterrows() if 'baseline' not in r.event]
 # prepare this plot properly
 first_stim_onset = np.min(np.array([kernels.events.timeline_audPeriodOn,kernels.events.timeline_visPeriodOn]),axis=0)
@@ -73,10 +89,10 @@ ax.legend([r.event for _,r in ve_n.iterrows() if 'baseline' not in r.event])
 ax.set_xlabel('time during trial')
 ax.set_ylabel('VE,test')
 # %%
-v_azimuths = [-1000,90]
+v_azimuths = [-1000,60]
 v_contrasts = [0,.4]
-a_azimuths = [90,-1000]
-a_spls = [.25,0]
+a_azimuths = [60,0]
+a_spls = [.1,.1]
 raster_kwargs = {'t_before': 0.05,'t_after': 0.4,'sort_idx': None}
 kernels.plot_prediction_rasters(n,visual_azimuth=v_azimuths,auditory_azimuth=a_azimuths,contrast=v_contrasts,spl=a_spls) 
 kernels.plot_kernels(n)
@@ -93,7 +109,7 @@ import seaborn as sns
 nrn = np.where(np.array(kernels.clusIDs)==n)[0][0]
 #ax[0].plot(kernels.prediction[nrn,:],kernels.R[nrn,:],'.')
 # %
-on_time = kernels.events.timeline_audPeriodOn[~np.isnan(kernels.events.timeline_audPeriodOn) & (kernels.events.stim_audAzimuth==90)]
+on_time = kernels.events.timeline_audPeriodOn[~np.isnan(kernels.events.timeline_audPeriodOn) & (kernels.events.stim_audAzimuth==60)]
 r = kernels.get_raster(on_time,t_before=.05,t_after =.5,spike_type='data')
 p = kernels.get_raster(on_time,t_before=.05,t_after =.5,spike_type='pred')
 

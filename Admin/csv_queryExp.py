@@ -430,6 +430,8 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
 
     # merge probes 
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
+                
+
         if unwrap_independent_probes:
             expected_probe_no = ((recordings.extractSpikes.str.len()/2)+0.5)
             expected_probe_no[np.isnan(expected_probe_no)] = 0 
@@ -460,7 +462,7 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
 
 
                 recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
-
+        
         
             if region_selection is not None:
                 keep_rec_region = [is_rec_in_region(rec,**region_selection) for _,rec in recordings.iterrows()]

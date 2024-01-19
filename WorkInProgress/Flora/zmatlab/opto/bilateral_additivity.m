@@ -2,10 +2,11 @@ clc; clear all;
 extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'sepDiffPowers',1); 
 
 % prepare params so that they can be matched
+
 powers = [extracted.power{:}]; 
 powers([extracted.hemisphere{:}]==0) = powers([extracted.hemisphere{:}]==0)/2; 
 hemispheres = [extracted.hemisphere{:}]; 
-power_set = [10];
+power_set = [17];
 subjects = [extracted.subject{:}]; 
 unique_subjects = unique(subjects);
 

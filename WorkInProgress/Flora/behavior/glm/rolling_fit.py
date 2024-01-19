@@ -11,7 +11,7 @@ from predChoice import format_av_trials,glmFit
 
 ephys_dict = {'spikes':'all','clusters':'all'}
 recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = 'AV030',expDate='postImplant',
+                        subject = 'AV008',expDate='postImplant',
                         expDef='multiSpaceWorld',
                         checkEvents='1',
                         checkSpikes='1',
@@ -19,17 +19,15 @@ recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict
                         region_selection={'region_name':'SC','min_fraction':.3})
 
 #%%
-rec = recordings.iloc[3]
+rec = recordings.iloc[7]
 # preselect clusters based on quality metrics 
 ev,spk,_,_,_ = simplify_recdat(rec,probe='probe')
-
-
 trials = format_av_trials(ev,spikes=None)
 glm = glmFit(trials,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0])
 glm.fit()
 #glm.fitCV(n_splits=2,test_size=0.1)
 #%%
-glm.visualise(yscale='log')
+glm.visualise(yscale='sig')
 
 # %%
 fig,ax = plt.subplots(1,1,figsize = (7,5))
@@ -45,7 +43,7 @@ ax.axvline(np.argmax(tr)-window)
 
 # %%
 # filter the ev  structure
-window_size = 150
+window_size = 200
 half_window = int(window_size/2)
 
 params = []
@@ -57,7 +55,7 @@ for i in range((np.argmax(tr)-window)-window_size):
     currev = Bunch({k:ev[k][to_keep] for k in ev.keys()})
     #print((currev.is_validTrial & (currev.response_direction>0)).sum())
     trials = format_av_trials(currev,spikes=None)
-    trialglm = glmFit(trials,model_type='AVSplit',fixed_parameters = [0,0,0,0,1,0],fixed_paramValues=glm.model.allParams)
+    trialglm = glmFit(trials,model_type='AVSplit',fixed_parameters = [0,0,0,0,1,0],fixed_paramValues=list(glm.model.allParams))
     trialglm.fit()
     #trialglm.visualise(yscale='log')
     params.append(trialglm.model.allParams[np.newaxis,:])
@@ -90,6 +88,20 @@ ax.plot(
 
 
 # %%
+
+my_i = 170
+x = half_window+my_i
+to_keep = np.zeros(ev.is_blankTrial.size).astype('bool')
+
+to_keep[(x-half_window):(x+half_window)] = True
+
+currev = Bunch({k:ev[k][to_keep] for k in ev.keys()})
+#print((currev.is_validTrial & (currev.response_direction>0)).sum())
+trials = format_av_trials(currev,spikes=None)
+print(trials)
+trialglm = glmFit(trials,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0],fixed_paramValues=[1,1,1,1,1,1])
+trialglm.fit()
+trialglm.visualise(yscale='sig')
 
 
 # %%

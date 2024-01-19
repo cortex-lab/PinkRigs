@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
 
 %
 % fit and plot each set of data
@@ -33,7 +33,7 @@ opto_fit_sets = logical([
 %%
 
 plot_model_pred = zeros(size(opto_fit_sets,1),1); % indices of models to plot
-plot_model_pred(3) = 1; 
+plot_model_pred(2) = 1; 
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits

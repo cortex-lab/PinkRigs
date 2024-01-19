@@ -6,7 +6,7 @@ from pathlib import Path
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.io import save_dict_to_json
 #dataset = 'naive-total'
-dataset = 'trained-passive-cureated'
+dataset = 'trained-active-curated'
 fit_tag = 'additive-fit'
 
 
@@ -23,11 +23,11 @@ from Analysis.neural.src.kernel_model import kernel_model
 from kernel_params import get_params
 
 
-recompute = True
+recompute = False
 for _,rec_info in recordings.iterrows():
    #  reinitialise the object?
     kernels = kernel_model(t_bin=0.005,smoothing=0.025)
-    dat_params,fit_params,eval_params = get_params()
+    dat_params,fit_params,eval_params = get_params(dat_set='active')
 
     output_file = (save_path / ('%s_%s_%.0f_%s.csv' % tuple(rec_info)))
     if not output_file.is_file() or recompute:

@@ -17,14 +17,14 @@ from Analysis.pyutils.plotting import off_topspines
 
 from Admin.csv_queryExp import load_data
 
-subject = 'FT009'
-expDate = '2021-01-20'
-expNum= 8
+subject = 'FT008'
+expDate = '2021-01-15'
+expNum= 5
 cam = 'frontCam'
-probe = 'probe0'
+probe = 'probe1'
 
 data_dict = {
-            'events':{'_av_trials':['table']}, probe:{'spikes':['times','clusters']}, 
+            'events':{'_av_trials':['table']}, probe:{'spikes':['times','clusters'],'clusters':['_av_IDs']}, 
             cam:{'camera':'all','_av_motionPCs':'all'}, 'eyeCam':{'camera':'all'}
                 }
 recordings = load_data(subject = subject,expDate= expDate, expNum=expNum,data_name_dict=data_dict)
@@ -33,6 +33,7 @@ rec_idx = 0
 events = recordings.iloc[rec_idx].events['_av_trials']
 camera = recordings.iloc[rec_idx][cam]['camera']
 spikes = recordings.iloc[rec_idx][probe]['spikes']
+clusters = recordings.iloc[rec_idx][probe]['clusters']
 # %%
 from Analysis.pyutils.video_dat import get_move_raster
 from Analysis.pyutils.plotting import my_rasterPSTH
@@ -74,8 +75,6 @@ bin_kwargs  = {
     'bin_size': 0.005
 }
 
-fig,ax = plt.subplots(1,1,figsize=(8,8))
-fig.patch.set_facecolor('xkcd:white')
 
 cam_values = (camera.ROIMotionEnergy)
 #cam_values = (cam_values-np.median(cam_values))/median_abs_deviation(cam_values)
@@ -84,10 +83,20 @@ move_raster,_,sort_idx  = get_move_raster(onset_times,camera.times,cam_values,
                                 sortAmp=True,to_plot=True,**bin_kwargs,baseline_subtract=False,ax=None)
 
 
+from pathlib import Path
 
-my_rasterPSTH(spikes.times,spikes.clusters,
-            [onset_times[sort_idx]],[256], include_PSTH=False,
-            **bin_kwargs,**plot_kwargs, ax = ax, ax1=ax
-                )
+for cID in clusters._av_IDs:
+    
+    fig,ax = plt.subplots(1,1,figsize=(8,8))
+    fig.patch.set_facecolor('xkcd:white')
+    my_rasterPSTH(spikes.times,spikes.clusters,
+                [onset_times[sort_idx]],[cID], include_PSTH=False,
+                **bin_kwargs,**plot_kwargs, ax = ax, ax1=ax
+                    )
+    cpath  = Path(r'C:\Users\Flora\Pictures\tempPrints')
+    im_name = 'cID_' + '%.0f' % cID + '.jpeg'
+    savename = cpath / im_name #'outline_brain.svg'
+    plt.savefig(savename,transparent=False,bbox_inches = "tight",format='jpeg',dpi=300)
+
 
 # %%

@@ -266,13 +266,15 @@ def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset
         }
         t_on = ev[onset_time]
 
-        resps = np.empty((t_on.size,len(nID)))*np.nan
         r = get_binned_rasters(spikes.times,spikes.clusters,nID,t_on[~np.isnan(t_on)],**raster_kwargs)
         
-
+        if single_average: 
+            r.rasters = r.rasters.mean(axis=1)[:,np.newaxis,:]
         zscored = zscore(r.rasters[:,:,0],axis=0)
-        discard_idx =  np.isnan(zscored).any(axis=0)
 
+        discard_idx =  np.isnan(zscored).any(axis=0)
+        
+        resps = np.empty((t_on.size,zscored.shape[1]))*np.nan
         resps[~np.isnan(t_on),:] = zscored
         
         # if spikes are used we need to filter extra trials, such as changes of Mind
@@ -288,11 +290,12 @@ def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset
                         to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
 
         # some more sophisticated cluster selection as to what goes into the model
-        nrnNames  = np.array(['neuron_%.0d' % n for n in nID])[~discard_idx]
         
         if single_average:
-            df['neuron'] = pd.DataFrame((resps[:,~discard_idx].mean(axis=1))) 
+            #df['neuron'] = pd.DataFrame((resps[:,~discard_idx].mean(axis=1))) 
+            df['neuron']  = pd.DataFrame(resps[:,~discard_idx])
         else:
+            nrnNames  = np.array(['neuron_%.0d' % n for n in nID])[~discard_idx]
             df[nrnNames] = pd.DataFrame(resps[:,~discard_idx])
 
 

@@ -16,7 +16,7 @@ from Analysis.pyutils.plotting import brainrender_scattermap
 
 #dat_type = 'AV025AV030AV034postactive'
 dat_type = 'naive-total'
-#|dat_type = 'trained-passive-cureated'
+#dat_type = 'trained-passive-cureated'
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 csv_path = interim_data_folder / dat_type / 'summary_data.csv'

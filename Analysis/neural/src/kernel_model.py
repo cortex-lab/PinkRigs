@@ -8,7 +8,7 @@ import collections,itertools
 # import PinkRig utilities 
 from Admin.csv_queryExp import load_ephys_independent_probes,simplify_recdat,Bunch
 from Analysis.neural.utils.spike_dat import bincount2D
-from Analysis.pyutils.video_dat import digitise_motion_energy
+from Analysis.pyutils.video_dat import digitise_motion_energy,get_move_raster
 from Analysis.pyutils.plotting import off_axes
 from Analysis.pyutils.ev_dat import parse_events
 
@@ -1232,6 +1232,7 @@ class kernel_model():
                             contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None, 
                             t_support_stim = [-0.05,0.35],
                             t_support_movement =[-.2,0.1],
+                            t_support_cam = None,
                             digitise_cam=False,
                             zscore_cam = False,
                             turn_stim_off = None,
@@ -1252,7 +1253,9 @@ class kernel_model():
         t_support_stim: list, len(list)=2
             time raange at which the stimulus kernels are supported 
         t_support_movement: list, len(list) =2
-            time range at which the movement kernels are supported
+            time range at which the movement kernels are supported around the choice (only used in task conditions)
+        t_support_cam: 
+            support period for the motion evergy derived from the camera data. 
         spl: list/str
         digitise_cam: bool
         zscore_cam: bool 
@@ -1321,8 +1324,6 @@ class kernel_model():
 
             # extract and digitise approproate events  
 
-
-
             if 'postactive' in rec.expDef:
                 ev.is_validTrial = np.ones(ev.is_auditoryTrial.size)
                 self.sess_type = 'passive'
@@ -1360,8 +1361,6 @@ class kernel_model():
                 ev  = extracted_ev.calculate_trialOnOff(ev,t_support_stim=t_support_stim,t_support_movement=t_support_movement)
             else: 
                 ev  = extracted_ev.calculate_trialOnOff(ev,t_support_stim=t_support_stim,t_support_movement=None)
-
-
 
             self.events  = ev
 
@@ -1498,8 +1497,8 @@ class kernel_model():
                     bin_ranges[event_name] = stim_bin_range
 
 
-
-                if turn_stim_off is not None:
+                # for stimuli turn them off when the movement finishes
+                if (turn_stim_off is not None) & ('move' not in event_name):
                     if ('stimOff' in turn_stim_off) & (event_name in offset_events):
                         on_idx = np.where(event_names_==event_name)[0][0]
                         dig_on = self.events_digitised[on_idx,:]
@@ -1600,7 +1599,11 @@ class kernel_model():
                             cam_values = (cam_values-np.median(cam_values))/median_abs_deviation(cam_values)
 
                     
-                    self.cam_values[camtype] = cam_values
+                    # make an option to make the camera kernel shifted in time too
+                    if t_support_cam:
+                        pass
+
+                    self.cam_values[camtype] = cam_values.copy()
                     # add the movement to the feature matrix during the trial
                     kernel_idx  = trial_indices[fitted_trial_idxs,:].sum(axis=0).astype('bool')
                     cam_values[~kernel_idx] = 0
@@ -1791,7 +1794,7 @@ class kernel_model():
 
     def get_raster(self,myev_times,t_before = 0.2, t_after = .2, sort_idx = None, spike_type = 'data',sortAmp = False):
         """
-        return raster of events 
+        return raster of events in the format that is inputted in the model (i.e. post-binning etc.)
 
         Parameters: 
         ----------------
@@ -1836,6 +1839,7 @@ class kernel_model():
             raster = self.prediction[:,bin2show]
         elif spike_type in self.cam_values.keys():
             raster = self.cam_values[spike_type][bin2show]
+            # maybe buil in a digitization option here???
 
         # to do implement sorting of raster by amp
         if sortAmp:
@@ -1848,7 +1852,7 @@ class kernel_model():
 
     def plot_pred_helper(self,on_times,is_sel,nrnID_idx,
         ax,raster_kwargs=None,c='k',
-        plot_train = True, plot_test= False, 
+        plot_train = True, plot_test= False, merge_train_test = False,
         plot_pred_train = True,plot_pred_test = False):
 
         if not raster_kwargs: 
@@ -1858,8 +1862,20 @@ class kernel_model():
                 'sort_idx': None
             } 
 
+        train_set = self.is_training_set.copy()
+        test_set  = self.is_test_set.copy()
+
+        if merge_train_test: 
+            plot_train=True 
+            plot_pred_train = True 
+            plot_test= False 
+            plot_pred_test = False
+            train_set = train_set+test_set
+
+            
+
         if plot_train or plot_pred_train:
-            trial_set = self.is_training_set            
+            trial_set = train_set            
             on_time = on_times[(trial_set & is_sel)]
             if on_time.size>=1:
                 if plot_train:
@@ -1879,7 +1895,7 @@ class kernel_model():
 
 
         if plot_test or plot_pred_test:
-            trial_set = self.is_test_set            
+            trial_set = test_set            
             on_time = on_times[(trial_set & is_sel)]
 
             if on_time.size>=1:
@@ -1901,7 +1917,7 @@ class kernel_model():
 
     def plot_prediction(
         self,nrnID,plot_stim = True, 
-        plot_move=False, sep_choice=True,
+        plot_move=False, sep_choice=True,sep_move=False,
         plotted_vis_azimuth=None,plotted_aud_azimuth=None,
         plot_colors=None, 
         **plot_cond_kwargs):
@@ -1914,9 +1930,16 @@ class kernel_model():
         plot_stim:bool 
         plot_move: bool
         sep_choice: bool
+            whether to separate trials at each condition based on its trial type
+        sep_move: bool
+            whether to separate trials based on motion energy or not
+        movetype: str 
+            only used when sep_move is True
+            movetype indicates whether to get trials with high amount or low amount of movement.
         plotted_vis_azimuth: list
         plotted_aud_azimuth:list
-        plot_colors: list of stim and movement plot colors
+        plot_colors: list of str 
+            list of stim and movement plot colors
         plot_train:bool
         plot_test:bool
         plot_pred:bool
@@ -1959,6 +1982,19 @@ class kernel_model():
 
         vazi,aazi=np.meshgrid(plotted_vis_azimuth,plotted_aud_azimuth)
 
+        if sep_move:
+
+            # digitise the camera data if it has not been digitized already
+            # aligned to block stim onset very rough... 
+           # _,_,digitised_motion = digitise_motion_energy(self.tscale,self.feature_matrix[:,self.feature_column_dict['motionEnergy']].ravel(),plot_sample=True,min_off_time=.02,min_on_time =.02)
+            _,_,digitised_motion = digitise_motion_energy(self.tscale,self.cam_values['motionEnergy'],plot_sample=False,min_off_time=.02,min_on_time =.02)
+
+            digitised_motion_raster,_,_ = get_move_raster(self.events.block_stimOn,self.tscale,digitised_motion,pre_time=0,post_time=.2,bin_size=self.t_bin,to_plot=False,baseline_subtract=False)
+            # sort camera based on average amptude in the response period, or something of that sort. 
+            did_it_move = ((digitised_motion_raster.sum(axis=1))>0).astype('int')
+
+
+
         for i,m in enumerate(vazi):
             for j,_ in enumerate(m):
                 v = vazi[i,j]
@@ -1974,8 +2010,11 @@ class kernel_model():
 
                 if sep_choice:
                     n_lines = 2
+                elif sep_move:
+                    n_lines = 2
                 else: 
                     n_lines = 1
+
 
                 for mydir in range(n_lines):                  
 
@@ -1983,6 +2022,8 @@ class kernel_model():
                     
                     if sep_choice:
                         is_selected_trial = is_selected_trial & (self.events.choiceType==mydir+1)
+                    elif sep_move:
+                        is_selected_trial = is_selected_trial & (did_it_move==mydir)
 
                     if plot_stim: 
                         myax = ax[n_aud_pos-1-i,stim_plot_inds[j]]
@@ -1999,8 +2040,15 @@ class kernel_model():
                         else: 
                             stimOnset_time = self.events.timeline_audPeriodOn
 
-                        rkw = {'t_before': 0.05,'t_after': 0.8,'sort_idx': None}
+                        # if we discard certain onsets based on how much movement happened during these trials.
+
+                        rkw = {'t_before': 0.05,'t_after': 0.3,'sort_idx': None}
                         is_selected_trial = is_selected_trial & ~np.isnan(stimOnset_time)
+
+                        # if sep_move & (movetype=='high'):
+                        #     is_selected_trial = is_selected_trial & did_it_move
+                        # elif sep_move & (movetype=='low'):
+                        #     is_selected_trial = is_selected_trial & ~did_it_move
 
                         self.plot_pred_helper(stimOnset_time,is_selected_trial,nrnID_idx,myax,
                                             c=plot_colors[mydir],raster_kwargs= rkw,

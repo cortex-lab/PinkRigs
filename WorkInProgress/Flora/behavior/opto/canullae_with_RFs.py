@@ -61,6 +61,8 @@ from Analysis.pyutils.plotting import brainrender_scattermap
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
 allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 
+
+
 score_thr = 0.05
 
 # %%
@@ -131,12 +133,18 @@ for idx,m in enumerate(histology_folders):
 fig,ax = plt.subplots(1,1,figsize=(10,5))
 ap=allen_pos_apdvml[:,0]
 ml = allen_pos_apdvml[:,2]
+
 azimuth = clusInfo.fit_azimuth
 swap_single_hemi = True
 if swap_single_hemi: 
-    ml=(ml-5600)*clusInfo.hemi
+    allen_pos_apdvml_r = clusInfo[['ap','dv','ml']].values
+    allen_pos_apdvml_r[:,2] =  ((clusInfo.ml-5600)*clusInfo.hemi+5600)
     azimuth = azimuth *clusInfo.hemi
-    data.ml = (data.ml-5600) * data.hemisphere * -1
+    data.ml = (data.ml-5600) * data.hemisphere * -1 +5600
+
+
+#allen_pos_apdvml_r= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
+
 which=(clusInfo.score>score_thr) & (azimuth<90) & (azimuth>0)
 plt.scatter(ml[which],ap[which],c=azimuth[which],vmin=0,vmax=90,cmap='Blues')
 plt.colorbar()
@@ -155,5 +163,57 @@ plt.colorbar()
 plt.scatter(data.ml,data.ap,s=70,c='red')
 plt.xlabel('ml,SC')
 plt.ylabel('ap')
+
+# %%
+from Processing.pyhist.helpers.atlas import AllenAtlas
+from Analysis.pyutils.plotting import brainrender_scattermap
+from scipy import stats 
+
+atlas = AllenAtlas(25)
+
+# bar plots for SCs and SCm
+# for the spatial cells
+_,ax = plt.subplots(1,1,figsize=(5,5))
+p = allen_pos_apdvml
+xyz = atlas.ccf2xyz(p,ccf_order='apdvml') 
+t= 'aud'
+clusInfo['is_SC'] = ['SC'in loc for loc in clusInfo.brainLocationAcronyms_ccf_2017.astype('str')]
+
+mm = np.nanmin(xyz[clusInfo.is_SC & (clusInfo.score>score_thr),2])
+ma  = np.nanmax(xyz[clusInfo.is_SC & (clusInfo.score>score_thr),2])
+
+requested_depth = 2000
+xyz_ref = atlas.ccf2xyz(np.array([allen_pos_apdvml[0,0],requested_depth,allen_pos_apdvml[0,2]]),ccf_order='apdvml')
+
+atlas.plot_hslice(xyz_ref[2],volume='boundary',ax=ax,aspect='auto')
+
+# ax.set_ylim([-5000,-2600])
+# ax.set_xlim([-2200,0])
+
+#ax.scatter(-dots_to_plot[:,2]+5600,-dots_to_plot[:,0]+5400,color=dot_colors,edgecolor='grey',s=100,alpha=.8,vmin=0,vmax=.3) 
+
+ax.scatter(-data.ml+5600,-data.ap+5400,s=50,color='red')
+ax.scatter(-data.ml+5600,-data.ap+5400,s=1000,color='red',alpha=.1)
+
+
+is_plotted= (clusInfo.score>score_thr) & clusInfo.is_SC
+xfromprobe = clusInfo._av_xpos-clusInfo._av_shankID*200
+
+dots_to_plot = allen_pos_apdvml_r[is_plotted,:]
+
+dot_colors = brainrender_scattermap(elevation[is_plotted],vmin = -37.5,vmax=37.5,n_bins=5,cmap='coolwarm')
+
+#ax.scatter(-dots_to_plot[:,2]+5600+xfromprobe[is_plotted],-dots_to_plot[:,0]+5400+xfromprobe[is_plotted],color=dot_colors,edgecolor='grey',s=100,alpha=.8,vmin=0,vmax=.3) 
+ax.set_ylim([-5000,-2600])
+ax.set_xlim([-2200,0])
+
+which_figure = 'cannulae_map'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+# %%
+# linear model for ap vs azimuth 
+
 
 # %%

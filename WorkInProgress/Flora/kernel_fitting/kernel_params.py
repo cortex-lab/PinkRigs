@@ -19,7 +19,7 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dat_set = 'naive'):
 
         elif dat_set=='active': 
             dat_params = {
-                't_support_stim':[-0.05,0.6],   
+                't_support_stim':[-0.05,.6],   
                 't_support_movement':[-0.2,0.1],
                 'rt_params':{'rt_min': .07, 'rt_max': None},
                 'event_types': ['aud','vis','move'], # 
@@ -49,9 +49,17 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dat_set = 'naive'):
         }
 
     if call_eval:
-        eval_params = {
-            'kernel_selection':'stimgroups',
-            'sig_metric': ['explained-variance']
-        }
+        if  dat_set=='naive':
+
+            eval_params = {
+                'kernel_selection':'stimgroups',
+                'sig_metric': ['explained-variance']
+            }
+        
+        elif dat_set=='active':
+            eval_params = {
+                'kernel_selection':'dirgroups',
+                'sig_metric': ['explained-variance']
+            }
 
     return dat_params,fit_params,eval_params

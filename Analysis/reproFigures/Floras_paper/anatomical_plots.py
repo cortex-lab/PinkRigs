@@ -10,17 +10,18 @@ from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 from Analysis.pyutils.plotting import brainrender_scattermap
-
-dat_type = 'naive-total'
-#dat_type = 'trained-passive-cureated'
+from Processing.pyhist.helpers.regions import BrainRegions
+br = BrainRegions()
+#dat_type = 'naive-total'
+dat_type = 'trained-passive-cureated'
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 csv_path = interim_data_folder / dat_type / 'summary_data.csv'
 clusInfo = pd.read_csv(csv_path)
 clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi # calculate relative ap*hemisphre position
+clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
 
-
-which_figure = 'kernelVE-aud'
+which_figure = 'kernelVE-me'
 one_hemisphere = True
 
 
@@ -43,7 +44,7 @@ atlas = AllenAtlas(25)
 thr=.02
 p = allen_pos_apdvml
 xyz = atlas.ccf2xyz(p,ccf_order='apdvml') 
-fig,ax = plt.subplots(1,1,figsize=(3,3))
+fig,(ax,axb) = plt.subplots(1,2,figsize=(6,3))
 
 p[:,1] = p[:,1]-200
 is_plotted = clusInfo.is_good & clusInfo.is_SC 
@@ -69,12 +70,14 @@ if 'aud' in which_figure:
     ax.scatter(p[is_plotted,2]-5600,-p[is_plotted,1],c=clusInfo.kernelVE_aud[is_plotted],edgecolor='k',cmap=cmap,s=dotsize,alpha=.8,vmin=0,vmax=vmax)
 if 'vis' in which_figure: 
     is_plotted = clusInfo.is_good & clusInfo.is_SC & (clusInfo.kernelVE_vis>thr)
-    plt.scatter(p[is_plotted,2]-5600,-p[is_plotted,1],c=clusInfo.kernelVE_vis[is_plotted],edgecolor='k',cmap=cmap,s=dotsize,alpha=.8,vmin=0,vmax=vmax)
+    ax.scatter(p[is_plotted,2]-5600,-p[is_plotted,1],c=clusInfo.kernelVE_vis[is_plotted],edgecolor='k',cmap=cmap,s=dotsize,alpha=.8,vmin=0,vmax=vmax)
+
+axb.hist(clusInfo.BerylAcronym[is_plotted])
 
 
 ax.set_xlim([0,2400])
 ax.set_ylim([-3200,-600])
-
+axb.set_ylim([0,140])
 cpath  = Path(r'C:\Users\Flora\Pictures\SfN2023')
 im_name = dat_type + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'

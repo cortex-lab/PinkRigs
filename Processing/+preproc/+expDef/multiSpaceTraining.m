@@ -280,6 +280,17 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         missedOnset = isnan(timelineStimOnset) & ~(audAmplitude==0 & visContrast == 0);
         stimFoundIdx = responseMadeIdx & ~(audAmplitude==0 & visContrast == 0);
         stimOnsetIdx = round(timelineStimOnset(stimFoundIdx)*sR);
+
+
+        %%% some hack to fix the NaN at the first trial which was caused by powers in the universe     
+        % Caused by session GB002 on 19 Jan 2024 -- FT
+        stimFoundIdx_true = find(stimFoundIdx); 
+        stimFoundIdx_true(find(isnan(stimOnsetIdx)))=[];
+        stimFoundIdx = zeros(1,numel(stimFoundIdx_true)); stimFoundIdx(stimFoundIdx_true)=1;
+        stimFoundIdx = logical(stimFoundIdx);
+        stimOnsetIdx = stimOnsetIdx(~isnan(stimOnsetIdx)); 
+        
+        %%%%%%%%%%%%%%%%
         stimEndIdx = min([stimOnsetIdx+1.5*sR trialStEnTimes(stimFoundIdx,2)*sR],[],2);
         stimEndIdx = stimEndIdx-stimOnsetIdx;
         if any(missedOnset)
@@ -481,8 +492,10 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     
     % detect any periods of movement (summed over 20ms) in any direction
     movingScan = smooth((posVelScan'>=velThresh) + (-1*negVelScan'>=velThresh),21);
+    
     falseIdx = (movingScan(stimOnsetIdx(~isnan(stimOnsetIdx)))~=0); %don't want trials when mouse is moving at stim onset
-
+    
+    % 
 
     % I am gonna actually save out the trials that were like this
     movedAtStim = zeros(1,numel(is_blankTrial)); 
