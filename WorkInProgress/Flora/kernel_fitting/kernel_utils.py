@@ -1,13 +1,88 @@
 
-import sys
+import sys,shutil
 import pandas as pd
 import numpy as np
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Analysis.pyutils.io import save_dict_to_json
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.neural.utils.data_manager import load_cluster_info
+from Analysis.neural.src.kernel_model import kernel_model
+from kernel_params import get_params
 
-def load_VE_per_cluster(dataset,fit_tag,interim_data_folder=Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')):
+def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'whoKnows',fit_tag = 'additive-fit',**param_tags): 
+    """
+    queryCSV based fitting procedure. 
+
+    Parameters:
+
+    """
+
+    if savepath is None: 
+        interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
+        save_path = interim_data_folder / dataset_name / 'kernel_model' / fit_tag
+        save_path.mkdir(parents=True,exist_ok=True)
+
+    failed_recs = []
+    for _,rec_info in recordings.iterrows():
+
+        try: 
+            print('Now attempting to fit %s %s, expNum = %s, %s' % tuple(rec_info))
+
+            nametag = '%s_%s_%s_%s' % tuple(rec_info)
+
+            # create a folder 
+            curr_save_path  = save_path / nametag
+
+            if not curr_save_path.is_dir() or recompute:
+                
+                # remove if the folder already exists
+                if curr_save_path.is_dir():
+                    shutil.rmtree(curr_save_path)
+                
+                curr_save_path.mkdir(parents=True,exist_ok=True)
+
+                # since kernels is a class, I think it is safer to recall it after each fit... I think that is why -1000 kept accumulating in dat_params, for example
+                kernels = kernel_model(t_bin=0.005,smoothing=0.025)
+                dat_params,fit_params,eval_params = get_params(**param_tags)
+                kernels.load_and_format_data(**dat_params,**rec_info)
+                kernels.fit(**fit_params)
+                variance_explained = kernels.evaluate(**eval_params)
+
+
+                # save all the results
+                variance_explained.to_csv((curr_save_path / ('variance_explained_batchKernel.csv')))
+                my_kernels = kernels.calculate_kernels()
+
+                for k in my_kernels.keys():
+                    np.save(
+                        (curr_save_path / ('%s.npy' % k)), 
+                        my_kernels[k]
+                    )
+                
+                np.save(
+                    (curr_save_path / 'clusIDs.npy'), 
+                    kernels.clusIDs
+                )
+
+        except:
+            print('Failed to fit %s %s, expNum = %s, %s' % tuple(rec_info))
+            failed_recs.append(rec_info)
+
+
+    failed_recs = pd.DataFrame(failed_recs,columns = ['subject','expDate','expNum','probe'])
+
+    failed_recs.to_csv((save_path / 'failed_to_fit.csv'))    
+    # save the parameters of fitting
+    save_dict_to_json(dat_params,save_path / 'dat_params.json')
+    save_dict_to_json(fit_params,save_path / 'fit_params.json')
+    save_dict_to_json(eval_params,save_path / 'eval_params.json')
+
+
+
+
+
+def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')):
     """"
     function that reads the csv output of the kernel fitting and matches that with the ONE clusters info
     
@@ -19,6 +94,8 @@ def load_VE_per_cluster(dataset,fit_tag,interim_data_folder=Path(r'C:\Users\Flor
         name of the model during model fitting
     interim_data_folder: pathlib.Path
         parent folder where the fittings are stored
+    unite_aud: bool 
+        whether to unite all aud kernels indepedent of SPL
     
     Returns: pd.df
         clusInfo 
@@ -26,16 +103,18 @@ def load_VE_per_cluster(dataset,fit_tag,interim_data_folder=Path(r'C:\Users\Flor
     
     """
 
-    save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
-    dat_keys = get_data_bunch(dataset)
+    save_path = interim_data_folder / dataset_name / 'kernel_model' / fit_tag
+    dat_keys = get_data_bunch(dataset_name)
 
     all_dfs = []
-    for _,session in dat_keys.iterrows():
+    for _,rec_info in dat_keys.iterrows():
         # get generic info on clusters 
-        print(*session)
-        clusInfo = load_cluster_info(**session,unwrap_independent_probes=False)
+        print(*rec_info)
+        clusInfo = load_cluster_info(**rec_info,unwrap_independent_probes=False)
+        nametag = '%s_%s_%s_%s' % tuple(rec_info)
 
-        kernel_fit_results = (save_path / ('%s_%s_%.0f_%s.csv' % tuple(session)))
+        kernel_fit_results = save_path / nametag / ('variance_explained_batchKernel.csv')
+
 
         if kernel_fit_results.is_file():
             kernel_fits = pd.read_csv(kernel_fit_results)  
@@ -58,8 +137,39 @@ def load_VE_per_cluster(dataset,fit_tag,interim_data_folder=Path(r'C:\Users\Flor
                             newVE.append(VEs[idx[0]])
                         else:
                             newVE.append(np.nan)  
-                    
-                    clusInfo[tag] = newVE                     
+                               
+                    clusInfo[tag] = newVE 
+                
+                
+                if ('aud' in tag) & (unite_aud):
+                    if 'dir' in tag:
+                        clusInfo['kernelVE_aud_dir'] = clusInfo[tag]
+                    else:
+                        clusInfo['kernelVE_aud'] = clusInfo[tag]
+
+
+
+            move_kernels,move_dir_kernels = [],[]
+
+            cIDs = np.load(save_path / nametag / 'clusIDs.npy')
+            
+            mk = np.load(save_path / nametag / 'move_kernel.npy')
+            mkd = np.load(save_path / nametag / 'move_kernel_dir.npy')
+            for idx,c in enumerate(clusInfo._av_IDs):
+                matrix_idx = np.where(cIDs==c)[0]
+                if matrix_idx.size==1: 
+                    matrix_idx = matrix_idx[0]
+                    move_kernels.append(mk[matrix_idx,:][np.newaxis,:])          
+                    move_dir_kernels.append(mkd[matrix_idx,:][np.newaxis,:])
+                else:      
+                    move_kernels.append(np.empty((1,mk.shape[1]))*np.nan)          
+                    move_dir_kernels.append(np.empty((1,mk.shape[1]))*np.nan)               
+
+
+            move_kernels,move_dir_kernels = np.concatenate(move_kernels),np.concatenate(move_dir_kernels)  
+
+            clusInfo['move_kernels'] = move_kernels.tolist()
+            clusInfo['move_dir_kernels'] = move_dir_kernels.tolist()              
 
             all_dfs.append(clusInfo)
         

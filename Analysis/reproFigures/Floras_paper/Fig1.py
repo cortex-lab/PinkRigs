@@ -12,7 +12,7 @@ import time
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.spike_dat import bombcell_sort_units
-dat_type = 'trained-active-curated'
+dat_type = 'naive-allen'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
@@ -400,7 +400,7 @@ atlas = AllenAtlas(25)
 
 # bar plots for SCs and SCm
 # for the spatial cells
-_,(ax,ax1) = plt.subplots(1,2,figsize=(7/4,5/4),sharey=True,gridspec_kw={'width_ratios':[5,2]})
+_,(ax,ax1) = plt.subplots(1,2,figsize=(14,10),sharey=True,gridspec_kw={'width_ratios':[5,2]})
 
 _,(ax2) = plt.subplots(1,1,figsize=(5,1))
 
@@ -434,15 +434,23 @@ maps['%s_mean'% t] = mean_per_pos
 maps['%s_std' % t ] = std_per_pos
 
 posbins_plot = -(posbins+8500)+5400
-ax1.errorbar(mean_per_pos,posbins_plot[:-1]+np.diff(posbins_plot)/2,xerr=std_per_pos,
+aplocs = posbins_plot[:-1]+np.diff(posbins_plot)/2
+
+ax1.errorbar(mean_per_pos,aplocs,xerr=std_per_pos,
               linestyle='-',marker='o',markeredgecolor='k',markersize=2,color='lightgrey',capsize=4,ecolor='grey',elinewidth=1)
-ax1.set_xlim([-120,250])
+#ax1.set_xlim([-120,250])
 
 which_figure = '%s_map'% t
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dat_type + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
 #plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+
+# %% 
+# interpolate to ask where the 
+np.interp([45,75],mean_per_pos,aplocs)
 
 
 # %%

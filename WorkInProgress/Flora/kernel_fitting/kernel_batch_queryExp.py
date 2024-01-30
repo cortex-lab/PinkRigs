@@ -27,7 +27,6 @@ recordings = recordings[['subject','expDate','expNum','probe']]
 # %%
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 save_path = interim_data_folder / dataset / 'kernel_model' / fit_tag
-
 save_path.mkdir(parents=True,exist_ok=True)
 
 from Analysis.neural.src.kernel_model import kernel_model
@@ -52,7 +51,6 @@ for _,rec_info in recordings.iterrows():
 
         # save all the results
         nametag = '%s_%s_%s_%s' % tuple(rec_info)
-
         # create a folder 
         curr_save_path  = save_path / nametag
         # remove it if it already existed

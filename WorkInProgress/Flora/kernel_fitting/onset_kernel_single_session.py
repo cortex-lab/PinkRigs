@@ -12,9 +12,9 @@ nrn_list = [22,25,50,71,80,207,34,156,325]
 
 
 data_ID = {
-     'subject': 'AV034',
-     'expDate': '2022-12-08', 
-     'expNum': 2,
+     'subject': 'AV030',
+     'expDate': '2022-03-10', 
+     'expNum': 1,
       'probe': 'probe0' 
 }
 
@@ -43,7 +43,7 @@ variance_explained = kernels.evaluate(**evalParams)
 kernels.fit_evaluate(get_prediciton=True,**fitParams)
 
 # %%
-n = 297
+n = 2
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
@@ -56,8 +56,8 @@ color_dict = {
 
 
 kernels.plot_prediction(n,plot_stim=True,sep_choice=True,plot_move=True,sep_move=False,
-                            plot_train = True, plot_test= False,merge_train_test=True, 
-                            plot_pred_train = True,plot_pred_test = False,plot_colors=['black','steelblue'],
+                            plot_train = True, plot_test= False,merge_train_test=False, 
+                            plot_pred_train = True,plot_pred_test = False,plot_colors=['blue','red'],
                             plotted_vis_azimuth=np.array([-1000,-60,60]),plotted_aud_azimuth=np.array([-60,0,60]))
 
 # save out the example neurons
@@ -90,9 +90,9 @@ ax.set_xlabel('time during trial')
 ax.set_ylabel('VE,test')
 # %%
 v_azimuths = [-1000,60]
-v_contrasts = [0,.4]
+v_contrasts = [0,.1]
 a_azimuths = [60,0]
-a_spls = [.1,.1]
+a_spls = [.25,.25]
 raster_kwargs = {'t_before': 0.05,'t_after': 0.4,'sort_idx': None}
 kernels.plot_prediction_rasters(n,visual_azimuth=v_azimuths,auditory_azimuth=a_azimuths,contrast=v_contrasts,spl=a_spls) 
 kernels.plot_kernels(n)

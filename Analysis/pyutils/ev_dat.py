@@ -379,7 +379,7 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
                                         'spl':spl,
                                         'vis_azimuths':v_azi,
                                         'aud_azimuth':a_azi,
-                                        'choice_type': choice,
+                                         'choice_type': choice,
                                         'n_trials':is_this_trial.sum()})
             
         

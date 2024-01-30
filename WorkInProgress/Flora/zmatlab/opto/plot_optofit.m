@@ -42,7 +42,10 @@ plotOpt.Marker = plotParams.DotStyle;
 plotOpt.MarkerSize = plotParams.MarkerSize; 
 plotOpt.FaceAlpha = 0.1; 
 
-currBlock = addFakeTrials(currBlock); 
+if plotParams.addFake==1
+    currBlock = addFakeTrials(currBlock); 
+end 
+
 visDiff = currBlock.stim_visDiff;
 audDiff = currBlock.stim_audDiff;
 responseDir = currBlock.response_direction;

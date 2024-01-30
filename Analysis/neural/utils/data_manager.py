@@ -530,11 +530,17 @@ def load_cluster_info(rec = None,probe = 'probe0',**rec_kwargs):
 
     if rec is None: 
         data_dict = {
-            probe:{'clusters':'all'}}
+            probe:{'clusters':'all','spikes':'clusters'}}
         recording = load_data(data_name_dict=data_dict,**rec_kwargs)   
         rec = recording.iloc[0]
 
     clusters = rec[probe].clusters
+    
+    # because quality metrics are calculated on the kilosort output, they correspond to the entire ephys file the data was taken from.  E.g. active passive together 
+    # so sometimes the neurons drift out at that long timescale. So I recalculate the nSpikes parameter here
+    nSpikes  = np.array([np.sum(rec[probe].spikes.clusters==clus) for clus in clusters._av_IDs])
+    clusters['nSpikes'] = nSpikes
+
 
     clusInfo = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
     clusInfo = pd.DataFrame.from_dict(clusInfo)

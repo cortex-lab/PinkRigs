@@ -21,12 +21,12 @@ opto_fit_sets = logical([
     [0,1,1,0,1,1]; ...   %12
     [1,0,1,0,1,1]; ...    
     [1,1,0,0,1,1]; ...    
-    [1,1,1,0,0,1]; ...    
-
-%     [0,0,1,0,1,1]; ...   %17
-%     [0,1,0,0,1,1]; ...   %18
-%     [0,1,1,0,0,1]; ...   %19
-%     [0,1,1,0,1,0]; ...   %20
+    [1,1,1,0,0,1]; ...  
+    [1,1,1,0,1,0]; ...  
+    [0,0,1,0,1,1]; ...   %17
+    [0,1,0,0,1,1]; ...   %18
+    [0,1,1,0,0,1]; ...   %19
+    [0,1,1,0,1,0]; ...   %20
 
 ]);
 
@@ -55,12 +55,13 @@ for s=1:numel(extracted.data)
     
     if shouldPlot
         f=figure; 
-        f.Position = [10,10,300,300];
+        f.Position = [10,10,400,400];
         plotParams.LineStyle = '--';
         plotParams.DotStyle = 'none';
         plotParams.MarkerEdgeColor = 'k';
-        plotParams.MarkerSize = 36; 
+        plotParams.MarkerSize = 18; 
         plotParams.LineWidth = 3; 
+        plotParams.addFake=1; 
 
         plot_optofit(controlfit,plotParams,plotfit)
         hold on; 
@@ -168,17 +169,18 @@ figure;
 %plot([1,2],median(opto_fit_logLik(:,2:3)),['black']);
 hold on
 for m=1:size(opto_fit_logLik,1)
-    plot([1,2],[opto_fit_logLik(m,12),opto_fit_logLik(m,19)],'k')
+    plot([1,2],[opto_fit_logLik(m,3),opto_fit_logLik(m,5)],'k')
     hold on 
 end 
-[hv,pv]= ttest(opto_fit_logLik(:,12),opto_fit_logLik(:,19));
+[hv,pv]= ttest(opto_fit_logLik(:,3),opto_fit_logLik(:,5));
 
 %%
+
 
 deltaVVb = opto_fit_logLik(:,3)-opto_fit_logLik(:,5);
 %%
 % this stupid plot 
-s_id = 6; 
+s_id = 2; 
 figure; 
 
 best_deltaR2 = opto_fit_logLik(s_id,1) - opto_fit_logLik(s_id,2);
@@ -187,20 +189,27 @@ yline(opto_fit_logLik(s_id,1),color='k',LineWidth=5)
 hold on 
 yline(opto_fit_logLik(s_id,2),color='green',LineWidth=5)
 hold on 
-plot([1,2,3,4,5],opto_fit_logLik(s_id,[8,9,10,11,3]),color='k',LineWidth=3,LineStyle='--');
+plot([1,2,3,4,5],opto_fit_logLik(s_id,[8,9,10,11,3]),color='k',LineWidth=3,LineStyle='--'); % only 1 is allowed to change 
 hold on 
-plot([1,2,3,4,5],opto_fit_logLik(s_id,[13,14,15,16,12]),color='green',LineWidth=3,LineStyle='--');
+plot([1,2,3,4,5],opto_fit_logLik(s_id,[13,14,15,16,12]),color='green',LineWidth=3,LineStyle='--'); % same one drops out
+ylabel('-Log2Likelihood')
+xticks([1,2,3,4,5])
+xticklabels({'V_i_p_s_i','V_c_o_n_t_r_a','A_i_p_s_i','A_c_o_n_t_r_a','bias'})
 
 ax2 = subplot(1,2,2);
 yline(opto_fit_logLik(s_id,3),color='k',LineWidth=5) % bias add 
 hold on 
 yline(opto_fit_logLik(s_id,12),color='green',LineWidth=5) % bias lost 
-plot([1,2,3,4],opto_fit_logLik(s_id,[4:7]),color='k',LineWidth=3,LineStyle='--');
+plot([1,2,3,4],opto_fit_logLik(s_id,[4:7]),color='k',LineWidth=3,LineStyle='--'); % bias + x how much more it gains 
 hold on 
-plot([1,2,3,4],opto_fit_logLik(s_id,[17:20]),color='green',LineWidth=3,LineStyle='--');
+plot([1,2,3,4],opto_fit_logLik(s_id,[17:20]),color='green',LineWidth=3,LineStyle='--',Marker='+'); % bias + x how much more it looses 
 linkaxes([ax1, ax2], 'y');
+xticks([1,2,3,4])
+xticklabels({'V_i_p_s_i','V_c_o_n_t_r_a','A_i_p_s_i','A_c_o_n_t_r_a'})
+
 
 sgtitle(sprintf('%s,hemisphere:%.0d,power:%.0d',extracted.subject{s_id},extracted.hemisphere{s_id},extracted.power{s_id}))
+
 
 
 

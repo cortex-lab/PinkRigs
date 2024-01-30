@@ -1236,7 +1236,8 @@ class kernel_model():
                             digitise_cam=False,
                             zscore_cam = False,
                             turn_stim_off = None,
-                            stim_dir_kernel = False,
+                            aud_dir_kernel = False,
+                            vis_dir_kernel = False,
                             **kwargs):         
 
         """
@@ -1371,6 +1372,8 @@ class kernel_model():
             contrasts = [c for c in contrasts if c>0]
             spls = [p for p in spls if p>0]
 
+            print('%.0f trials are kept.' % ev.is_blankTrial.size)
+
             # classify into kernels
             if 'vis' in event_types:   
                 onset_sel_key = 'timeline_visPeriodOn'  # timing info taken for this  
@@ -1379,7 +1382,7 @@ class kernel_model():
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
 
-                if stim_dir_kernel: # if the kernel is just directional, we don't add azimuths specifically
+                if vis_dir_kernel: # if the kernel is just directional, we don't add azimuths specifically
                     azimuths = [None]
 
                 for my_contrast,my_azimuth in itertools.product(contrasts, azimuths): 
@@ -1404,7 +1407,7 @@ class kernel_model():
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = aud_azimuths
 
-                if stim_dir_kernel: 
+                if aud_dir_kernel: 
                     azimuths = [None]
 
                 for my_spl,my_azimuth in itertools.product(spls,azimuths): 
@@ -1419,7 +1422,7 @@ class kernel_model():
                     # add all auditory trials as onset kernel even when direction kernels are called
                     extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
-                    if stim_dir_kernel: 
+                    if aud_dir_kernel: 
                         diag_value_vector = np.sign(ev.stim_audAzimuth[is_selected])
                         feature_name_string = feature_name_string + '_dir'
                         extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)

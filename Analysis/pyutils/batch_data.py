@@ -141,6 +141,7 @@ def get_data_bunch(namekey):
         # recordings where I looked at the movement and there seemed to be some sessions with less movement plus independent recordings selected/mouse 
         column_names = ['subject','expDate','expNum','probe']
         recordings = [
+            ('AV020','2022-07-27',10,'probe0'),
             ('AV025','2022-11-08',1,'probe0'),
             ('AV025','2022-11-08',1,'probe1'),
             ('AV025','2022-11-10',1,'probe0'),
@@ -151,6 +152,47 @@ def get_data_bunch(namekey):
 
         ]
 
+    elif namekey == 'trained-active-highSPL':
+
+        # recordings where I looked at the movement and there seemed to be some sessions with less movement plus independent recordings selected/mouse 
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('AV008','2022-03-10',1,'probe0'),
+            ('AV008','2022-03-10',1,'probe1'),
+            ('AV008','2022-03-13',2,'probe0'),
+            ('AV008','2022-03-13',2,'probe1'),
+            ('AV014','2022-06-09',2,'probe0'),
+            ('AV014','2022-06-17',1,'probe0'),
+            ('AV014','2022-06-17',1,'probe1'),
+            ('AV014','2022-07-12',2,'probe0'),
+            ('AV014','2022-07-12',2,'probe1'),
+
+        ]
+
+    elif namekey == 'trained-active-all':
+
+        # recordings where I looked at the movement and there seemed to be some sessions with less movement plus independent recordings selected/mouse 
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('AV008','2022-03-10',1,'probe0'),
+            ('AV008','2022-03-10',1,'probe1'),
+            ('AV008','2022-03-13',2,'probe0'),
+            ('AV008','2022-03-13',2,'probe1'),
+            ('AV014','2022-06-09',2,'probe0'),
+            ('AV014','2022-06-17',1,'probe0'),
+            ('AV014','2022-06-17',1,'probe1'),
+            ('AV014','2022-07-12',2,'probe0'),
+            ('AV014','2022-07-12',2,'probe1'),
+            ('AV020','2022-07-27',10,'probe0'),
+            ('AV025','2022-11-08',1,'probe0'),
+            ('AV025','2022-11-08',1,'probe1'),
+            ('AV025','2022-11-10',1,'probe0'),
+            ('AV025','2022-11-10',1,'probe1'),
+            ('AV030','2022-12-07',2,'probe1'), 
+            ('AV034','2022-12-09',1,'probe0'),
+            ('AV034','2022-12-10',1,'probe0'),
+
+        ]
 
     elif namekey == 'naive-acute-rfs':
         column_names = ['subject','expDate','expNum','probe']
@@ -470,4 +512,4 @@ def get_data_bunch(namekey):
         columns= column_names
     )
 
-    return recordings
+    return recordings.astype('str')
