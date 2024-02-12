@@ -146,17 +146,16 @@ def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_t
     b,a = signal.butter(7,w,'low')
     camv_filt = signal.filtfilt(b, a, camv)
 
-    k_clus  = KMeans(n_clusters=5).fit(camv_filt[:,np.newaxis])
+    k_clus  = KMeans(n_clusters=5).fit(camv[:,np.newaxis])
     # remove clusters with less than 2% points
     keep_idx = [(k_clus.labels_==clusIdx).mean()>.02 for clusIdx in np.unique(k_clus.labels_)]
     # get the center of each of the remainder of the clusters. 
     thresh = k_clus.cluster_centers_[keep_idx,0]
     thresh = np.min(thresh)#+np.ptp(thresh)*0.02 # determine the minimum thershold for crossing
-
     std_low = np.std(camv_filt[k_clus.labels_==np.argmin(thresh)])
-    low_up_thr = np.array([thresh,thresh+std_low*1.2])
+    low_up_thr = np.array([thresh,thresh+std_low])
     # schmitt trigger of the trace
-    camv_thr,_ = schmitt(camv_filt,low_up_thr)
+    camv_thr,_ = schmitt(camv,low_up_thr)
 
     on_times = camt[1:][(camv_thr[:-1]==-1) & (camv_thr[1:]==1)]        
     off_times = camt[1:][(camv_thr[:-1]==1) & (camv_thr[1:]==-1)]
@@ -170,7 +169,7 @@ def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_t
 
     while on_times.size!=off_times.size: 
         # if stating in on state
-        if camv_thr[0]>0: 
+        if camv_thr[0]>=0: 
             on_times = np.insert(on_times,0,camt[0])
         elif camv_thr[-1]>0: 
             off_times = np.insert(off_times,0,camt[-1])

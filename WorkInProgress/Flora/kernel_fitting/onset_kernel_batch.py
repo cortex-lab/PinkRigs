@@ -6,8 +6,8 @@ from kernel_utils import fit_and_save
 
 
 
-dataset_name = 'trained-active-highSPL'
+dataset_name = 'trained-passive-cureated'
 recordings = get_data_bunch(dataset_name) # or can be with queryCSV
-fit_and_save(recordings,savepath=None,dataset_name=dataset_name,recompute=True,dataset_type='active')
+fit_and_save(recordings,savepath=None,dataset_name=dataset_name,recompute=True,dataset_type='passive')
 
 # %%

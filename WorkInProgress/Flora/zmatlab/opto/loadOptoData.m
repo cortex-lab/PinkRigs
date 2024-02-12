@@ -41,6 +41,7 @@ if params.balanceTrials
 end
 
 if ~params.sepMice
+    events.subjectID_ = events.subjectID; 
     events.subjectID = ones(numel(events.subjectID),1);
 end
 
@@ -76,8 +77,6 @@ for i=1:size(paramSet,1)
    event_controls = filterStructRows(events,...
        (ismember(events.sessionID,subset_sessions) & ...
        isnan(events.stim_laserPosition))); 
-
-   % add one trial of each condition to each set
 
    opto.data{i,1} = concatenateEvents({event_subset,event_controls}); 
    opto.subject{i,1}=mouseIDs.name(paramSet(i,1));

@@ -166,6 +166,9 @@ def get_data_bunch(namekey):
             ('AV014','2022-06-17',1,'probe1'),
             ('AV014','2022-07-12',2,'probe0'),
             ('AV014','2022-07-12',2,'probe1'),
+            ('FT030','2021-12-03',1,'probe0'), 
+            ('FT031','2021-12-05',1,'probe0'), 
+
 
         ]
 
@@ -191,6 +194,15 @@ def get_data_bunch(namekey):
             ('AV030','2022-12-07',2,'probe1'), 
             ('AV034','2022-12-09',1,'probe0'),
             ('AV034','2022-12-10',1,'probe0'),
+
+        ]
+
+    elif namekey == 'AV008-trainedSC':
+
+        # recordings where I looked at the movement and there seemed to be some sessions with less movement plus independent recordings selected/mouse 
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [
+            ('AV014','2022-06-09',2,'probe0'),
 
         ]
 

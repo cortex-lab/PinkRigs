@@ -154,8 +154,8 @@ for rec_idx in range(len(rec)):
     except:
         print('did not work...')
 
-# %%
-# #################### EXAMPLE TUNING CURVES  ######################
+
+# %% #################### EXAMPLE TUNING CURVES  ######################
 # from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
 
 # azi = azimuthal_tuning(rec.to_dict('r')[0])
@@ -183,31 +183,33 @@ for rec_idx in range(len(rec)):
 # savename = mypath + '\\' + sessName + nrn_name + 'tuning_curve.svg'
 # fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
-#         ####################### EXAMPLE MOVEMENT CORRELATIONG NEURONS  ###############
+# %%        ####################### EXAMPLE MOVEMENT CORRELATIONG NEURONS  ###############
+# after we identified the neurons in Fig 3 I will come back to this 
+import scipy
+cID = 33
+#[76,15,89,193,49,4,35,62,99,167,357,281]:
+from Analysis.neural.utils.spike_dat import bincount2D
+clus_ids = clusters._av_IDs.astype('int') 
+r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin=0.1)
+x,y = cam.times,cam.ROIMotionEnergy
+interp_func = scipy.interpolate.interp1d(x,y,kind='linear')
+camtrace = interp_func(t_bins[t_bins<x[-1]])
+fig,ax = plt.subplots(2,1,sharex=True)
+pre,post = 200,500
+ax[0].plot(t_bins[pre:post],camtrace[pre:post],'k')
+spiketrace = r[np.where(clus==cID)[0][0],:]
+ax[-1].hlines(-.01,t_bins[post]-1,t_bins[post],'k',lw=5)
+ax[1].plot(t_bins[pre:post],spiketrace[pre:post],'grey')
+off_axes(ax[0])
+off_axes(ax[1])
 
-#         import scipy
-#         from Analysis.neural.utils.spike_dat import bincount2D
-#         clus_ids = clusters._av_IDs.astype('int') 
-#         r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin=0.1)
-#         x,y = cam.times,cam.ROIMotionEnergy
-#         interp_func = scipy.interpolate.interp1d(x,y,kind='linear')
-#         camtrace = interp_func(t_bins[t_bins<x[-1]])
-#         fig,ax = plt.subplots(2,1,sharex=True)
-#         pre,post = 300,500
-#         ax[0].plot(t_bins[pre:post],camtrace[pre:post],'k')
-#         spiketrace = r[np.where(clus==cID)[0][0],:]
-#         ax[-1].hlines(-.01,t_bins[post]-1,t_bins[post],'k',lw=5)
-#         ax[1].plot(t_bins[pre:post],spiketrace[pre:post],'grey')
-#         off_axes(ax[0])
-#         off_axes(ax[1])
-
-#         sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[idx,1:])
-#         nrn_name = '_av_IDs_%.0f' % cID
-#         mypath = r'C:\Users\Flora\Pictures\LakeConf'
-#         savename = mypath + '\\' + sessName + nrn_name + 'movement_corr.svg'
-#         fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[rec_idx,1:])
+nrn_name = '_av_IDs_%.0f' % cID
+mypath = r'C:\Users\Flora\Pictures\LakeConf'
+savename = mypath + '\\' + sessName + nrn_name + 'movement_corr.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 # # # %%
-# #################### example mulitsensory interaction ########################
+# %% #################### example mulitsensory interaction ########################
 
 # bin_kwargs={'tscale':[None],
 #             'pre_time':0.01,'post_time': .3, 

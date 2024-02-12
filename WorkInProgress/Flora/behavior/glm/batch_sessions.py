@@ -16,7 +16,7 @@ recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict
                         checkEvents='1',
                         checkSpikes='1',
                         unwrap_independent_probes=True,
-                        region_selection={'region_name':'VIS','min_fraction':.3})
+                        region_selection={'region_name':'SCm','min_fraction':.3})
 
 # %%
 n_trials  = np.array([((rec.events._av_trials.response_direction>0) & (rec.events._av_trials.is_validTrial)).sum() for _,rec in recordings.iterrows()])
@@ -32,7 +32,7 @@ n_neurons = []
 ll_nobias = []
 for r,(_,rec) in enumerate(recordings.iterrows()):
 
-    trials,gIDs = search_for_neural_predictors(rec,my_ROI='VISp',event_type = 'timeline_choiceMoveOn',ll_thr = 0.01)
+    trials,gIDs = search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_audPeriodOn',ll_thr = 0.01)
     for i,model in enumerate(model_types):
         if model=='non-neural':
             trial_matrix = trials.iloc[:,:3]
@@ -52,11 +52,20 @@ for r,(_,rec) in enumerate(recordings.iterrows()):
 
 # %%
 import matplotlib.pyplot as plt
-
+from pathlib import Path
 plt.plot(logLiks,ls='-',color='grey',alpha=1,lw=5)
 #plt.plot(np.nanmean(logLiks,axis=1),color='k',lw=12)
 plt.ylim([0.1,1])
 plt.ylabel('-Log2Likelihood')
+
+which_figure = 'pre_stim'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = 'encoding_choice' + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+
 #%%
 plt.plot(n_neurons,(logLiks[0]-logLiks[1]),'.',markersize=25,color='cyan',markeredgecolor='k')
 plt.xlabel('#SC neurons available')

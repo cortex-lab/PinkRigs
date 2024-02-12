@@ -303,11 +303,18 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
 
         to_keep_trials = ev.is_validTrial.astype('bool')
 
+        print('%.0f trials in total.' % ev.is_auditoryTrial.size)
+
+        print('keeping %.0f valid trials' % to_keep_trials.sum())
+
         # if it is active data, also exclude trials where firstmove was made prior to choiceMove
         if hasattr(ev,'timeline_firstMoveOn'):
             no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
             no_premature_wheel = no_premature_wheel + np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
             to_keep_trials = to_keep_trials & no_premature_wheel
+
+            print('loosing %.0f invalid and %.0f noGo trials' % (((~ev.is_validTrial).sum()),(np.isnan(ev.timeline_choiceMoveDir).sum())))
+            print('keeping %.0f after discarding premature wheel' % to_keep_trials.sum())
 
         
         if rt_params:
@@ -315,7 +322,11 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
                         to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
                 
                 if rt_params['rt_max']: 
-                        to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
+                        to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])  
+
+
+                print('keeping %.0f after discarding based on RT' % to_keep_trials.sum())
+
 
          # and if there is anything else wrong with the trial, like the pd did not get detected..? 
 

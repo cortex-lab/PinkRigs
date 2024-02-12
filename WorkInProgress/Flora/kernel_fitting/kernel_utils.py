@@ -111,9 +111,10 @@ def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=
         # get generic info on clusters 
         print(*rec_info)
         clusInfo = load_cluster_info(**rec_info,unwrap_independent_probes=False)
-        nametag = '%s_%s_%s_%s' % tuple(rec_info)
+        nametag = '%s_%s_%s_%s' % tuple(rec_info)        
+        current_folder = save_path / nametag
 
-        kernel_fit_results = save_path / nametag / ('variance_explained_batchKernel.csv')
+        kernel_fit_results = current_folder / ('variance_explained_batchKernel.csv')
 
 
         if kernel_fit_results.is_file():
@@ -149,27 +150,22 @@ def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=
 
 
 
-            move_kernels,move_dir_kernels = [],[]
+            # procedure to load in the actual kernels. 
+            cIDs = np.load(current_folder / 'clusIDs.npy')       
+            kernel_paths = list(current_folder.glob('*kernel*.npy'))
+            for k in kernel_paths:
+                collected_k = []
+                myk = np.load(k)
+                for idx,c in enumerate(clusInfo._av_IDs):
+                    matrix_idx = np.where(cIDs==c)[0]
+                    if matrix_idx.size==1: 
+                        matrix_idx = matrix_idx[0]
+                        collected_k.append(myk[matrix_idx,:][np.newaxis,:]) 
+                    else:      
+                        collected_k.append(np.empty((1,myk.shape[1]))*np.nan)  
 
-            cIDs = np.load(save_path / nametag / 'clusIDs.npy')
-            
-            mk = np.load(save_path / nametag / 'move_kernel.npy')
-            mkd = np.load(save_path / nametag / 'move_kernel_dir.npy')
-            for idx,c in enumerate(clusInfo._av_IDs):
-                matrix_idx = np.where(cIDs==c)[0]
-                if matrix_idx.size==1: 
-                    matrix_idx = matrix_idx[0]
-                    move_kernels.append(mk[matrix_idx,:][np.newaxis,:])          
-                    move_dir_kernels.append(mkd[matrix_idx,:][np.newaxis,:])
-                else:      
-                    move_kernels.append(np.empty((1,mk.shape[1]))*np.nan)          
-                    move_dir_kernels.append(np.empty((1,mk.shape[1]))*np.nan)               
-
-
-            move_kernels,move_dir_kernels = np.concatenate(move_kernels),np.concatenate(move_dir_kernels)  
-
-            clusInfo['move_kernels'] = move_kernels.tolist()
-            clusInfo['move_dir_kernels'] = move_dir_kernels.tolist()              
+                collected_k  = np.concatenate(collected_k)
+                clusInfo[k.stem] = collected_k.tolist() 
 
             all_dfs.append(clusInfo)
         

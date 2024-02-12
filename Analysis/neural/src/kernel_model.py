@@ -1229,7 +1229,7 @@ class kernel_model():
         self.smoothing = smoothing
 
     def load_and_format_data(self,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None,  
-                            contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None, 
+                            contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None, contra_vis_only=True,
                             t_support_stim = [-0.05,0.35],
                             t_support_movement =[-.2,0.1],
                             t_support_cam = None,
@@ -1273,7 +1273,7 @@ class kernel_model():
         self.digitise_cam = digitise_cam
         # load from PinkRigs pipeline
 
-        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'_av_IDs'}
+        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':['_av_IDs','mlapdv']}
         other_ = {'events': {'_av_trials': 'table'},
                 'frontCam':{'camera':['times','ROIMotionEnergy']},
                 'sideCam':{'camera':['times','ROIMotionEnergy']}}
@@ -1355,7 +1355,8 @@ class kernel_model():
                 include_unisensory_vis=True,
                 include_unisensory_aud=True,
                 classify_choice_types = True,
-                add_crossval_idx_per_class = True
+                add_crossval_idx_per_class = True,
+                min_trial = 1
                 )
             
             if 'move' in event_types:
@@ -1382,24 +1383,44 @@ class kernel_model():
                 #onset_sel_key  = 'block_stimOn'
                 azimuths = vis_azimuths
 
-                if vis_dir_kernel: # if the kernel is just directional, we don't add azimuths specifically
-                    azimuths = [None]
+                if contra_vis_only:
+                    # assert mlapdv 
+                    # decide which hemisphre we are on
+                    # overwrite the azimuth such that it is only contra to hemisphre 
+                    assert 'mlapdv' in rec.probe.clusters, 'no idea which hemisphere this recording is in, quitting'
 
-                for my_contrast,my_azimuth in itertools.product(contrasts, azimuths): 
-                    possible_spls_vis = spls.copy()
-                    possible_spls_vis.append(0)
-                    is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = possible_spls_vis, vis_azimuth=my_azimuth,**rt_params)        
-                    
-                    feature_name_string = 'vis_kernel' + '_contrast_%.2f' % my_contrast
-                    if my_azimuth!=None:
+                    hemisphere =  - np.nanmedian(np.sign(rec.probe.clusters.mlapdv[:,0]-5739)) # ml>5600 is left hemisphre ml<5600: R. This line makes -1=L +1=R
+                    if hemisphere== -1: 
+                        azimuths = [x for x in azimuths if x>=0]
+                    elif hemisphere == 1:
+                        azimuths = [x for x in azimuths if x<=0]
+                
+                possible_spls_vis = spls.copy()
+                possible_spls_vis.append(0)
+
+                if not vis_dir_kernel:
+                    for my_contrast,my_azimuth in itertools.product(contrasts, azimuths): 
+                        is_selected = get_subselected_trials(ev,onset_sel_key,contrast=my_contrast,spl = possible_spls_vis, vis_azimuth=my_azimuth,**rt_params)        
+                        
+                        feature_name_string = 'vis_kernel' + '_contrast_%.2f' % my_contrast
                         feature_name_string += '_azimuth_%.0f' % my_azimuth                  
                         extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,offset_sel_key=offset_sel_key)
 
-                    else:
-                        # this is when the kernel is directional, hopefully. 
-                        diag_value_vector = np.sign(ev.stim_visAzimuth[is_selected])
-                        feature_name_string = feature_name_string + '_dir'
+                else:
+                    # this is when the kernel is directional, hopefully. 
+                    for my_azimuth in azimuths:
+
+                        is_selected = get_subselected_trials(ev,onset_sel_key,contrast=contrasts,spl = possible_spls_vis, vis_azimuth=my_azimuth,**rt_params)           
+      
+                        # normalise the the vis contrast 
+                        curr_contrasts  = ev.stim_visContrast[is_selected]/np.max(contrasts)
+                        gamma = 0.5
+                        diag_value_vector = curr_contrasts**gamma
+                        feature_name_string = 'vis_kernel' + '_contrast_scaled' 
+                        feature_name_string += '_azimuth_%.0f' % my_azimuth                  
                         extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string,diag_values=diag_value_vector,offset_sel_key=offset_sel_key)
+
+
 
             if 'aud' in event_types:   
                 onset_sel_key = 'timeline_audPeriodOn'  # timing info taken for this
@@ -1469,6 +1490,7 @@ class kernel_model():
                     
                 feature_name_string = 'move_kernel' 
 
+                #if 'motionEnergy' not in event_types:    
                 extracted_ev.add_to_event_list(ev,onset_sel_key,is_selected,feature_name_string)
 
                 # add directionality by default
@@ -1521,7 +1543,7 @@ class kernel_model():
                         
                         offsets = np.where(dig_off==1)[0]  
 
-                        move_on = self.events_digitised[event_names_=='move_kernel',:][0,:]
+                        move_on = np.abs(self.events_digitised[event_names_=='move_kernel_dir',:][0,:])
                         move_end_idx = np.where(move_on==1)[0]+np.floor(t_support_movement[1]/self.t_bin)  
 
                         # determine whether there was a movement
@@ -1559,7 +1581,7 @@ class kernel_model():
                 self.feature_column_dict[ev_name] = np.array(range(kernel_end_idx[ix],kernel_end_idx[ix+1]))
 
 
-            trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.kernel_earliestTime-self.t_bin,ev.kernel_latestTime+self.t_bin)]
+            trial_indices = [np.bitwise_and(self.tscale >= ts[0], self.tscale <= ts[-1]) for ts in zip(ev.kernel_earliestTime-self.t_bin,ev.kernel_latestTime+self.t_bin)] # maybe omit these 
 
             trial_indices = np.concatenate(trial_indices).reshape((-1,self.tscale.size))
             fitted_trial_idxs = np.unique(extracted_ev.fitted_trials_idx)
@@ -1992,7 +2014,7 @@ class kernel_model():
            # _,_,digitised_motion = digitise_motion_energy(self.tscale,self.feature_matrix[:,self.feature_column_dict['motionEnergy']].ravel(),plot_sample=True,min_off_time=.02,min_on_time =.02)
             _,_,digitised_motion = digitise_motion_energy(self.tscale,self.cam_values['motionEnergy'],plot_sample=False,min_off_time=.02,min_on_time =.02)
 
-            digitised_motion_raster,_,_ = get_move_raster(self.events.block_stimOn,self.tscale,digitised_motion,pre_time=0,post_time=.2,bin_size=self.t_bin,to_plot=False,baseline_subtract=False)
+            digitised_motion_raster,_,_ = get_move_raster(self.events.block_stimOn,self.tscale,digitised_motion,pre_time=-0.05,post_time=.3,bin_size=self.t_bin,to_plot=False,baseline_subtract=False)
             # sort camera based on average amptude in the response period, or something of that sort. 
             did_it_move = ((digitised_motion_raster.sum(axis=1))>0).astype('int')
 
@@ -2067,7 +2089,7 @@ class kernel_model():
 
                     if plot_move:
                         myax = ax[n_aud_pos -1 - i,move_plot_inds[j]]
-                        rkw = {'t_before': 0.2,'t_after': 0.2,'sort_idx': None}
+                        rkw = {'t_before': 0.15,'t_after': 0.1,'sort_idx': None}
                         self.plot_pred_helper(self.events.timeline_choiceMoveOn,is_selected_trial,nrnID_idx,myax,
                                             c=plot_colors[mydir],raster_kwargs=rkw,
                                             **plot_cond_kwargs)
