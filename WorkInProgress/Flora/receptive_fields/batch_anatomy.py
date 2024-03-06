@@ -12,7 +12,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.data_manager import load_cluster_info,write_cleanCSV
 from Analysis.neural.src.rf_model import rf_model
 
-dat_type = 'active-chronic-rfs'
+dat_type = 'naive-acute-rfs'
 dat_keys = get_data_bunch(dat_type)
 
 #from Admin.csv_queryExp import queryCSV
@@ -72,9 +72,19 @@ ax.set_xlabel('# neurons')
 ax.set_ylabel('distance from tip (um)')
 ax.legend(['all','visRFs'])
 
+
+which_figure = 'AV008'
+cpath  = Path(r'C:\Users\Flora\OneDrive - University College London\Cortexlab\papers\Single images')
+im_name = 'receptive_fields_neurons_per_depth' + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 # %%
-dots_to_plot = allen_pos_apdvml[clusInfo.score>score_thr]
-dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[clusInfo.score>score_thr],vmin = -150,vmax=150,n_bins=35,cmap='coolwarm')
+ww = 'FT039'
+to_plot = (clusInfo.subject==ww) & (clusInfo.score>score_thr)
+dots_to_plot = allen_pos_apdvml[to_plot]
+dot_colors = brainrender_scattermap(clusInfo.fit_azimuth.values[to_plot],vmin = -90,vmax=90,n_bins=35,cmap='coolwarm')
 
 
 # %%
@@ -84,9 +94,9 @@ from brainrender.actors import Points
 scene = Scene(title="SC aud and vis units", inset=False,root=False)
 scene.add_brain_region("SCs",alpha=0.05,color='grey')
 sc = scene.add_brain_region("SCm",alpha=0.05,color='grey')
-scene.add_brain_region("VISp",alpha=0.05)
+# scene.add_brain_region("VISp",alpha=0.05)
 #scene.add_brain_region("RSP",alpha=0.05)
-dots_to_plot_all = allen_pos_apdvml[clusInfo._av_KSLabels==2]
+dots_to_plot_all = allen_pos_apdvml[(clusInfo._av_KSLabels==2)&(clusInfo.subject==ww)]
 scene.add(Points(dots_to_plot, colors=dot_colors, radius=30, alpha=0.5))
 scene.add(Points(dots_to_plot_all, colors='k', radius=8, alpha=0.5))
 

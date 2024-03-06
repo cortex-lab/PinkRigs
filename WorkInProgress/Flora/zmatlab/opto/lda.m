@@ -1,5 +1,5 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',0,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
 % build the table for the LME 
 
 % need to contain - choice, visContrast (scaled) and raised to some sort of power, soundPos, scaled, session
@@ -26,7 +26,9 @@ tbl.vis = ev.vis_gamma_scaled;
 
 
 %
-model = fitglme(tbl,'choice ~ opto+aud+vis+aud*opto+vis*opto+ (1|mouse)+ (1|mouse:session) + (-1+vis|mouse)  + (-1+vis|mouse:session)+ (-1+aud|mouse)  + (-1+aud|mouse:session) + (-1+opto|mouse) + (-1+opto|mouse:session) ','Distribution','Binomial','Link','logit');
+model = fitglme(tbl,['choice ~ opto+aud+vis+aud*opto+vis*opto+ (1|mouse)+ (1|mouse:session) + ' ...
+    '(-1+vis|mouse)  + (-1+vis|mouse:session)+ (-1+aud|mouse)  + (-1+aud|mouse:session) +' ...
+    ' (-1+opto|mouse) + (-1+opto|mouse:session) '],'Distribution','Binomial','Link','logit');
 
 
 %%
@@ -42,7 +44,7 @@ opto = unique(tbl.opto);
 [visGrid,audGrid,optoGrid] = meshgrid(visPos,audPos,opto);
 combinations = [visGrid(:),audGrid(:),optoGrid(:)];
 
-mouseID =3; 
+mouseID =2; 
 
 
 

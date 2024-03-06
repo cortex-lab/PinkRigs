@@ -9,14 +9,14 @@ addOptional(p,'sepChoices',0)
 addOptional(p,'reExtract', 0);
 addOptional(p,'addFakeTrial', 0);
 addOptional(p,'sepDiffPowers', 0); % trying to separate the bilateral recordings when the applied power is imbalanced
-
+addOptional(p,'whichSet', 'bi_high'); 
 
 parse(p, varargin{:});
 
 params = p.Results; 
 
 if params.reExtract
-    extractionParams = optoParams; 
+    extractionParams = optoParams(params.whichSet); 
     extractOptoData(extractionParams);
 end
 

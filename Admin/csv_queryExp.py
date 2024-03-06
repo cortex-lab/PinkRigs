@@ -46,7 +46,8 @@ def get_server_list():
     server_list = [
         Path(r'\\zinu.cortexlab.net\Subjects'), 
         Path(r'\\zaru.cortexlab.net\Subjects'),
-        Path(r'\\znas.cortexlab.net\Subjects')
+        Path(r'\\znas.cortexlab.net\Subjects'), 
+        Path(r'\\zortex.cortexlab.net\Subjects')
     ]
 
     return server_list

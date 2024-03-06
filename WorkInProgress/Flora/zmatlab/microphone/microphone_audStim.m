@@ -67,6 +67,20 @@ fitmic_times = @(t)t*co(2) + co(1);
 
 mictimes_tl=fitmic_times(mictimes); 
 
+%% plot spectrogram per trial
+c_idx = 3954400; 
+example=double(micData(c_idx-1200000:c_idx+3000000));
+[s,w,t]=spectrogram(example,kaiser(1000,10),[],[],Fs); 
+figure; imagesc(t, w/1000, 20*log10(abs(s)));
+%hold on; line([.5,.5], [0,100], 'Color', 'r','LineWidth',1);
+%hold on; line([.7,.7], [0,100], 'Color', 'r','LineWidth',1);
+caxis([30 120]);
+colorbar;
+axis xy 
+xlabel('time (s)');
+ylabel('freq(kHz)');
+
+
 %% check average spectrogram -- do aud!!
 
 visOn_tl = expInfo.dataEvents{1,1}.timeline_visPeriodOn;
