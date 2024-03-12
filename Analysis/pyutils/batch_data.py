@@ -38,7 +38,18 @@ def get_data_bunch(namekey):
             ('FT019','2021-07-07',2,'probe0'), # size issue 
             ('FT025','2021-07-19',4,'probe0'), # size issue 
             ('FT027','2021-09-13',1,'probe0'), # size issue 
-            ('AV024','2022-10-12',2,'probe0'),
+            ('FT038','2021-11-08',1,'probe0'), 
+            ('FT039','2021-11-17',1,'probe0'),           
+            ('FT039','2021-11-18',1,'probe0'), 
+            ('FT039','2021-11-22',1,'probe0'), # facecam alignment issue
+            ('FT039','2021-11-23',1,'probe0'), # facecam alignment issue
+            ('FT039','2021-11-23',3,'probe0')
+        ]
+
+    elif namekey == 'naive-cdh23': 
+        column_names = ['subject','expDate','expNum','probe']
+        recordings = [ 
+            ('AV024','2022-10-12',2,'probe0'), # but AV024 has been trained for a few sess... 
             ('AV024','2022-10-12',3,'probe0'),
             ('AV024','2022-10-12',4,'probe0'),
             ('AV024','2022-10-12',5,'probe0'),
@@ -47,12 +58,12 @@ def get_data_bunch(namekey):
             ('AV024','2022-10-12',3,'probe1'),
             ('AV024','2022-10-12',4,'probe1'),
             ('AV024','2022-10-12',5,'probe1'),
-            # ('FT038','2021-11-08',1,'probe0'), 
-            # ('FT039','2021-11-17',1,'probe0'),           
-            # ('FT039','2021-11-18',1,'probe0'), 
-            # ('FT039','2021-11-22',1,'probe0'), # facecam alignment issue
-            # ('FT039','2021-11-23',1,'probe0'), # facecam alignment issue
-            # ('FT039','2021-11-23',3,'probe0'), 
+            ('FT038','2021-11-08',1,'probe0'), 
+            ('FT039','2021-11-17',1,'probe0'),           
+            ('FT039','2021-11-18',1,'probe0'), 
+            ('FT039','2021-11-22',1,'probe0'), # facecam alignment issue
+            ('FT039','2021-11-23',1,'probe0'), # facecam alignment issue
+            ('FT039','2021-11-23',3,'probe0'), 
         ]
 
 

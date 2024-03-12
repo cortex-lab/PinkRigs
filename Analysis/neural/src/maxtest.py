@@ -48,6 +48,9 @@ def get_test_statistic(test_raster,blank_raster,trim_fraction = None, permute_se
         blank_raster = blank_raster[:n_trials_test,:,:]
 
     rasters = np.concatenate((test_raster,blank_raster),axis=0)
+    
+    
+    
     n_trials = rasters.shape[0]
     idx = np.arange(n_trials)
     if permute_seed:
@@ -61,7 +64,17 @@ def get_test_statistic(test_raster,blank_raster,trim_fraction = None, permute_se
 
     # trim? 
     if trim_fraction is not None: 
-        pass 
+        # get the max mean response
+        n_to_trim = int(np.floor(n_trials_test * trim_fraction))       
+
+        # for each neuron we throw away the trim_fraction no of extreme trials 
+        n_neurons = stim.shape[1]
+
+        resp_inds_stim = np.argsort(stim.mean(axis=2),axis=0)
+        stim = np.concatenate([stim[resp_inds_stim[n_to_trim:-n_to_trim,n],n,:][:,np.newaxis,:] for n in range(n_neurons)],axis=1)
+
+        resp_inds_blank = np.argsort(blank.mean(axis=2),axis=0)
+        blank = np.concatenate([blank[resp_inds_blank[n_to_trim:-n_to_trim,n],n,:][:,np.newaxis,:] for n in range(n_neurons)],axis=1)
 
     Rmax_stim = np.max(np.abs(stim.mean(axis=0)),axis=1)
     Rmax_blank = np.max(np.abs(blank.mean(axis=0)),axis=1)
@@ -73,7 +86,7 @@ class maxtest():
 
         self.raster_kwargs = { 
                 'pre_time':0.6,
-                'post_time':0.2, 
+                'post_time':0.1, 
                 'bin_size':0.01,
                 'smoothing':0.025,
                 'return_fr':True,
@@ -110,7 +123,7 @@ class maxtest():
 
 
 
-    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,savepath = None,n_shuffles=2000):
+    def run(self,spikes=None,event_times_dict=None,blank_times=None,subselect_neurons=None,plotting=False,savepath = None,trim_fraction=None,n_shuffles=2000):
         """
         Parameters:
         -----------
@@ -162,8 +175,8 @@ class maxtest():
             t_on = event_times_dict[k]
             r = get_binned_rasters(spikes.times,spikes.clusters,clus_ids,t_on,**self.raster_kwargs)
             stim = r.rasters[:,:,r.tscale>=0]
-            t_obs = get_test_statistic(stim,blank,permute_seed=None)
-            t_null = [get_test_statistic(stim,blank,permute_seed=s)[:,np.newaxis] for s in range(n_shuffles)]
+            t_obs = get_test_statistic(stim,blank,trim_fraction=trim_fraction,permute_seed=None)
+            t_null = [get_test_statistic(stim,blank,trim_fraction=trim_fraction,permute_seed=s)[:,np.newaxis] for s in range(n_shuffles)]
             t_null = np.concatenate(t_null,axis=1)
             # implement plotting just to check
             if plotting: 

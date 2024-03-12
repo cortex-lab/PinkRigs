@@ -14,9 +14,9 @@ nrn_list = [22,25,50,71,80,207,34,156,325]
 #             ('AV008','2022-03-10',2,'probe0'),
 
 data_ID = {
-     'subject': 'AV034',
-     'expDate': '2022-12-09', 
-     'expNum': 1,
+     'subject': 'AV030',
+     'expDate': '2022-12-07', 
+     'expNum': 2,
       'probe': 'probe0' 
 }
 
@@ -40,12 +40,13 @@ plt.rcParams.update({'font.size':20})
 plt.rcParams['figure.dpi'] = 300
 
 
+
 kernels.fit(**fitParams)
 variance_explained = kernels.evaluate(**evalParams)
 kernels.fit_evaluate(get_prediciton=True,**fitParams)
 
 # %%
-n = 24
+n = 52
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300

@@ -32,22 +32,22 @@ for rec_idx in range(len(rec)):
             data_name_dict={
                 'events':{'_av_trials':'table'},
                 probe:{'spikes':['times','clusters'],'clusters':'_av_IDs'},
-                'frontCam':{'camera':'all'},
-                'sideCam':{'camera':'all'}
+                # 'frontCam':{'camera':'all'},
+                # 'sideCam':{'camera':'all'}
 
             },
             **rec.iloc[rec_idx,1:4]
             )
 
-        ev,spikes,clusters,_,cam = simplify_recdat(recordings.iloc[0],probe=probe)
+        ev,spikes,clusters,_,cam = simplify_recdat(recordings.iloc[0],probe=probe,cam_hierarchy=['sideCam','frontCam','eyeCam'])
         b,v,a,ms = postactive(ev)
 
 
         mypath = Path(r'D:\TempIms')
 
         save_format = 'svg'
-
-        for cID in [76,15,89,193,49,4,35,62,99,167,357,281]: #clusters._av_IDs:
+#,,346
+        for cID in [29,92,105,113]: #clusters._av_IDs:
 
             ############ rasters aligned to stimulus ############
             
@@ -64,7 +64,7 @@ for rec_idx in range(len(rec)):
 
             # parameters of plotting 
             bin_kwargs={'tscale':[None],
-                        'pre_time':.1,'post_time': .4, 
+                        'pre_time':.1,'post_time': .2, 
                         'bin_size':0.005, 'smoothing':0.02,
                         'return_fr':True,'baseline_subtract':True
                         }
@@ -93,7 +93,7 @@ for rec_idx in range(len(rec)):
                 ax[idx].set_xlabel('%.0f deg' % azi)
                 off_axes(ax[idx])
                 if idx==azimuths.size-1:
-                    plt.hlines(-600,0.2,0.4,'k',lw=3)
+                    plt.hlines(-600,0.1,0.2,'k',lw=3)
 
             plt.suptitle(cID)
 
@@ -156,58 +156,64 @@ for rec_idx in range(len(rec)):
 
 
 # %% #################### EXAMPLE TUNING CURVES  ######################
-# from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
+from Analysis.neural.src.azimuthal_tuning import azimuthal_tuning
+column_names = ['subject','expDate','expNum','probe']
 
-# azi = azimuthal_tuning(rec.to_dict('r')[0])
-# #cID = 325
+#rec = pd.read_csv(r'C:\Users\Flora\Documents\ProcessedData\kernel_regression\postactiveSC.csv')
+rec = [('FT008','2021-01-15',5,'probe0')]
+rec = pd.DataFrame(rec,columns= column_names)
 
-# tuning_type = 'aud'
-# tuning_curve_params = { 
-#     'contrast': None, # means I select the max
-#     'spl': 0.02, # means I select the max
-#     'which': tuning_type,
-#     'subselect_neurons':None,
-#     'trim_type': None, 
-#     'trim_fraction':None
-# }
+azi = azimuthal_tuning(rec.to_dict('r')[0])
+#cID = 325
 
-# azi.get_rasters_perAzi(**tuning_curve_params)
-# tuning_curves,is_selective = azi.get_significant_fits(curve_type= 'gaussian',metric='svd')
-# #%%
-# azi.plot_response_per_azimuth(neuronID=cID,which='p')
-# fig = azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=cID,metric='svd',plot_trials=False)
-# fig.tight_layout()
-# sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[0])
-# nrn_name = '_av_IDs_%.0f' % cID
-# mypath = r'C:\Users\Flora\Pictures\LakeConf'
-# savename = mypath + '\\' + sessName + nrn_name + 'tuning_curve.svg'
-# fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+tuning_type = 'aud'
+tuning_curve_params = { 
+    'contrast': None, # means I select the max
+    'spl': None, # means I select the max
+    'which': tuning_type,
+    'subselect_neurons':None,
+    'trim_type': None, 
+    'trim_fraction':None
+}
+
+azi.get_rasters_perAzi(**tuning_curve_params)
+tuning_curves,is_selective = azi.get_significant_fits(curve_type= 'gaussian',metric='svd')
+#%%
+cID=222
+azi.plot_response_per_azimuth(neuronID=cID,which='p')
+fig = azi.plot_tuning_curves(tuning_curves=tuning_curves,neuronID=cID,metric='svd',plot_trials=False)
+fig.tight_layout()
+sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[0])
+nrn_name = '_av_IDs_%.0f' % cID
+mypath = r'C:\Users\Flora\Pictures\LakeConf'
+savename = mypath + '\\' + sessName + nrn_name + 'tuning_curve.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 # %%        ####################### EXAMPLE MOVEMENT CORRELATIONG NEURONS  ###############
 # after we identified the neurons in Fig 3 I will come back to this 
-import scipy
-cID = 33
-#[76,15,89,193,49,4,35,62,99,167,357,281]:
-from Analysis.neural.utils.spike_dat import bincount2D
-clus_ids = clusters._av_IDs.astype('int') 
-r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin=0.1)
-x,y = cam.times,cam.ROIMotionEnergy
-interp_func = scipy.interpolate.interp1d(x,y,kind='linear')
-camtrace = interp_func(t_bins[t_bins<x[-1]])
-fig,ax = plt.subplots(2,1,sharex=True)
-pre,post = 200,500
-ax[0].plot(t_bins[pre:post],camtrace[pre:post],'k')
-spiketrace = r[np.where(clus==cID)[0][0],:]
-ax[-1].hlines(-.01,t_bins[post]-1,t_bins[post],'k',lw=5)
-ax[1].plot(t_bins[pre:post],spiketrace[pre:post],'grey')
-off_axes(ax[0])
-off_axes(ax[1])
+# import scipy
+# cID = 33
+# #[76,15,89,193,49,4,35,62,99,167,357,281]:
+# from Analysis.neural.utils.spike_dat import bincount2D
+# clus_ids = clusters._av_IDs.astype('int') 
+# r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin=0.1)
+# x,y = cam.times,cam.ROIMotionEnergy
+# interp_func = scipy.interpolate.interp1d(x,y,kind='linear')
+# camtrace = interp_func(t_bins[t_bins<x[-1]])
+# fig,ax = plt.subplots(2,1,sharex=True)
+# pre,post = 200,500
+# ax[0].plot(t_bins[pre:post],camtrace[pre:post],'k')
+# spiketrace = r[np.where(clus==cID)[0][0],:]
+# ax[-1].hlines(-.01,t_bins[post]-1,t_bins[post],'k',lw=5)
+# ax[1].plot(t_bins[pre:post],spiketrace[pre:post],'grey')
+# off_axes(ax[0])
+# off_axes(ax[1])
 
-sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[rec_idx,1:])
-nrn_name = '_av_IDs_%.0f' % cID
-mypath = r'C:\Users\Flora\Pictures\LakeConf'
-savename = mypath + '\\' + sessName + nrn_name + 'movement_corr.svg'
-fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+# sessName = '%s_%s_%.0f_%s' % tuple(rec.iloc[rec_idx,1:])
+# nrn_name = '_av_IDs_%.0f' % cID
+# mypath = r'C:\Users\Flora\Pictures\LakeConf'
+# savename = mypath + '\\' + sessName + nrn_name + 'movement_corr.svg'
+# fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 # # # %%
 # %% #################### example mulitsensory interaction ########################
 

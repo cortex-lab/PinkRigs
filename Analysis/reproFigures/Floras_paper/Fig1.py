@@ -12,7 +12,7 @@ import time
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
 from Analysis.neural.utils.spike_dat import bombcell_sort_units
-dat_type = 'naive-allen'
+dat_type = 'naive-total'
 dat_keys = get_data_bunch(dat_type)
 
 from Admin.csv_queryExp import queryCSV
@@ -25,7 +25,7 @@ from Admin.csv_queryExp import queryCSV
 # dat_keys['probe']='probe0'
 
 #  %%
-rerun_sig_test= False  
+rerun_sig_test= False   
 recompute_csv = False  
 recompute_pos_model = False 
 
@@ -85,7 +85,7 @@ if not csv_path.is_file() or recompute_csv:
             sig_test = maxtest()
             sig_test.load_and_format_data(**session)
             p=sig_test.run(
-                n_shuffles=2000,
+                n_shuffles=2000, trim_fraction=None,
                 savepath= interim_data_sess
             ) # still, rather slow
         else: 
@@ -161,41 +161,6 @@ if not csv_path.is_file() or recompute_csv:
 
         print('azimuthal tuning',time.time()-t0,'s')
         
-        ################### KERNEL FIT RESULTS #############################
-        foldertag = r'kernel_model\additive-fit'
-        csvname = '%s_%s_%.0f_%s.csv' % tuple(session)
-        kernel_fit_results = interim_data_folder / dat_type  / foldertag / csvname
-
-        kernel_events_to_save = ['aud', 'baseline', 'motionEnergy', 'vis']
-        for k in kernel_events_to_save:
-            tag = 'kernelVE_%s' % k 
-            if kernel_fit_results.is_file():
-                kernel_fits = pd.read_csv(kernel_fit_results)
-                kernel_events_to_save  = np.unique(kernel_fits.event)
-                # match neurons 
-                curr_set = kernel_fits[(kernel_fits.event==k) & (kernel_fits.cv_number==1)]             
-
-                # concatenate with clusInfo
-                unmatched_clus_idx = np.setdiff1d(clusInfo._av_IDs,curr_set.clusID)
-                if len(unmatched_clus_idx)==0:
-                    clusInfo[tag] = curr_set.VE.values
-                else:
-                    VEs = curr_set.VE.values
-                    newVE = []
-                    matched_clusIDs = curr_set.clusID
-                    for c in clusInfo._av_IDs:
-                        idx = np.where(matched_clusIDs==c)[0]
-                        if len(idx)==1:
-                            newVE.append(VEs[idx[0]])
-                        else:
-                            newVE.append(np.nan)  
-                    
-                    clusInfo[tag] = newVE                     
-
-            else: 
-                clusInfo[tag] = np.nan
-
-
         #################### MISC ###########################################
         clusInfo['is_good'] = clusInfo._av_KSLabels==2
 
@@ -222,7 +187,9 @@ else:
     clusInfo = pd.read_csv(csv_path)
 
 #%%
-bc_class = bombcell_sort_units(clusInfo)
+bc_class = bombcell_sort_units(clusInfo, min_spike_num=300)
+
+
 #%%
 clusInfo['is_good'] = bc_class=='good'
 clusInfo['aphemi'] = (clusInfo.ap-8500)*clusInfo.hemi
@@ -273,7 +240,7 @@ allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
 # hemispheric reversal of the preferred tuning 
 clusInfo['ml_r'] = ((clusInfo.ml-5600)*clusInfo.hemi+5600)
 allen_pos_apdvml_r = clusInfo[['ap','dv','ml_r']].values
-allen_pos_apdvml_r_gauss = add_gauss_to_apdvml(allen_pos_apdvml_r.copy(),ml=80,ap=80,dv=0)
+allen_pos_apdvml_r_gauss = add_gauss_to_apdvml(allen_pos_apdvml_r.copy(),ml=40,ap=40,dv=0)
 
 
 clusInfo['x0aud_r'] = clusInfo.x0aud * clusInfo.hemi
@@ -285,6 +252,28 @@ regionNames = clusInfo.brainLocationAcronyms_ccf_2017
 regionNames[regionNames=='unregistered']='void'
 clusInfo['BerylAcronym'] = reg.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
 
+# %%
+# print the basic numbers 
+goodSCunits = np.sum(clusInfo.is_SC & clusInfo.is_good)
+print("%.0f SC units" % goodSCunits)
+UniqueSess = np.unique(clusInfo[clusInfo.is_SC & clusInfo.is_good].expFolder)
+print('from %.0f sessions' % (UniqueSess.size))
+
+
+is_vis = clusInfo.is_vis_sig & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo.x0vis)
+print("%.0f vis SC units" % is_vis.sum())
+
+is_vis = clusInfo.is_vis_spatial  & clusInfo.is_vis_sig & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo.x0vis)
+print("%.0f vis spatial SC units" % is_vis.sum())
+
+is_aud = clusInfo.is_aud_sig & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo.x0aud)
+print("%.0f aud SC units" % is_aud.sum())
+
+is_aud = clusInfo.is_aud_spatial & clusInfo.is_aud_sig & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo.x0aud)
+print("%.0f aud spatial SC units" % is_aud.sum())
+
+
+print("%.0f av SC units" % (is_aud & is_vis).sum())
 
 # %%
 _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
@@ -292,7 +281,7 @@ _,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
 maps = {}
 for idx,t in enumerate(tuning_types):
     print(t)
-    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+    goodclus = clusInfo[clusInfo.is_good & clusInfo['is_%s_sig' % t] & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
 ]
     namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_train' in c)][:7]
     print(namekeys)
@@ -308,7 +297,7 @@ for idx,t in enumerate(tuning_types):
     off_axes(ax[idx])
 # 
     # calculate the means and the stds for the registered maps
-    goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,150))
+    goodclus['pos_bin_idx'] = np.digitize(goodclus.aphemi,bins=np.arange(-1000,1000,200))
     unique_bins = np.unique(goodclus.pos_bin_idx)
     mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
     std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s' % t]) for b in unique_bins]
@@ -331,12 +320,10 @@ ax.set_ylabel('preferred auditory azimuth')
 # %% 
 # reversed for a single hemisphere
 
-_,ax = plt.subplots(len(tuning_types),1,figsize=(5,9),sharey=True)
-
 maps = {}
 for idx,t in enumerate(tuning_types):
-    print(t)
-    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
+    _,ax = plt.subplots(1,1,figsize=(5,5))
+    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_sig' % t] & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
 ]
     namekeys = [c for c in clusInfo.columns if ('%s_' % t in c) & ('_test' in c)][:7]
     print(namekeys)
@@ -347,17 +334,25 @@ for idx,t in enumerate(tuning_types):
         (tcs.max(axis=1)+tcs.min(axis=1)),axis='rows')                   
 
 
-    ax[idx].matshow(tcs_norm,aspect='auto',cmap='PuRd')
-    ax[idx].set_ylim([240,0])
-    off_axes(ax[idx])
+    ax.matshow(tcs_norm,aspect='auto',cmap='PuRd')
+    #ax[idx].set_ylim([440,0])
+    off_axes(ax)
 # 
     # calculate the means and the stds for the registered maps
-    goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=np.arange(0,1100,150))
+    goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=np.arange(0,1000,200))
     unique_bins = np.unique(goodclus.pos_bin_idx)
     mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
     std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
     maps['%s_mean'% t] = mean_per_pos
     maps['%s_std' % t ] = std_per_pos
+
+    
+    which_figure = '%s_spatial_cells_tuning_curves_test'% t
+    cpath  = Path(r'C:\Users\Flora\OneDrive - University College London\Cortexlab\papers\Single images')
+    im_name = dat_type + which_figure + '.svg'
+    savename = cpath / im_name #'outline_brain.svg'
+    #plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 
 print(len(maps['vis_mean']),len(maps['aud_mean']))
 
@@ -368,27 +363,64 @@ ax.errorbar(maps['vis_mean'],maps['aud_mean'],xerr=maps['vis_std'],yerr=maps['au
 off_topspines(ax)
 ax.axline((0,0),slope=1,color='k',linestyle='--')
 #ax.plot([-90,90],[-90,90],'k--',alpha=0.3)
-
+ax.set_title('r=%.2f' % (np.corrcoef(maps['vis_mean'],maps['aud_mean'])[0,1]))
 # ax.set_xlim([-90,90])
 # ax.set_ylim([-90,90])
 ax.set_xlabel('preferred visual azimuth')
 ax.set_ylabel('preferred auditory azimuth')
 
+which_figure = 'aud_vs_vis_AP'
+cpath  = Path(r'C:\Users\Flora\OneDrive - University College London\Cortexlab\papers\Single images')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'    
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
 # %%
 # plot the sigmas
 _,ax = plt.subplots(1,len(tuning_types),figsize=(5,2.5),sharex=True,sharey=True)
 
+which_figure = 'sigma'
 colors = ['blue','magenta']
 for idx,t in enumerate(tuning_types):
     print(t)
-    goodclus = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
+    goodclus = clusInfo[clusInfo.is_good & clusInfo['is_%s_sig' % t] & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
 
     #nonspatial = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & ~clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
 
     #ax[idx].hist(nonspatial['sigma%s' % t],bins = np.arange(0,120,10),density=True,alpha=.5,color='grey')
                 
-    ax[idx].hist(goodclus['sigma%s' % t],bins = np.arange(0,180,10),density=True,alpha=.7,color=colors[idx])
-    ax[idx].set_title('%.1f' % goodclus['sigma%s' % t].median())
+    ax[idx].hist(goodclus['%s%s' % (which_figure,t)],bins = np.arange(0,90,3),density=False,alpha=.5,color=colors[idx])
+    ax[idx].set_title('%.1f' % goodclus['%s%s' % (which_figure,t)].median())
+
+which_figure = which_figure + '%s_distributions'% t
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+# %%
+# same plot on one figure
+_,ax = plt.subplots(1,1,figsize=(5,2.5),sharex=True,sharey=True)
+
+which_figure = 'sigma'
+colors = ['blue','magenta']
+for idx,t in enumerate(tuning_types):
+    print(t)
+    goodclus = clusInfo[clusInfo.is_good & clusInfo['is_%s_sig' % t] & clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
+
+    #nonspatial = clusInfo[clusInfo['is_%s' % t] & clusInfo.is_good & ~clusInfo['is_%s_spatial' % t] & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])]
+
+    #ax[idx].hist(nonspatial['sigma%s' % t],bins = np.arange(0,120,10),density=True,alpha=.5,color='grey')
+                
+    ax.hist(goodclus['%s%s' % (which_figure,t)],bins = np.arange(0,90,3),density=True,alpha=.5,color=colors[idx])
+    ax.set_title('%.1f' % goodclus['%s%s' % (which_figure,t)].median())
+
+which_figure = which_figure + '%s_distributions_both'% t
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
  #%%
 
@@ -402,13 +434,12 @@ atlas = AllenAtlas(25)
 # for the spatial cells
 _,(ax,ax1) = plt.subplots(1,2,figsize=(14,10),sharey=True,gridspec_kw={'width_ratios':[5,2]})
 
-_,(ax2) = plt.subplots(1,1,figsize=(5,1))
 
 
 p = allen_pos_apdvml
 xyz = atlas.ccf2xyz(p,ccf_order='apdvml') 
 t= 'vis'
-is_plotted = clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+is_plotted = clusInfo['is_%s_spatial'% t] & clusInfo['is_%s_sig' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
 
 requested_depth = 2000
 xyz_ref = atlas.ccf2xyz(np.array([allen_pos_apdvml[0,0],requested_depth,allen_pos_apdvml[0,2]]),ccf_order='apdvml')
@@ -419,14 +450,15 @@ dots_to_plot = allen_pos_apdvml_r_gauss[is_plotted,:]
 
 dot_colors = brainrender_scattermap(clusInfo['x0%s_r' % t][is_plotted],vmin = -90,vmax=90,n_bins=15,cmap='coolwarm')
 
-ax.scatter(-dots_to_plot[:,2]+5600,-dots_to_plot[:,0]+5400,color=dot_colors,edgecolor='grey',s=20,alpha=.8,vmin=0,vmax=.3) 
+ax.scatter(-dots_to_plot[:,2]+5736,-dots_to_plot[:,0]+5400,color=dot_colors,edgecolor='grey',s=60,alpha=.8,vmin=0,vmax=.3) 
 ax.set_ylim([-5000,-2600])
 ax.set_xlim([-2200,0])
 
 goodclus = clusInfo[is_plotted]
-posbins = np.arange(0,1100,150)
+n_diff = 200
+posbins = np.arange(0,1000,n_diff)
 
-goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=posbins)
+goodclus['pos_bin_idx'] = np.digitize(np.abs(goodclus.aphemi),bins=posbins,right=True)
 unique_bins = np.unique(goodclus.pos_bin_idx)
 mean_per_pos = [np.mean(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
 std_per_pos = [np.std(goodclus[goodclus.pos_bin_idx==b]['x0%s_r' % t]) for b in unique_bins]
@@ -434,7 +466,7 @@ maps['%s_mean'% t] = mean_per_pos
 maps['%s_std' % t ] = std_per_pos
 
 posbins_plot = -(posbins+8500)+5400
-aplocs = posbins_plot[:-1]+np.diff(posbins_plot)/2
+aplocs = posbins_plot-n_diff/2
 
 ax1.errorbar(mean_per_pos,aplocs,xerr=std_per_pos,
               linestyle='-',marker='o',markeredgecolor='k',markersize=2,color='lightgrey',capsize=4,ecolor='grey',elinewidth=1)
@@ -444,7 +476,7 @@ which_figure = '%s_map'% t
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dat_type + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
-#plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
 
 
@@ -464,11 +496,34 @@ is_plotted = clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t])
 
 ax2.hist(clusInfo.BerylAcronym[is_plotted])
 
-is_plotted = clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+is_plotted = clusInfo['is_%s_sig' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
 
 ax2.hist(clusInfo.BerylAcronym[is_plotted])
 
-is_plotted = clusInfo['is_%s_spatial'% t] & clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+is_plotted = clusInfo['is_%s_spatial'% t]  & clusInfo['is_%s_sig' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+ax2.hist(clusInfo.BerylAcronym[is_plotted])
+
+which_figure = '%s_per_layer'% t
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = dat_type + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+#%%
+_,(ax2) = plt.subplots(1,1,figsize=(1,5))
+
+t= 'ms'
+
+
+
+
+# is_plotted = clusInfo['is_%s' % t] & clusInfo.is_good & clusInfo.is_SC & ~np.isnan(clusInfo['x0%s' % t]) 
+
+# ax2.hist(clusInfo.BerylAcronym[is_plotted])
+
+is_plotted = is_aud & is_vis
 
 ax2.hist(clusInfo.BerylAcronym[is_plotted])
 

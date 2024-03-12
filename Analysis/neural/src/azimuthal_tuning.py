@@ -273,9 +273,22 @@ class azimuthal_tuning():
         response_rasters = []
         for k in azimuth_times_dict.keys():
             t_on = azimuth_times_dict[k]
+            is_nan = np.isnan(t_on)
+            t_on = t_on[~is_nan] #occasionallty one or two flips were not detected 
             r = get_binned_rasters(spikes.times,spikes.clusters,cIDs,t_on,**self.raster_kwargs)
             # so we need to break here so that we perorm getting binned rasters only once...
+
             stim = r.rasters[:,:,r.tscale>=0]
+
+            if np.sum(is_nan)!=0:
+                n_missing = azimuth_times_dict[k].size - stim.shape[0]
+                print('%.0f was missing' % n_missing)
+                if n_missing<2:
+                    empties = np.zeros((n_missing,stim.shape[1],stim.shape[2]))
+                    stim = np.concatenate((stim,empties))    
+                else: 
+                    print('too many trials are missing, breaking...')       	
+
 
             timings = ['pre_time','post_time','bin_size']
             timings = {t:self.raster_kwargs[t] for t in timings}
@@ -549,11 +562,11 @@ class azimuthal_tuning():
 
         titlestring = 'neuron %.0d' % neuronID
         if plot_train:
-            tc_train = get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==0]).iloc[neuron_idx].values
+            tc_train = self.get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==0]).iloc[neuron_idx].values
             ax.plot(azimuths,tc_train,'k')
         
         if plot_test: 
-            tc_test = get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1]).iloc[neuron_idx].values
+            tc_test = self.get_tuning_only(tuning_curves[tuning_curves['%s_cv_number' % self.modality]==1]).iloc[neuron_idx].values
             ax.plot(azimuths,tc_test,'grey')
 
         if plot_pred: 

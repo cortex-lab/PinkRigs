@@ -310,7 +310,7 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
         # if it is active data, also exclude trials where firstmove was made prior to choiceMove
         if hasattr(ev,'timeline_firstMoveOn'):
             no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
-            no_premature_wheel = no_premature_wheel + np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
+            no_premature_wheel = no_premature_wheel + ~np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
             to_keep_trials = to_keep_trials & no_premature_wheel
 
             print('loosing %.0f invalid and %.0f noGo trials' % (((~ev.is_validTrial).sum()),(np.isnan(ev.timeline_choiceMoveDir).sum())))

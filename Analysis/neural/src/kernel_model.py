@@ -1878,7 +1878,7 @@ class kernel_model():
     def plot_pred_helper(self,on_times,is_sel,nrnID_idx,
         ax,raster_kwargs=None,c='k',
         plot_train = True, plot_test= False, merge_train_test = False,
-        plot_pred_train = True,plot_pred_test = False):
+        plot_pred_train = True,plot_pred_test = False,plot_range=True):
 
         if not raster_kwargs: 
             raster_kwargs = {
@@ -1892,7 +1892,10 @@ class kernel_model():
 
         if merge_train_test: 
             plot_train=True 
-            plot_pred_train = True 
+            if plot_pred_train or plot_pred_test:                
+                plot_pred_train = True
+            else:
+                plot_pred_train = False
             plot_test= False 
             plot_pred_test = False
             train_set = train_set+test_set
@@ -1910,7 +1913,10 @@ class kernel_model():
 
                     mean = dat.mean(axis=0)
                     bars = dat.std(axis=0)/dat.shape[0]
-                    ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+                    if plot_range:
+                        ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+                    else:
+                        ax.plot(bin_range,mean,color=c,linestyle='solid')   
 
                 if plot_pred_train: 
                     pred = self.get_raster(on_time,spike_type = 'pred',**raster_kwargs)
@@ -1931,7 +1937,11 @@ class kernel_model():
 
                     mean = dat.mean(axis=0)
                     bars = dat.std(axis=0)/dat.shape[0]
-                    ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+                    
+                    if plot_range:
+                        ax.fill_between(bin_range, mean - bars, mean + bars, color=c,alpha=.4)
+                    else:
+                        ax.plot(bin_range,mean,color=c,linestyle='solid')  
 
                 if plot_pred_test: 
                     pred = self.get_raster(on_time,spike_type = 'pred',**raster_kwargs)

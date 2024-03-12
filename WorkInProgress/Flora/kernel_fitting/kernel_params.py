@@ -44,7 +44,7 @@ def get_params(call_data=True,call_fit=True,call_eval=True,dataset_type = 'naive
             dat_params = {
                 't_support_stim':[-0.05,0.5],   
                 't_support_movement':[-0.15,0.1],
-                'rt_params':{'rt_min': 0.05, 'rt_max': 1.5},
+                'rt_params':{'rt_min': 0.01, 'rt_max': 1.5},
                 'event_types': ['aud','vis','move','baseline','motionEnergy'], # 
                 'contrasts': 'all', # can also be a list of specified values
                 'spls': 'all',
