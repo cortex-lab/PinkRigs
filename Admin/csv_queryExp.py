@@ -20,7 +20,6 @@ if len(pinkRig_path)>0:
 
 #from Analysis.pyutils.ev_dat import format_events
 
-
 def get_csv_location(which):
     """
     func equivalent to getLocation in matlab
@@ -103,7 +102,64 @@ def check_date_selection(date_selection,dateList):
             selected_dates.append(False)
     return selected_dates
 
-def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1): 
+
+def bombcell_sort_units(clusdat,max_peaks=2,max_throughs=1,
+                        is_somatic=1,min_spatial_decay_slope=-0.003,
+                        min_waveform_duration=100,max_waveform_duration=800,
+                        max_waveform_baseline_fraction=.3,max_percentage_spikes_missing=20,
+                        min_spike_num=300,max_refractory_period_violations=.1,min_amp=20,minSNR=.1,max_drift=500,min_presence_ratio=.2):
+
+    """
+    classifier that sorts units into good,mua and noise, based on bombcell parameters
+
+    Parameters: 
+    ----------
+    see bombcell documentataion 
+
+
+    Returns:
+    -------
+        	: np. array 
+        bombcell class (mua/good/noise)
+    """
+
+    #any unit that is not discarded as noise or selected as well isolated is mua.
+    #maybe there ought to be an option to classify well isolated axonal units...
+    
+    
+    bombcell_class = np.empty(clusdat.nPeaks.size,dtype="object") 
+    bombcell_class[:] = 'mua'
+    # assign noise 
+
+    ix = ~ (
+        (clusdat.nPeaks>max_peaks) | 
+        (clusdat.nTroughs>max_throughs) |
+        (clusdat.isSomatic>=is_somatic) | 
+        (clusdat.spatialDecaySlope>=min_spatial_decay_slope) |
+        (clusdat.waveformDuration_peakTrough<min_waveform_duration) |
+        (clusdat.waveformDuration_peakTrough>max_waveform_duration) |
+        (clusdat.waveformBaselineFlatness>=max_waveform_baseline_fraction)
+    ) 
+
+    bombcell_class[ix]='noise'
+
+    # assign well isolated units 
+    ix = (
+        (bombcell_class != 'noise') &
+        (clusdat.nSpikes>min_spike_num) &
+        (clusdat.fractionRPVs_estimatedTauR <= max_refractory_period_violations) &
+        (clusdat.rawAmplitude>min_amp) &
+        (clusdat.percentageSpikesMissing_gaussian<max_percentage_spikes_missing) & 
+        (clusdat.signalToNoiseRatio>=minSNR) & 
+        (clusdat.presenceRatio>=min_presence_ratio)  
+        )
+
+    bombcell_class[ix]='good'
+
+
+    return bombcell_class
+
+def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1,goodOnly = False,**bombcell_kwargs): 
     """
     utility function to assess whether a recording contains neurons in a target region
     
@@ -125,13 +181,27 @@ def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1):
     """
 
     clusters = rec.probe.clusters
+    if goodOnly:
+        bc_class = bombcell_sort_units(clusters, **bombcell_kwargs)#%%
+        is_good = bc_class=='good'
+        clusters = Bunch({k:clusters[k][is_good] for k in clusters.keys()})
+
+
+    if min_fraction>1: 
+        mode = 'number'
+    else:
+        mode = 'fraction'
+
 
     # check whether anatomy exists at all
     if 'mlapdv' not in list(clusters.keys()):
         is_region = False
     else:
         is_in_region = [region_name in x for x in clusters.brainLocationAcronyms_ccf_2017]
-        if np.mean(is_in_region)>min_fraction:
+        
+        if (mode=='fraction') & (np.mean(is_in_region)>min_fraction):
+            is_region=True
+        elif (mode=='number') & (np.sum(is_in_region)>min_fraction):
             is_region=True
 
         else:
@@ -362,7 +432,7 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     return output
 
-def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=False,region_selection=None,**kwargs):
+def load_data(recordings=None,data_name_dict=None,unwrap_probes=False,merge_probes=False,region_selection=None,**kwargs):
     """
     Paramters: 
     -------------
@@ -384,8 +454,11 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
             the raw ibl_format folder can also be called for spiking. 
             For this, one needs to give 'probe0_raw' or 'probe1_raw' as the collection namestring. 
     
-    unwrap_independent_probes: bool
-        returns exp2checkList with a probe tag where so each row is probe as opposed to a session  
+    unwrap_probes: bool
+        returns exp2checkList with a probe tag where so each row is separate probe as opposed to a session 
+    merge_probes: bool
+        returns a exp2checkList with a single column of ehys data, where data from both probes are merged into a single Bunch of clusters and spikes
+        where clusterIDs from the 2nd probe get 10k added to them
 
     Returns: 
     -------------
@@ -433,7 +506,7 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
                 
 
-        if unwrap_independent_probes:
+        if unwrap_probes or merge_probes:
             expected_probe_no = ((recordings.extractSpikes.str.len()/2)+0.5)
             expected_probe_no[np.isnan(expected_probe_no)] = 0 
             expected_probe_no = expected_probe_no.astype(int)
@@ -443,28 +516,73 @@ def load_data(recordings=None,data_name_dict=None,unwrap_independent_probes=Fals
             old_columns = recordings.columns.values
             keep_columns = np.setdiff1d(old_columns,['ephysPathProbe0','ephysPathProbe1', 'probe0', 'probe1'])
 
-            rec_list = []
-            for _,rec in recordings.iterrows():
-                for p_no in range(rec.expected_probe_no):
-                    string_idx =(p_no)*2
-                    if (rec.extractSpikes[int(string_idx)]=='1'):
-                        myrec = rec[keep_columns]
-                        myrec['probeID'] = 'probe%s' % p_no
-                        myrec['probe'] = rec['probe%s' % p_no]
-                        ephysPath = rec['ephysPathProbe%s' % p_no]
-                        myrec['ephysPath'] = ephysPath
+            if unwrap_probes & (~merge_probes):
+                # this is the mode when we crate a different row for each probe
+                rec_list = []
+                for _,rec in recordings.iterrows():
+                    for p_no in range(rec.expected_probe_no):
+                        string_idx =(p_no)*2
+                        if (rec.extractSpikes[int(string_idx)]=='1'):
+                            myrec = rec[keep_columns]
+                            myrec['probeID'] = 'probe%s' % p_no
+                            myrec['probe'] = rec['probe%s' % p_no]
+                            ephysPath = rec['ephysPathProbe%s' % p_no]
+                            myrec['ephysPath'] = ephysPath
 
-                        curated_fileMark = Path(ephysPath)
-                        curated_fileMark = curated_fileMark / 'pyKS\output\cluster_info.tsv'
-                        myrec['is_curated'] = curated_fileMark.is_file()
-                        
-                        rec_list.append(myrec)
+                            curated_fileMark = Path(ephysPath)
+                            curated_fileMark = curated_fileMark / 'pyKS\output\cluster_info.tsv'
+                            myrec['is_curated'] = curated_fileMark.is_file()
+                            
+                            rec_list.append(myrec)
+                
+
+
+                    recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
             
+            elif (~unwrap_probes) & merge_probes: 
+                rec_list = []
+
+                for _,rec in recordings.iterrows():
+                    myrec = rec[keep_columns]
+
+                    is_probe0 = hasattr(rec.probe0.spikes,'amps')
+                    is_probe1 = hasattr(rec.probe1.spikes,'amps')
+
+                    # add new data about probe ID to both spikes and clusters 
+                    if is_probe0:
+                        rec.probe0.spikes['probeID'] = np.zeros(rec.probe0.spikes.amps.size)
+                        rec.probe0.clusters['probeID'] = np.zeros(rec.probe0.clusters.amps.size)
+
+                    if is_probe1:                    
+                        rec.probe1.spikes['probeID'] = np.ones(rec.probe1.spikes.amps.size)
+                        rec.probe1.clusters['probeID'] = np.ones(rec.probe1.clusters.amps.size)
+
+                    # redo the _av_IDs of probe 1 if needed
+                    if is_probe0 & is_probe1:
+                        rec.probe1.clusters._av_IDs = rec.probe1.clusters._av_IDs + 1000
+                        rec.probe1.spikes.clusters = rec.probe1.spikes.clusters + 1000
+
+                        sp,cl = rec.probe0.spikes.keys(),rec.probe0.clusters.keys()
+
+                        new_spikes = Bunch({k:np.concatenate((rec.probe0.spikes[k],rec.probe1.spikes[k])) for k in sp})
+                        new_clusters = Bunch({k:np.concatenate((rec.probe0.clusters[k],rec.probe1.clusters[k])) for k in cl})
+                    
+                        myrec['probe'] = Bunch({'spikes':new_spikes,'clusters':new_clusters})
+                    elif is_probe0 & ~is_probe1:
+                        myrec['probe'] = rec.probe0
+                    elif ~is_probe0 & is_probe1:
+                        myrec['probe'] = rec.probe1
+                        
+                    rec_list.append(myrec)
+
+                recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probe']))) 
+            
+                # first we identify whether there are two probes
+                # then we process the 2nd probes data such that it can be disambiguated from the first probe
+                # process the 1st probe
+                # merge
 
 
-                recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
-        
-        
             if region_selection is not None:
                 keep_rec_region = [is_rec_in_region(rec,**region_selection) for _,rec in recordings.iterrows()]
                 recordings = recordings[keep_rec_region]

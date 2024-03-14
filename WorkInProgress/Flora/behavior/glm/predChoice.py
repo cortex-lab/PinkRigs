@@ -494,7 +494,7 @@ def search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_choiceM
 
     import re
     from Processing.pyhist.helpers.regions import BrainRegions
-    from Analysis.neural.utils.spike_dat import bombcell_sort_units
+    from Admin.csv_queryExp import bombcell_sort_units
 
     br = BrainRegions()
     bc_class = bombcell_sort_units(clusInfo)

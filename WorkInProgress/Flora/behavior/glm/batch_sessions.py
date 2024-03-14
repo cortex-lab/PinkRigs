@@ -3,25 +3,27 @@ import sys
 import pandas as pd
 import numpy as np
 
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+sys.  path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Admin.csv_queryExp import load_data,simplify_recdat
 from Analysis.neural.utils.data_manager import load_cluster_info
 from predChoice import glmFit,search_for_neural_predictors
 
-
+#['FT030','FT031','AV005','AV008','AV014','AV020','AV025','AV030','AV034']
 ephys_dict = {'spikes':'all','clusters':'all'}
 recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = ['AV025','AV030','AV034'],expDate='postImplant',
+                        subject = ['FT030','FT031','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],expDate='postImplant',
                         expDef='multiSpaceWorld',
                         checkEvents='1',
                         checkSpikes='1',
-                        unwrap_independent_probes=True,
-                        region_selection={'region_name':'SCm','min_fraction':.3})
+                        unwrap_probes=False, merge_probes=True,
+                        region_selection={'region_name':'SC','min_fraction':10,'goodOnly':True,'min_spike_num':300})
+
+# or manually select the recordings??
 
 # %%
 n_trials  = np.array([((rec.events._av_trials.response_direction>0) & (rec.events._av_trials.is_validTrial)).sum() for _,rec in recordings.iterrows()])
 
-recordings = recordings.iloc[n_trials>100]
+recordings = recordings.iloc[n_trials>200]
 # %%
 
 
@@ -54,8 +56,8 @@ for r,(_,rec) in enumerate(recordings.iterrows()):
 import matplotlib.pyplot as plt
 from pathlib import Path
 plt.plot(logLiks,ls='-',color='grey',alpha=1,lw=5)
-#plt.plot(np.nanmean(logLiks,axis=1),color='k',lw=12)
-plt.ylim([0.1,1])
+plt.plot(np.nanmean(logLiks,axis=1),color='k',lw=12)
+#plt.ylim([0.1,1])
 plt.ylabel('-Log2Likelihood')
 
 which_figure = 'pre_stim'

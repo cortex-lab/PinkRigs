@@ -17,7 +17,7 @@ data_ID = {
      'subject': 'AV030',
      'expDate': '2022-12-07', 
      'expNum': 2,
-      'probe': 'probe0' 
+      'probe': 'probe1' 
 }
 
 
@@ -46,7 +46,7 @@ variance_explained = kernels.evaluate(**evalParams)
 kernels.fit_evaluate(get_prediciton=True,**fitParams)
 
 # %%
-n = 52
+n =110
 plt.rcParams.update({'font.family':'Verdana'})
 plt.rcParams.update({'font.size':16})
 plt.rcParams['figure.dpi'] = 300
@@ -59,8 +59,8 @@ color_dict = {
 
 
 kernels.plot_prediction(n,plot_stim=True,sep_choice=True,plot_move=True,sep_move=False,
-                            plot_train = True, plot_test= False,merge_train_test=True, 
-                            plot_pred_train = False,plot_pred_test = False,plot_colors=['blue','red'],
+                            plot_train = True, plot_test= False,merge_train_test=True,
+                            plot_pred_train = False,plot_pred_test = False,plot_range=False,plot_colors=['blue','red'],
                             plotted_vis_azimuth=np.array([-60,-1000,60]),plotted_aud_azimuth=np.array([-60,0,60]))
 
 # save out the example neurons

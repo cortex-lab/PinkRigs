@@ -61,7 +61,7 @@ for idx,m in enumerate(histology_folders):
 import brainrender as br
 from Analysis.pyutils.plotting import brainrender_scattermap
 n_mice = len(histology_folders)
-mouse_colors = brainrender_scattermap(np.arange(n_mice),vmin=-1,vmax=n_mice-1,cmap='Dark2',n_bins=n_mice)
+mouse_colors = brainrender_scattermap(np.arange(n_mice),vmin=-1,vmax=n_mice,cmap='Dark2',n_bins=n_mice)
 
 scene = br.Scene(title="Cannulae locations", inset=False,root=False)
 scene.add_brain_region("SCs",alpha=0.07,color='sienna')

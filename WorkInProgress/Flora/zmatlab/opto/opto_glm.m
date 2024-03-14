@@ -1,6 +1,10 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1, ...
+    'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',0,'whichSet', 'all_one_p'); 
 
+
+save_fig = 1;
+savepath = 'D:\behaviours_opto'; 
 %
 % fit and plot each set of data
 %
@@ -55,7 +59,7 @@ for s=1:numel(extracted.data)
     
     if shouldPlot
         f=figure; 
-        f.Position = [10,10,400,400];
+        f.Position = [10,10,300,300];
         plotParams.LineStyle = '--';
         plotParams.DotStyle = 'none';
         plotParams.MarkerEdgeColor = 'k';
@@ -71,6 +75,9 @@ for s=1:numel(extracted.data)
             numel(controlBlock.is_blankTrial),...
             extracted.power{s},...
             extracted.hemisphere{s}))
+
+
+
     end
 
 
@@ -95,6 +102,17 @@ for s=1:numel(extracted.data)
         end
 
     end
+
+    %
+    if save_fig
+   
+       savename = sprintf('%s_%.0fmW_hemisphere_%.0f_%splot.svg', ...
+            extracted.subject{s},...
+            extracted.power{s},...
+            extracted.hemisphere{s},...
+            plotParams.plottype); 
+       saveas(gcf, [savepath '/' savename], 'svg');
+    end 
     %
 end
 

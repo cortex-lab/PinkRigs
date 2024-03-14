@@ -208,61 +208,7 @@ def call_bombcell_params():
 
     return metric_thresholds
     
-def bombcell_sort_units(clusdat,max_peaks=2,max_throughs=1,
-                        is_somatic=1,min_spatial_decay_slope=-0.003,
-                        min_waveform_duration=100,max_waveform_duration=800,
-                        max_waveform_baseline_fraction=.3,max_percentage_spikes_missing=20,
-                        min_spike_num=300,max_refractory_period_violations=.1,min_amp=20,minSNR=.1,max_drift=500,min_presence_ratio=.2):
 
-    """
-    classifier that sorts units into good,mua and noise, based on bombcell parameters
-
-    Parameters: 
-    ----------
-    see bombcell documentataion 
-
-
-    Returns:
-    -------
-        	: np. array 
-        bombcell class (mua/good/noise)
-    """
-
-    #any unit that is not discarded as noise or selected as well isolated is mua.
-    #maybe there ought to be an option to classify well isolated axonal units...
-    
-    
-    bombcell_class = np.empty(clusdat.nPeaks.size,dtype="object") 
-    bombcell_class[:] = 'mua'
-    # assign noise 
-
-    ix = ~ (
-        (clusdat.nPeaks>max_peaks) | 
-        (clusdat.nTroughs>max_throughs) |
-        (clusdat.isSomatic>=is_somatic) | 
-        (clusdat.spatialDecaySlope>=min_spatial_decay_slope) |
-        (clusdat.waveformDuration_peakTrough<min_waveform_duration) |
-        (clusdat.waveformDuration_peakTrough>max_waveform_duration) |
-        (clusdat.waveformBaselineFlatness>=max_waveform_baseline_fraction)
-    ) 
-
-    bombcell_class[ix]='noise'
-
-    # assign well isolated units 
-    ix = (
-        (bombcell_class != 'noise') &
-        (clusdat.nSpikes>min_spike_num) &
-        (clusdat.fractionRPVs_estimatedTauR <= max_refractory_period_violations) &
-        (clusdat.rawAmplitude>min_amp) &
-        (clusdat.percentageSpikesMissing_gaussian<max_percentage_spikes_missing) & 
-        (clusdat.signalToNoiseRatio>=minSNR) & 
-        (clusdat.presenceRatio>=min_presence_ratio)  
-        )
-
-    bombcell_class[ix]='good'
-
-
-    return bombcell_class
 
 def bincount2D(x, y, xbin=0, ybin=0, xlim=None, ylim=None, weights=None,xsmoothing=0):
     """

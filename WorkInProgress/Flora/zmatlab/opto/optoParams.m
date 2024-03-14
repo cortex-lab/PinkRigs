@@ -18,6 +18,7 @@ function [params] = optoParams(which)
         params.reverse_opto =0;
         params.selPowers = [34];
         params.selHemispheres = [0];
+
     elseif strcmp('bi_low',which)
         params.reverse_opto =1;
         params.selPowers = [20];
@@ -32,5 +33,15 @@ function [params] = optoParams(which)
         params.reverse_opto =1;
         params.selPowers = [10];
         params.selHemispheres = [-1,1];
+
+    elseif strcmp('uni_all',which)
+        params.reverse_opto =1;
+        params.selPowers = [10,30];
+        params.selHemispheres = [-1,1];
+
+    elseif strcmp('all_one_p',which)
+        params.reverse_opto =0;
+        params.selPowers = [10,20,15,17,30];
+        params.selHemispheres = [-1,0,1];
     end 
 end 
