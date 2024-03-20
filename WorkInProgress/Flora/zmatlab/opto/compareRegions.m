@@ -1,9 +1,12 @@
 %%
 clc; clear all; 
+ addpath(genpath('C:\Users\Flora\Documents\Github\PinkRigs'));
+ addpath(genpath('C:\Users\Flora\Documents\Github\2023_CoenSit'));
+
 [sites,cortexDat] = loadCortexData('uni',1); 
 
 % load the opto
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet','uni_high'); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet','uni_low'); 
 %
 sites{4} = 'SC'; 
 allDat = [cortexDat,extracted.data]; 
@@ -98,9 +101,10 @@ end
 labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
 indices = {[1],[2],[3],[5],[6]};  
 
+figure;
 
 for p = 1:numel(labels)
-    figure;
+    subplot(1,numel(labels),p)
     for site=1:numel(sites)
         allratios = ratios{site}; 
         curr = mean(allratios(:,indices{p}),2); 
@@ -111,6 +115,11 @@ for p = 1:numel(labels)
     xticklabels(sites)
     title(labels{p})
     ylabel('opto/control param value')
+    if strcmp('bias',labels{p})
+        ylim([-30,60])
+    else
+        ylim([-1,2])
+    end
     %ylim([-1,2])
     hline(1,'--')
     xlim([.5,4.5])
@@ -120,9 +129,9 @@ end
 labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
 indices = {[1],[2],[3],[5],[6]};  
 
-
+figure;
 for p = 1:numel(labels)
-    figure;
+    subplot(1,numel(labels),p);
     for site=1:numel(sites)
         allratios = diffs{site}; 
         curr = mean(allratios(:,indices{p}),2); 

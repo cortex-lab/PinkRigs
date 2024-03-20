@@ -20,7 +20,6 @@ rt = ev.rt;
 
 visStim = [-40,-20,-10,0,10,20,40];
 audStim = [-60,0,60]; 
-
 [visGrid, audGrid] = meshgrid(visStim,audStim);
 %
 rt_per_cond = arrayfun(@(x,y) rt(ismember([visDiff,audDiff],[x,y],'rows') & ~isnan(rt)), visGrid, audGrid,'UniformOutput',0);

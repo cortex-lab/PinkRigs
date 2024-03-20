@@ -5,7 +5,7 @@ import pandas as pd
 
 
 from Analysis.neural.utils.spike_dat import bincount2D
-from Admin.csv_queryExp import Bunch
+from Admin.csv_queryExp import Bunch,format_events
 
 
 def postactive(ev):  
@@ -257,15 +257,37 @@ def getTrialNames(ev):
 
 
 
+def filter_active_trials(ev,rt_params = {'rt_min':None,'rt_max':None},exclude_premature_wheel=False):
+        """
+        function to filter out typically unused trials in the active data analysis
+        """
+        ev = format_events(ev)
+        to_keep_trials = ((ev.is_validTrial) & 
+                (ev.response_direction!=0) &  # not a nogo
+                (np.abs(ev.stim_audAzimuth)!=30))
+         # if spikes are used we need to filter extra trials, such as changes of Mind
+        if exclude_premature_wheel:
+                no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
+                to_keep_trials = to_keep_trials & no_premature_wheel
+
+        if rt_params:
+                if rt_params['rt_min']: 
+                        to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
+                
+                if rt_params['rt_max']: 
+                        to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])  
+
+
+        return to_keep_trials
+
+
 
 
 def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
                 classify_choice_types=True,choice_types = None, 
-                rt_params = None, 
-                classify_rt = False, 
                 min_trial = 2, 
                 include_unisensory_aud = True, 
-                include_unisensory_vis = False,add_crossval_idx_per_class=False):
+                include_unisensory_vis = False,add_crossval_idx_per_class=False,**kwargs):
         """
         function that preselects some events based on parameters
           1) excludes events that we don't intend to fit at all
@@ -309,23 +331,7 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
 
         # if it is active data, also exclude trials where firstmove was made prior to choiceMove
         if hasattr(ev,'timeline_firstMoveOn'):
-            no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
-            no_premature_wheel = no_premature_wheel + ~np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
-            to_keep_trials = to_keep_trials & no_premature_wheel
-
-            print('loosing %.0f invalid and %.0f noGo trials' % (((~ev.is_validTrial).sum()),(np.isnan(ev.timeline_choiceMoveDir).sum())))
-            print('keeping %.0f after discarding premature wheel' % to_keep_trials.sum())
-
-        
-        if rt_params:
-                if rt_params['rt_min']: 
-                        to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
-                
-                if rt_params['rt_max']: 
-                        to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])  
-
-
-                print('keeping %.0f after discarding based on RT' % to_keep_trials.sum())
+                to_keep_trials = filter_active_trials(ev,**kwargs)
 
 
          # and if there is anything else wrong with the trial, like the pd did not get detected..? 
@@ -349,10 +355,6 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
             ev.choiceType = np.zeros(ev.is_validTrial.size).astype('int')
             choice_types = [0]
         
-
-        if classify_rt:
-            # option to balance whether trial types are dominantly long/short in a certain trial class
-            pass
 
         if include_unisensory_aud:                 
             # in unisensory cases the spl/contrast is set to 0 as expected, however the azimuths are also set to nan -- not the easiest to query...

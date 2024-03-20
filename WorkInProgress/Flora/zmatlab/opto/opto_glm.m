@@ -1,9 +1,9 @@
 clc; clear all;
 extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1, ...
-    'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',0,'whichSet', 'all_one_p'); 
+    'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',0,'whichSet', 'uni_all'); 
 
 
-save_fig = 1;
+save_fig = 0;
 savepath = 'D:\behaviours_opto'; 
 %
 % fit and plot each set of data
@@ -128,6 +128,7 @@ paramLabels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'});
 
 % plot order; % calculate fit improvement by varying each predictor 
 
+
 best_deltaR2 = opto_fit_logLik(:,1) - opto_fit_logLik(:,2);
 deltaR2 = (opto_fit_logLik(:,1)-opto_fit_logLik(:,[3,8,9,10,11]))./best_deltaR2;
 
@@ -137,6 +138,7 @@ cvR2 = (opto_fit_logLik(:,2)-opto_fit_logLik(:,12:16))./best_deltaR2;
 %% individual plots 
 figure; 
 plot(deltaR2');
+
 
 figure;plot(cvR2'); 
 
@@ -262,17 +264,20 @@ xticklabels(paramLabels)
 %plot([1,2,3,4,5,6,7,8,9],mean(opto_fit_logLik_norm(:,[13,14,15,16,12,17,18,19,20])),color='g',LineWidth=5,LineStyle='-',Marker='+',MarkerSize=30);
 %%
 % plot gain vs loss against each other for each param
+paramLabels = categorical({'Vipsi','Vcontra','Aipsi','Acontra','bias'}); 
+
 gain_ids = [8,9,10,11,3]; 
 loss_ids = [13,14,15,16,12];
 figure; 
 nSets = numel(gain_ids);
 for i=1:nSets
     subplot(1,nSets,i)
-    plot(opto_fit_logLik_norm(:,gain_ids(i)),1-opto_fit_logLik_norm(:,loss_ids(i)),'.',MarkerSize=30);hold on;
+    plot(opto_fit_logLik_norm(:,gain_ids(i)),1-opto_fit_logLik_norm(:,loss_ids(i)),'.',MarkerSize=30,MarkerEdgeColor='cyan');hold on;
     yline(0); hold on;
     xline(0)
-    yline(1); hold on;
-    xline(1)
+    plot([-.1;0],[1;1],color='k')
+    plot([1;1],[-.1;0],color='k')
+
     xlim([-.1,1.1])
     ylim([-.1,1.1])
     title(paramLabels(i))
@@ -326,21 +331,36 @@ sprintf('%s,hemisphere:%.0d,power:%.0d',extracted.subject{s_id},extracted.hemisp
     % fit
 
 figure; 
-paramLabels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'}); 
-
+paramLabels = categorical({'bias','Vipsi','Vcontra','gamma','Aipsi','Acontra'}); 
+subjects = categorical([extracted.subject{:}])';
 for ptype=1:numel(paramLabels)
     subplot(1,numel(paramLabels),ptype)
-    plot(opto_fit_params(:,1,ptype),opto_fit_params(:,1,ptype)+opto_fit_params(:,2,ptype),'.',MarkerSize=30)
+    myx = opto_fit_params(:,1,ptype);
+    myy = opto_fit_params(:,1,ptype)+opto_fit_params(:,2,ptype);
+
+     for s =1:numel(subjects)
+        myx_hemisaveraged(s) = mean(myx(subjects==subjects(s)));
+        myy_hemisaveraged(s) = mean(myy(subjects==subjects(s)));
+
+     end 
+
+    plot(myx,myy,'.',MarkerSize=30)
+    
     hold on; 
     plot([-5,5],[-5,5],'k--')
     xlabel(sprintf('%s,control fit',paramLabels(ptype)))
     ylabel(sprintf('%s,full fit',paramLabels(ptype)))
     ylim([-5,5])
+    [hv,p]= ttest(myx_hemisaveraged,myy_hemisaveraged);
+    title(p)
 end 
+
+%
+
 
 %%
 % plot some parameters agains depth/cannula location in SC
-locations = csv.readTable('C:\Users\Flora\Documents\Processed data\Audiovisual\cannula_locations.csv'); 
+locations = csv.readTable('D:\opto_cannula_locations.csv'); 
 
 n = numel(extracted.data); 
 dv = NaN(n,1); ap = NaN(n,1);ml = NaN(n,1);acronym = NaN(n,1); 
@@ -362,27 +382,82 @@ for s=1:n
     end 
 end 
 
+
+%% % approximate stimulus 
+ap_ccf = -ap+5400;
+mid_loc = -3950; 
+distance_from_stim = abs(ap_ccf-mid_loc); 
+
+% gain likelihood 8,9,10,11,3 'Vipsi','Vcontra','Aipsi','Acontra','bias'
+% loss likelihood 13,14,15,16,12
+% param change
+
+idx_sets = [3,12,1];  % bias
+idx_sets = [9,14,3];  % Vcontra
+idx_sets = [8,13,2];  % Vipsi
+idx_sets = [11,16,6];  % A contra
+idx_sets = [10,15,5];  % Aipsi
+
+gainll = opto_fit_logLik_norm(:,idx_sets(1)); 
+lossll = 1-opto_fit_logLik_norm(:,idx_sets(2)); 
+paramchange = opto_fit_params(:,2,idx_sets(3));
+figure;
+subplot(1,3,1)
+plot(distance_from_stim,gainll,'.',Markersize=30);
+subplot(1,3,2)
+plot(distance_from_stim,lossll,'.',Markersize=30);
+
+subplot(1,3,3)
+plot(distance_from_stim,paramchange,'.',Markersize=30);
+
+
 %%
-
-
-gain_ids = [4,5,6,7]; 
-i=2;
-v = (opto_fit_params(:,2,1));
-% plot the dv location against the 
 figure; 
-subplot(2,1,2)
-plot(v,abs(ml-5600),'.',MarkerSize=30); hold on;
-xlabel('deltaVisC')
-ylabel('tip_m_l')
-set(gca, 'YDir','reverse')
-xline(0)
-xlim([-3,3])
+paramLabels = categorical({'bias','Vipsi','Vcontra','gamma','Aipsi','Acontra'}); 
+
+for ptype=1:numel(paramLabels)
+    subplot(1,numel(paramLabels),ptype)
+
+    myx =distance_from_stim; 
+
+    if strcmp('bias',paramLabels(ptype))
+        myy = (opto_fit_params(:,2,ptype));
+    else
+        myy = (opto_fit_params(:,2,ptype)+opto_fit_params(:,1,ptype))./opto_fit_params(:,1,ptype);
+    end 
+
+    tbl = table; 
+    tbl.distance = myx; 
+    tbl.paramchange = myy; 
+    tbl.hemisphere = categorical([extracted.hemisphere{:}])'; 
+    tbl.subject = categorical([extracted.subject{:}])'; 
+
+    tbl = tbl(~isnan(myx),:);
+    model = fitlme(tbl, 'paramchange ~ distance + (1|subject) + (1|hemisphere)');
+    % Get the coefficients table
+    coeff_table = model.Coefficients;    
+    % Find the row index corresponding to the 'Group' predictor
+    group_idx = find(strcmp(coeff_table.Name, 'distance'));    
+    % Extract the p-value
+    p_value = coeff_table.pValue(group_idx);
+
+    plot(myx,myy,'.',MarkerSize=30)
+    hold on; 
+    xlabel(sprintf('%s,ditance from stimulus',paramLabels(ptype)))
+    if ptype==1
+        ylabel(sprintf('opto-cotrol param, full refit'))
+        yline(0)
+        ylim([-6,6])
+    else
+        ylim([-3,3])
+        yline(1)
+        ylabel(sprintf('opto/cotrol param, full refit'))
+        yscale log
 
 
-subplot(2,1,1);
-plot(v,dv,'.',MarkerSize=30); 
-xlabel('deltaVisC')
-ylabel('tip_d_v')
-set(gca, 'YDir','reverse')
-xlim([-3,3])
-xline(0)
+    end 
+    title(paramLabels(ptype),p_value)
+    hold on; 
+
+end 
+

@@ -11,38 +11,31 @@ from Analysis.neural.utils.data_manager import load_cluster_info
 
 ephys_dict = {'spikes':'all','clusters':'all'}
 recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = 'AV025',expDate='2022-11-09',
+                        subject = 'AV008',expDate='2022-03-10',
                         expDef='multiSpaceWorld',
                         checkEvents='1',
                         checkSpikes='1',
-                        unwrap_independent_probes=True,
+                        unwrap_probes=False, merge_probes=True, 
                         region_selection={'region_name':'SC','min_fraction':.3})
 
 
 # %%
-from predChoice import format_av_trials,glmFit
-
+from predChoice import format_av_trials,glmFit,search_for_neural_predictors
 rec = recordings.iloc[0]
-# preselect clusters based on quality metrics
-# 
-# 
-#  
-ev,spk,_,_,_ = simplify_recdat(rec,probe='probe')
-clusInfo = load_cluster_info(rec,probe='probe')
+
+=search_for_neural_predictors(rec,my_ROI='SCm',event_type='timeline_choiceMoveOn',ll_thr=0.01)
+
+ev,spk,clusInfo,_,_ = simplify_recdat(rec,probe='probe')
 
 
 my_ROI = 'SCm'
 event_type = 'timeline_choiceMoveOn'
 
 
-from Processing.pyhist.helpers.regions import BrainRegions
-from Analysis.neural.utils.spike_dat import bombcell_sort_units
-br = BrainRegions()
-bc_class = bombcell_sort_units(clusInfo)
-clusInfo['is_good'] = bc_class=='good'
-clusInfo.brainLocationAcronyms_ccf_2017[clusInfo.brainLocationAcronyms_ccf_2017=='unregistered'] = 'void' # this is just so that the berylacronymconversion does something good
-clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
 goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym=='SCm')]._av_IDs.values
+
+
+
 
 trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,t=0.15,onset_time=event_type)
 # iterative fitting for each nrn 
@@ -94,8 +87,8 @@ fig,ax = plt.subplots(1,1,figsize=(8,8))
 final_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
 final_glm = glmFit(final_matrix,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0],fixed_paramValues = list(glm.model.allParams))   
 final_glm.fitCV(n_splits=2,test_size=0.5)
-final_glm.visualise(yscale='sig',ax=ax)
-fig.suptitle('{subject}_{expDate}_{expNum}_{probeID}'.format(**rec))
+final_glm.visualise(yscale='log',ax=ax)
+fig.suptitle('{subject}_{expDate}_{expNum}'.format(**rec))
 ax.set_title('LogLik=%.2f' % final_glm.model.LogLik)
 #%%
 # compare the neural vs non-neural models

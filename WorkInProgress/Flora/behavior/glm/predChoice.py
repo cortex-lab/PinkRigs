@@ -4,7 +4,7 @@
 # todo: figure out closs validation
 # figure out: param contribution evaluation
 
-import sys
+import sys,re
 import numpy as np
 import pandas as pd  
 from scipy.optimize import minimize
@@ -16,6 +16,7 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Admin.csv_queryExp import format_events,simplify_recdat
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 from Analysis.neural.utils.data_manager import load_cluster_info
+from Analysis.pyutils.ev_dat import filter_active_trials
 
 class AVSplit(): 
     """
@@ -95,6 +96,26 @@ class AVSplit():
         biasComponent = bias 
 
         return  np.ravel(audComponent + visComponent + biasComponent) + neural_contribution
+    
+    @staticmethod
+    def get_ll_per_condition(ll):
+        """
+        function to return the log likelihoods per condition given the matrix that is outputted by each unique split 
+        """
+        is_blank = (ll.visDiff==0) & (ll.audDiff==0)
+        is_vis = (ll.visDiff!=0) & (ll.audDiff==0)
+        is_aud = (ll.visDiff==0) & (ll.audDiff!=0)
+        is_coh = (ll.visDiff!=0) & (ll.audDiff!=0) & ((np.sign(ll.audDiff)-np.sign(ll.visDiff))==0)
+        is_conf = (ll.visDiff!=0) & (ll.audDiff!=0) & ((np.sign(ll.audDiff)-np.sign(ll.visDiff))!=0)
+
+        ll_blank = ll[is_blank].LogLik.mean()
+        ll_aud =  ll[is_aud].LogLik.mean()       
+        ll_vis =  ll[is_vis].LogLik.mean()       
+        ll_coh =  ll[is_coh].LogLik.mean()       
+        ll_conf =  ll[is_conf].LogLik.mean() 
+
+        return ll_blank,ll_aud,ll_vis,ll_coh,ll_conf
+    
     
     def plot(self,parameters,yscale='log',conditions=None,choices=None,ax=None,colors=['b','grey','red'],dataplotkwargs={'marker':'o','ls':''},predpointkwargs ={'marker':'*','ls':''},predplotkwargs={'ls':'-'}):
         """
@@ -212,7 +233,7 @@ class AVSplit():
         
 
 
-def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset_time = 'timeline_audPeriodOn'):
+def format_av_trials(ev,spikes=None,cam=None,nID=None,single_average = False,pre_time=0.2,post_time=0, onset_time = 'timeline_audPeriodOn',**kwargs):
     """
     specific function for the av pipeline such that the _av_trials.table is formatted for the glmFit class
 
@@ -237,58 +258,45 @@ def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset
     df['audDiff']=ev.stim_audAzimuth/maxA
     df['choice'] = ev.response_direction-1
 
+    if post_time is not None:
+        rt_params = {'rt_min':post_time+0.03,'rt_max':1.5}
+    else:
+        rt_params = {'rt_min':0.03,'rt_max':1.5}
 
 
-    # filtering of the data
-    # by default we get rid of 
-        # nogos  
-        # invalid trials (i.e. repeatNum!=1)
-        # 30 degree aud azimuth
-    # we also can optionally get rid of other trials later... 
-    to_keep_trials = ((ev.is_validTrial) & 
-                      (ev.response_direction!=0) & 
-                      (np.abs(ev.stim_audAzimuth)!=30))
-
-
+    to_keep_trials = filter_active_trials(ev,rt_params=rt_params,**kwargs)
+       
    
     # add choice related activity of it was requested
     if spikes: 
         # tbd
-        rt_params = {'rt_min':.03,'rt_max':1.5}
-
         raster_kwargs = {
-                'pre_time':t,
-                'post_time':0, 
-                'bin_size':t,
+                'pre_time':pre_time,
+                'post_time':post_time, 
+                'bin_size':pre_time+post_time,
                 'smoothing':0,
                 'return_fr':True,
                 'baseline_subtract': False, 
         }
+
+        
         t_on = ev[onset_time]
 
+        # this only works if all t_ons are nans which is ofc not true always
         r = get_binned_rasters(spikes.times,spikes.clusters,nID,t_on[~np.isnan(t_on)],**raster_kwargs)
         
         if single_average: 
             r.rasters = r.rasters.mean(axis=1)[:,np.newaxis,:]
-        zscored = zscore(r.rasters[:,:,0],axis=0)
+        # zscore across the trials so that the neurons that do not vary per trial do not get added as baseline weights    
+        zscored = zscore(r.rasters[:,:,0],axis=0) 
 
+        # discard neurons that are nan on all trials that were kept 
         discard_idx =  np.isnan(zscored).any(axis=0)
-        
+
+        # get back the nans when t_on was nan
         resps = np.empty((t_on.size,zscored.shape[1]))*np.nan
         resps[~np.isnan(t_on),:] = zscored
-        
-        # if spikes are used we need to filter extra trials, such as changes of Mind
-        no_premature_wheel = (ev.timeline_firstMoveOn-ev.timeline_choiceMoveOn)==0
-        no_premature_wheel = no_premature_wheel + np.isnan(ev.timeline_choiceMoveOn) # also add the nogos
-        to_keep_trials = to_keep_trials & no_premature_wheel
-
-        if rt_params:
-                if rt_params['rt_min']: 
-                        to_keep_trials = to_keep_trials & (ev.rt>=rt_params['rt_min'])
-                
-                if rt_params['rt_max']: 
-                        to_keep_trials = to_keep_trials & (ev.rt<=rt_params['rt_max'])   
-
+     
         # some more sophisticated cluster selection as to what goes into the model
         
         if single_average:
@@ -297,6 +305,30 @@ def format_av_trials(ev,spikes=None,nID=None,single_average = False,t=0.2, onset
         else:
             nrnNames  = np.array(['neuron_%.0d' % n for n in nID])[~discard_idx]
             df[nrnNames] = pd.DataFrame(resps[:,~discard_idx])
+
+
+    if cam:
+        from Analysis.pyutils.video_dat import get_move_raster
+        # get all auditory stimulus onsets
+        bin_kwargs  = {
+            'pre_time':pre_time,
+            'post_time':post_time, 
+            'bin_size': pre_time+post_time,
+            'sortAmp':False, 'to_plot':False,
+            'baseline_subtract':False
+        }
+
+
+        cam_values = (cam.ROIMotionEnergy) # or maybe I should do things based on PCs
+        t_on = ev[onset_time]
+        move_raster,_,_  = get_move_raster(t_on[~np.isnan(t_on)],cam.times,cam_values,**bin_kwargs) 
+        
+        zscored = zscore(move_raster,axis=0) 
+
+        resps = np.empty((t_on.size,zscored.shape[1]))*np.nan
+        resps[~np.isnan(t_on),:] = zscored
+        df['movement'] = pd.DataFrame(resps)
+
 
 
     df = df[to_keep_trials].reset_index(drop=True)
@@ -407,6 +439,9 @@ class glmFit():
         self.y = y
 
     def get_Likelihood(self,betas): 
+        """
+        likelihood calculation that is typically used while fitting the model that minimises the likelihood
+        """
         # this is what could be looped potentially given if there are several dims y becomes 2D & X becomes 3D
         # and then we just sum over the likelihoods for this we need a paramgenerator function called here        
         
@@ -418,6 +453,18 @@ class glmFit():
         # calculate how likely each of these choisen response was given the model
         logLik = -np.mean(np.log2(pHat_calculated[responseCalc.astype('int'),np.arange(pHat_calculated.shape[1])])) + penalty
         return logLik
+    
+    def get_Likelihood_per_trial(self,betas): 
+        """
+        likelihood calculation for each trial type, function used during evaluation (i.e. something that e.g. does not add the penalty when performing the evaluation)
+        
+        returns the -log2likelihood per trial
+        """
+        pHat_calculated = self.calculatepHat(self.X,betas) # the probability of each possible response 
+        responseCalc = self.y
+        logLiks_per_trial = -np.log2(pHat_calculated[responseCalc.astype('int'),np.arange(pHat_calculated.shape[1])])
+        return logLiks_per_trial
+        	
        
     def fit(self):
         """
@@ -441,8 +488,11 @@ class glmFit():
         X = self.conditions
         y = self.choices
 
-        fitted_params,params,logLiks = [],[],[]
-        for train_index, test_index in sss.split(X,y):
+        non_neuralX = X[:,:self.model.required_conditions.size]
+        unique_conds = np.unique(non_neuralX,axis=0)
+
+        fitted_params,params,logLiks,ll_per_cond = [],[],[],[]
+        for train_index, test_index in sss.split(non_neuralX,y):
             X_train, X_test = X[train_index], X[test_index]
             y_train, y_test = y[train_index], y[test_index]
             self.init_data_for_LikeLihood(X_train,y_train)
@@ -452,6 +502,22 @@ class glmFit():
             self.init_data_for_LikeLihood(X_test,y_test)
             logLiks.append(self.get_Likelihood(self.model.paramFit))
 
+            self.init_data_for_LikeLihood(X_test,y_test)
+            logLik_per_trial = self.get_Likelihood_per_trial(self.model.paramFit)
+
+            # also calculate the logLikelihood per each trial condition
+            non_neuralX_test = non_neuralX[test_index]
+            ll_per_cond.append(np.array([np.mean(logLik_per_trial[(non_neuralX_test==c).all(axis=1)]) for c in unique_conds])[np.newaxis,:])
+
+        # convert ll_per_cond_to_df
+        # nanmean because if there was no trial in some splits we get a nan
+        ll_per_cond = np.nanmean(np.concatenate(ll_per_cond),axis=0)
+        ll_per_cond  = np.concatenate((unique_conds,ll_per_cond[:,np.newaxis]),axis=1)
+        columns = self.model.required_conditions.tolist()
+        columns.append('LogLik')
+        ll_per_cond = pd.DataFrame(ll_per_cond,columns=columns)
+
+        self.model.LogLik_per_condition = ll_per_cond
         self.model.LogLik=np.mean(logLiks)
         self.model.paramFit = np.mean(np.concatenate(fitted_params),axis=0)  
         self.model.allParams = np.mean(np.concatenate(params),axis=0)
@@ -468,9 +534,9 @@ class glmFit():
 
 
 
-def search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_choiceMoveOn',ll_thr = 0.005):
+def search_for_neural_predictors(rec,my_ROI='SCm',ll_thr = 0.005,**kwargs):
     """
-    iterative search method to add neural predictors to the GLM
+    iterative search method to add neural predictors to the GLM from the 
 
     method: 
     
@@ -484,26 +550,18 @@ def search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_choiceM
     ll_thr: 
         minimum log-likelihood decrease required for a neuron to be added
     
+        
+    Returns: 
+    pd.df,list
+    :the final matrix containing all variables including vis, aud, choice and neurons 
+    :the ID of the neurons that have been searched..? 
+    : logLikelihoods??
+
     """ 
 
-    ev,spk,_,_,_ = simplify_recdat(rec,probe='probe')
-    clusInfo = load_cluster_info(rec,probe='probe')
-    
-    # my_ROI = 'SCm'
-    # event_type = 'timeline_audPeriodOn'
-
-    import re
-    from Processing.pyhist.helpers.regions import BrainRegions
-    from Admin.csv_queryExp import bombcell_sort_units
-
-    br = BrainRegions()
-    bc_class = bombcell_sort_units(clusInfo)
-    clusInfo['is_good'] = bc_class=='good'
-    clusInfo.brainLocationAcronyms_ccf_2017[clusInfo.brainLocationAcronyms_ccf_2017=='unregistered'] = 'void' # this is just so that the berylacronymconversion does something good
-    clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
+    ev,spk,clusInfo,_,_ = simplify_recdat(rec,probe='probe')
     goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym==my_ROI)]._av_IDs.values
-
-    trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,t=0.15,onset_time=event_type)
+    trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,**kwargs)
     # iterative fitting for each nrn 
     nrn_IDs = [re.split('_',i)[1] for i in trials.columns if 'neuron' in i]
 
@@ -547,8 +605,9 @@ def search_for_neural_predictors(rec,my_ROI='SCm',event_type = 'timeline_choiceM
 
     final_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
 
-    return final_matrix,goodclusIDs
+    return final_matrix,goodclusIDs,best_nrn,ll_best
 
-    
+# maybe fore 
+      
 
 # %%

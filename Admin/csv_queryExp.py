@@ -572,7 +572,7 @@ def load_data(recordings=None,data_name_dict=None,unwrap_probes=False,merge_prob
                         myrec['probe'] = rec.probe0
                     elif ~is_probe0 & is_probe1:
                         myrec['probe'] = rec.probe1
-                        
+
                     rec_list.append(myrec)
 
                 recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probe']))) 
@@ -649,6 +649,47 @@ def format_events(ev,reverse_opto=False):
 
         return ev
 
+def format_cluster_data(clusters):
+    """
+    this is a helper that further formats the cluster data, mostly with adding information about the anatomy and quality metrics
+    
+    """
+    clusInfo = {k:clusters[k] for k in clusters.keys() if clusters[k].ndim==1}
+    clusInfo = pd.DataFrame.from_dict(clusInfo)
+    #clusInfo = clusInfo.set_index('_av_IDs',drop=False)
+
+    colnames = list(clusters.keys())
+    if 'mlapdv' in colnames:
+        # we could add the raw, but for now, I won't actually
+        clusInfo['ml'] = clusters.mlapdv[:,0]
+        clusInfo['ap'] = clusters.mlapdv[:,1]
+        clusInfo['dv'] = clusters.mlapdv[:,2]
+        clusInfo['hemi'] = np.sign(clusInfo.ml-5600)
+
+    else: 
+        clusInfo['ml'] = np.nan
+        clusInfo['ap'] = np.nan
+        clusInfo['dv'] = np.nan
+        clusInfo['hemi'] = np.nan
+        clusInfo['brainLocationAcronyms_ccf_2017'] = 'unregistered'
+        clusInfo['brainLocationIds_ccf_2017']  = np.nan   
+
+    if 'phy_clusterID' not in colnames:
+        clusInfo['phy_clusterID'] = clusInfo.cluster_id
+
+    from Processing.pyhist.helpers.regions import BrainRegions
+    br = BrainRegions()
+    bc_class = bombcell_sort_units(clusInfo)
+    clusInfo['bombcell_class'] = bc_class
+    clusInfo['is_good'] = bc_class=='good'
+    clusInfo.brainLocationAcronyms_ccf_2017[clusInfo.brainLocationAcronyms_ccf_2017=='unregistered'] = 'void' # this is just so that the berylacronymconversion does something good
+    clusInfo['BerylAcronym'] = br.acronym2acronym(clusInfo.brainLocationAcronyms_ccf_2017, mapping='Beryl')
+
+    return clusInfo
+
+
+
+
 def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
     """
     this is the most standarising loader. Allows standardisation of numerous sessions etc. 
@@ -676,7 +717,7 @@ def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['s
 
     Retruns:
     --------
-        Bunch,Bunch,Bunch,Bunch
+        Bunch,Bunch,pd.dataFrame,Bunch
         for ev,spikes,clusters & channels
         if it does not exist, we will out None
     """
@@ -692,7 +733,7 @@ def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['s
             spikes = p_dat.spikes
         
         if hasattr(p_dat,'clusters'):
-            clusters = p_dat.clusters
+            clusters = format_cluster_data(p_dat.clusters)
         
         if hasattr(p_dat,'channels'):
             channels = p_dat.channels

@@ -359,6 +359,9 @@ class anatomy_plotter():
             ALLEN_CCF_LANDMARKS_MLAPDV_UM = [5739, 5400,  332] """
         
         if self.axis=='dv':
+            if unilateral:
+                hemi = np.sign(x-5739)
+                x = (x-5739)*hemi + 5739             
             x_ = -x + 5739 # ml coordinate 
             y_ = -y + 5400 # ap coordinate 
         elif self.axis == 'ap':

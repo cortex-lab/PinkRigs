@@ -9,7 +9,7 @@ function [params] = optoParams(which)
     params.checkEvents = '1';
     params.expDate = {['2022-09-04:2023-12-04']}; 
     params.combMice = 0; 
-    params.minN = 400; 
+    params.minN = 600; 
     params.includeNoGo = 0; 
     params.sepPlots= 1; % customary!!
 
@@ -36,8 +36,34 @@ function [params] = optoParams(which)
 
     elseif strcmp('uni_all',which)
         params.reverse_opto =1;
+        params.selPowers = [17,15,30];
+        params.selHemispheres = [-1,1];
+        params.minN = 1000; 
+
+
+    elseif strcmp('uni_all_nogo',which)
+        params.reverse_opto =1;
         params.selPowers = [10,30];
         params.selHemispheres = [-1,1];
+        params.includeNoGo = 3; 
+
+    elseif strcmp('bi_high_nogo',which)
+        params.reverse_opto =0;
+        params.selPowers = [34];
+        params.selHemispheres = [0];
+        params.includeNoGo = 3; 
+
+    elseif strcmp('bi_alternate',which)
+        params.subject  = {['AV041'];['AV047'];['AV044']};
+        params.reverse_opto =0;
+        params.selPowers = [17,34];
+        params.selHemispheres = [-1,0,1];
+
+    elseif strcmp('bi_single_example',which)
+        params.reverse_opto =0;
+        params.selPowers = [17,34];
+        params.selHemispheres = [-1,0,1];
+        params.subject  = {['AV041']};
 
     elseif strcmp('all_one_p',which)
         params.reverse_opto =0;

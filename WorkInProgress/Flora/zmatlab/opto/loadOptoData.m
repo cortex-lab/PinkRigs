@@ -46,14 +46,17 @@ if ~params.sepMice
 end
 
 if ~params.sepHemispheres
+    events.stim_laserPosition_ = events.stim_laserPosition; 
     events.stim_laserPosition(~isnan(events.stim_laserPosition)) = 1;
 end 
 
 if ~params.sepPowers
+    events.laser_power_ = events.laser_power;
     events.laser_power(~isnan(events.stim_laserPosition)) = 1; 
 end 
 
 if ~params.sepDiffPowers
+    events.diff_power_ = events.diff_power; 
     events.diff_power(~isnan(events.stim_laserPosition)) = 0 ; 
 end 
 

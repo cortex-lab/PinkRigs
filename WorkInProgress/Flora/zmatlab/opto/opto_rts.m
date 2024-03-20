@@ -2,7 +2,7 @@
 % mouse/power etc
 
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0,'sepHemispheres',1,'whichSet', 'uni_all'); 
 
 %%
 plotOpt.toPlot=0; 
@@ -14,16 +14,16 @@ for s=1:numel(extracted.subject)
     % get contra and ipsi trials for laser and non-laser conditions
     ev.laser_stimDiff = min([ev.timeline_audPeriodOn,ev.timeline_visPeriodOn],[],2)-ev.timeline_laserOn_rampStart;
         
-    c = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
-        get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
+    c = get_metrics_StimClass(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
+        get_metrics_StimClass(filterStructRows(ev,(ev.timeline_choiceMoveDir==1 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
     
-    i = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
+    i = get_metrics_StimClass(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial)),'rtAud',plotOpt) - ...
         get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
 
-    slow_ = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
+    slow_ = get_metrics_StimClass(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
         ev.laser_stimDiff>nanmedian(ev.laser_stimDiff))),'rtMin',plotOpt); 
 
-    fast_ = get_rts(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
+    fast_ = get_metrics_StimClass(filterStructRows(ev,(ev.timeline_choiceMoveDir==2 & ev.is_laserTrial & ...
     ev.laser_stimDiff<nanmedian(ev.laser_stimDiff))),'rtMin',plotOpt);
  
 
@@ -40,7 +40,7 @@ plot([1,2],[ipsi;contra],'k'); hold on;
 plot([1,2],[0,0],'k--')
 %% plot the actual chronometric curves
 %
-s=10; 
+s=1; 
 plotOpt.toPlot=1; 
 
 ev = extracted.data{s};
@@ -56,11 +56,11 @@ plotOpt.lineStyle = '--'; %plotParams.LineStyle;
 plotOpt.Marker = '+';
 plotOpt.MarkerSize = 12;
 
-chrono_correct = get_rts(filterStructRows(ev,(ev.response_feedback==1 & ev.is_laserTrial)),plotOpt); 
+chrono_correct = get_metrics_StimClass(filterStructRows(ev,(ev.response_feedback==1 & ev.is_laserTrial)),'rtAud',plotOpt); 
 
 plotOpt.lineStyle = '-'; %plotParams.LineStyle;
 plotOpt.Marker = '*';
-chrono_correct = get_rts(filterStructRows(ev,(ev.response_feedback==1 & ~ev.is_laserTrial)),plotOpt); 
+chrono_correct = get_metrics_StimClass(filterStructRows(ev,(ev.response_feedback==1 & ~ev.is_laserTrial)),'rtAud',plotOpt); 
 
 
 %%

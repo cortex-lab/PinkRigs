@@ -25,6 +25,11 @@ for i=1:numel(extracted.subject)
     extracted.data{i, 1}.laser_power = extracted.data{i, 1}.stim_laser1_power + extracted.data{i, 1}.stim_laser2_power;
     laserPositions = extracted.data{i, 1}.stim_laserPosition; % this might need to be corrected for which laser is how much power exactly
     extracted.data{i, 1}.laser_power_signed = extracted.data{i, 1}.stim_laserPosition.*extracted.data{i, 1}.laser_power ;
+
+    shiftlaser = circshift(extracted.data{i, 1}.is_laserTrial,1);
+    shiftlaser(1) = 0;  
+    extracted.data{i, 1}.postLaserTrial = shiftlaser; 
+
     % add the session a session ID
     extracted.data{i, 1}.sessionID = ones(nTrials,1)*i;
     % get mouse ID
@@ -37,6 +42,7 @@ for i=1:numel(extracted.subject)
         isnoGo_block = conv((extracted.data{i, 1}.response_direction==0),ones(window_size,1));
         extracted.data{i, 1}.isnoGo_block = (isnoGo_block(1:(end-(window_size-1)))>=window_size);
     end 
+
     % assert whether that is actully a non-opto session
     laserPowers = extracted.data{i, 1}.laser_power; laserPositions = extracted.data{i, 1}.stim_laserPosition;
     usedPowers = unique(laserPowers);
