@@ -1,12 +1,14 @@
 %%
-clc; clear all; 
+clc; clear all; close all;
  addpath(genpath('C:\Users\Flora\Documents\Github\PinkRigs'));
  addpath(genpath('C:\Users\Flora\Documents\Github\2023_CoenSit'));
 
-[sites,cortexDat] = loadCortexData('uni',1); 
+
+set_type = 'bi';  
+[sites,cortexDat] = loadCortexData(set_type,1); 
 
 % load the opto
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet','uni_low'); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet',sprintf('%s_high',set_type)); 
 %
 sites{4} = 'SC'; 
 allDat = [cortexDat,extracted.data]; 
@@ -76,25 +78,82 @@ for site=1:numel(sites)
 
 end 
 %%
-labels = {['bias'],['vis'],['aud']};
-indices = {[1],[2,3],[5,6]};  
+
+if strcmp('bi',set_type)
+
+    labels = {['bias'],['vis'],['aud']};
+    indices = {[1],[2,3],[5,6]};  
+elseif strcmp('uni',set_type)
+    labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
+    indices = {[1],[2],[3],[5],[6]};  
+end 
 
 
+figure;
 for p = 1:numel(labels)
-    figure;
+
+    t = []; region_id = []; % for the anova
+
+    subplot(1,numel(labels),p)
     for site=1:numel(sites)
-        allratios = ratios{site}; 
-        curr = mean(allratios(:,indices{p}),2); 
-        plot(ones(numel(curr),1)*site+0.2*(site-2),curr,'ko')
+        
+        if strcmp('bias',labels{p})
+
+            allratios = diffs{site}; 
+            ylabel('opto - control param value')
+
+        else 
+            allratios = ratios{site}; 
+            ylabel('opto/control param value')
+            ylim([-1,4])
+
+        end 
+
+        param_per_site = mean(allratios(:,indices{p}),2); 
+        
+        % accumulate for ANOVA
+        t = [t;param_per_site]; 
+        region_id = [region_id;ones(numel(param_per_site),1)*site];
+
+        % plot
+        plot(ones(numel(param_per_site),1)*site+0.2*(site-2),param_per_site,'ko')
         hold on
+
+
+
     end
+    % anova 
+    allparams(p,:)=t;
+
+    % plotting 
     xticks([1,2,3,4])
     xticklabels(sites)
     title(labels{p})
-    ylabel('opto/control param value')
-    ylim([-1,4])
     hline(1,'--')
     xlim([.5,4.5])
+end 
+
+for i=1:numel(region_id)
+    regions{i} = char(sites(region_id(i)));
+end
+%%
+
+for p = 1:numel(labels)
+    [p_anova, tbl_anova, stats_anova] = anova1(allparams(p,:),regions);
+    
+    % Display ANOVA results
+    fprintf('ANOVA p-value for %s: %.4f\n', labels{p},p_anova);
+    
+    % If ANOVA is significant, perform post-hoc tests
+    if p_anova < 0.05
+        % Perform Tukey's HSD post-hoc test
+        [c, m, h, gnames] = multcompare(stats_anova, 'CType', 'tukey-kramer');
+        
+        % Display post-hoc test results
+        fprintf('Tukey''s HSD post-hoc test:\n');
+        disp(array2table(c, 'VariableNames', {'Group1', 'Group2', 'LowerCI', 'UpperCI', 'Difference', 'PValue'}));
+    end
+
 end 
 
 %%
@@ -125,10 +184,54 @@ for p = 1:numel(labels)
     xlim([.5,4.5])
 end 
 
+
+
+%% test performing the ANOVA with post-hoc
+
+% basically I need to provide two vectosrs one value and one gouping
+
+
+labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
+indices = {[1],[2],[3],[5],[6]};  
+save_fig = 0; 
+figure;
+for p = 1:numel(labels)
+    t = []; region_id = []; 
+    for site=1:numel(sites)
+        param_per_site = ratios{site}(:,indices{p});
+        t = [t;param_per_site]; 
+        region_id = [region_id;ones(numel(param_per_site),1)*site];
+    end
+    allparams(p,:)=t;  % the region id list is always the same
+end 
+for i=1:numel(region_id)
+    regions{i} = char(sites(region_id(i)));
+end
+
+
+for p = 1:numel(labels)
+    [p_anova, tbl_anova, stats_anova] = anova1(allparams(p,:),regions);
+    
+    % Display ANOVA results
+    fprintf('ANOVA p-value for %s: %.4f\n', labels{p},p_anova);
+    
+    % If ANOVA is significant, perform post-hoc tests
+    if p_anova < 0.1
+        % Perform Tukey's HSD post-hoc test
+        [c, m, h, gnames] = multcompare(stats_anova, 'CType', 'tukey-kramer');
+        
+        % Display post-hoc test results
+        fprintf('Tukey''s HSD post-hoc test:\n');
+        disp(array2table(c, 'VariableNames', {'Group1', 'Group2', 'LowerCI', 'UpperCI', 'Difference', 'PValue'}));
+    end
+
+end 
+
+
 %%
 labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
 indices = {[1],[2],[3],[5],[6]};  
-
+save_fig = 0; 
 figure;
 for p = 1:numel(labels)
     subplot(1,numel(labels),p);
@@ -146,7 +249,53 @@ for p = 1:numel(labels)
     hline(0,'--')
     xlim([.5,4.5])
 end 
+
+
+%% test performing the ANOVA with post-hoc
+
+% basically I need to provide two vectosrs one value and one gouping
+
+
+labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
+indices = {[1],[2],[3],[5],[6]};  
+save_fig = 0; 
+figure;
+for p = 1:numel(labels)
+    t = []; region_id = []; 
+    for site=1:numel(sites)
+        param_per_site = diffs{site}(:,indices{p});
+        t = [t;param_per_site]; 
+        region_id = [region_id;ones(numel(param_per_site),1)*site];
+    end
+    allparams(p,:)=t;  % the region id list is always the same
+end 
+for i=1:numel(region_id)
+    regions{i} = char(sites(region_id(i)));
+end
+
+
+
+for p = 1:numel(labels)
+    [p_anova, tbl_anova, stats_anova] = anova1(allparams(p,:),regions);
+    
+    % Display ANOVA results
+    fprintf('ANOVA p-value for %s: %.4f\n', labels{p},p_anova);
+    
+    % If ANOVA is significant, perform post-hoc tests
+    if p_anova < 0.1
+        % Perform Tukey's HSD post-hoc test
+        [c, m, h, gnames] = multcompare(stats_anova, 'CType', 'tukey-kramer');
+        
+        % Display post-hoc test results
+        fprintf('Tukey''s HSD post-hoc test:\n');
+        disp(array2table(c, 'VariableNames', {'Group1', 'Group2', 'LowerCI', 'UpperCI', 'Difference', 'PValue'}));
+    end
+
+end 
+
+
 %% plot the batch fits just for illustration
+save_fig=1; savepath = 'D:\behaviours_opto'; 
 
 for site=1:numel(sites)
     currBlock = allDat{site};
@@ -187,4 +336,10 @@ for site=1:numel(sites)
        plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
     end
    title(sites{site})
+
+    if save_fig
+   
+       savename = sprintf('%s_',sites{site}); 
+       saveas(gcf, [savepath '/' savename], 'svg');
+    end 
 end 

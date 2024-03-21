@@ -36,7 +36,7 @@ function [params] = optoParams(which)
 
     elseif strcmp('uni_all',which)
         params.reverse_opto =1;
-        params.selPowers = [17,15,30];
+        params.selPowers = [10,15,30];
         params.selHemispheres = [-1,1];
         params.minN = 1000; 
 

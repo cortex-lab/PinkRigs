@@ -43,6 +43,7 @@ shouldPlot = 1;
 plotfit = 1; % whether to connect the data or plot actual fits
 plotParams.plottype = 'log'; 
 for s=1:numel(extracted.data)    
+
     currBlock = extracted.data{s};
     nTrials(s) = numel(currBlock.is_blankTrial); 
     optoBlock = filterStructRows(currBlock, currBlock.is_laserTrial); 
@@ -129,6 +130,7 @@ paramLabels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'});
 % plot order; % calculate fit improvement by varying each predictor 
 
 
+
 best_deltaR2 = opto_fit_logLik(:,1) - opto_fit_logLik(:,2);
 deltaR2 = (opto_fit_logLik(:,1)-opto_fit_logLik(:,[3,8,9,10,11]))./best_deltaR2;
 
@@ -146,6 +148,7 @@ figure;plot(cvR2');
 figure;
 errorbar(paramLabels,median(deltaR2),zeros(size(deltaR2,2),1),mad(deltaR2),'black',"LineStyle","none");
 hold on; 
+
 bar(paramLabels,median(deltaR2),'black');
 hold on; 
 errorbar(paramLabels,median(cvR2),mad(cvR2),zeros(size(deltaR2,2),1),'green',"LineStyle","none");
@@ -352,7 +355,7 @@ for ptype=1:numel(paramLabels)
     ylabel(sprintf('%s,full fit',paramLabels(ptype)))
     ylim([-5,5])
     [hv,p]= ttest(myx_hemisaveraged,myy_hemisaveraged);
-    title(p)
+    title(sprintf('p=%.4f',p))
 end 
 
 %
@@ -393,10 +396,10 @@ distance_from_stim = abs(ap_ccf-mid_loc);
 % param change
 
 idx_sets = [3,12,1];  % bias
-idx_sets = [9,14,3];  % Vcontra
-idx_sets = [8,13,2];  % Vipsi
-idx_sets = [11,16,6];  % A contra
-idx_sets = [10,15,5];  % Aipsi
+% idx_sets = [9,14,3];  % Vcontra
+% idx_sets = [8,13,2];  % Vipsi
+% idx_sets = [11,16,6];  % A contra
+% idx_sets = [10,15,5];  % Aipsi
 
 gainll = opto_fit_logLik_norm(:,idx_sets(1)); 
 lossll = 1-opto_fit_logLik_norm(:,idx_sets(2)); 
@@ -420,7 +423,7 @@ for ptype=1:numel(paramLabels)
 
     myx =distance_from_stim; 
 
-    if strcmp('bias',paramLabels(ptype))
+    if strcmp('bias',string(paramLabels(ptype)))
         myy = (opto_fit_params(:,2,ptype));
     else
         myy = (opto_fit_params(:,2,ptype)+opto_fit_params(:,1,ptype))./opto_fit_params(:,1,ptype);
@@ -441,10 +444,10 @@ for ptype=1:numel(paramLabels)
     % Extract the p-value
     p_value = coeff_table.pValue(group_idx);
 
-    plot(myx,myy,'.',MarkerSize=30)
+    ax= plot(myx,myy,'.',MarkerSize=30);
     hold on; 
     xlabel(sprintf('%s,ditance from stimulus',paramLabels(ptype)))
-    if ptype==1
+    if strcmp('bias',string(paramLabels(ptype)))
         ylabel(sprintf('opto-cotrol param, full refit'))
         yline(0)
         ylim([-6,6])
@@ -452,7 +455,7 @@ for ptype=1:numel(paramLabels)
         ylim([-3,3])
         yline(1)
         ylabel(sprintf('opto/cotrol param, full refit'))
-        yscale log
+        %yscale(ax,'log')
 
 
     end 

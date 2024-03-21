@@ -132,7 +132,7 @@ sgtitle(sprintf('%s,hemisphere:%.0d,power:%.0d',extracted.subject{s_id},extracte
 
 
 
-%%
+%
 % this stupid plot 
 
 % do the minmax normalisation for all parameters
