@@ -30,7 +30,7 @@ bias = 0
 
 x0s = np.linspace(-.7,.7,5) 
 vis_contrasts = np.linspace(-1,1,40)
-bounds = np.linspace(1,2,5)
+bounds = np.linspace(1,1.5,5)
 vis_coefs = np.linspace(8,16,5)
 biases = np.linspace(0,10,5)
 noises = np.linspace(1,3,5)
@@ -64,7 +64,7 @@ def get_rt_quartiles(m,v,correct_only = True):
 
 fig,(axp,ax1,ax2,axc,axc1) = plt.subplots(1,5,figsize=(15,3))
 colors = plt.cm.inferno(np.linspace(0.2,.8,x0s.size))
-for i,bias in enumerate(biases):
+for i,bound in enumerate(bounds):
     m = pyddm.Model(drift=DriftOnly(vis=vis_coef,bias=bias),
                     noise=pyddm.NoiseConstant(noise=noise),
                     bound=pyddm.BoundConstant(B=bound),
@@ -118,11 +118,26 @@ axc1.set_ylabel('median reaction time on incorrect')
 plt.show()
 
 # %%
+
+
+vis_coef = 8
+noise = 2
+bound = 1
+x0 =0
+bias = 0
+
+x0s = np.linspace(-.7,.7,5) 
+vis_contrasts = np.linspace(-1,1,40)
+bounds = np.linspace(1,1.5,5)
+vis_coefs = np.linspace(8,16,5)
+biases = np.linspace(0,10,5)
+noises = np.linspace(1,3,5)
+
 # simulation plot for the poster
 # i.e. uppper and lower 
 fig,axu= plt.subplots(1,1,figsize=(4,4))
 colors = plt.cm.inferno(np.linspace(0.2,.8,x0s.size))
-for i,x0 in enumerate(x0s):
+for i,bound in enumerate(bounds):
     m = pyddm.Model(drift=DriftOnly(vis=vis_coef,bias=bias),
                     noise=pyddm.NoiseConstant(noise=noise),
                     bound=pyddm.BoundConstant(B=bound),
@@ -132,7 +147,7 @@ for i,x0 in enumerate(x0s):
                         rate=1),
                         ]),
                     IC=pyddm.ICPoint(x0=x0),
-                    dt=.01, dx=.01, T_dur=1.5,choice_names = ('Right','Left'))
+                    dt=.01, dx=.01, T_dur=2,choice_names = ('Right','Left'))
 
 
     pdf_r = m.solve(conditions={"C":0}).pdf('Right')
@@ -142,7 +157,7 @@ off_axes(axu)
 
 
 mypath = r'C:\Users\Flora\Pictures\SfN2023'
-savename = mypath + '\\' + 'simulation_x0.svg'
+savename = mypath + '\\' + 'simulation_bound.svg'
 fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
     #axu.plot(m.t_domain(),pdf_r,color=colors[i])

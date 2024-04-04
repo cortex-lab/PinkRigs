@@ -204,7 +204,7 @@ def digitise_motion_energy(camt,camv,plot_sample=False,min_off_time=.01,min_on_t
     return (on_times,off_times,digitised)
 
 
-def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**kwargs):
+def plot_triggerred_data(recordings=None,cameras=['eyeCam','frontCam','sideCam'],timings=None,**kwargs):
     if timings is None:
         timings = {
             'pre_time':.15,
@@ -215,15 +215,16 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
     sort_by_rt = False
     sort_by_response = False
 
-    cam_dict = {cam:{'camera':['times','ROIMotionEnergy']} for cam in cameras}
-    cam_dict.update({'events':{'_av_trials':['table']}})
-    recordings = load_data(data_name_dict=cam_dict,**kwargs)
+    if recordings is None:
+        cam_dict = {cam:{'camera':['times','ROIMotionEnergy']} for cam in cameras}
+        cam_dict.update({'events':{'_av_trials':['table']}})
+        recordings = load_data(data_name_dict=cam_dict,**kwargs)
 
     for _, rec in recordings.iterrows():
         
         events = rec.events._av_trials
         for cam in cameras:
-            stub = '%s_%s_%s_%s_audTriggeredMovement.png' % (rec.expDate, rec.expNum, rec.subject, cam)
+            stub = '%s_%s_%s_%s_audTriggeredMovement.svg' % (rec.expDate, rec.expNum, rec.subject, cam)
             try:
                 camera = rec[cam]['camera']
 
@@ -281,7 +282,7 @@ def plot_triggerred_data(cameras=['eyeCam','frontCam','sideCam'],timings=None,**
                 
                 
                 #plt.show()
-                plt.savefig((Path(rec.expFolder) / stub),transparent=False,bbox_inches = "tight",format='png',dpi=300)
+                plt.savefig((Path(rec.expFolder) / stub),transparent=False,bbox_inches = "tight",format='svg',dpi=300)
             
             except:
                 print('%s did not work.' % stub)

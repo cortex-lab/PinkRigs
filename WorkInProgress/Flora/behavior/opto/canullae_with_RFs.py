@@ -22,73 +22,76 @@ subjects = ['AV029','AV031','AV033','AV036','AV038','AV041','AV044','AV046','AV0
 
 #subjects = ['AV036']
 
-for subject in subjects: 
-    recordings = queryCSV(subject=subjects,expDate='last1')
+recordings = queryCSV(subject=subjects,expDate='last1')
 
-    stub = r'Histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
-    histology_folders = [
-        (Path(r.expFolder).parents[1] / stub) for _,r in recordings.iterrows()
-    ]
+stub = r'Histology\registration\brainreg_output\manual_segmentation\standard_space\tracks'
+histology_folders = [
+    (Path(r.expFolder).parents[1] / stub) for _,r in recordings.iterrows()
+]
 
-    # save summary anatomical data: subject,ap,dv,ml,hemisphere(-1:Left,1:Right),regionAcronym 
+# save summary anatomical data: subject,ap,dv,ml,hemisphere(-1:Left,1:Right),regionAcronym 
 
-    data = pd.DataFrame()
-    for idx,m in enumerate(histology_folders):
-        cannulae_list = list(m.glob('*.npy'))
-        for c in cannulae_list:
-            subject = m.parents[5].name
-            track = np.load(c)
-            # canulla tip point (because I always start tracking at the tip)
-            tip_ccf = track[0]
-            # assert the position of these tip points in allen atlas space location
-            region_id = atlas.get_labels(atlas.ccf2xyz(track[0],ccf_order='apdvml'))
-            region_acronym=br.id2acronym(region_id) # get the parent of that 
+data = pd.DataFrame()
+for idx,m in enumerate(histology_folders):
+    cannulae_list = list(m.glob('*.npy'))
+    for c in cannulae_list:
+        subject = m.parents[5].name
+        track = np.load(c)
+        # canulla tip point (because I always start tracking at the tip)
+        tip_ccf = track[0]
+        # assert the position of these tip points in allen atlas space location
+        region_id = atlas.get_labels(atlas.ccf2xyz(track[0],ccf_order='apdvml'))
+        region_acronym=br.id2acronym(region_id) # get the parent of that 
 
-            data = data.append(
-                {'subject':subject,
-                'ap':tip_ccf[0], 
-                'dv':tip_ccf[1],
-                'ml':tip_ccf[2], 
-                'hemisphere':-int(np.sign(tip_ccf[2]-5600)), 
-                'region_id':region_id, 
-                'region_acronym':region_acronym[0],
-                'parent1':br.acronym2acronym(region_acronym, mapping='Beryl')[0]},ignore_index=True
-            )
-
-
-    # plot 
-    anat = anatomy_plotter()
-    _, (ax,ax1) = plt.subplots(1,2,figsize=(15,4))
-
-    # the top view
-    anat.plot_anat_canvas(ax=ax,axis = 'dv',coord = 1500)
-    anat.plot_points(data.ml, data.ap,s=50,color='red',alpha=1,unilateral=False)
-    anat.plot_points(data.ml, data.ap,s=1000,color='red',alpha=.1,unilateral=False)
-    rectangleL = matplotlib.patches.Rectangle([-1450,-4075],800,4075-3800,alpha=0.2)
-    rectangleR = matplotlib.patches.Rectangle([650,-4075],800,4075-3800,alpha=0.2)
-
-    ax.add_patch(rectangleL)
-    ax.add_patch(rectangleR)
-
-    ax.set_ylim([-5000,-2600])
-    ax.set_xlim([-2200,2200])
-
-    # the coronal section
-    anat.plot_anat_canvas(ax=ax1,axis = 'ap',coord = 3700)
-    anat.plot_points(data.ml, data.dv,s=50,color='red',alpha=1,unilateral=False)
-    anat.plot_points(data.ml, data.dv,s=1000,color='red',alpha=.1,unilateral=False)
-    ax1.set_xlim([-2200,2200])
-    ax1.set_ylim([-3000,-800])
-
-    plt.suptitle('%s' % subject)
+        data = data.append(
+            {'subject':subject,
+            'ap':tip_ccf[0], 
+            'dv':tip_ccf[1],
+            'ml':tip_ccf[2], 
+            'hemisphere':-int(np.sign(tip_ccf[2]-5600)), 
+            'region_id':region_id, 
+            'region_acronym':region_acronym[0],
+            'parent1':br.acronym2acronym(region_acronym, mapping='Beryl')[0]},ignore_index=True
+        )
 
 
-    plt.show()
+# plot 
+anat = anatomy_plotter()
+_, (ax,ax1) = plt.subplots(1,2,figsize=(15,4))
 
-    which_figure = 'cannulae_map_%s' % ('all')
-    cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
-    im_name = which_figure + '.svg'
-    savename = cpath / im_name #'outline_brain.svg
-    plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+# the top view
+anat.plot_anat_canvas(ax=ax,axis = 'dv',coord = 1400)
+anat.plot_points(data.ml, data.ap,s=50,color='red',alpha=1,unilateral=True)
+anat.plot_points(data.ml, data.ap,s=1000,color='red',alpha=.1,unilateral=True)
+rectangleL = matplotlib.patches.Rectangle([-1450,-4075],800,4075-3800,alpha=0.2)
+rectangleR = matplotlib.patches.Rectangle([650,-4075],800,4075-3800,alpha=0.2)
 
+ax.add_patch(rectangleL)
+ax.add_patch(rectangleR)
+
+ax.set_ylim([-5000,-2600])
+ax.set_xlim([-2200,2200])
+
+# the coronal section
+anat.plot_anat_canvas(ax=ax1,axis = 'ap',coord = 3700)
+anat.plot_points(data.ml, data.dv,s=50,color='red',alpha=1,unilateral=True)
+anat.plot_points(data.ml, data.dv,s=1000,color='red',alpha=.1,unilateral=True)
+ax1.set_xlim([-2200,2200])
+ax1.set_ylim([-3000,-800])
+
+plt.suptitle('%s' % subject)
+
+
+plt.show()
+
+which_figure = 'cannulae_map_%s' % ('all')
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+#%%
+# save an distance from RF thing
+data.to_csv(r'D:\opto_cannula_locations.csv')
 # %%

@@ -9,11 +9,10 @@ from Admin.csv_queryExp import load_data
 
 
 
-ephys_dict = {'spikes':'all','clusters':'all'}
-recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict},
-                        subject = ['AV043'],expDate='2024-03-14',
-                        expNum='3',
-                        checkSpikes='1',
-                        unwrap_probes=False, merge_probes=False)
+recordings = load_data(data_name_dict = {'frontCam':{'camera':['times','ROIMotionEnergy']},
+                           'eyeCam':{'camera':['times','ROIMotionEnergy']},
+                           'sideCam':{'camera':['times','ROIMotionEnergy']}},
+                        subject = ['AV030'],
+                        unwrap_probes=False, merge_probes=False,cam_hierarchy=['sideCam','eyeCam','frontCam'])
 
 # %%

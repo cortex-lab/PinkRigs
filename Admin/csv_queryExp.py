@@ -159,7 +159,30 @@ def bombcell_sort_units(clusdat,max_peaks=2,max_throughs=1,
 
     return bombcell_class
 
-def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1,goodOnly = False,**bombcell_kwargs): 
+def get_subregions(regionNames,mode='Beryl'):
+    def classify_SC_acronym(allen_acronym):
+        if ('SCs' in allen_acronym) or ('SCo' in allen_acronym) or ('SCzo' in allen_acronym):
+            my_acronym = 'SCs'
+        elif ('SCi' in allen_acronym):
+            my_acronym = 'SCi'
+        elif ('SCd' in allen_acronym):
+            my_acronym = 'SCd'
+        else:
+            my_acronym = 'nontarget'        
+        return my_acronym
+
+
+    if mode=="Beryl":
+        from Processing.pyhist.helpers.regions import BrainRegions
+        reg = BrainRegions()
+        regionNames[regionNames=='unregistered']='void'
+        parentregions = reg.acronym2acronym(regionNames, mapping='Beryl')
+    elif '3SC'==mode:
+        parentregions = np.array([classify_SC_acronym(n) for n in regionNames])        
+
+    return parentregions
+
+def is_rec_in_region(rec,region_name = 'SC',framework='ccf',min_fraction = .1,goodOnly = False,**bombcell_kwargs): 
     """
     utility function to assess whether a recording contains neurons in a target region
     
@@ -197,7 +220,11 @@ def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1,goodOnly = False,*
     if 'mlapdv' not in list(clusters.keys()):
         is_region = False
     else:
-        is_in_region = [region_name in x for x in clusters.brainLocationAcronyms_ccf_2017]
+        if framework=='ccf':
+            is_in_region = [region_name in x for x in clusters.brainLocationAcronyms_ccf_2017]
+        else: 
+            region_names_in_framework = get_subregions(clusters.brainLocationAcronyms_ccf_2017,mode=framework)
+            is_in_region = [x==region_name for x in region_names_in_framework]
         
         if (mode=='fraction') & (np.mean(is_in_region)>min_fraction):
             is_region=True
@@ -208,6 +235,35 @@ def is_rec_in_region(rec,region_name = 'SC',min_fraction = .1,goodOnly = False,*
             is_region = False
 
     return is_region
+
+
+def select_best_camera(rec,cam_hierarchy=['sideCam','frontCam','eyeCam']):
+    """
+    helper function that select a camera data based on the hierarchy and based on whether the camera data is avlaible at all 
+
+    Parameters: 
+    -----------
+    rec: pd.Series 
+        loaded ONE object 
+    cam_hierarchy: list
+        determines which camera view are prioritised
+
+    """
+    cam_checks = np.array([(hasattr(rec[cam].camera,'ROIMotionEnergy')  & 
+                            hasattr(rec[cam].camera,'times')) if hasattr(rec,cam) else False for cam in cam_hierarchy])
+    if cam_checks.any(): 
+            cam_idx = np.where(cam_checks)[0][0]
+            used_camname = cam_hierarchy[cam_idx]
+            cam = rec[used_camname].camera
+    else: 
+        cam = None 
+
+    if hasattr(cam,'ROIMotionEnergy'):
+        if cam.ROIMotionEnergy.ndim==2:
+            cam.ROIMotionEnergy = (cam.ROIMotionEnergy[:,0]) 
+
+    return cam 
+    
 
 def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSortedPyKS=None,checkEvents=None,checkSpikes=None,checkFrontCam = None, checkSideCam = None, checkEyeCam = None):
     """ 
@@ -432,7 +488,12 @@ def load_ONE_object(collection_folder,object,attributes='all'):
 
     return output
 
-def load_data(recordings=None,data_name_dict=None,unwrap_probes=False,merge_probes=False,region_selection=None,**kwargs):
+def load_data(recordings=None,
+              data_name_dict=None,
+              unwrap_probes=False,
+              merge_probes=False,
+              region_selection=None,
+              cam_hierarchy=None,**kwargs):
     """
     Paramters: 
     -------------
@@ -502,6 +563,8 @@ def load_data(recordings=None,data_name_dict=None,unwrap_probes=False,merge_prob
                 objects = Bunch(objects)
                 recordings.loc[idx][collection] = objects
 
+
+    ### ####### deling with extra arguments that further format the data ######
     # merge probes 
     # an optional argument for when there are numerous datasets available for probes, we just merge the data
                 
@@ -587,6 +650,13 @@ def load_data(recordings=None,data_name_dict=None,unwrap_probes=False,merge_prob
                 keep_rec_region = [is_rec_in_region(rec,**region_selection) for _,rec in recordings.iterrows()]
                 recordings = recordings[keep_rec_region]
 
+
+        if cam_hierarchy:
+            camdat = [select_best_camera(rec,cam_hierarchy=cam_hierarchy) for  _,rec in recordings.iterrows()]
+            recordings['camera'] = camdat
+            recordings = recordings[~recordings.camera.isna()]
+
+        print('s')
 
     return recordings
 
@@ -688,8 +758,6 @@ def format_cluster_data(clusters):
     return clusInfo
 
 
-
-
 def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['sideCam','frontCam','eyeCam']): 
     """
     this is the most standarising loader. Allows standardisation of numerous sessions etc. 
@@ -738,15 +806,7 @@ def simplify_recdat(recording,probe='probe',reverse_opto=False,cam_hierarchy=['s
         if hasattr(p_dat,'channels'):
             channels = p_dat.channels
 
-    cam_checks = np.array([(hasattr(recording[cam].camera,'ROIMotionEnergy')  & hasattr(recording[cam].camera,'times')) if hasattr(recording,cam) else False for cam in cam_hierarchy])
-    if cam_checks.any(): 
-        cam_idx = np.where(cam_checks)[0][0]
-        used_camname = cam_hierarchy[cam_idx]
-        cam = recording[used_camname].camera
-
-        if hasattr(cam,'ROIMotionEnergy'):
-            if cam.ROIMotionEnergy.ndim==2:
-                cam.ROIMotionEnergy = (cam.ROIMotionEnergy[:,0])    
+    cam = select_best_camera(recording,cam_hierarchy=cam_hierarchy)
 
     return (ev,spikes,clusters,channels,cam)
 

@@ -138,27 +138,6 @@ if not csv_path.is_file() or recompute_csv:
             clusInfo = pd.concat((azi.tc_params.add_suffix(t),clusInfo),axis=1)
 
 
-       # then calculate enhancement index at "preferred azimuths". 
-        # azimuth_pref_estimate = np.digitize(azimuth_pref_estimate,bins=azi.aud.azimuths.values+15)
-        # azimuth_pref_estimate = azi.aud.azimuths.values[azimuth_pref_estimate]
-
-        # azimuth_pref_estimate_aud = np.digitize(clusInfo.x0aud.values,bins=np.arange(-75,105,30),right=False)
-        # azimuth_pref_estimate_aud = azi.aud.azimuths.values[azimuth_pref_estimate_aud]
-        # azimuth_pref_estimate_aud[azimuth_pref_estimate_aud==0] = np.nan
-
-        # azimuth_pref_estimate_vis = np.digitize(clusInfo.x0vis.values,bins=np.arange(-75,105,30),right=False)
-        # azimuth_pref_estimate_vis = azi.aud.azimuths.values[azimuth_pref_estimate_vis]
-        # azimuth_pref_estimate_vis[azimuth_pref_estimate_vis==0] = np.nan
-
-        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
-        # clusInfo['enhancement_index_pref'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)    
-
-        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis],azimuth_pref_estimate_aud[:,np.newaxis]*-1),axis=1)
-        # clusInfo['enhancement_index_antipref,aud'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
-
-        # at_azimuth_values = np.concatenate((azimuth_pref_estimate_vis[:,np.newaxis]*-1,azimuth_pref_estimate_aud[:,np.newaxis]),axis=1)
-        # clusInfo['enhancement_index_antipref,vis'] = azi.get_enhancement_index_per_nrn(at_azimuth_values)
-
         print('azimuthal tuning',time.time()-t0,'s')
         
         #################### MISC ###########################################

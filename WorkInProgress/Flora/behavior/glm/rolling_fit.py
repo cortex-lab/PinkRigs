@@ -15,8 +15,13 @@ recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict
                         expDef='multiSpaceWorld',
                         checkEvents='1',
                         checkSpikes='1',
-                        unwrap_independent_probes=True,
-                        region_selection={'region_name':'SC','min_fraction':.3})
+                        unwrap_independent_probes=False,merge_probes=True,
+                        region_selection=None)
+
+
+
+
+# %%
 
 #%%
 rec = recordings.iloc[7]

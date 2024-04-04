@@ -1,85 +1,33 @@
 
 #%%
-import sys,re
 import pandas as pd
-import numpy as np
+from pathlib import Path
 
-sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Admin.csv_queryExp import load_data,simplify_recdat
-from Analysis.neural.utils.data_manager import load_cluster_info
+from predChoice import glmFit,search_for_neural_predictors
+from loaders import load_rec_df,load_params
+brain_area = 'SCm'
+paramset = 'choice'
 
+recordings = load_rec_df(brain_area=brain_area,paramset=paramset,recompute_session_selection=False)
 
-ephys_dict = {'spikes':'all','clusters':'all'}
-recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events': {'_av_trials': 'table'}},
-                        subject = 'AV008',expDate='2022-03-10',
-                        expDef='multiSpaceWorld',
-                        checkEvents='1',
-                        checkSpikes='1',
-                        unwrap_probes=False, merge_probes=True, 
-                        region_selection={'region_name':'SC','min_fraction':.3})
+timing_params = load_params(paramset=paramset)
 
 
-# %%
-from predChoice import format_av_trials,glmFit,search_for_neural_predictors
-rec = recordings.iloc[0]
+#
 
-=search_for_neural_predictors(rec,my_ROI='SCm',event_type='timeline_choiceMoveOn',ll_thr=0.01)
+rec = recordings.iloc[11]
 
-ev,spk,clusInfo,_,_ = simplify_recdat(rec,probe='probe')
+trials,gIDs,best_nrn,ll_best = search_for_neural_predictors(rec,my_ROI=brain_area,ll_thr = 0.01,exclude_premature_wheel=False,**timing_params)
 
 
-my_ROI = 'SCm'
-event_type = 'timeline_choiceMoveOn'
-
-
-goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym=='SCm')]._av_IDs.values
-
-
-
-
-trials = format_av_trials(ev,spikes=spk,nID=goodclusIDs,t=0.15,onset_time=event_type)
-# iterative fitting for each nrn 
-nrn_IDs = [re.split('_',i)[1] for i in trials.columns if 'neuron' in i]
 
 non_neural = trials.iloc[:,:3]
 neural = trials.iloc[:,3:]
-glm = glmFit(non_neural,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0])
+glm = glmFit(non_neural,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0],fixed_paramValues = [1,1,1,1,.7,0])
 glm.fitCV(n_splits=2,test_size=0.5)
 
-n_neurons = neural.shape[1]
 
-thr = 0.01
-best_nrn,ll_best = [],[]
-ll_best = [glm.model.LogLik]
-for i in range(n_neurons):
-    print('finding #%.0f best neuron' % i)
-    if i==0:
-        base_matrix = non_neural
-        bleed_matrix = neural
-    else:
-        base_matrix = pd.concat((non_neural,neural.loc[:,best_nrn]),axis=1)
-        leftover_nrn = np.setdiff1d(neural.columns.values,np.array(best_nrn))
-        bleed_matrix = neural.loc[:,leftover_nrn]
-        
-    ll = []
-    for idx,(neuronName,trial_activity) in enumerate(bleed_matrix.iteritems()):
-        fittable = pd.concat((base_matrix,trial_activity),axis=1)
-        neuralglm = glmFit(fittable,model_type='AVSplit',fixed_parameters = [0,0,0,0,1,0],fixed_paramValues = list(glm.model.allParams))
-        neuralglm.fitCV(n_splits=2,test_size=0.5)
 
-        ll_current = neuralglm.model.LogLik
-        if np.isnan(ll_current) or np.isinf(ll_current):
-            ll_current= 1000
-        ll.append(ll_current)
-    
-    curr_best_ll = np.min(np.array(ll))
-    if curr_best_ll>(ll_best[i]-thr):
-        print('the situation is not improving, you got to break...')
-        break 
-    ll_best.append(curr_best_ll)
-    best_nrn.append(bleed_matrix.columns.values[np.argmin(np.array(ll))])
-
-#%% 
 # look at the metrics
 import matplotlib.pyplot as plt
 # refit and assess model contribution of each parameter
@@ -90,10 +38,10 @@ final_glm.fitCV(n_splits=2,test_size=0.5)
 final_glm.visualise(yscale='log',ax=ax)
 fig.suptitle('{subject}_{expDate}_{expNum}'.format(**rec))
 ax.set_title('LogLik=%.2f' % final_glm.model.LogLik)
-#%%
+
 # compare the neural vs non-neural models
 
-#%%
+#
 fig,ax = plt.subplots(1,1,figsize=(8,8))
 
 final_glm.plotPrediction(yscale='log',ax=ax)
@@ -101,22 +49,38 @@ ax.axline((0,0),slope=1,color='k',linestyle='--')
 ax.set_xlabel('actual')
 ax.set_ylabel('predicted')
 ax.set_title('LogOdds')
-# %%
+#
 fig,ax = plt.subplots(1,1,figsize=(8,8))
 ax.plot(ll_best)
 ax.set_xlabel('# best neuron')
 ax.set_ylabel('-Log2Likelihood')
 ax.axhline(final_glm.model.LogLik,color='k',ls='--')
 ax.text((len(ll_best)-5),final_glm.model.LogLik+0.004,'refit with all %.0f neurons' % (len(ll_best)-1))
-ax.set_title('improvement on prediction from SC neuron prior to %s' % event_type)
+ax.set_title('improvement on prediction from SC neuron prior to %s' % paramset)
+
+
+which_figure = 'LogOdds_neural_improvement_per_neurons'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name =  which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 
 fig,ax = plt.subplots(2,1,figsize=(25,5))
 gParams = list(final_glm.model.required_parameters.copy())
-ax[0].plot(gParams,final_glm.model.allParams[:6],'o-')
-ax[1].plot(best_nrn,final_glm.model.allParams[6:])
+gParams = gParams + best_nrn
+ax[0].plot(gParams,final_glm.model.allParams,'o-')
 ax[1].axhline(0,color='k',ls='--')
 ax[1].set_xlabel('neuronID') 
+
+which_figure = 'LogOdds_neural_parameters'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name =  which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 #%%
+import numpy as np
 fig,ax = plt.subplots(2,3,figsize=(15,8))
 for i in range(2):
 
@@ -124,6 +88,7 @@ for i in range(2):
         mytitle ='non-neural'
         m = non_neural
     elif i==1: 
+
         mytitle ='with neurons'
         m = final_matrix
 
@@ -131,18 +96,25 @@ for i in range(2):
     testglm.fitCV(n_splits=2,test_size=0.5)
     testglm.visualise(yscale='log',ax = ax[0,i])
     ax[0,i].set_title('%s, LogLik: %.2f' % (mytitle,testglm.model.LogLik))
-    testglm.plotPrediction(yscale='sig',ax=ax[1,i])
-    ax[1,2].hist(testglm.model.get_logOdds(testglm.conditions,testglm.model.allParams),alpha=0.5,range=(-8,8)) 
+    testglm.plotPrediction(yscale='log',ax=ax[1,i])
+    ax[1,2].hist(np.abs(testglm.model.get_logOdds(testglm.conditions,testglm.model.allParams))
+                 ,alpha=0.5,density=False,range=(0,10)) 
+    ax[1,1].set_ylim([-5.5,5.5])
+    ax[1,0].set_ylim([-5.5,5.5])
+    ax[1,1].set_xlim([-5.5,5.5])
+    ax[1,0].set_xlim([-5.5,5.5])
+
 ax[1,2].set_xlabel('LogOdds')
 ax[1,2].set_ylabel('# trials')
 ax[1,2].legend(['non-neural','neural'])
 
 from Analysis.pyutils.plotting import off_axes
 off_axes(ax[0,2])
-#%%
-ns = 'neuron_170'
-plt.plot((final_matrix['choice']))
-plt.plot(final_matrix[ns])
-plt.xlabel('trial #')
-plt.title(ns)
+
+which_figure = 'LogOdds_neural_improvement_examlple'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name =  which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 # %%

@@ -30,7 +30,7 @@ from Analysis.pyutils.plotting import off_axes,off_topspines
 
 # get each model's performance 
 # %%
-dataset = datasets[8]
+#dataset = datasets[8]
 
 LogLik_train_all,LogLik_test_all,fitted_models = [], [], []
 for dataset in datasets:
@@ -76,7 +76,7 @@ LogLik_test_all = np.concatenate(LogLik_test_all)
 # %%
 
 fig,ax= plt.subplots(1,1)
-ax.plot(LogLik_train_all.T)
+ax.plot(model_names,LogLik_train_all.T)
 
 # %%
 
@@ -85,21 +85,29 @@ train_norm = (LogLik_train_all-LogLik_train_all[:,0][:,np.newaxis])/(LogLik_trai
 test_norm = (LogLik_test_all-LogLik_test_all[:,0][:,np.newaxis])/(LogLik_test_all[:,1]-LogLik_test_all[:,0])[:,np.newaxis]
 
 # %%
+# plot a bunch of losst performances against each other 
+
+wh = [14,15,17,9,10,12,13,16,11]
+model_names[wh]
+#%%
+fig,ax= plt.subplots(1,1,figsize=(20,4))
+ax.plot(model_names,test_norm.T)
+# %%
 wh = [2,14,3,4,13,15]
 
 wh = [3,4,13,15]
 wh = [5,6,7,8,9,10,11,12]
 wh = [5,10,6,11,12,7]
 
-wh = [0,10,15]
+wh = [0,11,16]
 
-wh = [1,4,3,5]
+wh = [5,3,4,2]
+wh = [14,15,17,9,10,12,13,16,11]
 
 model_names = np.array(model_names)
 fig,ax= plt.subplots(1,1)
 ax.set_title('train')
 ax.plot(1-train_norm.T[wh,:],'k',alpha=.3)
-ax.set_xticks(np.arange(len(wh)))
 ax.set_xticklabels(model_names[wh],rotation=45)
 ax.axhline(0,color='r')
 
@@ -109,7 +117,14 @@ ax.set_title('test')
 ax.plot(1-test_norm.T[wh,:],'k',alpha=.3)
 ax.set_xticks(np.arange(len(wh)))
 ax.set_xticklabels(model_names[wh],rotation=45)
-ax.axhline(0,color='r')
+ax.axhline(1,color='r')
+
+
+mypath = r'C:\Users\Flora\Pictures\SfN2023'
+savename = mypath + '\\' + 'loss_models_test_set.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
 # %%
 
 wh = ['d_x0','d_b']

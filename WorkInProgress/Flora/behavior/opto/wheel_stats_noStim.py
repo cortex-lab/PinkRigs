@@ -111,7 +111,7 @@ dirs = np.concatenate(dirs)
 
 # %%
 _,ax = plt.subplots(1,1,figsize=(6,6)) 
-unique_powers = np.array([0,2,5,10,17]) # np.unique(p[p>0])
+unique_powers = np.array([0,17]) # np.unique(p[p>0])
 colors = plt.cm.viridis(np.linspace(0.2,.8,unique_powers.size))
 for idx,i in enumerate(unique_powers):
     ax.hist(td[p==i],bins=100,cumulative=False,density=False,stacked=False,histtype='bar',alpha=0.6,color=colors[idx],lw=10) 
@@ -125,8 +125,8 @@ fig,ax = plt.subplots(1,1)
 sel_idx = np.argsort(td)
 
 
-#selected_l = (p==10)
-selected_l = np.isnan(p)
+selected_l = (p<0)
+#selected_l = np.isnan(p)
 
 rasters_sel = rasters[selected_l,:]
 td_selected = td[selected_l]
@@ -139,32 +139,48 @@ off_axes(ax)
 #ax.imshow((rasters[630:830,:]),aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #ax.matshow(rasters[np.argsort(rasters[:,300:].mean(axis=1)),:],aspect='auto',vmin=-.4,vmax=.4,cmap='coolwarm_r')
 #off_axes(ax)
-# ax.axvline(100,color='k')
-# ax.hlines(300,400,500,color='k',lw=6)
-# ax.vlines(0,0,100,color='k',lw=6)
-
+ax.axvline(100,color='k')
+#ax.hlines(300,400,500,color='k',lw=6)
+ax.vlines(0,0,50,color='k',lw=6)
 #plt.colorbar()
+
+mypath = r'C:\Users\Flora\Pictures\SfN2023'
+savename = mypath + '\\' + 'wheel_-10mW.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+
 #%%
 plt.rcParams.update({'font.size': 24})
 plt.rcParams.update({'font.family': 'Calibri Light'})
+fig,ax = plt.subplots(1,1,figsize=(13,8))
 
-_,ax = plt.subplots(1,1,figsize=(13,8))
+t_thr=2.5
 
-t_thr=1.8
 
+power_selected = 0
 ax.hist(td[np.isnan(p) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='k',lw=10)
 
 #ax.hist(td[(np.abs(p)>0) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='lime',lw=10)
 
-ax.hist(td[(np.abs(p)==0) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='orange',lw=10)
+ax.hist(td[(np.abs(p)>0) & (td<t_thr)],bins=125,cumulative=False,density=True,stacked=False,histtype='bar',alpha=0.6,color='lime',lw=10)
 
 
 off_topspines(ax)
 ax.set_xlabel('RT from end of quiescent period (s)')
 ax.set_ylabel('rel. density')
+from scipy.stats import median_abs_deviation as mad
+print('no stim: %.3f s, stim: %.3f s' % (np.median(td[np.isnan(p) & (td<t_thr)]),np.median(td[(np.abs(p)==0) & (td<t_thr)])))
+print('no stimMAD: %.3f s, stim MAD: %.3f s' % (mad(td[np.isnan(p) & (td<t_thr)]),mad(td[(np.abs(p)==0) & (td<t_thr)])))
+
+mypath = r'C:\Users\Flora\Pictures\SfN2023'
+savename = mypath + '\\' + 'density_unilateral.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
 # ax.vlines(np.median(td[np.isnan(p) & (td<t_thr)]),3,4.3,color='k',lw=4)
 
-# ax.vlines(np.median(td[(np.abs(p)>0) & (td<t_thr)]),3,4.3,color='lime',lw=4)
+# ax.vlines(np.median(td[(np.abs(p)==10) & (td<t_thr)]),3,4.3,color='lime',lw=4)
 
 #ax.hist(td[(np.abs(p)==10) & (td<1.5)],bins=75,cumulative=True,density=True,stacked=False,histtype='bar',alpha=0.6,color='red',lw=10)
 #ax.hist(td[(np.abs(p)==17) & (td<1.5)],bins=75,cumulative=True,density=True,stacked=False,histtype='bar',alpha=0.6,color='brown',lw=10)
@@ -189,8 +205,8 @@ for idx,i in enumerate(unique_powers):
 # %%
 # 
 
-cond_l = (dirs==1) & (p==0) #& np.isnan(p)
-cond_r = (dirs==2) & (p==0)#& np.isnan(p)
+cond_l = (dirs==1) & (p==-10) #& np.isnan(p)
+cond_r = (dirs==2) & (p==-10)#& np.isnan(p)
 
 
 rasters_l = rasters[cond_l,:]
@@ -229,5 +245,11 @@ ax.plot(2,pR,'.',color='k',markersize=20)
 ax.set_ylim([0,1])
 ax.axhline(0.5,color='k',linestyle='--')
 off_excepty(ax)
+
+
+mypath = r'C:\Users\Flora\Pictures\SfN2023'
+savename = mypath + '\\' + 'pRdir.svg'
+fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
 
 # %%

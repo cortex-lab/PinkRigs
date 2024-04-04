@@ -297,28 +297,7 @@ def cross_correlation(A, B, zscorea=True, zscoreb=True):
     corr = np.dot(A.T, B)/float(n)
     return corr
 
-def get_subregions(regionNames,mode='Beryl'):
-    def classify_SC_acronym(allen_acronym):
-        if ('SCs' in allen_acronym) or ('SCo' in allen_acronym) or ('SCzo' in allen_acronym):
-            my_acronym = 'SCs'
-        elif ('SCi' in allen_acronym):
-            my_acronym = 'SCi'
-        elif ('SCd' in allen_acronym):
-            my_acronym = 'SCd'
-        else:
-            my_acronym = 'nontarget'        
-        return my_acronym
 
-
-    if mode=="Beryl":
-        from Processing.pyhist.helpers.regions import BrainRegions
-        reg = BrainRegions()
-        regionNames[regionNames=='unregistered']='void'
-        parentregions = reg.acronym2acronym(regionNames, mapping='Beryl')
-    elif '3SC'==mode:
-        parentregions = np.array([classify_SC_acronym(n) for n in regionNames])        
-
-    return parentregions
 
 
 class anatomy_plotter():

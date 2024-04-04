@@ -9,6 +9,7 @@ from Analysis.pyutils.ev_dat import parse_events
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 
 
+
 def get_mann_whitneyU(x,y,n_shuffles=20):
     """
     function to calculate the mann-Whitney U(x) statistic for each unit
@@ -42,7 +43,7 @@ def get_mann_whitneyU(x,y,n_shuffles=20):
     return numer
 
 
-def combined_condition_U(spike_counts,trialChoice,trialConditions,n_shuffles=50):
+def combined_condition_U(spike_counts,trialChoice,trialConditions,n_shuffles=2000):
     """
     function to calculate te combined ranksum across conditions (i.e. cccp anaysis established by Steinmetz et al.)
 
@@ -96,11 +97,17 @@ class cccp():
         self.aud_azimuths =[-60,0,60] 
         self.rt_params = {'rt_min':.05,'rt_max':.35}
 
-    def load_and_format_data(self,**kwargs):
-        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'all'}
-        other_ = {'events': {'_av_trials': 'table'}}
-        recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
-        ev,self.spikes,self.clusters,_,_ = simplify_recdat(recordings.iloc[0],probe='probe')
+    def load_and_format_data(self,rec=None,**kwargs):
+        
+        if rec is None:
+            ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':'all'}
+            cameras = ['frontCam','sideCam','eyeCam']
+            cam_dict = {cam:{'camera':['times','ROIMotionEnergy']} for cam in cameras}
+            cam_dict.update({'events':{'_av_trials':['table']}})
+            recordings = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=cam_dict,**kwargs)
+            rec = recordings.iloc[0]
+        
+        ev,self.spikes,self.clusters,_,self.cam = simplify_recdat(rec,probe='probe')
 
         contrasts = np.unique(ev.stim_visContrast)
         contrasts = (contrasts).tolist()
@@ -119,21 +126,25 @@ class cccp():
             classify_choice_types=True)
         
     
-    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',t_before=0.2,t_after=0,t_bin=0.05):
+    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',which_dat='neural',t_before=0.2,t_after=0,t_bin=0.05):
         """
         ccCP = combined condition choice probability
         ccVP = combined condition visual stimulus detction probability
         ccAP = combined condition auditory stimulus detection probability
 
+
+
+
+        Returns: 
+        ---------
+            :np.ndArray combined U statistic for each unit and time bin the test was conducted in
+            :np.ndArray p-value for each unit per time bin
+            :np.ndArray shuffled U-statistic for each unit 
+            : np.ndArray time bins
+
+            
         """
-        raster_kwargs = {
-                'pre_time':t_before,
-                'post_time':t_after, 
-                'bin_size':t_bin,
-                'smoothing':0,
-                'return_fr':False,
-                'baseline_subtract': False, 
-        }
+
 
         trial_types  = self.trial_types
         if 'ccCP' in test_type:
@@ -171,25 +182,70 @@ class cccp():
             trialChoice = ev.stim_audAzimuth==60
 
 
-        r = get_binned_rasters(self.spikes.times,self.spikes.clusters,self.clusters._av_IDs,ev[t_on_key],**raster_kwargs)
-        u,p,u_  = combined_condition_U(r.rasters,trialChoice=trialChoice,trialConditions=ev.newIDs,n_shuffles=100)
+        if which_dat=='neural':
+            raster_kwargs = {
+                'pre_time':t_before,
+                'post_time':t_after, 
+                'bin_size':t_bin,
+                'smoothing':0,
+                'return_fr':False,
+                'baseline_subtract': False, 
+                }
+            r = get_binned_rasters(self.spikes.times,self.spikes.clusters,self.clusters._av_IDs,ev[t_on_key],**raster_kwargs)
+            raster = r.rasters
+            tscale = r.tscale
+
+        elif which_dat=='video':
+            from Analysis.pyutils.video_dat import get_move_raster
+            # get all auditory stimulus onsets
+            bin_kwargs  = {
+                'pre_time':t_before,
+                'post_time':t_after, 
+                'bin_size': t_bin,
+                'sortAmp':False, 'to_plot':False,
+                'baseline_subtract':False
+            }
+
+
+            cam_values = (self.cam.ROIMotionEnergy) # or maybe I should do things based on PCs
+            raster,tscale,_  = get_move_raster(ev[t_on_key],self.cam.times,cam_values,**bin_kwargs) 
+            
+
+
+        u,p,u_  = combined_condition_U(raster,trialChoice=trialChoice,trialConditions=ev.newIDs,n_shuffles=100)
         
-        return u,p,u_,r.tscale
+        return u,p,u_,tscale
     
 
-def get_default_set():
+def get_default_set(which='single_bin'):
     # default set of inputs that are easily editable
         column_names = ['test_type','t_on_key','t_before','t_after','t_bin']
-        t_bin_universal = 0.025
         
-        params = [
-            ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
-            ('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal),
-            #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
-            ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
+        
+
+        if which=='single_bin':
+            t_bin_universal = 0.15
+            
+            params = [
+                ('ccAP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal), # should really be taken before rt_params_min
+                ('ccCP', 'timeline_choiceMoveOn',t_bin_universal,0,t_bin_universal),
+                #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
+                ('ccVP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal)
 
 
-        ]
+            ]
+         
+        elif which=='multi_bin':
+            t_bin_universal = 0.025
+            
+            params = [
+                ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
+                ('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal),
+                #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
+                ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
+
+
+            ]
   
 
         params = pd.DataFrame(params,

@@ -1,6 +1,7 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',1,'whichSet', 'bi_high'); 
 % build the table for the LME 
+%extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet', 'uni_all'); 
 
 % need to contain - choice, visContrast (scaled) and raised to some sort of power, soundPos, scaled, session
 %ID, mouseID, isLaserTrial. 
@@ -12,12 +13,20 @@ ev.origMax = [max(abs(ev.stim_visDiff)) max(abs(ev.stim_audDiff))];
 ev.stim_visDiff = ev.stim_visDiff./max(ev.origMax(1),1e-15); % to avoid nans
 ev.stim_audDiff = ev.stim_audDiff./max(ev.origMax(2),1e-15);
 
+% fit the control data to obtain the average gamma
+controlBlock = filterStructRows(ev, ~ev.is_laserTrial);
+controlfit = plts.behaviour.GLMmulti(controlBlock, 'simpLogSplitVSplitA');
+controlfit.fit;
 
-gamma = 0.646; % empirical from the control trials of the three mice
+%%
+
+
+gamma = controlfit.prmFits(1,4); % empirical from the control trials after fitting the log-Odds. 
 
 ev.vis_gamma_scaled = sign(ev.stim_visDiff).*(abs(ev.stim_visDiff)).^gamma; 
 tbl = table; 
 tbl.opto = double(ev.is_laserTrial);
+
 tbl.choice = ev.response_direction-1; 
 [~,~,tbl.mouse] = unique(ev.subjectID_); 
 [~,~,tbl.session] = unique(ev.sessionID);
@@ -29,8 +38,15 @@ tbl.vis = ev.vis_gamma_scaled;
 model = fitglme(tbl,['choice ~ opto+aud+vis+aud*opto+vis*opto+ (1|mouse)+ (1|mouse:session) + ' ...
     '(-1+vis|mouse)  + (-1+vis|mouse:session)+ (-1+aud|mouse)  + (-1+aud|mouse:session) +' ...
     ' (-1+opto|mouse) + (-1+opto|mouse:session) '],'Distribution','Binomial','Link','logit');
+%%
 
+figure; 
+bar(model.Coefficients.Estimate([1,2,3,5,4,6]))
 
+labels = {'bias','bias_o','A','A_o','V','V_o'};
+xticklabels(labels)
+ylim([-1,3])
+    
 %%
 % plot the data /mouse/session based on table
 % maybe in a stype that each session is a subplot
@@ -44,20 +60,30 @@ opto = unique(tbl.opto);
 [visGrid,audGrid,optoGrid] = meshgrid(visPos,audPos,opto);
 combinations = [visGrid(:),audGrid(:),optoGrid(:)];
 
-mouseID =2; 
+mouseID =6; 
 
 
 
 sessionIDs = unique(tbl.session(tbl.mouse==mouseID)); 
-nSessions = numel(sessionIDs); 
+
+group_size = 5; 
+num_groups = ceil(length(sessionIDs) / group_size);
+groups = cell(1, num_groups);
+for i = 1:num_groups
+    start_index = (i - 1) * group_size + 1;
+    end_index = min(i * group_size, length(sessionIDs));
+    groups{i} = sessionIDs(start_index:end_index);
+end
+
+nSessions = numel(groups); 
 
 
 
 figure; 
 
 for s=1:nSessions
-    sessionID = sessionIDs(s); 
-    isCurrSession  = (tbl.mouse==mouseID) & (tbl.session==sessionID);
+    sessionID = groups{s}; 
+    isCurrSession  = (tbl.mouse==mouseID) & ismember(tbl.session,sessionID);
     nTrials(s) = sum(isCurrSession); 
     for c=1:size(combinations,1)
     
@@ -69,7 +95,7 @@ for s=1:nSessions
     
     
     
-    curveType = 'sig';
+    curveType = 'log';
     % generate predictions for session in Q:
     nEval = 600; 
     evalpoints =  linspace(-1,1,nEval);
@@ -81,18 +107,23 @@ for s=1:nSessions
             evaltbl.vis = evalV(a,:,o)'; 
             evaltbl.aud = evalA(a,:,o)';
             evaltbl.opto = evalO(a,:,o)';
-            evaltbl.session = ones(nEval,1) * sessionID; 
-            evaltbl.mouse = ones(nEval,1) * mouseID; 
+
+            current_prediction=zeros(numel(sessionID),nEval);
+            for currsess=1:numel(sessionID)
+                evaltbl.session = ones(nEval,1) * sessionID(currsess); 
+                evaltbl.mouse = ones(nEval,1) * mouseID; 
             
-            preds(a,:,o)  = predict(model,evaltbl);
-            
+                current_prediction(currsess,:)  = predict(model,evaltbl);
+            end 
+            preds(a,:,o) = mean(current_prediction,1);
         end 
     end 
     
     % convert things to log if requested 
     if strcmp('log',curveType)
-        preds = log10(preds./(1-preds)); 
+        preds = log10(preds./(1-preds));  % this is the logOdds -- 
         fracRightTurns = log10(fracRightTurns./(1-fracRightTurns)); 
+        ylim( [-3,3])
     end 
     % plot the data and the predictions on top     
     
@@ -100,7 +131,7 @@ for s=1:nSessions
     linestyles_pred = {'--';'-'};
     markers_pred = {'none';'none'}; 
     linestyles_dat = {'none';'none'}; 
-    markers_dat = {'.';'*'};
+    markers_dat = {'none';'.'};
     lineColors = plts.general.selectRedBlueColors(audPos);
     for oidx=1:numel(opto)
         plotOpt.lineStyle = linestyles_pred{oidx}; 
@@ -112,6 +143,12 @@ for s=1:nSessions
         plts.general.rowsOfGrid(visGrid(1,:,oidx), fracRightTurns(:,:,oidx), lineColors, plotOpt);
         hold on; 
     end
+    if strcmp('log',curveType)
+        ylim( [-3,3])
+        hline(0,'k--')
+        vline(0,'k--')
+
+    end 
     title(sprintf('%.0f,n=%.0f',sessionID,nTrials(s)));
 end
 sgtitle(mouseID)

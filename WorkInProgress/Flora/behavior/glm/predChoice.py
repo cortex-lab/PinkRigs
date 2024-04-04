@@ -185,7 +185,7 @@ class AVSplit():
 
         ax.axvline(0,color='k',ls='--')
 
-    def plotPred(self,parameters,yscale='log',conditions=None,choices=None,ax=None,colors=['b','grey','red'],predpointkwargs ={'marker':'.','ls':'','markersize':24,'markeredgecolor':'k'}):
+    def plotPred(self,parameters,yscale='log',conditions=None,choices=None,ax=None,colors=['b','grey','red']):
         """
         plot the model prediction for this specific model
         if the model has neural components we 0 those out
@@ -224,7 +224,9 @@ class AVSplit():
                     y =np.log(y/(1-y))
                     y_pred = np.log(y_pred/(1-y_pred))
 
-                ax.plot(y,y_pred,color=mycolor,**predpointkwargs)
+                #ax.plot(y,y_pred,color=mycolor,**predpointkwargs)
+                ax.scatter(y,y_pred,s=np.arange(1,y.size+1)**2.5+50,color=mycolor,edgecolor='k')
+                #ax.plot(y,y_pred,color=mycolor)
                 ax.axline((0,0),slope=1,color='k',linestyle='--')
                 ax.set_xlabel('actual')
                 ax.set_ylabel('predicted')
@@ -364,7 +366,7 @@ class glmFit():
         self.alpha = alpha
         
         # sepearate the neural predictors
-        is_neural_predictor = np.array(['neuron' in p for p in self.predictor_names])
+        is_neural_predictor = np.array(['neuron' in p or 'movement' in p for p in self.predictor_names])
         is_neural_model = any(is_neural_predictor)
         if is_neural_model:
             self.neurons = predictors.values[:,is_neural_predictor]
@@ -409,13 +411,13 @@ class glmFit():
             model = AVSplit(**modelkwargs)
 
         assert (model.fixed_parameters.size==model.fixed_paramsValues.size),'recheck param no. for fixed Params & values '
-        assert (np.setdiff1d(self.predictor_names,model.required_conditions).size==0), 'some of the required predictors have not been passsed'
+        assert (np.setdiff1d(self.predictor_names,model.required_conditions).size==0), 'some of the required predictors have not been passed'
                
         # set up parameters and bounds        
         nFittableParams = model.required_parameters.size - np.sum(model.fixed_parameters) + self.n_neurons  # trying to add the regulariser        
         model.paramInit = [1] * nFittableParams
         nonNeuralFittables = model.required_parameters[~model.fixed_parameters[:model.required_parameters.size].astype('bool')]
-        model.paramBounds = [(0,3) if m=='gamma' else (None,None) for m in nonNeuralFittables]     
+        model.paramBounds = [(0,3) if m=='gamma' else (-50,50) for m in nonNeuralFittables]     
         if nFittableParams-nonNeuralFittables.size>0:
             [model.paramBounds.append((None,None)) for i in range(nFittableParams-nonNeuralFittables.size)]
         # replace the gamma bound ---
@@ -484,7 +486,7 @@ class glmFit():
     
     def fitCV(self,**kwargs):
 
-        sss = StratifiedShuffleSplit(random_state=0,**kwargs)
+        sss = StratifiedShuffleSplit(**kwargs)
         X = self.conditions
         y = self.choices
 
@@ -497,6 +499,7 @@ class glmFit():
             y_train, y_test = y[train_index], y[test_index]
             self.init_data_for_LikeLihood(X_train,y_train)
             self.fit()
+            
             fitted_params.append(self.model.paramFit[np.newaxis,:])
             params.append(self.model.allParams[np.newaxis,:])
             self.init_data_for_LikeLihood(X_test,y_test)
@@ -567,7 +570,9 @@ def search_for_neural_predictors(rec,my_ROI='SCm',ll_thr = 0.005,**kwargs):
 
     non_neural = trials.iloc[:,:3]
     neural = trials.iloc[:,3:]
-    glm = glmFit(non_neural,model_type='AVSplit',fixed_parameters = [0,0,0,0,0,0])
+    glm = glmFit(non_neural,model_type='AVSplit',
+                 fixed_parameters = [0,0,0,0,1,0],
+                 fixed_paramValues=[1,1,1,1,0.7,0])
     glm.fitCV(n_splits=2,test_size=0.5)
 
     n_neurons = neural.shape[1]

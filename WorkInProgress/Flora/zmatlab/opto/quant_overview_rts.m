@@ -1,10 +1,10 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'whichSet', 'uni_all');
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'whichSet', 'uni_all_nogo');
 
 
 
 %%
-
+which_set='rtThresh';
 plotOpt.toPlot=0; 
 for s=1:numel(extracted.subject)    
     ev = extracted.data{s};
@@ -12,17 +12,17 @@ for s=1:numel(extracted.subject)
 
 
 
-    dpR(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ev.is_laserTrial)),'rtThresh',plotOpt) - ...
-                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ~ev.is_laserTrial)),'rtThresh',plotOpt),'all');
+    dpR(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ev.is_laserTrial)),which_set,plotOpt) - ...
+                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ~ev.is_laserTrial)),which_set,plotOpt),'all');
 
-    dpL(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ev.is_laserTrial)),'rtThresh',plotOpt) - ...
-                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ~ev.is_laserTrial)),'rtThresh',plotOpt),'all');
+    dpL(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ev.is_laserTrial)),which_set,plotOpt) - ...
+                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ~ev.is_laserTrial)),which_set,plotOpt),'all');
 
-    postlaserR(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ev.postLaserTrial & ~ev.is_laserTrial)),'rtThresh',plotOpt) - ...
-                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ~ev.postLaserTrial & ~ev.is_laserTrial)),'rtThresh',plotOpt),'all');
+    postlaserR(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ev.postLaserTrial & ~ev.is_laserTrial)),which_set,plotOpt) - ...
+                         get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ~ev.postLaserTrial & ~ev.is_laserTrial)),which_set,plotOpt),'all');
 
-    postlaserL(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ev.postLaserTrial & ~ev.is_laserTrial)),'rtThresh',plotOpt) - ...
-                     get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ~ev.postLaserTrial & ~ev.is_laserTrial)),'rtThresh',plotOpt),'all');
+    postlaserL(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ev.postLaserTrial & ~ev.is_laserTrial)),which_set,plotOpt) - ...
+                     get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==1 & ~ev.postLaserTrial & ~ev.is_laserTrial)),which_set,plotOpt),'all');
 end 
 %%
 

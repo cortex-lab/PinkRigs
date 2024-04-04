@@ -213,9 +213,9 @@ def digitize_events(ontimes,offtimes,timepoints):
     for idx, (on, off) in enumerate(zip(onsets, offsets)):
         onsample = int(on/new_dt)
         offsample = int((off)/new_dt) # (off+new_dt) is there to include the last digital sample
-        if idx % 10000 == 0:
-            # print every 1000th event
-            print(idx, ontimes[idx], offtimes[idx], timepoints[onsample], timepoints[offsample])
+        # if idx % 10000 == 0:
+        #     # print every 1000th event
+        #     #print(idx, ontimes[idx], offtimes[idx], timepoints[onsample], timepoints[offsample])
         events_digitized[onsample:offsample] = 1
     
 
@@ -289,8 +289,8 @@ def parse_events(ev,contrasts,spls,vis_azimuths,aud_azimuths,
                 include_unisensory_aud = True, 
                 include_unisensory_vis = False,add_crossval_idx_per_class=False,**kwargs):
         """
-        function that preselects some events based on parameters
-          1) excludes events that we don't intend to fit at all
+        function that preselects categorises events to various classes for stratified cross-validation and cccp 
+          1) filters events that we don't intend to fit at all (e.g.using filter_active_trials)
           2) identifies events into sub-categories such that 
             a.) during balanced cross-validation we are able to allocate trialtypes into both train & test sets
             b.) we are able to equalise how many of each of these trial type go into the model at all -- it is e.g. unfair to fill the model with a lot of correct choices and few incorrect choices when wanting to fit 'choice'     

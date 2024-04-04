@@ -13,6 +13,7 @@ class movement_correlation():
     def __init__(self): 
 
         if ~hasattr(self, 'vid_dat'):    
+            #initialisation collects all the session with the best videos%%
 
             videos = get_data_bunch('naive-video-set')
 
