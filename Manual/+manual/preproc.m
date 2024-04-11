@@ -3,9 +3,9 @@ close all
 clear params
 %params.subject = {['AV029'];['AV033'];['AV031'];['AV036'];['AV038'];['AV046'];['AV041'];['AV047'];['AV044']};
 %params.subject = {['FT008'],['FT009'],['FT010'],['FT011'],['FT022'],['FT019'],['FT025'],['FT027']};
-params.subject = {['AV043']}; 
-params.expDate = {['2024-03-06']};
-%params.expNum ={'1'}; 
+params.subject = {['AV025']}; 
+params.expDate = {['2022-11-07']};
+params.expNum ={'4'}; 
 
 %params.expDef = 't'; 
     

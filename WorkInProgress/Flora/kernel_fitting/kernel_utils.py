@@ -25,13 +25,10 @@ def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'whoKnow
 
     failed_recs = []
     for _,rec_info in recordings.iterrows():
+        nametag = '%(subject)s_%(expDate)s_%(expNum)s_%(probeID)s' % rec_info
+        print('Now attempting to fit %s' % nametag)
 
-        try: 
-            print('Now attempting to fit %s %s, expNum = %s, %s' % tuple(rec_info))
-
-            nametag = '%s_%s_%s_%s' % tuple(rec_info)
-
-            # create a folder 
+        try:  
             curr_save_path  = save_path / nametag
 
             if not curr_save_path.is_dir() or recompute:
@@ -45,7 +42,11 @@ def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'whoKnow
                 # since kernels is a class, I think it is safer to recall it after each fit... I think that is why -1000 kept accumulating in dat_params, for example
                 kernels = kernel_model(t_bin=0.005,smoothing=0.025)
                 dat_params,fit_params,eval_params = get_params(**param_tags)
-                kernels.load_and_format_data(**dat_params,**rec_info)
+                if hasattr(rec_info,'probe'):
+                    kernels.load_and_format_data(rec=rec_info,**dat_params)
+                else:
+                    kernels.load_and_format_data(**dat_params,**rec_info)
+
                 kernels.fit(**fit_params)
                 variance_explained = kernels.evaluate(**eval_params)
 
@@ -66,7 +67,7 @@ def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'whoKnow
                 )
 
         except:
-            print('Failed to fit %s %s, expNum = %s, %s' % tuple(rec_info))
+            print('Failed to fit %s' % nametag)
             failed_recs.append(rec_info)
 
 

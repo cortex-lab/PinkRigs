@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Analysis.neural.src.cccp import cccp,get_default_set
 
-pars = get_default_set()
+pars = get_default_set(which='multi_bin')
 
 # loading
-mname = 'AV030'
-expDate = '2022-12-18'
+mname = 'FT031'
+expDate = '2021-12-05'
 probe = 'probe0'
 sess='multiSpaceWorld'
 
@@ -31,9 +31,8 @@ c.load_and_format_data(**session)
 
 c.aud_azimuths=[0]
 
-# %%
 
-u,p,_,t = zip(*[c.get_U(**cp) for _,cp in pars.iterrows()])
+u,p,_,t = zip(*[c.get_U(which_dat='video',**cp) for _,cp in pars.iterrows()])
 #p = np.concatenate(p,axis=1)
 
 # %%

@@ -1228,7 +1228,7 @@ class kernel_model():
         self.t_bin = t_bin
         self.smoothing = smoothing
 
-    def load_and_format_data(self,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None,  
+    def load_and_format_data(self,rec=None,event_types = ['vis','aud'],rt_params = None, subselect_neurons = None,
                             contrasts = [0.25], spls = [0.25],vis_azimuths = None, aud_azimuths = None, contra_vis_only=True,
                             t_support_stim = [-0.05,0.35],
                             t_support_movement =[-.2,0.1],
@@ -1272,26 +1272,32 @@ class kernel_model():
 
         self.digitise_cam = digitise_cam
         # load from PinkRigs pipeline
-
-        ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':['_av_IDs','mlapdv']}
-        other_ = {'events': {'_av_trials': 'table'},
-                'frontCam':{'camera':['times','ROIMotionEnergy']},
-                'sideCam':{'camera':['times','ROIMotionEnergy']}}
-
-        rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
     
         loaded_ok = False
 
-        if rec.shape[0] == 1:            
-            rec =  rec.iloc[0]
-            print('successful loading.')
-            print('binning events and spikes... This might take a while.')
-            loaded_ok = True
-        else:
-            print('recordings are ambiguously defined. Please recall.')
+        if rec is None:
+            ephys_dict =  {'spikes': ['times', 'clusters'],'clusters':['_av_IDs','mlapdv']}
+            other_ = {'events': {'_av_trials': 'table'},
+                    'frontCam':{'camera':['times','ROIMotionEnergy']},
+                    'sideCam':{'camera':['times','ROIMotionEnergy']}}
+
+            rec = load_ephys_independent_probes(ephys_dict=ephys_dict,add_dict=other_,**kwargs)
         
 
+            if rec.shape[0] == 1:            
+                rec =  rec.iloc[0]
+                print('successful loading.')
+                print('binning events and spikes... This might take a while.')
+                loaded_ok = True
+            else:
+                print('recordings are ambiguously defined. Please recall.')
+        
+        else: 
+            loaded_ok=True
+            
         ev,spikes,_,_,self.cam = simplify_recdat(rec,probe='probe')
+
+
 
         if ('motionEnergy' in event_types) & (self.cam is None):
             print('seems like there is no good video data...')

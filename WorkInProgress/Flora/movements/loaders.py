@@ -12,12 +12,35 @@ from Analysis.pyutils.ev_dat import filter_active_trials
 def load_for_movement_correlation(dataset='naive',recompute_data_selection=False):
     """function to load the data..."""
 
-    current_params = {
-        'data_name_dict':{ 'events': {'_av_trials': 'table'}, 
+    if 'WithSpike' in dataset:
+        ephys_dict = {'spikes':'all','clusters':'all'}
+        current_params = {
+        'data_name_dict':{'probe0':ephys_dict,'probe1':ephys_dict,
+                          'events': {'_av_trials': 'table'}, 
                            'frontCam':{'camera':['times','ROIMotionEnergy']},
                            'eyeCam':{'camera':['times','ROIMotionEnergy']},
                            'sideCam':{'camera':['times','ROIMotionEnergy']}},
-    }
+        'unwrap_probes':True,
+        'filter_unique_shank_positions':True,
+        'merge_probes':False,
+        'checkEvents':'1', 
+        'checkSpikes':'1'
+        }  
+
+    else:
+        current_params = {
+            'data_name_dict':{ 'events': {'_av_trials': 'table'}, 
+                            'frontCam':{'camera':['times','ROIMotionEnergy']},
+                            'eyeCam':{'camera':['times','ROIMotionEnergy']},
+                            'sideCam':{'camera':['times','ROIMotionEnergy']}},
+        }
+
+    if 'naive' in dataset:
+        cam_hierarchy = ['frontCam','eyeCam','sideCam']
+    else:
+        cam_hierarchy =  ['sideCam','eyeCam','frontCam']
+
+    
     savepath = r'D:\VideoAnalysis\%s_dataset.csv' % dataset
 
     
@@ -25,14 +48,14 @@ def load_for_movement_correlation(dataset='naive',recompute_data_selection=False
         recordings = load_data(subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
                                expDef = 'postactive',
                                 checkEvents='1',
-                                cam_hierarchy= ['sideCam','eyeCam','frontCam'],
+                                cam_hierarchy= cam_hierarchy,
                                 **current_params)
 
-    if (dataset == 'active') & recompute_data_selection:
+    elif (dataset == 'active') & recompute_data_selection:
         recordings = load_data(subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
                                checkEvents='1',expDate='postImplant',
                                expDef = 'multiSpaceWorld',
-                                cam_hierarchy= ['sideCam','eyeCam','frontCam'],
+                                cam_hierarchy= cam_hierarchy,
                                 **current_params)  
 
         exclude_premature_wheel = False
@@ -47,25 +70,25 @@ def load_for_movement_correlation(dataset='naive',recompute_data_selection=False
         recordings = recordings.iloc[n_trials>150]  
 
 
-    if (dataset == 'activeWithSpike') & recompute_data_selection:
-        # get the spikes into the data name dict
-        ephys_dict = {'spikes':'all','clusters':'all'}
-        current_params = {
-        'data_name_dict':{'probe0':ephys_dict,'probe1':ephys_dict,
-                          'events': {'_av_trials': 'table'}, 
-                           'frontCam':{'camera':['times','ROIMotionEnergy']},
-                           'eyeCam':{'camera':['times','ROIMotionEnergy']},
-                           'sideCam':{'camera':['times','ROIMotionEnergy']}}
-        }     
+    elif (dataset == 'postactiveWithSpike') & recompute_data_selection:
+        # get the spikes into the data name dic   
 
-        recordings = load_data(subject = ['AV008'],
-                               checkEvents='1',expDate='postImplant',
-                               expDef = 'multiSpaceWorld',
-                               checkSpikes='1', merge_probes=True,
-                                cam_hierarchy= ['sideCam','eyeCam','frontCam'],
+        recordings = load_data(subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
+                              expDate='postImplant',expDef = 'postactive',
+                                cam_hierarchy= cam_hierarchy,
                                 **current_params) 
-         
+        
 
+        print('oh dear problematic recording....')
+             
+    elif (dataset == 'activeWithSpike') & recompute_data_selection:
+        # get the spikes into the data name dict
+
+        recordings = load_data(subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
+                               expDate='postImplant',expDef = 'multiSpaceWorld',
+                                cam_hierarchy= cam_hierarchy,
+                                **current_params) 
+        
         exclude_premature_wheel = False
         rt_params = {'rt_min':0.03,'rt_max':1.5}
 
@@ -75,13 +98,10 @@ def load_for_movement_correlation(dataset='naive',recompute_data_selection=False
                                                 
                                                 for _,rec in recordings.iterrows()])
 
-        recordings = recordings.iloc[n_trials>150]   
-
-          
+        recordings = recordings.iloc[n_trials>150]      
 
 
-    
-    elif (dataset == 'naive') & recompute_data_selection:
+    elif ('naive' in dataset) & recompute_data_selection:
         dat_type = 'naive-total'
         expList = get_data_bunch(dat_type)
         expList = expList.drop_duplicates(subset=['subject', 'expDate'])
@@ -89,18 +109,24 @@ def load_for_movement_correlation(dataset='naive',recompute_data_selection=False
     elif not recompute_data_selection:
         expList = pd.read_csv(savepath)
     
-    if (dataset == 'naive') or (not recompute_data_selection):
+    if ('naive' in dataset) or (not recompute_data_selection):
+        
 
         recordings = [load_data(subject = rec.subject,
                                 expDate = rec.expDate,
                                 expNum = rec.expNum,
-                                cam_hierarchy= ['frontCam','eyeCam','sideCam'],
+                                cam_hierarchy = cam_hierarchy,
                                 **current_params) for _,rec in expList.iterrows()]    
         
         recordings = pd.concat(recordings)
 
+    if 'WithSpike' in dataset:
+        # basically double check spiking because the extractSpikes==1 is not enough. Some alignments are weird
+        # see e.g. AV025/2022-11-07/4
+        is_good_spike = np.array([len(rec.probe.spikes.clusters)>0 for _,rec in recordings.iterrows()])
+        recordings = recordings.iloc[is_good_spike] 
 
-    
+
     recordings[['subject','expDate','expNum']].to_csv(savepath)
 
     return recordings

@@ -95,7 +95,7 @@ class cccp():
     def __init__(self):
         self.vis_azimuths = [-60,60]
         self.aud_azimuths =[-60,0,60] 
-        self.rt_params = {'rt_min':.05,'rt_max':.35}
+        self.rt_params = {'rt_min':.03,'rt_max':1.5}
 
     def load_and_format_data(self,rec=None,**kwargs):
         
@@ -212,7 +212,7 @@ class cccp():
             
 
 
-        u,p,u_  = combined_condition_U(raster,trialChoice=trialChoice,trialConditions=ev.newIDs,n_shuffles=100)
+        u,p,u_  = combined_condition_U(raster,trialChoice=trialChoice,trialConditions=ev.newIDs,n_shuffles=2000)
         
         return u,p,u_,tscale
     
@@ -230,7 +230,8 @@ def get_default_set(which='single_bin'):
                 ('ccAP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal), # should really be taken before rt_params_min
                 ('ccCP', 'timeline_choiceMoveOn',t_bin_universal,0,t_bin_universal),
                 #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
-                ('ccVP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal)
+                ('ccVP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal),
+                ('ccCP', 'timeline_audPeriodOn',t_bin_universal,0,t_bin_universal),
 
 
             ]

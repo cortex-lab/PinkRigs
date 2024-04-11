@@ -29,5 +29,5 @@ pA,pC,pV= zip(*[run_all_ccCPs(rec,pars) for _,rec in recordings.iterrows()])
 pA,pC,pV = np.array(pA),np.array(pC),np.array(pV)
 
 # %%
-(pV<0.05).sum()/pA.size
+(pC<0.05).sum()/pA.size
 # %%

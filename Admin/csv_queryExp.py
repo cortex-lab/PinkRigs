@@ -278,6 +278,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
                         If list: string of selected dates (e.g. ['2022-03-15','2022-03-30'])
     expDef : str
         selected expdef or portion of the string of the the expdef name
+
     expNum: str/list 
         selected expNum
     checkIsSortedPyKS: None/str    
@@ -309,6 +310,7 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
         if not isinstance(subject,list):
             subject = [subject]
         mouse2checkList = mouseList[mouseList.Subject.isin(subject)]['Subject']
+
     exp2checkList = []
     for mm in mouse2checkList:
         mouse_csv = get_csv_location(mm)
@@ -316,7 +318,13 @@ def queryCSV(subject='all',expDate='all',expDef='all',expNum = None,checkIsSorte
             expList = pd.read_csv(mouse_csv,dtype='str')
             expList.expDate=[date.replace('_','-').lower() for date in expList.expDate.values]
             if 'all' not in expDef:
-                expList = expList[expList.expDef.str.contains(expDef)]
+                if not isinstance(expDef,list):
+                    expDef = [expDef]
+                
+                is_selected_defs = np.concatenate([expList.expDef.str.contains(curr_expDef).values[np.newaxis] for curr_expDef in expDef]).sum(axis=0).astype('bool')
+                expList = expList[is_selected_defs]
+
+
             if 'all' not in expDate: 
                 # dealing with the call of posImplant based on the main csv. Otherwise one is able to use any date they would like 
                 if ('postImplant' in expDate):
@@ -493,6 +501,7 @@ def load_data(recordings=None,
               unwrap_probes=False,
               merge_probes=False,
               region_selection=None,
+              filter_unique_shank_positions = False,
               cam_hierarchy=None,**kwargs):
     """
     Paramters: 
@@ -602,6 +611,20 @@ def load_data(recordings=None,
 
                     recordings = pd.DataFrame(rec_list, columns =np.concatenate((keep_columns,['probeID','probe','ephysPath','is_curated']))) 
             
+                if filter_unique_shank_positions:
+                    # only do this with chronic insertions
+                    botrow_positions = np.arange(8)*720                    
+                    botrow_targets = [botrow_positions[np.argmin(np.abs(botrow_positions-min(rec.probe.clusters.depths)))] for _,rec in recordings.iterrows()]
+                    recordings['botrow'] = botrow_targets
+                    
+                    acute_recs  = recordings[recordings.rigName=='lilrig-stim']
+                    chronic_recs = recordings[recordings.rigName!='lilrig-stim']
+
+                    chronic_recs = chronic_recs.drop_duplicates(subset=['subject','probeID','botrow'])
+                    recordings = pd.concat((chronic_recs,acute_recs))
+                    
+
+
             elif (~unwrap_probes) & merge_probes: 
                 rec_list = []
 
@@ -656,7 +679,7 @@ def load_data(recordings=None,
             recordings['camera'] = camdat
             recordings = recordings[~recordings.camera.isna()]
 
-        print('s')
+        # give each recording a unique ID 
 
     return recordings
 
