@@ -28,6 +28,8 @@ def call_neural_dat(dataset='naive',spikeToInclde=True, camToInclude = True, rec
     
     if 'naive' in dataset:
         subject_list = ['FT008','FT009','FT010','FT011','FT019','FT022','FT025','FT027','FT038','FT039']
+    elif 'all' in dataset: 
+        subject_list = 'all'
     else:
         subject_list = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034']
 
@@ -65,7 +67,10 @@ def call_neural_dat(dataset='naive',spikeToInclde=True, camToInclude = True, rec
                                         'AVPassive_checkerboard_extended'],
                                             **query_params)
         
-
+    elif (dataset=='allPassive') & recompute_data_selection:
+        recordings = load_data(expDef = ['AVPassive','postactive'],
+                                            **query_params)
+        
     elif (dataset == 'postactive') & recompute_data_selection:
         recordings = load_data(expDef = 'postactive',expDate = 'postImplant', **query_params)
 

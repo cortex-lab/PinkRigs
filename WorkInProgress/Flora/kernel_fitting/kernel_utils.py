@@ -1,10 +1,10 @@
 
-import sys,shutil
+import sys,shutil,re
 import pandas as pd
 import numpy as np
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Analysis.pyutils.io import save_dict_to_json
+from Analysis.pyutils.io import save_dict_to_json,get_subfolders
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Analysis.neural.src.kernel_model import kernel_model
@@ -105,13 +105,15 @@ def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=
     """
 
     save_path = interim_data_folder / dataset_name / 'kernel_model' / fit_tag
-    dat_keys = get_data_bunch(dataset_name)
+    sess_folders = get_subfolders(save_path)
+    dat_keys = [re.split('_', sess.stem) for sess in sess_folders]
+    dat_keys = pd.DataFrame(pd.DataFrame(dat_keys,columns = ['subject','expDate','expNum','probe']))
 
     all_dfs = []
     for _,rec_info in dat_keys.iterrows():
         # get generic info on clusters 
         print(*rec_info)
-        clusInfo = load_cluster_info(**rec_info,unwrap_independent_probes=False)
+        clusInfo = load_cluster_info(**rec_info)
         nametag = '%s_%s_%s_%s' % tuple(rec_info)        
         current_folder = save_path / nametag
 
