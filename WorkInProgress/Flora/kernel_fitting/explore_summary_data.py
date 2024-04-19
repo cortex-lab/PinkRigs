@@ -15,7 +15,7 @@ br = BrainRegions()
 from Analysis.pyutils.plotting import brainrender_scattermap
 
 #dat_type = 'AV025AV030AV034postactive'
-dat_type = 'naive-total'
+dat_type = 'active'
 #dat_type = 'trained-passive-cureated'
 
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
@@ -44,8 +44,7 @@ for k in kernel_names:
     bool_names.append(n)
     clusInfo[n] = clusInfo[k].values>thr
 # %%
-
-from Analysis.neural.utils.spike_dat import bombcell_sort_units
+from Admin.csv_queryExp import bombcell_sort_units
 
 bc_class = bombcell_sort_units(clusInfo)
 #

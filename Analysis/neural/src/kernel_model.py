@@ -1294,7 +1294,7 @@ class kernel_model():
         
         else: 
             loaded_ok=True
-            
+
         ev,spikes,_,_,self.cam = simplify_recdat(rec,probe='probe')
 
 
@@ -1357,7 +1357,6 @@ class kernel_model():
                 vis_azimuths=vis_azimuths,
                 aud_azimuths=aud_azimuths,
                 rt_params=rt_params,
-                classify_rt=False,
                 include_unisensory_vis=True,
                 include_unisensory_aud=True,
                 classify_choice_types = True,
@@ -1420,7 +1419,7 @@ class kernel_model():
       
                         # normalise the the vis contrast 
                         curr_contrasts  = ev.stim_visContrast[is_selected]/np.max(contrasts)
-                        gamma = 0.5
+                        gamma = 0.68
                         diag_value_vector = curr_contrasts**gamma
                         feature_name_string = 'vis_kernel' + '_contrast_scaled' 
                         feature_name_string += '_azimuth_%.0f' % my_azimuth                  

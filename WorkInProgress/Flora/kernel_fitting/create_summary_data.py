@@ -15,11 +15,11 @@ my_expDef = 'postactive'
 subject_string = ''.join(subject_set)
 dataset = subject_string + my_expDef
 
-dataset = 'trained-active-curated'
+dataset = 'active'
 interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
 
 csv_path = interim_data_folder / dataset 
-fit_tag = 'stimChoice'
+fit_tag = 'additive-fit'
 foldertag = r'kernel_model\%s' % fit_tag
 kernel_fit_results = interim_data_folder / dataset  / foldertag 
 

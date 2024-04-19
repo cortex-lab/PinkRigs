@@ -177,6 +177,13 @@ def get_subregions(regionNames,mode='Beryl'):
         reg = BrainRegions()
         regionNames[regionNames=='unregistered']='void'
         parentregions = reg.acronym2acronym(regionNames, mapping='Beryl')
+
+    elif mode=='Cosmos':
+        from Processing.pyhist.helpers.regions import BrainRegions
+        reg = BrainRegions()
+        regionNames[regionNames=='unregistered']='void'
+        parentregions = reg.acronym2acronym(regionNames, mapping='Cosmos')       
+
     elif '3SC'==mode:
         parentregions = np.array([classify_SC_acronym(n) for n in regionNames])        
 

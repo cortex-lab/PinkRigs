@@ -9,7 +9,7 @@ from kernel_utils import fit_and_save
 # dataset_name = 'trained-passive-cureated'
 # recordings = get_data_bunch(dataset_name) # or can be with queryCSV # or write a loader functin 
 
-recordings = call_neural_dat(dataset='naive',
+recordings = call_neural_dat(dataset='active',
                              spikeToInclde=True,
                              camToInclude=True,
                              recompute_data_selection=True,
@@ -19,6 +19,6 @@ recordings = call_neural_dat(dataset='naive',
                              filter_unique_shank_positions = True)
 
 # %%
-fit_and_save(recordings,savepath=None,dataset_name='naive',recompute=True,dataset_type='naive')
+fit_and_save(recordings,savepath=None,dataset_name='active',recompute=True,dataset_type='active')
 
 # %%

@@ -94,6 +94,27 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
 
         % Extract flips
         Fs = str2double(metaS.imSampRate);
+        [c,~,ic] = unique(syncData.sync);
+        if numel(c)>2
+            warning('weird flipper, will try to process')
+            tmp = diff(syncData.sync);
+            [cd,~,icd] = unique(abs(tmp(tmp~=0)));
+            h = histcounts(icd,numel(cd));
+            if numel(h) == 2 & any(h == 1)
+                warning('looks like it''s just a shift, ignore?')
+            else
+                warning('looks more serious...')
+                hc = histcounts(ic);
+                [~,idx] = sort(hc,'descend');
+                % first 2 should the real ones
+                for ii = idx(3:end)
+                    % find the closest one
+                    idxEdge = diff(ic == ii) == 1;
+                    ic(ic == ii) = mode(ic(idxEdge));
+                end
+                syncData.sync = c(ic);
+            end
+        end
         ephysFlipperTimes{ee} = (find(diff(syncData.sync)~=0)/Fs);
     end
     % Remove empty file refs
