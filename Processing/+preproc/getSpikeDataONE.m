@@ -62,28 +62,58 @@ function spk = getSpikeDataONE(KSFolder)
     coords = readNPY(fullfile(KSFolder, 'channel_positions.npy'));
     ycoords = coords(:,2); xcoords = coords(:,1);
 
-    % Load pc features
-    pcFeat = readNPY(fullfile(KSFolder,'pc_features.npy')); % nSpikes x nFeatures x nLocalChannels
-	pcFeatInd = readNPY(fullfile(KSFolder,'pc_feature_ind.npy')); % nTemplates x nLocalChannels
+    % Load spike depth
+    spikeDepths = readNPY(fullfile(IBLFormatFolder,'spikes.depths.npy'));
 
-    % Compute depths
-    pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
-    pcFeat(pcFeat<0) = 0; % some entries are negative, but we don't really want to push the CoM away from there.
-    
-    % which channels for each spike?
-    spikeFeatInd = pcFeatInd(spikeTemplates+1,:);
-    % ycoords of those channels?
-    spikeFeatYcoords = ycoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
-    % center of mass is sum(coords.*features)/sum(features)
-    spikeDepths = sum(spikeFeatYcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);   
+%     % Load pc features
+%     pcFeat = readNPY(fullfile(KSFolder,'pc_features.npy')); % nSpikes x nFeatures x nLocalChannels
+% 	pcFeatInd = readNPY(fullfile(KSFolder,'pc_feature_ind.npy')); % nTemplates x nLocalChannels
+% 
+%     % Compute depths
+%     pcFeat = squeeze(pcFeat(:,1,:)); % take first PC only
+%     pcFeat(pcFeat<0) = 0; % some entries are negative, but we don't really want to push the CoM away from there.
+%     
+%     % which channels for each spike?
+%     spikeFeatInd = pcFeatInd(spikeTemplates+1,:);
+%     % ycoords of those channels?
+%     spikeFeatYcoords = ycoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
+%     % center of mass is sum(coords.*features)/sum(features)
+%     spikeDepths = sum(spikeFeatYcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);   
+% 
+%     spikeFeatXcoords = xcoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
+%     spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
 
-    spikeFeatXcoords = xcoords(spikeFeatInd+1); % 2D matrix of size #spikes x 12
-    spikeXPos = sum(spikeFeatXcoords.*pcFeat.^2,2)./sum(pcFeat.^2,2);
+    % New, faster to get spikeXPos
+    temps = readNPY(fullfile(KSFolder, 'templates.npy'));
+    winv = readNPY(fullfile(KSFolder, 'whitening_mat_inv.npy'));
+    tempsUnW = zeros(size(temps));
+    for t = 1:size(temps,1)
+        tempsUnW(t,:,:) = squeeze(temps(t,:,:))*winv;
+    end
+    % The amplitude on each channel is the positive peak minus the negative
+    tempChanAmps = squeeze(max(tempsUnW,[],2))-squeeze(min(tempsUnW,[],2));
 
+    % The template amplitude is the amplitude of its largest channel (but see
+    % below for true tempAmps)
+    tempAmpsUnscaled = max(tempChanAmps,[],2);
+
+    % need to zero-out the potentially-many low values on distant channels ...
+    threshVals = tempAmpsUnscaled*0.3;
+    tempChanAmps(bsxfun(@lt, tempChanAmps, threshVals)) = 0;
+
+    % ... in order to compute the depth as a center of mass
+    templateDepths = sum(bsxfun(@times,tempChanAmps,ycoords'),2)./sum(tempChanAmps,2);
+
+    % Compute xpos as center of mass
+    templateXPos = sum(bsxfun(@times,tempChanAmps,xcoords'),2)./sum(tempChanAmps,2);
+
+    % spikeDepths = templateDepths(spikeTemplates+1);
+    spikeXPos = templateXPos(spikeTemplates+1);
+
+    % Get spike shank IDs
     [~,spikeShankIDs] = min(abs(spikeXPos - repmat([0 200 400 600], [numel(spikeXPos),1])),[],2);
     spikeShankIDs = uint8(spikeShankIDs-1);
 
-    
     %% Get template info
     
     % Load template info
