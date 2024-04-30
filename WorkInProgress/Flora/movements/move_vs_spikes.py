@@ -24,11 +24,11 @@ cam = 'frontCam'
 probe = 'probe1'
 
 data_dict = {
-            'events':{'_av_trials':['table']}, probe:{'spikes':['times','clusters'],'clusters':['_av_IDs']}, 
+            'events':{'_av_trials':['table']}, probe:{'spikes':['times','clusters'],'clusters':'all'}, 
             cam:{'camera':'all','_av_motionPCs':'all'}, 'eyeCam':{'camera':'all'}
                 }
 recordings = load_data(subject = subject,expDate= expDate, expNum=expNum,data_name_dict=data_dict)
-# 
+# %%
 rec_idx = 0
 events = recordings.iloc[rec_idx].events['_av_trials']
 camera = recordings.iloc[rec_idx][cam]['camera']

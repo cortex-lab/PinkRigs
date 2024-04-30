@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Movement_corr_session_permutation import movement_correlation
-which = 'active'
+which = 'naive'
 m = movement_correlation(dataset=which,
                         spikeToInclde=True,
                         camToInclude=True,
