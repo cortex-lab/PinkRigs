@@ -4,6 +4,7 @@ extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemisph
 
 
 
+
 %%
 plotOpt.toPlot=0; 
 
@@ -110,6 +111,9 @@ xticks(1:2)
 ylim([-0.25,0.4])
 xticklabels({'blank','blank,n+1'})
 hline(0,'k--')
+[h, p, ci, stats] = ttest(dpBlank, postlaserBlank);
+title(p)
+
 
 subplot(1,3,2)
 % postlaserR;postlaserL
@@ -121,6 +125,8 @@ xticks(1:2)
 ylim([-0.25,0.4])
 xticklabels({'ipsi','ipsi,n+1'})
 hline(0,'k--')
+[h, p, ci, stats] = ttest(dpR, postlaserR);
+title(p)
 
 subplot(1,3,3)
 % postlaserR;postlaserL
@@ -132,4 +138,5 @@ xticks(1:2)
 ylim([-0.25,0.4])
 xticklabels({'contra','contra,n+1'})
 hline(0,'k--')
-
+[h, p, ci, stats] = ttest(dpL, postlaserL);
+title(p)

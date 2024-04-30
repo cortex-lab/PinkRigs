@@ -70,10 +70,11 @@ fig,ax = plt.subplots(1,1,figsize=(2,5),sharey=True)
 fraction_good = goodClus.groupby('Beryl')['is_corr'].mean()
 
 all_ROIs = [
-    'SCs','SCm','PPN','MRN','IC','CUN','PRNr',
     'VISp','VISpm','RSPv','RSPd','RSPagl',
-    'POST'
+    'POST',
+    'SCs','SCm','PPN','MRN','IC','CUN','PRNr'    
 ]
+
 
 fraction_good_ordered = pd.Series()
 # add the tested areas basically
@@ -133,6 +134,17 @@ im_name =  which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
 fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
+from scipy.stats import mannwhitneyu
+
+from scipy.stats import ks_2samp
+
+group1 = ((gSC.corrVal[gSC.is_corr & (gSC.Beryl=='SCs')]).values)
+group2 = ((gSC.corrVal[gSC.is_corr & (gSC.Beryl=='SCm')]).values)
+#statistic, p_value = mannwhitneyu(group1, group2, alternative='two-sided')
+
+statistic, p_value = ks_2samp(group1, group2)
+
+print(p_value)
 #%%
 
 fig, ax = plt.subplots(2,1,figsize=(1.5,7.5),gridspec_kw={'height_ratios':[3,.8]})

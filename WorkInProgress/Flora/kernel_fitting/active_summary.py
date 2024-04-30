@@ -40,7 +40,7 @@ clusInfo['gauss_ml'] = allen_pos_apdvml[:,2]
 #%% plot the fraction of good clusters/area
 
 if dataset=='active':
-    plot_types  = ['vis','aud','aud_dir','move_kernel','move_kernel_dir','motionEnergy']
+    plot_types  = ['vis','aud','aud_dir','move_kernel_dir','motionEnergy']
 else: 
     plot_types =  ['vis','aud','motionEnergy']
 
@@ -82,10 +82,10 @@ tot_counts.plot(kind='barh', color='skyblue',ax=ax)
 from Processing.pyhist.helpers.regions import BrainRegions
 reg = BrainRegions()
 
-all_ROIs = [
-    'SCs','SCm','PPN','MRN','IC','CUN','PRNr',
-    'VISp','VISpm','RSPv','RSPd','RSPagl',
-    'POST'
+all_ROIs = ['VISp','VISpm','RSPv','RSPd','RSPagl',
+    'POST',
+    'SCs','SCm','PPN','MRN','IC','CUN','PRNr'
+    
 ]
 
 
@@ -112,11 +112,11 @@ for i_t,t in enumerate(plot_types):
     ax[i_t].set_title('%s' % t)
     ax[i_t].set_ylabel('Brain Region')
     ax[i_t].set_xlabel('Fraction')
-    ax[i_t].set_xlim([0,1])
+    ax[i_t].set_xlim([0,.55])
 
     #ax[i_t].set_xticks(rotation=45)
     #ax[i_t].set_show()
-
+from pathlib import Path
 which_figure = '_kernel_fracts_per_region'
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dataset + which_figure + '.svg'
@@ -132,7 +132,7 @@ from pathlib import Path
 
 
 
-plot_examples = True
+plot_examples = False
 # ## naive data example neurons
 example_neurons_folders = [
     '\\\\zaru.cortexlab.net\\Subjects\\AV030\\2022-12-07\\2',
@@ -185,8 +185,8 @@ for i,(xname,yname) in enumerate(combs):
     isnotnan = ~np.isnan(x) & ~np.isnan(y)
     print(ss.spearmanr(x[isnotnan],y[isnotnan]))
     ax[i].set_title('Spearman r = %.2f' % ss.spearmanr(x[isnotnan],y[isnotnan]).correlation)
-    # ax.set_xlim([-.1,.25])
-    # ax.set_ylim([-.05,.25])
+    ax[i].set_xlim([-.1,.25])
+    ax[i].set_ylim([-.07,.25])
     ax[i].set_xlabel(xname)
     ax[i].set_ylabel(yname)
     off_topspines(ax[i])
@@ -225,7 +225,7 @@ fig.patch.set_facecolor('xkcd:white')
 colors = ['magenta','lightblue','k','orange']
 for i_t,t in enumerate(plot_types):    
     n = 'is_%s' % t
-    sig = gSC[gSC[n]]
+    sig = goodClus[goodClus[n]]
     kernel_name = 'kernelVE_%s' % t
 
     x =np.log2(sig[kernel_name])
@@ -234,7 +234,7 @@ for i_t,t in enumerate(plot_types):
     anat = anatomy_plotter()
 
     anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 3600)
-    anat.plot_points(gSC.gauss_ml.values, gSC.gauss_dv.values,s=5,color='grey',alpha=0.1,unilateral=True)
+    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_dv.values,s=5,color='grey',alpha=0.1,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=dot_colors,alpha=1,edgecolors='k',unilateral=True)
 
     ax[0,i_t].set_xlim([-2200,0])
@@ -242,14 +242,14 @@ for i_t,t in enumerate(plot_types):
     ax[0,i_t].set_title(' %s cells in SC' % t)
 
     anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
-    anat.plot_points(gSC.gauss_ml.values, gSC.gauss_ap.values,s=5,color='grey',alpha=0.1,unilateral=True)
+    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=5,color='grey',alpha=0.1,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_ap.values,s=25,color=dot_colors,alpha=1,edgecolors='k',unilateral=True)
 
     ax[1,i_t].set_xlim([-2200,0])
     ax[1,i_t].set_ylim([-4850,-2500])
 
 
-for i in range(2):
+for i in range(len(plot_types)-1):
     for z in range(2): 
         ax[z,i+1].set_yticklabels([])
 
