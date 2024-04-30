@@ -97,10 +97,14 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
         [c,~,ic] = unique(syncData.sync);
         if numel(c)>2
             warning('weird flipper, will try to process')
+            syncData.sync = int16(medfilt1(single(syncData.sync),9));
+            syncData.sync(1) = syncData.sync(2);
             tmp = diff(syncData.sync);
             [cd,~,icd] = unique(abs(tmp(tmp~=0)));
             h = histcounts(icd,numel(cd));
-            if numel(h) == 2 & any(h == 1)
+            if numel(h) == 1
+                fprintf('All good, filtered it.\n')
+            elseif numel(h) == 2 & any(h < 10)
                 warning('looks like it''s just a shift, ignore?')
             else
                 warning('looks more serious...')
@@ -192,6 +196,7 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
         ephysFiles = cellfun(@(x) dir(fullfile(x,'*.*bin')), ephysPath, 'uni', 0);
         metaData = arrayfun(@(x) readMetaData_spikeGLX(x{1}(1).name, x{1}(1).folder), ephysFiles, 'uni', 0);
         serialsFromMeta = cellfun(@(x) str2double(x.imDatPrb_sn), metaData);
+        createTime = cell2mat(cellfun(@(x) datenum(x.fileCreateTime(end-7:end)), metaData, 'uni', 0));
 
         if strcmp(probeInfo.probeType{1},'Acute')
             % No check in acute recordings
@@ -220,6 +225,13 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
     timelineRefTimesReord = cell(numel(expectedSerial),1);
     for pp = 1:numel(expectedSerial)
         corresProbe = serialsFromMeta == expectedSerial(pp);
+        if sum(corresProbe) > 1
+            warning('Several corresponding probes. May be because the flippers were identical (due to arduino reinitialization)?')
+            fprintf('Take the closest one in time...')
+            [m,idx] = min(abs(createTime-datenum(timeline.startDateTimeStr(end-7:end))));
+            fprintf('%d minutes away. \n',m*24*60)
+            corresProbe(~ismember(1:numel(corresProbe),idx)) = 0;
+        end
         if any(corresProbe)
             ephysPathReord(pp) = ephysPath(corresProbe);
             ephysRefTimesReord(pp) = ephysRefTimes(corresProbe);

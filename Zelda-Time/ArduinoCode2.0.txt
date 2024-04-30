@@ -38,6 +38,8 @@ PID myPID(&CurrTemp, &PeltierPWM, &TargetTemp,5,5,1, REVERSE);
 
 void setup(void)
 {
+  randomSeed(analogRead(0)); // Set "random" seed
+
   sensors.begin();  // Start up the library
   Serial.begin(9600);
   sensors.requestTemperatures();
