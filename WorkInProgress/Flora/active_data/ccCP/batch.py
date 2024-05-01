@@ -69,13 +69,31 @@ print('%.0f good neurons' % nGood)
 
 # make a plot of the distribution of nerons
 
-fig,ax = plt.subplots(1,1,figsize=(5,3))
+
+all_ROIs = ['VISp','VISpm','RSPv','RSPd','RSPagl',
+    'POST',
+    'SCs','SCm','PPN','MRN','IC','CUN','PRNr'
+    
+]
+
+
+
+fig,ax = plt.subplots(1,1,figsize=(3,5))
                       
 tot_counts = goodClus.groupby('Beryl')['is_good'].sum()
 
 # Plotting
-tot_counts.plot(kind='bar', color='skyblue',ax=ax)
+tot_counts_ordered = pd.Series()
 
+for r in all_ROIs:
+    if not (r in tot_counts.index.values):
+        print(r)
+        tot_counts_ordered[r]=0 
+    else:
+        tot_counts_ordered[r] = tot_counts[r]
+
+tot_counts_ordered.plot(kind='barh', color='skyblue',ax=ax)
+ax.invert_yaxis()
 
 from pathlib import Path
 which_figure = 'neuron_counts'
@@ -86,18 +104,32 @@ fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=30
 
 #%%
 
-fig,ax = plt.subplots(1,len(plot_types),figsize=(20,5),sharey=True)
-for i_t,t in enumerate(plot_types):    
 
+kernel_thr = 0.02
+fig,ax = plt.subplots(1,len(plot_types),figsize=(1*len(plot_types),3),sharex=True,sharey=True)
+for i_t,t in enumerate(plot_types):    
+    n = 'is_%s' % t
     fraction_good = goodClus.groupby('Beryl')[t].mean()
 
+    fraction_good_ordered = pd.Series()
+    # add the tested areas basically
+    for r in all_ROIs:
+        if not (r in fraction_good.index.values):
+            print(r)
+            fraction_good_ordered[r]=0 
+        else:
+            fraction_good_ordered[r] = fraction_good[r]
     # Plotting
-    fraction_good.plot(kind='bar', color='skyblue',ax=ax[i_t])
-    ax[i_t].set_title('Fraction of %s per region' % t)
-    ax[i_t].set_xlabel('Brain Region')
-    ax[i_t].set_ylabel('Fraction')
-    #ax[i_t].set_xticks(rotation=45)
-    #ax[i_t].set_show()
+    # parents = reg.acronym2acronym(fraction_good.index, mapping='Cosmos')
+    # orderidx = np.argsort(parents)
+    # Plotting
+    fraction_good_ordered.plot(kind='barh', color='skyblue',ax=ax[i_t])
+    ax[i_t].invert_yaxis()
+    ax[i_t].set_title('%s' % t)
+    ax[i_t].set_ylabel('Brain Region')
+    ax[i_t].set_xlabel('Fraction')
+    ax[i_t].set_xlim([0,.2])
+
 
 from pathlib import Path
 which_figure = 'ccCP_across_regions'
@@ -110,33 +142,33 @@ fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=30
 
 from Analysis.neural.utils.spike_dat import anatomy_plotter
 
-
-
 gSC = goodClus[(goodClus.Beryl=='SCs') + (goodClus.Beryl=='SCm')]
 
 
-fig, ax = plt.subplots(2,len(plot_types),figsize=(8,4),sharex=True)
+fig, ax = plt.subplots(2,len(plot_types),figsize=(1.5*len(plot_types),7.5),sharex=True,gridspec_kw={'height_ratios': [3,.8] })
 fig.patch.set_facecolor('xkcd:white')
 colors = ['magenta','lightblue','k','orange']
+
+
 for i_t,t in enumerate(plot_types):    
 
-    sig = gSC[gSC[t]]
+    sig = goodClus[goodClus[t]]
 
     anat = anatomy_plotter()
     #x =np.log2(sig[kernel_name])
-    #dot_colors = brainrender_scattermap(x,vmin = np.min(x),vmax=np.max(x),n_bins=15,cmap='RdPu')
+    #dot_colors = brainrender_scattermap(x,vmin = np.m  in(x),vmax=np.max(x),n_bins=15,cmap='RdPu')
 
 
     anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 3600)
-    anat.plot_points(gSC.gauss_ml.values, gSC.gauss_dv.values,s=10,color='grey',alpha=0.2,unilateral=True)
+    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_dv.values,s=10,color='grey',alpha=0.2,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
 
     ax[0,i_t].set_xlim([-2200,0])
-    ax[0,i_t].set_ylim([-3100,-700])
+    ax[0,i_t].set_ylim([-7100,-0])
     ax[0,i_t].set_title(' %s cells in SC' % t)
 
     anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
-    anat.plot_points(gSC.gauss_ml.values, gSC.gauss_ap.values,s=10,color='grey',alpha=0.2,unilateral=True)
+    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=10,color='grey',alpha=0.2,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_ap.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
 
     ax[1,i_t].set_xlim([-2200,0])

@@ -9,15 +9,23 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Movement_corr_session_permutation import movement_correlation
 from Admin.csv_queryExp import format_cluster_data,bombcell_sort_units
 
-which = 'postactiveWithSpike'
-m = movement_correlation(dataset=which,recompute_data_selection=False)
+which = 'naive'
+m = movement_correlation(dataset=which,
+                        spikeToInclde=True,
+                        camToInclude=True,
+                        recompute_data_selection=True,
+                        unwrap_probes= True,
+                        merge_probes=False,
+                        region_selection=None,
+                        filter_unique_shank_positions = True)
 
 #%%
 m.vid_dat.shape[0]
 
 # %%
-rec = m.vid_dat.iloc[7]
-cvals,p = m.session_permutation(rec,tbin=1)
+T_BIN =.1
+rec = m.vid_dat.iloc[2]
+cvals,p = m.session_permutation(rec,tbin=T_BIN)
 # %%
 from Analysis.neural.utils.spike_dat import bincount2D,cross_correlation
 import scipy
@@ -29,7 +37,7 @@ bc_class = bombcell_sort_units(clusInfo)#%%
 clusInfo['is_good'] = bc_class=='good'
 
 
-r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin =1)
+r,t_bins,clus = bincount2D(spikes.times,spikes.clusters,xbin =T_BIN)
 #
 cam = rec.camera
 x,y = cam.times,cam.ROIMotionEnergy
@@ -51,16 +59,18 @@ plt.hist(cvals[p>0],bins=70,alpha=.5)
 
 fig,ax = plt.subplots(2,1,figsize=(20,2),sharex=True)
 
-sigidx = np.where(p==0 & clusInfo.is_good)[0]
+sigidx = np.where((p==0) & clusInfo.is_good & 
+                  ((clusInfo.BerylAcronym=='SCs') + (clusInfo.BerylAcronym=='SCm')))[0]
+
 sig_clustersIDs = clusInfo._av_IDs[sigidx].values
 sig_cluster_cvals = cvals[sigidx]
 r_idx_sig_clusters = np.where(np.isin(clus, sig_clustersIDs))[0]
 
 
 
-n_idx = r_idx_sig_clusters[np.argsort(sig_cluster_cvals)][-10]
-f = 0
-t=f+700
+n_idx = r_idx_sig_clusters[np.argsort(sig_cluster_cvals)][-1]
+f = 9000
+t=f+2000
 ax[0].plot(times[f:t],camtrace[f:t])
 ax[1].plot(times[f:t],r_[n_idx,f:t])
 ax[0].set_title('r = %.2f' % cvals[n_idx])
@@ -81,6 +91,38 @@ off_axes(ax[0,0])
 off_axes(ax[1,1])
 off_topspines(ax[0,1])
 off_topspines(ax[1,0])
-# %%
 
+ax[1,0].axvline(0,color='k',linestyle='--')
+
+ax[1,1].hlines(-1,1750,1800,color='k')
+print('tbar is %.2f s ' % ((np.diff(t_bins)).mean()*50))
+
+from pathlib import Path
+
+which_figure = 'movement_correlations_example'
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = which + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+fig.colorbar(cax=ax[0,0], ax=ax[1,1])
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Generate some example data
+x = np.linspace(-3, 3, 100)
+y = np.linspace(-3, 3, 100)
+X, Y = np.meshgrid(x, y)
+Z = np.sin(X) * np.cos(Y)
+
+# Plot the data with the coolwarm colormap
+plt.contourf(X, Y, Z, cmap='coolwarm')
+
+# Add a colorbar
+plt.colorbar()
+
+# Show the plot
+plt.show()
 # %%

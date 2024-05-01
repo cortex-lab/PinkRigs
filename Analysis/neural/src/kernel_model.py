@@ -842,7 +842,7 @@ def test_kernel_significance(model, X, y, feature_column_dict,original_feature_c
     Test the significance of each kernel in the feature matrix.
 
     methods: leave-one-out
-        here, it does not matter too much which model you input, as the model will be refitte
+        here, it does not matter too much which model you input, as the model will be refitted
         steps: 
             1. fit model with everything but the tested kernel on training set. (model 1)
             2. Fit tested kernel on the residuals for training set (model 2)

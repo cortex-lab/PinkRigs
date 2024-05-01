@@ -12,6 +12,7 @@ for s=1:numel(extracted.subject)
 
 
 
+
     dpR(s) = nanmean(get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ev.is_laserTrial)),which_set,plotOpt) - ...
                          get_metrics_StimClass(filterStructRows(ev,(ev.response_direction==2 & ~ev.is_laserTrial)),which_set,plotOpt),'all');
 
@@ -50,5 +51,12 @@ xticks(1:2)
 ylim([-0.2,0.2])
 xticklabels({'ipsi,n+1','contra,n+1'})
 hline(0,'k--')
+
+%%
+%valid_indices = ~isnan(data1) & ~isnan(data2);
+
+[h, p, ci, stats] = ttest(dpR, dpL);
+
+%%
 
 
