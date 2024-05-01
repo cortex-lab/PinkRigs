@@ -131,14 +131,14 @@ def bombcell_sort_units(clusdat,max_peaks=2,max_throughs=1,
     bombcell_class[:] = 'mua'
     # assign noise 
 
-    ix = ~ (
+    ix = (
         (clusdat.nPeaks>max_peaks) | 
         (clusdat.nTroughs>max_throughs) |
-        (clusdat.isSomatic>=is_somatic) | 
-        (clusdat.spatialDecaySlope>=min_spatial_decay_slope) |
+        (clusdat.isSomatic!=is_somatic) | 
+        (clusdat.spatialDecaySlope>min_spatial_decay_slope) |
         (clusdat.waveformDuration_peakTrough<min_waveform_duration) |
         (clusdat.waveformDuration_peakTrough>max_waveform_duration) |
-        (clusdat.waveformBaselineFlatness>=max_waveform_baseline_fraction)
+        (clusdat.waveformBaselineFlatness>max_waveform_baseline_fraction)
     ) 
 
     bombcell_class[ix]='noise'
@@ -146,10 +146,10 @@ def bombcell_sort_units(clusdat,max_peaks=2,max_throughs=1,
     # assign well isolated units 
     ix = (
         (bombcell_class != 'noise') &
-        (clusdat.nSpikes>min_spike_num) &
+        (clusdat.nSpikes>=min_spike_num) &
         (clusdat.fractionRPVs_estimatedTauR <= max_refractory_period_violations) &
-        (clusdat.rawAmplitude>min_amp) &
-        (clusdat.percentageSpikesMissing_gaussian<max_percentage_spikes_missing) & 
+        (clusdat.rawAmplitude>=min_amp) &
+        (clusdat.percentageSpikesMissing_gaussian<=max_percentage_spikes_missing) & 
         (clusdat.signalToNoiseRatio>=minSNR) & 
         (clusdat.presenceRatio>=min_presence_ratio)  
         )
