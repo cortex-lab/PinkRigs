@@ -235,8 +235,13 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
         tExt.visStimPeriodOnOff = visPeriodOnOffTimeline;
 
         % Could add this in for passive
-        photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
-        photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
+        if ~isempty(visPeriodOnOffTimeline)
+            photoFlipsByTrial = indexByTrial(visPeriodOnOffTimeline, photoDiodeFlipTimes(:));
+            photoFlipsByTrial = indexByTrial(trialStEnTimes(~nonVisTrials,:), cell2mat(photoFlipsByTrial));
+        else
+            % audio only
+            photoFlipsByTrial = {};
+        end
         if isfield(block.events,'selected_paramsetValues')
             responseWindow = block.events.selected_paramsetValues.responseWindow;
         else
