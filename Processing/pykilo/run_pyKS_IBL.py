@@ -104,7 +104,7 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort 
             # otherwise set default params
             params = KilosortParams()
             params.preprocessing_function = 'destriping'
-            params.channel_detection_method = 'raw_correlations'
+            params.channel_detection_method = 'kilosort'
             params.probe = probe
             params = dict(params)
 
@@ -126,7 +126,6 @@ def run_pyKS_single_file(path_to_file,recompute_errored_sorting = False, resort 
             shutil.rmtree(KS_workfolder.joinpath(".kilosort"), ignore_errors=True)
 
         except:
-            pdb.set_trace()
             exc_type, exc_obj, exc_tb = sys.exc_info()
             save_error_message(output_dir / 'pyKS_error.json',err_type= exc_type,err_message=exc_obj,err_traceback=exc_tb)   
             success=False
@@ -170,7 +169,7 @@ def run_pyKS_on_queue(run_for=0.5):
     run_for = float(run_for)
     run_for_minutes = run_for * 60
     print('kilo should be running for %.0f hours' % run_for)
-    stage_KS_queue(mouse_selection='allActive',date_selection='previous7',resort=False)   
+    stage_KS_queue(mouse_selection='allActive',date_selection='previous27',resort=False)   
  
     queue_csv_file = get_csv_location('pyKS_queue')
 
@@ -204,9 +203,9 @@ def run_pyKS_on_queue(run_for=0.5):
                 _ = recheck_queue(overwrite=True,my_ephys_name=rec.ephysName,overwrite_value=-1)
                 break
 
-            # update the hour at the end of the loop if still going 
+            # update the hour at the end of the loop if still going
             check_time = time.now()-start_time
 
 if __name__ == "__main__":  
-   run_pyKS_on_queue(run_for=14) 
-   #run_pyKS_on_queue(run_for=sys.argv[1])
+   #run_pyKS_on_queue(run_for=5) 
+   run_pyKS_on_queue(run_for=sys.argv[1])
