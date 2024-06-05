@@ -13,7 +13,7 @@ function extractExpData(varargin)
     % process: cell of str
     %   What to process, similarly to 'recompute'. Can contain:
     % KSversion: str
-    %    'PyKS' or 'KS2'
+    %    'kilosort2', 'PyKS', or 'kilosort4'
    
     
     %% Get parameters
@@ -163,7 +163,7 @@ function extractExpData(varargin)
                 %% Extract spikes and clusters info (depth, etc.)
                 
                 if shouldProcess('spikes')
-                    if contains(expInfo.alignEphys, '1') %&& contains(expInfo.(sprintf('issorted%s',KSversion)), '1')
+                    if contains(expInfo.alignEphys, '1') 
                         fprintf (1, '* Extracting spikes... *\n');
                         
                         alignment = load(alignmentFile, 'ephys');
@@ -179,10 +179,12 @@ function extractExpData(varargin)
                             probeONEFolder = fullfile(expFolder,'ONE_preproc',sprintf('probe%d',probeNum-1));
 
                             switch KSversion
-                                case 'KS2'
+                                case 'kilosort2'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort2');
                                 case 'PyKS'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
+                                case 'kilosort4'
+                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort4');
                             end
                             IBLFormatFolder = fullfile(KSFolder,'ibl_format');
 
