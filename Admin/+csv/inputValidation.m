@@ -221,7 +221,7 @@ switch expDefInput{i}
     case 'all'
         fullExpDef{i} = {'all'};
     case {'t', 'train', 'training', 'behaviour'}
-        fullExpDef{i} = {'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker';'multiSpaceWorld'};
+        fullExpDef{i} = {'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker';'multiSpaceWorld';'multiSpaceSwitchWorld'};
     case {'p', 'passive', 'pass'}
         fullExpDef{i} = {'AVPassive_ckeckerboard_postactive'; 'AVPassive_checkerboard_extended'};
     case {'s', 'spont', 'spontaneous'}
