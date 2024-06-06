@@ -1,4 +1,5 @@
-behData = plts.behaviour.glmFit(subject='GB004', expDate = 'last60', checkEvents = 1, sepPlots = 1, noPlot = 1, modelString = 'simpLogSplitVSplitA');
+exp = csv.queryExp(subject='GB012', expDate = 'last60', expDef ='t', checkEvents = 1, sepPlots = 1, noPlot = 1);
+behData = plts.behaviour.glmFit(exp, modelString = 'simpLogSplitVSplitA');
 
 %%
 clear glmDataFast glmDataSlow blockIsAud dom domFast domSlow RTmean
