@@ -18,7 +18,7 @@ def RunKS4(bin_file,probe_file):
 	#download_probes
     # 'dminx':400
     # ,'nearest_templates':50
-	settings = {'data_dir':bin_file.parent, 'n_chan_bin':385, 'probe_path':probe_file}
+	settings = {'data_dir':bin_file.parent, 'n_chan_bin':385, 'batch_size':30000, 'probe_path':probe_file}
 	ops, st, clu, tF, Wall, similar_templates, is_ref, est_contam_rate, kept_spikes = run_kilosort(settings=settings, filename = bin_file)
 	
 	print('DONE')
