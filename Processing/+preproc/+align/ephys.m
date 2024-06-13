@@ -77,14 +77,21 @@ function [ephysRefTimesReord, timelineRefTimesReord, ephysPathReord, serialNumbe
         % Load sync data
         syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
         if isempty(syncDataFile)
-            fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
-            try
-                extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
-            catch
-                fprintf('Couldn''t extract the sync! Have a look?\n')
-            end    
-            ephysFlipperTimes{ee} = [];
-            syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
+            % check if from orange rigs, which uses different nomenclature
+            syncDataFile = dir(fullfile(ephysPath{ee},'*sync*'));
+            if ~isempty(syncDataFile)
+                fprintf('Looks like it''s not from the pink rigs. Skip.\n')
+                syncDataFile = [];
+            else
+                fprintf('Couldn''t find the sync file for %s, %s. Computing it.\n', subject, expDate)
+                try
+                    extractSync(fullfile(dataFile.folder,dataFile.name), str2double(metaS.nSavedChans))
+                catch
+                    fprintf('Couldn''t extract the sync! Have a look?\n')
+                end
+                ephysFlipperTimes{ee} = [];
+                syncDataFile = dir(fullfile(ephysPath{ee},'sync.mat'));
+            end
         end
         if ~isempty(syncDataFile)
             syncData = load(fullfile(syncDataFile.folder,syncDataFile.name));
