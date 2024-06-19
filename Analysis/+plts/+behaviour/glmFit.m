@@ -142,6 +142,8 @@ for mm = 1:numel(models)
                 keepIdx = respDirTest & valTrial & laserOn & abs(currBlock.stim_audAzimuth)~=30 & currBlock.stim_laserPosition==params.laserTrialType{1};
             elseif (params.useLaserTrials{1}==0) && sum(isnan(currBlock.is_laserTrial))==0
                 keepIdx = respDirTest & valTrial & ~laserOn & abs(currBlock.stim_audAzimuth)~=30;
+            elseif numel(unique(currBlock.stim_visContrast(abs(currBlock.stim_audAzimuth)==30)))>1
+                keepIdx = respDirTest & valTrial;
             else
                 keepIdx = respDirTest & valTrial & abs(currBlock.stim_audAzimuth)~=30;
             end
