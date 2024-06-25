@@ -19,7 +19,7 @@ function extractExpData(varargin)
     %% Get parameters
     varargin = ['recompute', 'none', varargin];
     varargin = ['process', 'all', varargin];
-    varargin = ['KSversion', 'PyKS', varargin];
+    varargin = ['KSversion', 'kilosort4', varargin];
     params = csv.inputValidation(varargin{:});
     exp2checkList = csv.queryExp(params);
     
