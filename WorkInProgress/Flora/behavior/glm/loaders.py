@@ -33,7 +33,7 @@ def load_params(paramset='choice'):
     return timing_params
 
 
-def load_rec_df(brain_area = 'SCm',paramset='choice',recompute_session_selection=False):
+def load_rec_df(brain_area = 'SCm',paramset='choice',expList=None):
     """function to load the data..."""
     savepath= Path(r'D:\ChoiceEncoding\selected_sessions_%s_%s.csv' % (brain_area,paramset))
     
@@ -41,22 +41,24 @@ def load_rec_df(brain_area = 'SCm',paramset='choice',recompute_session_selection
     current_params = {
         'data_name_dict':{'probe0':ephys_dict,'probe1':ephys_dict,
                              'events': {'_av_trials': 'table'},
-                             'eyeCam':{'camera':['times','ROIMotionEnergy']},
-                            'sideCam':{'camera':['times','ROIMotionEnergy']}},
+                             'eyeCam':{'camera':['times','ROIMotionEnergy','_av_motionPCs']},
+                            'sideCam':{'camera':['times','ROIMotionEnergy','_av_motionPCs']}},
         'expDef':'multiSpaceWorld',
         'checkEvents':'1',
         'checkSpikes':'1',
         'unwrap_probes':False,
+        'cam_hierarchy':None,#['sideCam','eyeCam'],
         'merge_probes':True,
         'region_selection':{'region_name':brain_area,
                             'framework':'Beryl',
                             'min_fraction':30,
                             'goodOnly':True,
                             'min_spike_num':300}
+                            
     }
 
 
-    if recompute_session_selection:
+    if expList is None:
         recordings = load_data(
             subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
             expDate = 'postImplant', 
@@ -80,7 +82,9 @@ def load_rec_df(brain_area = 'SCm',paramset='choice',recompute_session_selection
         (recordings[['subject','expDate','expNum']]).to_csv(savepath)
 
     else:
-        expList = pd.read_csv(savepath)
+        # if type(expList)=str
+        #     expList = pd.read_csv(savepath)
+
         recordings = [load_data(subject = rec.subject,
                                 expDate = rec.expDate,
                                 expNum = rec.expNum,

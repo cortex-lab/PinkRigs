@@ -19,6 +19,8 @@ extracted = plts.behaviour.getTrainingData(varargin{:});
 unique_subjects = unique(extracted.subject);
 subject_indices=1:numel(unique_subjects);
 
+ID_dates = [extracted.blkDates{:}]; 
+
 for i=1:numel(extracted.subject)
     % calculate things related to power 
     nTrials = numel(extracted.data{i, 1}.is_blankTrial);
@@ -34,6 +36,8 @@ for i=1:numel(extracted.subject)
     extracted.data{i, 1}.sessionID = ones(nTrials,1)*i;
     % get mouse ID
     extracted.data{i, 1}.subjectID  = ones(nTrials,1)*subject_indices(strcmp(unique_subjects,extracted.subject{i}));
+    
+    % 
 
     % calculate whether the nogo is in a block or not
     
@@ -138,6 +142,11 @@ saveONEFormat(optoExtracted,savepath,'_opto_trials','table','pqt',stub)   ;
 % save some metadata about the extraction
 mySubjects.name=unique_subjects; mySubjects.IDs = subject_indices';
 saveONEFormat(mySubjects,savepath,'_opto_trials','mouseIDs','pqt',stub);
+
+% correct the expDate params?
 save([savepath '\sessionParams.mat'],'params')
+
+
+save([savepath '\expDates.mat'],'ID_dates')
 
 end

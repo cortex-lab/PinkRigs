@@ -8,6 +8,18 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Admin.csv_queryExp import load_data
 
 
+ephys_dict = {'spikes': 'times'}
+recordings = load_data(data_name_dict={'probe0': ephys_dict, 'probe1': ephys_dict,'events':{'_av_trials':'table'}},
+                     subject='CB019', expDate='2021-10-25',expDef='all',
+                     expNum=None,
+                     checkSpikes='1',
+                     unwrap_probes=False, merge_probes=False)
+
+
+
+
+
+#%%
 ephys_dict = {'spikes':'all','clusters':'all'}
 ephys_dict = {'probe0':ephys_dict,'probe1':ephys_dict} 
 

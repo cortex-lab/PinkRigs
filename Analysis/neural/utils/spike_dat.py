@@ -32,6 +32,7 @@ def get_binned_rasters(spike_times, spike_clusters, cluster_ids, align_times, ts
     :type smoothing: float
     :param return_fr: `True` to return (estimated) firing rate, `False` to return spike counts
     :type return_fr: bool
+    
     :return: rasters
     :rtype: rasters: Bunch({'rasters': binned_spikes_, 'tscale': ts, 'cscale': ids})
     """

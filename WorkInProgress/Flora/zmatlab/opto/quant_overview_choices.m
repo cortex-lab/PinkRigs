@@ -1,7 +1,7 @@
 %% 
 
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'whichSet', 'bi_high');
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'whichSet', 'uni_all');
 %%
 
 % fig -- choice change per trial types

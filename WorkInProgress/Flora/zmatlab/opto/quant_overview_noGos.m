@@ -38,7 +38,7 @@ hline(0,'k--')
 
 
 
-which_set='pNoGo';
+which_set='pL';
 plotOpt.toPlot=0; 
 for s=1:numel(extracted.subject)    
     ev = extracted.data{s};
@@ -70,6 +70,8 @@ for s=1:numel(extracted.subject)
 
 
 end 
+
+%%
 %%
 
 figure;

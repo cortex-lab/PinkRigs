@@ -1,15 +1,17 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1, ...
-    'sepHemispheres',1,'sepPowers',1,'sepDiffPowers',0,'whichSet', 'uni_all'); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0, ...
+    'sepHemispheres',1,'sepPowers',0,'sepDiffPowers',0,'whichSet', 'uni_all'); 
 
 
 save_fig = 0;
 savepath = 'D:\behaviours_opto'; 
 %
+
 % fit and plot each set of data
 %
 % fit sets that determine which parameters or combinations of parameters
-% are allowed to change from fitting control trials to fitting opto trials
+% are allowed to change from fitting control trials to fitting opt
+% o trials
 opto_fit_sets = logical([
     [0,0,0,0,0,0]; ... %1 
     [1,1,1,0,1,1]; ...
@@ -41,7 +43,7 @@ plot_model_pred(2) = 1;
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits
-plotParams.plottype = 'log'; 
+plotParams.plottype = 'sig'; 
 for s=1:numel(extracted.data)    
 
     currBlock = extracted.data{s};
@@ -61,10 +63,10 @@ for s=1:numel(extracted.data)
     if shouldPlot
         f=figure; 
         f.Position = [10,10,300,300];
-        plotParams.LineStyle = '--';
-        plotParams.DotStyle = 'none';
+        plotParams.LineStyle = '-';
+        plotParams.DotStyle = '.';
         plotParams.MarkerEdgeColor = 'k';
-        plotParams.MarkerSize = 18; 
+        plotParams.MarkerSize = 36; 
         plotParams.LineWidth = 3; 
         plotParams.addFake=1; 
 
@@ -96,8 +98,8 @@ for s=1:numel(extracted.data)
            %
 %figure;  orifit.prmFits(4)
     	   orifit.prmFits(4) = controlfit.prmFits(4);
-           plotParams.LineStyle = '-';
-           plotParams.DotStyle = '.';
+           plotParams.LineStyle = 'none';
+           plotParams.DotStyle = 'none';
            plotParams.MarkerSize = 36; 
            plot_optofit(orifit,plotParams,plotfit,orifit.prmInit(4))
         end
@@ -123,14 +125,7 @@ end
 paramLabels = categorical({'bias','Vipsi','Vcontra','Aipsi','Acontra'}); 
 
 % normalise the log2likelihood
-
-
- 
-
 % plot order; % calculate fit improvement by varying each predictor 
-
-
-
 best_deltaR2 = opto_fit_logLik(:,1) - opto_fit_logLik(:,2);
 deltaR2 = (opto_fit_logLik(:,1)-opto_fit_logLik(:,[3,8,9,10,11]))./best_deltaR2;
 
@@ -140,7 +135,6 @@ cvR2 = (opto_fit_logLik(:,2)-opto_fit_logLik(:,12:16))./best_deltaR2;
 %% individual plots 
 figure; 
 plot(deltaR2');
-
 
 figure;plot(cvR2'); 
 
@@ -232,6 +226,7 @@ xticklabels({'V_i_p_s_i','V_c_o_n_t_r_a','A_i_p_s_i','A_c_o_n_t_r_a'})
 
 
 sgtitle(sprintf('%s,hemisphere:%.0d,power:%.0d',extracted.subject{s_id},extracted.hemisphere{s_id},extracted.power{s_id}))
+
 
 
 
@@ -366,7 +361,7 @@ end
 locations = csv.readTable('D:\opto_cannula_locations.csv'); 
 
 n = numel(extracted.data); 
-dv = NaN(n,1); ap = NaN(n,1);ml = NaN(n,1);acronym = NaN(n,1); 
+dv = NaN(n,1); ap = NaN(n,1);ml = NaN(n,1);eyfp=NaN(n,1); acronym = NaN(n,1);
 loc_subjects = cell2mat([locations.subject]);
 loc_hemishpheres= str2double([locations.hemisphere{:}]);
 % identify the location of each subject/hemishphere
@@ -380,7 +375,7 @@ for s=1:n
         dv(s) = str2double(locations.dv{idx}); 
         ml(s) = str2double(locations.ml{idx}); 
         ap(s) = str2double(locations.ap{idx}); 
-
+        eyfp(s) = str2double(locations.eYFP_fluorescence{idx}); 
 
     end 
 end 
@@ -394,6 +389,7 @@ distance_from_stim = abs(ap_ccf-mid_loc);
 % gain likelihood 8,9,10,11,3 'Vipsi','Vcontra','Aipsi','Acontra','bias'
 % loss likelihood 13,14,15,16,12
 % param change
+
 
 idx_sets = [3,12,1];  % bias
 % idx_sets = [9,14,3];  % Vcontra
@@ -413,25 +409,36 @@ plot(distance_from_stim,lossll,'.',Markersize=30);
 subplot(1,3,3)
 plot(distance_from_stim,paramchange,'.',Markersize=30);
 
-
+%%
+figure;
+histogram(eyfp,6)
 %%
 figure; 
 paramLabels = categorical({'bias','Vipsi','Vcontra','gamma','Aipsi','Acontra'}); 
 
+which = 'distance from stimulus'; 
+%which = 'eYFP exxpression';
+
 for ptype=1:numel(paramLabels)
     subplot(1,numel(paramLabels),ptype)
-
-    myx =distance_from_stim; 
+    
+    if strcmp('distance from stimulus',which)        
+        myx =distance_from_stim; 
+    elseif strcmp('eYFP exxpression',which)
+        myx =eyfp; 
+    end 
 
     if strcmp('bias',string(paramLabels(ptype)))
         myy = (opto_fit_params(:,2,ptype));
     else
-        myy = (opto_fit_params(:,2,ptype)+opto_fit_params(:,1,ptype))./opto_fit_params(:,1,ptype);
+        myy = (opto_fit_params(:,2,ptype)+control_fit_params(:,ptype))./control_fit_params(:,ptype);
     end 
 
     tbl = table; 
     tbl.distance = myx; 
     tbl.paramchange = myy; 
+
+    tbl.eyfp = eyfp;
     tbl.hemisphere = categorical([extracted.hemisphere{:}])'; 
     tbl.subject = categorical([extracted.subject{:}])'; 
 
@@ -446,9 +453,9 @@ for ptype=1:numel(paramLabels)
 
     ax= plot(myx,myy,'.',MarkerSize=30);
     hold on; 
-    xlabel(sprintf('%s,ditance from stimulus',paramLabels(ptype)))
+    xlabel(sprintf('%s,%s',paramLabels(ptype),which))
     if strcmp('bias',string(paramLabels(ptype)))
-        ylabel(sprintf('opto-cotrol param, full refit'))
+        ylabel(sprintf('opto-control param, full refit'))
         yline(0)
         ylim([-6,6])
     else

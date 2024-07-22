@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Analysis.neural.src.cccp import cccp,get_default_set
 
-pars = get_default_set(which='multi_bin')
+pars = get_default_set(which='single_bin',t_length=0.2,t_bin=0.005)
 
 # loading
 mname = 'FT031'
@@ -23,17 +23,33 @@ session = {
     'subject':mname,
     'expDate': expDate,
     'expDef': sess,
-    'probe': probe
 }
+from Admin.csv_queryExp import load_data
+
+ephys_dict = {'spikes':'all','clusters':'all'}
+
+current_params = {
+'data_name_dict':{'probe0':ephys_dict,'probe1':ephys_dict,
+                    'events': {'_av_trials': 'table'}},
+                    'checkSpikes':'1',
+                    'unwrap_probes':True,
+                    'filter_unique_shank_positions':True,
+                    'merge_probes':False,                              
+                    'cam_hierarchy': None
+
+}  
+recordings = load_data(**session,**current_params)
+rec = recordings.iloc[0]
 
 c = cccp()
-c.load_and_format_data(**session)
+c.load_and_format_data(rec=rec)
 
 c.aud_azimuths=[0]
 
 
-u,p,_,t = zip(*[c.get_U(which_dat='video',**cp) for _,cp in pars.iterrows()])
+u,p,_,t, = zip(*[c.get_U(which_dat='neural',**cp) for _,cp in pars.iterrows()])
 #p = np.concatenate(p,axis=1)
+
 
 # %%
 # what we can represent

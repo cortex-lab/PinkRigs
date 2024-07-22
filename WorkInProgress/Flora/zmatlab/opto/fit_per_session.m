@@ -10,14 +10,14 @@ plotParams.MarkerSize = 18;
 plotParams.LineWidth = 3; 
 plotParams.addFake=1; 
 plotfit = 1; % whether to connect the data or plot actual fits
-plotParams.plottype = 'sig'; 
+plotParams.plottype = 'log'; 
 
 for s=1:numel(extracted.data)    
     currBlock = extracted.data{s};
     sessions = unique(currBlock.sessionID);
 
     for cs=1:numel(sessions)
-        optoBlock = filterStructRows(cur rBlock, (currBlock.is_laserTrial) & (currBlock.sessionID==sessions(cs))); 
+        optoBlock = filterStructRows(currBlock, (currBlock.is_laserTrial) & (currBlock.sessionID==sessions(cs))); 
         controlBlock = filterStructRows(currBlock, (~currBlock.is_laserTrial) & (currBlock.sessionID==sessions(cs)));
 
 
