@@ -21,7 +21,8 @@ function expDefRef = getExpDefRef(expDef)
         expDefRef = 'sparseNoise';
          
     elseif contains(expDef,'multiSpaceWorld_checker_training') || ...
-            contains(expDef, 'multiSpaceWorld_checker')
+            contains(expDef, 'multiSpaceWorld_checker') || ...
+            contains(expDef,'multiSpaceSwitchWorld')
         expDefRef = 'multiSpaceTraining';
         
     elseif strcmpi(expDef,'multiSpaceWorld') || strcmpi(expDef,'multiSpaceWorldNewNames')
