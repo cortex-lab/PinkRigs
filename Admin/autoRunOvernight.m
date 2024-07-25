@@ -75,32 +75,32 @@ function autoRunOvernight
                 csv.checkForNewPinkRigRecordings('expDate', 1);
                 fprintf(fid,'Done (%s).\n',datestr(now));
         
-%                 c = clock;
-%                 if c(4) > 20 % trigger at 10pm 
-%                     fprintf(fid,'Update on training (%s)... \n',datestr(now));
-%                     % Get plot of the mice trained today.
-%                     expList = csv.queryExp('expDate', 0, 'expDef', 'training');
-%                     if ~isempty(expList)
-%                         plts.behaviour.boxPlots(expList, 'sepPlots', 1)
-%                         saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
-%                         close(gcf)
-%                     end
-%         
-%                     % Check status and send email.
-%                     checkTrainingPath = which('check_training_mice.py');
-%                     [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
-%                         'python ' checkTrainingPath ' &&' ...
-%                         'conda deactivate']);
-%                     printMessage(statusTrain,resultTrain,fid)
-%                 end
-%                 
+                c = clock;
+                if c(4) > 20 % trigger at 10pm 
+                    fprintf(fid,'Update on training (%s)... \n',datestr(now));
+                    % Get plot of the mice trained today.
+                    expList = csv.queryExp('expDate', 0, 'expDef', 'training');
+                    if ~isempty(expList)
+                        plts.behaviour.boxPlots(expList, 'sepPlots', 1)
+                        saveas(gcf,fullfile('C:\Users\Experiment\Documents\BehaviorFigures',['Behavior_' datestr(datetime('now'),'dd-mm-yyyy') '.png']))
+                        close(gcf)
+                    end
+        
+                    % Check status and send email.
+                    checkTrainingPath = which('check_training_mice.py');
+                    [statusTrain,resultTrain] = system(['conda activate PinkRigs && ' ...
+                        'python ' checkTrainingPath ' &&' ...
+                        'conda deactivate']);
+                    printMessage(statusTrain,resultTrain,fid)
+                end
+                
 %                 c = clock;
 %                 if c(4) > 20 || c(4) < 2
 %                     Kilo_runFor = num2str(2); % 2hrs at 10pm/1am run 
 %                 else
 %                     Kilo_runFor = num2str(5); % 5 hrs at the 4am,10am & 4pm run 
 %                 end
-    
+%
 %                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
 %                 runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
 %                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
@@ -132,11 +132,12 @@ function autoRunOvernight
                     preproc.align.main('expDate', 7, 'checkAlignAny', '0')
 
                     % Extracting data
-                    preproc.runBombcell('expDate', 7)
+                    preproc.runBombcell('expDate', 30)
 
                     % Extracting data
-                    preproc.extractExpData('expDate', 7, 'checkSpikes', '0')
+                    preproc.extractExpData('expDate', 30, 'checkSpikes', '0')
     
+                    
                     fprintf(fid,'Done (%s).\n',datestr(now));
                 end
                 fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));

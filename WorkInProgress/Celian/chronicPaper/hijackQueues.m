@@ -3,7 +3,7 @@ queuePath = '\\znas.cortexlab.net\Code\PinkRigs\Helpers';
 %% Get recordings
 
 % subjectList = {'AL030', 'AL031', 'AL032', 'AL036'};
-subjectList = {'Wikenheiser001'};
+subjectList = {'JF067'};
 
 serverLocations = getServersList;
 sorted = [];
@@ -14,15 +14,21 @@ for subject = subjectList
         d = dir(fullfile(server{1}, subject{1},'**','*ap.cbin'));
         d(contains(lower({d.folder}),'stitched')) = [];
         d(contains(lower({d.folder}),'catgt')) = [];
+        d(contains(lower({d.folder}),'_tcat.')) = [];
         d(contains(lower({d.folder}),'everything')) = [];
         d(contains(lower({d.folder}),'everything')) = [];
         [c,ia,ic] = unique({d.folder});
         dupidx = find(diff(ic)==0);
+        %%% used to be wrong, may be that some recordings were missed
+        %%% (was deleting elements of d yet still using old indices)
+        %%% (but should have crashed?)
+        dupindices = [];
         for dd = 1:numel(dupidx)
-            dupindices = find(strcmp({d.folder},d(dupidx(dd)).folder));
-            [~,i] = max([d(dupindices).bytes]);
-            d(setdiff(dupindices,dupindices(i))) = [];
+            dupindices_tmp = find(strcmp({d.folder},d(dupidx(dd)).folder));
+            [~,i] = max([d(dupindices_tmp).bytes]);
+            dupindices = [dupindices setdiff(dupindices_tmp,dupindices_tmp(i))]; % keep the biggest file
         end
+        d(dupindices) = [];
         
         sorted_tmp = false(1,numel(d));
         iblformatted_tmp = false(1,numel(d));
@@ -46,7 +52,7 @@ end
 D = cat(1,D{:});
 dtosort = D(~sorted);
 dtoformat = D(sorted & ~iblformatted);
-dtoQM = D(sorted & iblformatted);
+dtoQM = D(sorted==1);
 
 %% Update pyKS queue
 
@@ -87,7 +93,7 @@ csv.writeTable(M,fullfile(queuePath, 'ibl_formatting_queue.csv'));
 
 %% Run bombcell
 
-decompressDataLocal = 'C:\Users\Experiment\Documents\KSworkfolder';
+decompressDataLocal = 'C:\Users\Experiment\Documents\bombcellTmpFolder';
 if ~exist(decompressDataLocal, 'dir')
     mkdir(decompressDataLocal)
 end
@@ -106,6 +112,7 @@ for dd = 1:numel(dtoQM)
 %         end
 %     end
     ephysMetaDir = dir(fullfile(ephysDirPath,'*ap.meta')); % used in bc_qualityParamValues
+    ephysMetaDir = ephysMetaDir(1);
     savePath = fullfile(ephysKilosortPath,'qMetrics');
 
     qMetricsExist = ~isempty(dir(fullfile(savePath, 'templates._bc_qMetrics.parquet')));
@@ -122,6 +129,7 @@ for dd = 1:numel(dtoQM)
         % Which quality metric parameters to extract and thresholds
         param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, rawFile, ephysKilosortPath);
         metaContent = importdata(fullfile(ephysMetaDir.folder, ephysMetaDir.name));
+        if isstruct(metaContent); metaContent = metaContent.textdata; end
         param.nChannels = str2num(metaContent{contains(metaContent,'nSavedChans')}(13:end));
 
         % Compute quality metrics

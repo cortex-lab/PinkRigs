@@ -71,7 +71,7 @@ for mname in activeMice:
     expinfo = pd.read_csv(get_csv_location(mname))
 
     # check whether the mouse is trained on the task
-    sess2check = expinfo[(expinfo['expDef']=='multiSpaceWorld_checker_training') & (expinfo['expDuration']>600)][-1:]
+    sess2check = expinfo[((expinfo['expDef']=='multiSpaceWorld_checker_training') | (expinfo['expDef']=='multiSpaceSwitchWorld')) & (expinfo['expDuration']>600)][-1:]
 
     if (sess2check.shape[0]>0):
         # take the last day for the update
