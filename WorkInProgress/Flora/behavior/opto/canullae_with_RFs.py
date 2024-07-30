@@ -14,6 +14,8 @@ from Admin.csv_queryExp import queryCSV
 from Processing.pyhist.helpers.atlas import AllenAtlas
 from Processing.pyhist.helpers.regions import BrainRegions
 from Analysis.neural.utils.spike_dat import anatomy_plotter
+from opto_utils import get_relative_eYFP_intensity
+
 
 
 atlas,br = AllenAtlas(25),BrainRegions()
@@ -43,6 +45,14 @@ for idx,m in enumerate(histology_folders):
         region_id = atlas.get_labels(atlas.ccf2xyz(track[0],ccf_order='apdvml'))
         region_acronym=br.id2acronym(region_id) # get the parent of that 
 
+        # calculate the relative fluorescence for each track...
+        rel_fluorescence = get_relative_eYFP_intensity(c)
+        
+        if subject=='AV029':
+            rel_fluorescence = np.nan
+            print(subject,'did not have eYFP')
+            
+
         data = data.append(
             {'subject':subject,
             'ap':tip_ccf[0], 
@@ -51,7 +61,9 @@ for idx,m in enumerate(histology_folders):
             'hemisphere':-int(np.sign(tip_ccf[2]-5600)), 
             'region_id':region_id, 
             'region_acronym':region_acronym[0],
-            'parent1':br.acronym2acronym(region_acronym, mapping='Beryl')[0]},ignore_index=True
+            'parent1':br.acronym2acronym(region_acronym, mapping='Beryl')[0],
+            'eYFP_fluorescence': rel_fluorescence
+            },ignore_index=True
         )
 
 

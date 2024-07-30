@@ -98,15 +98,49 @@ class AVSplit():
         return  np.ravel(audComponent + visComponent + biasComponent) + neural_contribution
     
     @staticmethod
+    def get_trial_bools(visDiff,audDiff):
+        """
+        function to return a booleans for trial types 
+        returns:
+        blank, visual, auditory, cohrent and conflict as bools 
+        """
+        
+        is_blank = (visDiff==0) & (audDiff==0)
+        is_vis = (visDiff!=0) & (audDiff==0)
+        is_aud = (visDiff==0) & (audDiff!=0)
+        is_coh = (visDiff!=0) & (audDiff!=0) & ((np.sign(audDiff)-np.sign(visDiff))==0)
+        is_conf = (visDiff!=0) & (audDiff!=0) & ((np.sign(audDiff)-np.sign(visDiff))!=0)
+
+        return is_blank,is_vis,is_aud,is_coh,is_conf
+
+
+    @staticmethod
+    def get_trial_types(visDiff,audDiff):
+        """
+        function that retunrns an np.array of strings based that will indicate what type of trial we are in (vis/aud/coh/conflict/blank)
+        """
+        is_blank,is_vis,is_aud,is_coh,is_conf= AVSplit.get_trial_bools(visDiff,audDiff)
+
+
+        trial_types = np.empty(visDiff.shape, dtype='U8')
+        trial_types[is_blank]=['blank']
+        trial_types[is_vis]=['vis']
+        trial_types[is_aud]=['aud']
+        trial_types[is_coh]=['coherent']
+        trial_types[is_conf]=['conflict']
+
+        return trial_types
+
+
+            
+    @staticmethod
     def get_ll_per_condition(ll):
         """
         function to return the log likelihoods per condition given the matrix that is outputted by each unique split 
         """
-        is_blank = (ll.visDiff==0) & (ll.audDiff==0)
-        is_vis = (ll.visDiff!=0) & (ll.audDiff==0)
-        is_aud = (ll.visDiff==0) & (ll.audDiff!=0)
-        is_coh = (ll.visDiff!=0) & (ll.audDiff!=0) & ((np.sign(ll.audDiff)-np.sign(ll.visDiff))==0)
-        is_conf = (ll.visDiff!=0) & (ll.audDiff!=0) & ((np.sign(ll.audDiff)-np.sign(ll.visDiff))!=0)
+
+        is_blank,is_vis,is_aud,is_coh,is_conf = AVSplit.get_trial_bools(ll.visDiff,ll.audDiff)
+
 
         ll_blank = ll[is_blank].LogLik.mean()
         ll_aud =  ll[is_aud].LogLik.mean()       
@@ -117,6 +151,10 @@ class AVSplit():
         return ll_blank,ll_aud,ll_vis,ll_coh,ll_conf
     
     
+    def get_predictions(self):
+        pass
+        
+
     def plot(self,parameters,yscale='log',conditions=None,choices=None,ax=None,colors=['b','grey','red'],dataplotkwargs={'marker':'o','ls':''},predpointkwargs ={'marker':'*','ls':''},predplotkwargs={'ls':'-'}):
         """
         plot the model prediction for this specific model
@@ -232,6 +270,7 @@ class AVSplit():
                 ax.set_ylabel('predicted')
                 ax.set_title('r = %.2f' % np.corrcoef(y,y_pred)[0,1]) 
 
+
         
 
 
@@ -259,7 +298,8 @@ def format_av_trials(ev,spikes=None,cam=None,nID=None,single_average = False,pre
     df['visDiff']=ev.visDiff/maxV
     df['audDiff']=ev.stim_audAzimuth/maxA
     df['choice'] = ev.response_direction-1
-
+    df['feedback'] = ev.response_feedback
+    
     if post_time is not None:
         rt_params = {'rt_min':post_time+0.03,'rt_max':1.5}
     else:
@@ -330,6 +370,17 @@ def format_av_trials(ev,spikes=None,cam=None,nID=None,single_average = False,pre
         resps = np.empty((t_on.size,zscored.shape[1]))*np.nan
         resps[~np.isnan(t_on),:] = zscored
         df['movement'] = pd.DataFrame(resps)
+        
+
+        # also do it for each PC
+        nPCs = 100 
+        PCs_raster,_,_ = zip(*[get_move_raster(t_on[~np.isnan(t_on)],cam.times,cam._av_motionPCs[:,0,i],**bin_kwargs) for i in range(nPCs)])
+        PCs_raster = np.concatenate(PCs_raster,axis=1)
+        PCs_raster_ = np.empty((t_on.size,nPCs))*np.nan
+        PCs_raster_[~np.isnan(t_on),:] = PCs_raster
+        
+        for i in range(nPCs):
+            df['movement_PC%.0d' % i] = PCs_raster_[:,i]
 
 
 
@@ -481,6 +532,7 @@ class glmFit():
         fittingObjective = lambda b: self.get_Likelihood(b)
         result = minimize(fittingObjective, self.model.paramInit, bounds=self.model.paramBounds)          
         self.model.LogLik = self.get_Likelihood(result.x)
+        self.model.LogLik_per_trial = self.get_Likelihood_per_trial(result.x)
         self.model.paramFit = result.x
         self.model.allParams = self.model.get_all_params(result.x)
     

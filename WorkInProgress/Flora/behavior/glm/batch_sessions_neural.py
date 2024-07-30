@@ -10,7 +10,7 @@ from scipy import stats
 from predChoice import glmFit,search_for_neural_predictors
 from loaders import load_rec_df,load_params
 
-brain_area = 'RSPv'     
+brain_area = 'SCs'     
   
 paramsets = ['choice']
 #paramset ='choice' 

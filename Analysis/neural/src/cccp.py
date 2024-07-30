@@ -126,7 +126,7 @@ class cccp():
             classify_choice_types=True)
         
     
-    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',which_dat='neural',t_before=0.2,t_after=0,t_bin=0.05):
+    def get_U(self,test_type='ccCP',t_on_key ='timeline_choiceMoveOn',which_dat='neural',t_before=0.2,t_after=0,t_bin=0.05,average_across_time=False):
         """
         ccCP = combined condition choice probability
         ccVP = combined condition visual stimulus detction probability
@@ -140,7 +140,8 @@ class cccp():
             :np.ndArray combined U statistic for each unit and time bin the test was conducted in
             :np.ndArray p-value for each unit per time bin
             :np.ndArray shuffled U-statistic for each unit 
-            : np.ndArray time bins
+            :np.ndArray time bins
+            :np.ndArray rasters the thing was calculated from
 
             
         """
@@ -210,28 +211,28 @@ class cccp():
             cam_values = (self.cam.ROIMotionEnergy) # or maybe I should do things based on PCs
             raster,tscale,_  = get_move_raster(ev[t_on_key],self.cam.times,cam_values,**bin_kwargs) 
             
-
+        # here I could add the extra to average or not
+        if average_across_time: 
+            raster=raster.mean(axis=2)[:,:,np.newaxis]
 
         u,p,u_  = combined_condition_U(raster,trialChoice=trialChoice,trialConditions=ev.newIDs,n_shuffles=2000)
         
         return u,p,u_,tscale
     
 
-def get_default_set(which='single_bin'):
+def get_default_set(which='single_bin',t_length=.15,t_bin=0.025):
     # default set of inputs that are easily editable
-        column_names = ['test_type','t_on_key','t_before','t_after','t_bin']
+        column_names = ['test_type','t_on_key','t_before','t_after','t_bin','average_across_time']
         
         
 
-        if which=='single_bin':
-            t_bin_universal = 0.15
-            
+        if which=='single_bin':            
             params = [
-                ('ccAP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal), # should really be taken before rt_params_min
-                ('ccCP', 'timeline_choiceMoveOn',t_bin_universal,0,t_bin_universal),
+                ('ccAP', 'timeline_audPeriodOn',0,t_length,t_bin,True), # should really be taken before rt_params_min
+                ('ccCP', 'timeline_choiceMoveOn',t_length,0,t_bin,True),
                 #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
-                ('ccVP', 'timeline_audPeriodOn',0,t_bin_universal,t_bin_universal),
-                ('ccCP', 'timeline_audPeriodOn',t_bin_universal,0,t_bin_universal),
+                ('ccVP', 'timeline_audPeriodOn',0,t_length,t_bin,True),
+                ('ccCP', 'timeline_audPeriodOn',t_length,0,t_bin,True),
 
 
             ]
@@ -240,10 +241,10 @@ def get_default_set(which='single_bin'):
             t_bin_universal = 0.025
             
             params = [
-                ('ccAP', 'timeline_audPeriodOn',0,0.2,t_bin_universal), # should really be taken before rt_params_min
-                ('ccCP', 'timeline_choiceMoveOn',0.2,0,t_bin_universal),
+                ('ccAP', 'timeline_audPeriodOn',0,t_length,t_bin,False), # should really be taken before rt_params_min
+                ('ccCP', 'timeline_choiceMoveOn',t_length,0,t_bin,False),
                 #('ccCP', 'timeline_audPeriodOn',0.2,0.1,t_bin_universal),
-                ('ccVP', 'timeline_audPeriodOn',0,0.2,t_bin_universal)
+                ('ccVP', 'timeline_audPeriodOn',0,t_length,t_bin,False)
 
 
             ]

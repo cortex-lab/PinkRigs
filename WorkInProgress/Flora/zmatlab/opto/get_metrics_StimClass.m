@@ -18,6 +18,8 @@ if strcmp('pR',metricType)
     metric = ev.response_direction==2; 
 elseif strcmp('pNoGo',metricType)
     metric = ev.response_direction==0;
+elseif strcmp('pL',metricType)
+    metric = ev.response_direction==1; 
 elseif contains(metricType,'rt')   
     if strcmp('rtAud',metricType)
         ev.rt = ev.timeline_choiceMoveOn-ev.timeline_audPeriodOn;

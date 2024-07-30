@@ -75,7 +75,14 @@ ax[0].plot(times[f:t],camtrace[f:t])
 ax[1].plot(times[f:t],r_[n_idx,f:t])
 ax[0].set_title('r = %.2f' % cvals[n_idx])
 
-# 
+
+which_figure = 'movement_correlations_example_trace_%.0d' % n_idx
+cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
+im_name = which + which_figure + '.svg'
+savename = cpath / im_name #'outline_brain.svg'
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+# %%
 fig,ax = plt.subplots(2,2,figsize=(20,12), gridspec_kw={'height_ratios': [1, 5],'width_ratios':[1,7]})
 ax[0,1].plot(camtrace[f:t])
 ax[1,0].plot(np.sort(sig_cluster_cvals),np.arange(sig_cluster_cvals.size))
@@ -106,6 +113,13 @@ savename = cpath / im_name #'outline_brain.svg'
 fig.colorbar(cax=ax[0,0], ax=ax[1,1])
 plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
 
+#%%
+# 
+fig,ax = plt.subplots(2,2,figsize=(20,12), gridspec_kw={'height_ratios': [1, 5],'width_ratios':[1,7]})
+ax[0,1].plot(camtrace[f:t])
+ax[1,0].plot(np.sort(sig_cluster_cvals),np.arange(sig_cluster_cvals.size))
+ax[1,1].matshow(r_[r_idx_sig_clusters[np.argsort(sig_cluster_cvals)],f:t],
+                aspect='auto',vmin=-5,vmax=5,cmap='coolwarm')
 
 # %%
 import matplotlib.pyplot as plt

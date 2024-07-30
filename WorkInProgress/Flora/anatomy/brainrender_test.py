@@ -18,7 +18,7 @@ def add_tracks_to_scene(scene,subject,probe='probe0',mycolor='blue'):
     mainCSV = mainCSV[mainCSV.Subject==subject]
 
     sn = [(mainCSV.P0_serialNo) if '0' in probe else mainCSV.P1_serialNo] 
-    sn = int(sn[0].values) 
+    sn = float(mainCSV.P0_serialNo.values[0].replace(',','')) 
 
     # read in the mouseList for each mouse 
     servers = get_server_list()
@@ -44,31 +44,13 @@ scene.add_brain_region("SCm",alpha=0.6)
 # scene.add_brain_region("PRNr",alpha=0.8)
 
 subjects = [
-    'AV005',
-   #  'AV006',
-    'AV008','AV008',
-    'AV014','AV014',
-    'AV025','AV025', 
- #    'AV024','AV024',
-  #   'AV028',
+    'FT031','FT032','FT035','FT038'
     ]
 probes = [
-    'probe0',
- #    'probe0',
-    'probe0','probe1',
-    'probe1','probe1',
-    'probe0','probe1',
- #    'probe0','probe1', 
-  #   'probe0'
+    'probe0','probe0','probe0','probe0'
     ]
 colors = [
-    'red',
-  #   'lightgray',
-    'blue','blue',
-    'hotpink','hotpink',
-    'cyan','cyan', 
-  #   'greenyellow','greenyellow',
- #    'orange' 
+    'red','green','blue','magenta'
     ]
 
 for s,p,c in zip(subjects,probes,colors):
