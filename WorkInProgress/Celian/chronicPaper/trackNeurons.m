@@ -1,4 +1,6 @@
-UMFiles = {"\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_new\AV009\Probe1\IMRO_10\UnitMatch\UnitMatch.mat"};
+UMFiles = {"\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap\AV009\Probe1\IMRO_10\UnitMatch\UnitMatch.mat"};
+% UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables\AV009\19011118541\3\UnitMatch\UnitMatch.mat"};
+% UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables\AV009\19011111281\3\UnitMatch\UnitMatch.mat"};
 load(UMFiles{1})
 probe = csv.checkProbeUse('AV009');
 
@@ -8,13 +10,14 @@ convertedDays = cell2mat(cellfun(@(x) datenum(x(37:46)), UMparam.KSDir, 'uni', 0
 summaryFunctionalPlots(UMFiles,'Corr',1)
 
 %%
-[unitPresence, unitProbaMatch, days] = summaryMatchingPlots(UMFiles,1,0);
+[unitPresence, unitProbaMatch, days] = summaryMatchingPlots(UMFiles,'UID1',1,0);
 
 %% Compare to cemented probes?
 
 %% Find tracked population
 
-subSelec = find(any(unitPresence{midx}(1,:),1));
+midx = 1;
+subSelec = find(any(unitPresence{midx}(1:3,:),1));
 figure;
 [numRec,sortIdx] = sort(sum(unitPresence{midx}(:,subSelec)), 'descend');
 subplot(121)
@@ -33,13 +36,15 @@ axis tight
 UDtoUse = 'UID1';
 UIDuni = unique([MatchTable.(UDtoUse)]);
 rec = [1 5 10 15 20 25];
+%  rec = [1 5 10 15 20 25 27];
 
 figure;
 imagesc(unitPresence{1}(rec,unitPresence{1}(1,:) == 1)')
 
-popUIDs = UIDuni(all(unitPresence{1}(rec,unitPresence{1}(1,:) == 1)));
+% popUIDs = UIDuni(all(unitPresence{1}(rec,unitPresence{1}(1,:) == 1)));
+popUIDs = UIDuni(all(unitPresence{1}(rec,:)));
 
-%% Show waveforms and ISIs
+%% Get waveforms and ISIs
 
 ISIbins = [0 5*10.^(-4:0.1:0)];
 probeType = 'NaN';
@@ -82,13 +87,11 @@ for rr = 1:numel(rec)
 end
 
 
-%%
+%% Show
 
 [u,s,v] = svd(nanmean(wav,3)');
 [~,unitSortIdx] = sort(u(:,1));
 col = rand(numel(popUIDs),3); %colorcube(numel(popUIDs)*2); col(numel(popUIDs)+1:end,:) = [];
-
-cell2plt = [1 23 24];
 
 figure;
 for rr = 1:numel(rec)
@@ -112,6 +115,12 @@ for cc = 1:numel(cell2plt)
 end
 linkaxes(s,'xy')
 
+%% Single cells
+
+cell2plt = [1 23 24];
+% cell2plt = [4 7 8];
+% cell2plt = [15 16];
+
 figure('Position', [585   638   655   340]);
 % colDays = [linspace(160,24,numel(rec)); linspace(238,128,numel(rec)); linspace(157,100,numel(rec))]'/256;
 colDays = [linspace(0.7,0,numel(rec)); linspace(0.7,0,numel(rec)); linspace(0.7,0,numel(rec))]';
@@ -131,6 +140,105 @@ for cc = 1:numel(cell2plt)
         yticks([0 0.07])
         xlabel('Time (ms)')
         if cc == 1 && rr == 1; ylabel('Firing rate (sp/s)'); end
-        if rr == numel(rec); legend({num2str(convertedDays')}); set(gca,'XScale','log'); makepretty; end
+        if rr == numel(rec); legend({num2str(convertedDays(rec)')}); set(gca,'XScale','log'); makepretty; end
     end
+end
+
+
+%% Summary
+
+subjectList = {'AV008','AV009','AV015','AV021','AV049','CB015','CB016','CB017','CB018','CB020'};
+% subjectList = {'AL031', 'AL032', 'AL036'};
+
+d = [];
+for ss = 1:numel(subjectList)
+    dtmp = dir(fullfile('\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap',subjectList{ss},'**','UnitMatch.mat'));
+    d = cat(1, d, dtmp);
+end
+
+UMFiles = cell(1,numel(d));
+clear subj
+for midx = 1:numel(d)
+    UMFiles{midx} = fullfile(d(midx).folder, d(midx).name);
+    [~,subj{midx}] = fileparts(fileparts(fileparts(fileparts(d(midx).folder))));
+end
+[~, ~, groupVector] = unique(subj);
+
+% Plot summary across mice
+% res = summaryFunctionalPlots(UMFiles, 'Corr', groupVector);
+[unitPresence, unitProbaMatch, days, EPosAndNeg, DataSetInfo, pSinceAppearance, popCorr_Uni, popAUC_Uni] = summaryMatchingPlots(UMFiles,'UID1',groupVector,1);
+% trackWithFunctionalMetrics(UMFiles);
+
+%% Make plot grouping by animal
+
+groups = unique(groupVector);
+groupColor = distinguishable_colors(max(groups)+1);
+
+deltaDaysBinsOri = 2.^(-1:8);
+deltaDaysBins = [-deltaDaysBinsOri(end:-1:1)-0.1,deltaDaysBinsOri(1:end)];
+deltaBinsVec =[-deltaDaysBinsOri(end:-1:1),deltaDaysBinsOri];
+yTickLabels = arrayfun(@(X) num2str(round(X*10)/10),deltaBinsVec(1:end-1),'Uni',0);
+
+fnames = fieldnames(popCorr_Uni);
+
+figure;
+
+% Matching proba
+subplot(2,1+numel(fnames),1)
+hold on
+clear pSinceAppearance_perGroup
+for gg = 1:length(groups)
+    pSinceAppearance_perGroup(:,gg) = nanmean(pSinceAppearance(:,groupVector == groups(gg)),2);
+    plot(pSinceAppearance_perGroup(:,gg),'color',[.5 .5 .5])
+end
+xlabel('delta Days')
+set(gca,'XTick',1:numel(deltaDaysBins)-1,'XTickLabel',yTickLabels)
+ylabel('P(track)')
+nonnanNr = sum(~isnan(pSinceAppearance_perGroup),2);
+h = errorbar(1:size(pSinceAppearance_perGroup,1),nanmean(pSinceAppearance_perGroup,2),nanstd(pSinceAppearance_perGroup,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
+h.LineWidth = 2;
+offsetAxes
+
+% Number of datasets
+subplot(2,1+numel(fnames),2+numel(fnames))
+hold on
+scatter(1:size(pSinceAppearance,1),nonnanNr,20,'k','filled')
+set(gca,'XTick',1:numel(deltaDaysBins)-1,'XTickLabel',yTickLabels)
+ylabel('# animals')
+offsetAxes
+
+for ff = 1:numel(fnames)
+    % Functional fingerprint correlation
+    subplot(2,1+numel(fnames),1+ff)
+    hold on
+    clear popCorr_Uni_perGroup
+    for gg = 1:length(groups)
+        popCorr_Uni_perGroup(:,gg) = nanmean(popCorr_Uni.(fnames{ff})(:,groupVector == groups(gg)),2);
+        plot(popCorr_Uni_perGroup(:,gg),'color',[.5 .5 .5])
+    end
+    h = errorbar(1:size(popCorr_Uni_perGroup,1),nanmean(popCorr_Uni_perGroup,2),nanstd(popCorr_Uni_perGroup,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
+    h.LineWidth = 2;
+    xlabel('delta Days')
+    set(gca,'XTick',1:numel(deltaDaysBins)-1,'XTickLabel',yTickLabels)
+    ylabel('corr')
+    title(fnames{ff})
+    ylim([-0.5 1])
+    offsetAxes
+
+    % Functional fingerprint AUC
+    subplot(2,1+numel(fnames),2+numel(fnames)+ff)
+    hold on
+    clear popAUC_Uni_perGroup
+    for gg = 1:length(groups)
+        popAUC_Uni_perGroup(:,gg) = nanmean(popAUC_Uni.(fnames{ff})(:,groupVector == groups(gg)),2);
+        plot(nanmean(popAUC_Uni.(fnames{ff})(:,groupVector == groups(gg)),2),'color',[.5 .5 .5])
+    end
+    h = errorbar(1:size(popAUC_Uni_perGroup,1),nanmean(popAUC_Uni_perGroup,2),nanstd(popAUC_Uni_perGroup,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
+    h.LineWidth = 2;
+    xlabel('delta Days')
+    set(gca,'XTick',1:numel(deltaDaysBins)-1,'XTickLabel',yTickLabels)
+    ylabel('AUC')
+    title(fnames{ff})
+    ylim([0 1])
+    offsetAxes
 end
