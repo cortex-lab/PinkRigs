@@ -130,13 +130,14 @@ function sorting(varargin)
                         end
                         fclose(fid);
                     else
-                        error('Spikesorting failed.')
+                        error(sprintf('Spikesorting failed %s.', resultKS))
                     end
                 catch me
                     msgText = getReport(me);
                     warning('Couldn''t run spikesorting: threw an error (%s)',msgText)
 
                     % Save error message locally
+                    mkdir(serverKilosortPath)
                     saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
                 end
             else
