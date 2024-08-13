@@ -132,7 +132,7 @@ function autoRunOvernight
                     preproc.align.main('expDate', 7, 'checkAlignAny', '0')
 
                     % Extracting data
-                    preproc.runBombcell('expDate', 30)
+%                     preproc.runBombcell('expDate', 30)
 
                     % Extracting data
                     preproc.extractExpData('expDate', 30, 'checkSpikes', '0')
