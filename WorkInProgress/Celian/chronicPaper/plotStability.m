@@ -88,7 +88,11 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
                 end
             end
     
-            valueMean(ss,pp) = nanmean(qm(ismember(recLocAll, recLocGood)));
+            if strcmp(varType, 'count')
+                valueMean(ss,pp) = nanmean(qm(ismember(recLocAll, recLocGood) & days < inf)); %min(days(ismember(recLocAll, recLocGood)))+7));
+            else
+                valueMean(ss,pp) = nanmean(qm(ismember(recLocAll, recLocGood)));
+            end
             slopeMean(ss,pp) = nanmean(b{ss,pp}(:,2));
             interceptMean(ss,pp) = nanmean(b{ss,pp}(:,1));
             subj{ss,pp} = [subjectsToInspect{ss} ' ' probes{pp}];

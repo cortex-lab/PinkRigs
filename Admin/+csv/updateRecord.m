@@ -355,10 +355,10 @@ for pIdx = find(nDat.alignEphys == 1)
     % If ephys alignment is "good" check if sorting files exist. If
     % they do, then give a "1" to issortedPyKS or issortedPyKS.
     ephysPath = alignment.ephys(pIdx).ephysPath;
-    if ~isempty(dir([ephysPath '\**\output\spike_times.npy']))
+    if ~isempty(dir([ephysPath '\**\output\spike_times.npy'])) || ~isempty(dir([ephysPath '\**\kilosort4\spike_times.npy']))
         % Issue a "1" if "results" file for pyKS exists
         nDat.issortedPyKS(pIdx) = 1;
-    elseif ~isempty(dir([ephysPath '\**\pyKS_error.json']))
+    elseif ~isempty(dir([ephysPath '\**\pyKS_error.json'])) || ~isempty(dir([ephysPath '\**\Kilosort4_error.json']))
         % Issue a "2" if error file is in folder
         nDat.issortedPyKS(pIdx) = 2;
     else

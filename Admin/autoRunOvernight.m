@@ -100,7 +100,7 @@ function autoRunOvernight
 %                 else
 %                     Kilo_runFor = num2str(5); % 5 hrs at the 4am,10am & 4pm run 
 %                 end
-%     
+%
 %                 fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
 %                 runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
 %                 [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
@@ -137,29 +137,15 @@ function autoRunOvernight
                     % Extracting data
                     preproc.extractExpData('expDate', 30, 'checkSpikes', '0')
     
+                    
                     fprintf(fid,'Done (%s).\n',datestr(now));
                 end
                 fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
         
             case {'kilo2'}
                 fprintf(fid,'Detected kilo2 computer... \n');
-        
-                c = clock;
-                if c(4) > 20 || c(4) < 2
-                    Kilo_runFor = num2str(2);
-                else
-                    Kilo_runFor = num2str(5);
-                end
-        
-                dbstop if error % temporarily, to debug
-                fprintf(fid,'Running pykilosort on the queue for %s hours (%s)... \n',Kilo_runFor,datestr(now));
-                githubPath = fileparts(fileparts(which('autoRunOvernight.m')));
-                runpyKS = [githubPath '\Processing\pykilo\run_pyKS.py'];
-                [statuspyKS,resultpyKS] = system(['activate pyks2 && ' ...
-                    'python ' runpyKS ' ' Kilo_runFor ' && ' ...
-                    'conda deactivate']);
-                printMessage(statuspyKS,resultpyKS,fid)
-    
+%                 preproc.sorting()
+                
                 fprintf(fid,sprintf('Stopping now %s. \n',datestr(now)));
         
             case {'celians'}

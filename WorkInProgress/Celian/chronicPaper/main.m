@@ -48,14 +48,22 @@ fullProbeScan = {{'0__2880'}, {'1__2880'}, {'2__2880'}, {'3__2880'}, ...
 % BC params
 e.folder = ''; e.name = ''; % hack
 paramBC = bc_qualityParamValuesForUnitMatch(e, '');
+% Get old version
+paramBC.minSpatialDecaySlope = -0.003; % now -0.005
+paramBC.minPresenceRatio = 0.2; % now 0.7
+% refractory period? -- if changed would need to recompute everything
+paramBC.tauR_valuesMin = 0.5/1000; % refractory period time (s), usually 0.0020 change
+paramBC.tauR_valuesStep = 0.5./1000; % refractory period time (s), usually 0.0020
+paramBC.tauR_valuesMax = 10./1000; % refractory period time (s), usually 0.0020
+% computation of spatial decay? -- would need to recompute everything
 
 % Example subject
-% exSubj = 'AV009';
+exSubj = 'AV009';
 % exSubj = 'AV049';
 % exSubj = 'Lignani001';
 % exSubj = 'Lignani002';
 % exSubj = 'Margrie008';
-exSubj = 'Wikenheiser001';
+% exSubj = 'Wikenheiser001';
 ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
 probes = unique(probeSNAll(exSubjectIdx));
@@ -364,6 +372,25 @@ set(gca, 'XScale', 'log')
 xlim([10.^-5 10.^-2])
 title('Lower bank')
 
+%% Check bombcell GUI
+
+rr = 1;
+probeName = fieldnames(expInfoAll(rr,:).dataSpikes{1});
+clusters = expInfoAll(rr,:).dataSpikes{1}.(probeName{1}).clusters;
+qMetric = clusters.bc_qualityMetrics;
+ephysKilosortPath = fullfile(expInfoAll(rr,:).ephysPathProbe0{1},'pyKS','output');
+savePath = fullfile(ephysKilosortPath, 'qMetrics');
+
+unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
+[spikeTimes_samples, spikeTemplates, templateWaveforms, templateAmplitudes, pcFeatures, ...
+    pcFeatureIdx, channelPositions] = bc_loadEphysData(ephysKilosortPath);
+
+bc_loadMetricsForGUI;
+% unitQualityGuiHandle = bc_unitQualityGUI(memMapData, ephysData, qMetric, forGUI, rawWaveforms, ...
+%     param, probeLocation, unitType, loadRawTraces);
+
+bc_plotGlobalQualityMetric(qMetric, paramBC, unitType, uniqueTemplates, forGUI.tempWv);
+
 %% Extract metric
 
 nspk = nan(1, size(expInfoAll,1));
@@ -380,10 +407,10 @@ for rr = 1:size(expInfoAll,1)
 
         %%% -----
         %%% PROBLEM WITH SCALING FACTOR FOR 2.0 AND SPIKEGADGETS -- HACK
-        if (contains(recLocAll{rr}, 'Margrie') && ~contains(recLocAll{rr}, 'Margrie002')) | contains(recLocAll{rr}, 'Wikenheiser')
+        if (contains(recLocAll{rr}, 'Margrie') && ~contains(recLocAll{rr}, 'Margrie002')) || contains(recLocAll{rr}, 'Wikenheiser')
             probeName = fieldnames(expInfoAll(rr,:).dataSpikes{1});
             rec = expInfoAll(rr,:).(sprintf('ephysPathP%s',probeName{1}(2:end))){1};
-            dateStr = rec(31+numel(subjectsAll{ff})+(1:10));
+            dateStr = rec(31+numel(subjectsAll{rr})+(1:10));
             d = dir(fullfile(rec,'*ap.cbin'));
             datFileName = fullfile(d.folder,d.name);
     
@@ -403,6 +430,7 @@ for rr = 1:size(expInfoAll,1)
 
         unitType = bc_getQualityUnitType(paramBC, clusters.bc_qualityMetrics);
         idx2Use = ismember(unitType, [1 3]);
+        num_ampBelow30(rr) = sum(clusters.bc_qualityMetrics.rawAmplitude(idx2Use)<30)/sum(idx2Use);
 
         nspk(rr) = sum(clusters.bc_qualityMetrics.nSpikes(idx2Use)); yRng = [100 20000]; %Total spks/s
         fr(rr) = sum(clusters.qualityMetrics.firing_rate(idx2Use)); yRng = [100 20000]; %Total spks/s
@@ -422,10 +450,11 @@ end
 
 %% Function to get summary
 
-% 
-% subjectsToInspect = {'Churchland001','Lignani001','Lignani002','Mainen001','Rochefort001','Rochefort002','Wikenheiser001', ...
-%         'Wikenheiser002','Wikenheiser003','Margrie001','Margrie002','Margrie003','Margrie004','Margrie005','Margrie006', ...
-%         'Margrie007','Margrie008','Duan001','Duan002'};
+subjectsOtherLabs = {'Churchland001','Lignani001','Lignani002','Mainen001','Rochefort001','Rochefort002','Wikenheiser001', ...
+        'Wikenheiser002','Wikenheiser003','Margrie001','Margrie002','Margrie003','Margrie004','Margrie005','Margrie006', ...
+        'Margrie007','Margrie008','Duan001','Duan002'};
+
+% subjectsToInspect = subjectsOtherLabs;
 % % subjectsToInspect = subjects(contains(subjects,'Wikenheiser'));
 % colAni(contains(subjects,'Churchland'),:) = repmat([0.8902    0.1020    0.1098], [sum(contains(subjects,'Churchland')) 1]);
 % colAni(contains(subjects,'Lignani'),:) = repmat([0.4157    0.2392    0.6039], [sum(contains(subjects,'Lignani')) 1]);
@@ -438,13 +467,14 @@ end
 colAni = ones(numel(subjects),3)*0.5;
 colAni(ssEx,:) = [0.4157    0.2392    0.6039]; 
 % subjectsToInspect = {'AV009'};
+% subjectsToInspect = subjects(~ismember(subjects,subjectsOtherLabs));
 subjectsToInspect = subjects;
 
 paramplt.dlim = 2;
-paramplt.pltIndivBank = 1;
+paramplt.pltIndivBank = 0;
 paramplt.pltIndivProbe = 1;
-paramplt.pltAllProbes = 0;
-paramplt.pltData = 1;
+paramplt.pltAllProbes = 1;
+paramplt.pltData = 0;
 paramplt.pltFit = 1;
 
 [cnt_valueMean, cnt_slopeMean, cnt_interceptMean, cnt_fullProbeSubj, cnt_subj, cnt_useNum] = ...
@@ -462,13 +492,65 @@ paramplt.pltFit = 1;
 lme_cnt_value = plotQuantifSummary(cnt_valueMean, cnt_subj, cnt_useNum, probeInfo, exSubj, 'count', colAni(ssEx,:));
 lme_cnt_slope = plotQuantifSummary(cnt_slopeMean, cnt_subj, cnt_useNum, probeInfo, exSubj, 'slope_count', colAni(ssEx,:));
 
-% Amplitude
+% % Amplitude
 lme_amp_value = plotQuantifSummary(amp_valueMean, amp_subj, amp_useNum, probeInfo, exSubj, 'amp', colAni(ssEx,:));
 lme_amp_slope = plotQuantifSummary(amp_slopeMean, amp_subj, amp_useNum, probeInfo, exSubj, 'slope_amp', colAni(ssEx,:));
-
-% RMS
+% 
+% % RMS
 lme_rms_value = plotQuantifSummary(rms_valueMean, rms_subj, rms_useNum, probeInfo, exSubj, 'rms', colAni(ssEx,:));
 lme_rms_slope = plotQuantifSummary(rms_slopeMean, rms_subj, rms_useNum, probeInfo, exSubj, 'slope_rms', colAni(ssEx,:));
+
+%%
+
+% dayBins = [0 2.^(1:6) inf];
+dayBins = [0 10 50 100 inf];
+clear qm_av
+for ss = 1:numel(subjectsToInspect)
+    subjectIdx = contains(subjectsAll,subjectsToInspect(ss));
+    probes = unique(probeSNAll(subjectIdx));
+    colAniToInspect = colAni(ismember(subjects,subjectsToInspect(ss)),:);
+    for pp = 1:numel(probes)
+
+        % Check number of uses for this probe
+        [~,useNum(ss,pp)] = find(contains(probeInfo.implantedSubjects{strcmp(probeSNUni,probes(pp))},subjectsToInspect{ss}));
+
+        probeIdx = contains(probeSNAll,probes(pp));
+        subAndProbeIdx = find(subjectIdx & probeIdx);
+        recLocGood = recLocAll(subAndProbeIdx);
+        fullProbeScanSpec = cellfun(@(x) [subjectsToInspect{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
+
+        recLoc = unique(recLocGood);
+        for rr = 1:numel(recLoc)
+            recIdx = find(strcmp(recLocAll,recLoc{rr}));
+            for bb = 1:numel(dayBins)-1
+                days2LookAt = days(recIdx) > dayBins(bb) & days(recIdx) < dayBins(bb+1);
+                qm_av{ss}{pp}(rr,bb) = nanmean(cnt(recIdx(days2LookAt)));
+            end
+        end
+    end
+end
+
+figure;
+hold all
+av = [];
+for ss = 1:numel(subjectsToInspect)
+    subjectIdx = contains(subjectsAll,subjectsToInspect(ss));
+    probes = unique(probeSNAll(subjectIdx));
+    colAniToInspect = colAni(ismember(subjects,subjectsToInspect(ss)),:);
+    for pp = 1:numel(probes)
+        av = cat(2, av, nanmean(qm_av{ss}{pp},1)');
+        plot((1:size(av,1))+0.5,nanmean(qm_av{ss}{pp},1),'color',[.5 .5 .5])
+    end
+end
+nonnanNr = sum(~isnan(av),2);
+h = errorbar((1:size(av,1))+0.5,nanmean(av,2),2*nanstd(av,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
+h.LineWidth = 2;
+xlim([1,numel(dayBins)])
+set(gca,'XTick',1:numel(dayBins),'XTickLabel',num2str(dayBins'))
+% ylabel('P(track)')
+offsetAxes
+ylabel('Recorded units')
+xlabel('Days from implantation')
 
 %% BU
 

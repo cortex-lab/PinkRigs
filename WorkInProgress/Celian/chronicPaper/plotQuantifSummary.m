@@ -36,16 +36,16 @@ function lme = plotSummary(quantVar, subj, useNum, probeInfo, exSubj, quantVarSt
     
     % Mixed effects linear models
     T = struct();
-    T.slope = quantVec;
+    T.quant = quantVec;
     T.probeID = probesVec;
     T.APpos = APpos';
     T.MLpos = abs(MLpos)';
     T.uses = uses;
     T = struct2table(T);
     fnames = T.Properties.VariableNames; 
-    fnames(contains(fnames,'slope')) = [];
+    fnames(contains(fnames,'quant')) = [];
     fnames(contains(fnames,'probeID')) = [];
-    formula = 'slope ~ 1+';
+    formula = 'quant ~ 1+';
     for ff = 1:numel(fnames)
         formula = [formula fnames{ff} '+'];
     end
@@ -93,7 +93,7 @@ function lme = plotSummary(quantVar, subj, useNum, probeInfo, exSubj, quantVarSt
     h = histogram(y(idx),linspace(min(y),max(y),20),'orientation','horizontal','EdgeColor','none','FaceColor',[.5 .5 .5]);
     linkaxes(ax,'y')
     
-    % plot slope as a function of AP position
+    % plot quant as a function of AP position
     figure('Position',[680   728   200   180]); hold all
     x = APpos;
     y = quantVec;
@@ -117,7 +117,7 @@ function lme = plotSummary(quantVar, subj, useNum, probeInfo, exSubj, quantVarSt
     % ylim([-30 10])
     offsetAxes
     
-    % Plot slope as a function of uses
+    % Plot quant as a function of uses
     figure('Position',[680   728   200   180]); hold all
     x = uses;
     y = quantVec;
