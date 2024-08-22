@@ -2074,13 +2074,13 @@ def batch_process_facemap(output_format='flat', sessions=None,
                 num_videos_ran += 1
                 # run_facemap(video_fpath)
 
-                # finished processing, and so rename the text file to processed
-                e = datetime.datetime.now()
-                dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
-                processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
-                os.rename(processing_facemap_txt_file, processed_txt_file_name)
-
                 if write_to_log:
+                    # finished processing, and so rename the text file to processed (on server)
+                    e = datetime.datetime.now()
+                    dt_string = e.strftime("%Y-%m-%d-%H-%M-%S")
+                    processed_txt_file_name = os.path.join(exp_folder, '%s_%s_processed.txt' % (dt_string, video_fov))
+                    os.rename(processing_facemap_txt_file, processed_txt_file_name)
+                    # Write log to local computer
                     log_file_paths = glob.glob(os.path.join('C:/autoRunLog', '*.txt'))
                     log_file_path = natsort.natsorted(log_file_paths)[-1]
                     with open(log_file_path, 'a') as f:
