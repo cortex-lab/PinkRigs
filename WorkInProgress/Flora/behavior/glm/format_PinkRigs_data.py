@@ -5,30 +5,56 @@ import numpy as np
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 
-from Admin.csv_queryExp import queryCSV,simplify_recdat
-from loaders import load_rec_df,load_params
+from Admin.csv_queryExp import simplify_recdat
+from loaders import load_params
 from predChoice import format_av_trials
 # this queries the csv for possible recordings 
 
-potential_sessions = queryCSV(
-    subject = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034'],
-    expDate= 'postImplant',
-    expDef='multiSpaceWorld',
-    checkEvents='1',
-    checkSpikes='1'
-)
+sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Analysis.pyutils.loaders import call_neural_dat
 
-# we then load the acutal data and apply metrics to keep only certain sessions both on the behavioural performance
-# and the neural data 
 
-my_ROI = 'SCs'
-paramset_name = 'poststim'
-
+my_ROI = 'MOs'
+paramset_name = 'choice'
 params = load_params(paramset=paramset_name)
-# here the paramset is only used beecause the 
-selected_sessions = load_rec_df(expList = potential_sessions,brain_area=my_ROI,paramset=paramset_name) 
+savepath = Path(r'D:\LogRegression\%s_%s' % (my_ROI,paramset_name))
+selected_sessions = call_neural_dat(
+                            subject_set='forebrain',
+                            dataset_type='active',
+                             spikeToInclde=True,
+                             camToInclude=False,
+                             recompute_data_selection=True,
+                             unwrap_probes= False,
+                             merge_probes=True,
+                             filter_unique_shank_positions = False,
+                             region_selection={'region_name':my_ROI,
+                                                'framework':'Beryl',
+                                                'min_fraction':20,
+                                                'goodOnly':True,
+                                                'min_spike_num':300},
+                             min_rt=params['post_time'],
+                             analysis_folder = savepath
+                             )
+
+# %%
+for _,rec in selected_sessions.iterrows():
+    ev,spk,clusInfo,_,cam = simplify_recdat(rec,probe='probe')
+    goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym==my_ROI)]._av_IDs.values
+    selected_sessions['neuronNo'] = goodclusIDs.size
+
+#
+# Group by 'subject' and aggregate
+result = selected_sessions.groupby('subject').agg(
+    session_count=('subject', 'size'),  # Count the number of rows per subject
+    neuron_sum=('neuronNo', 'sum')  # Sum the 'neuronNo' values per subject
+).reset_index()
+
+print(result)
+
 #%%
 #rec = selected_sessions.iloc[0]
+savepath = savepath / 'formatted'
+
 for _,rec in selected_sessions.iterrows():
     ev,spk,clusInfo,_,cam = simplify_recdat(rec,probe='probe')
     goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym==my_ROI)]._av_IDs.values
@@ -62,8 +88,6 @@ for _,rec in selected_sessions.iterrows():
     y = trials['choice']
     stratifyIDs = trials['trialtype_id']
 
-    savepath = r'D:\LogRegression' 
-    savepath = savepath + '/%s_%s' % (my_ROI,paramset_name)
     savepath = Path(savepath)
     savepath.mkdir(parents=False,exist_ok=True)
 

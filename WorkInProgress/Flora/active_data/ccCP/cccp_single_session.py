@@ -12,10 +12,9 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Analysis.neural.src.cccp import cccp,get_default_set
 
 pars = get_default_set(which='single_bin',t_length=0.2,t_bin=0.005)
-
 # loading
-mname = 'FT031'
-expDate = '2021-12-05'
+mname = 'AV009'
+expDate = '2022-03-03'
 probe = 'probe0'
 sess='multiSpaceWorld'
 

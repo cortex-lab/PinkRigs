@@ -4,80 +4,102 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
+from Admin.csv_queryExp import load_data,format_cluster_data
 from Analysis.pyutils.io import save_dict_to_json,get_subfolders
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.neural.utils.data_manager import load_cluster_info
 from Analysis.neural.src.kernel_model import kernel_model
 from kernel_params import get_params
 
-def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'whoKnows',fit_tag = 'additive-fit',**param_tags): 
+def fit_and_save(recordings,recompute=True,savepath=None,dataset_name = 'active',fit_tag = 'additive-fit',**param_tags): 
     """
     queryCSV based fitting procedure. 
 
     Parameters:
-
+    recordings : DataFrame
+        A DataFrame containing information about the recordings to be processed.
+    recompute : bool, optional
+        If True, recompute the fits even if they already exist (default is True).
+    savepath : str or Path, optional
+        Path where the results will be saved. If None, a default path is used (default is None).
+    dataset_name : str, optional
+        Name of the dataset (default is 'active'). Used to identify the dataset in saving folders.
+    fit_tag : str, optional
+        Tag used to identify the fitting method (default is 'additive-fit').
+    **param_tags : dict
+        Additional parameters passed to get_params function from kernel params.
     """
+
+    # If no save path is provided, use a default location.
 
     if savepath is None: 
         interim_data_folder = Path(r'C:\Users\Flora\Documents\ProcessedData\Audiovisual')
         save_path = interim_data_folder / dataset_name / 'kernel_model' / fit_tag
         save_path.mkdir(parents=True,exist_ok=True)
 
-    failed_recs = []
-    for _,rec_info in recordings.iterrows():
+    failed_recs = [] # List to keep track of failed recordings.
+
+
+    # Iterate over each recording in the provided DataFrame that should be in a queryCSV format
+    for _, rec_info in recordings.iterrows():
+        # Create a unique identifier (nametag) for each recording based on its information.
         nametag = '%(subject)s_%(expDate)s_%(expNum)s_%(probeID)s' % rec_info
         print('Now attempting to fit %s' % nametag)
 
         try:  
-            curr_save_path  = save_path / nametag
+            curr_save_path = save_path / nametag  # Set the save path for the current recording.
 
+            # Check if the directory already exists or if recomputation is requested.
             if not curr_save_path.is_dir() or recompute:
                 
-                # remove if the folder already exists
+                # If the directory exists and recomputation is required, remove the existing directory.
                 if curr_save_path.is_dir():
                     shutil.rmtree(curr_save_path)
                 
-                curr_save_path.mkdir(parents=True,exist_ok=True)
+                curr_save_path.mkdir(parents=True, exist_ok=True)  # Create the directory.
+                
+                # Initialize the kernel model. Reinitializing helps avoid issues with accumulating values in previous fits.
+                kernels = kernel_model(t_bin=0.005, smoothing=0.025)
+                dat_params, fit_params, eval_params = get_params(**param_tags)  # Get parameters for the fitting process.
 
-                # since kernels is a class, I think it is safer to recall it after each fit... I think that is why -1000 kept accumulating in dat_params, for example
-                kernels = kernel_model(t_bin=0.005,smoothing=0.025)
-                dat_params,fit_params,eval_params = get_params(**param_tags)
-                if hasattr(rec_info,'probe'):
-                    kernels.load_and_format_data(rec=rec_info,**dat_params)
+                # Load and format the data based on the recording information.
+                if hasattr(rec_info, 'probe'):
+                    kernels.load_and_format_data(rec=rec_info, **dat_params)
                 else:
-                    kernels.load_and_format_data(**dat_params,**rec_info)
+                    kernels.load_and_format_data(**dat_params, **rec_info)
 
+                # Fit the model to the data.
                 kernels.fit(**fit_params)
+                
+                # Evaluate the fit and calculate the variance explained.
                 variance_explained = kernels.evaluate(**eval_params)
 
+                # Save the variance explained to a CSV file.
+                variance_explained.to_csv((curr_save_path / 'variance_explained_batchKernel.csv'))
 
-                # save all the results
-                variance_explained.to_csv((curr_save_path / ('variance_explained_batchKernel.csv')))
+                # Calculate the kernels and save them as .npy files.
                 my_kernels = kernels.calculate_kernels()
-
                 for k in my_kernels.keys():
-                    np.save(
-                        (curr_save_path / ('%s.npy' % k)), 
-                        my_kernels[k]
-                    )
+                    np.save((curr_save_path / ('%s.npy' % k)), my_kernels[k])
                 
-                np.save(
-                    (curr_save_path / 'clusIDs.npy'), 
-                    kernels.clusIDs
-                )
+                # Save the cluster IDs used in the model.
+                np.save((curr_save_path / 'clusIDs.npy'), kernels.clusIDs)
 
         except:
+            # If any exception occurs, report the failure and add the recording info to the failed list.
             print('Failed to fit %s' % nametag)
-            failed_recs.append(rec_info)
+            failed_recs.append(rec_info[['subject', 'expDate', 'expNum','probeID']])
 
+    # Convert the list of failed recordings to a DataFrame.
+    failed_recs = pd.DataFrame(failed_recs, columns=['subject', 'expDate', 'expNum','probeID'])
 
-    failed_recs = pd.DataFrame(failed_recs,columns = ['subject','expDate','expNum','probe'])
-
+    # Save the failed recordings to a CSV file.
     failed_recs.to_csv((save_path / 'failed_to_fit.csv'))    
-    # save the parameters of fitting
-    save_dict_to_json(dat_params,save_path / 'dat_params.json')
-    save_dict_to_json(fit_params,save_path / 'fit_params.json')
-    save_dict_to_json(eval_params,save_path / 'eval_params.json')
+    
+    # Save the parameters used for fitting as JSON files.
+    save_dict_to_json(dat_params, save_path / 'dat_params.json')
+    save_dict_to_json(fit_params, save_path / 'fit_params.json')
+    save_dict_to_json(eval_params, save_path / 'eval_params.json')
 
 
 
@@ -113,7 +135,14 @@ def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=
     for _,rec_info in dat_keys.iterrows():
         # get generic info on clusters 
         print(*rec_info)
-        clusInfo = load_cluster_info(**rec_info)
+
+        data_dict = {
+            rec_info.probe:{'clusters':'all','spikes':'clusters'}}
+        recording = load_data(data_name_dict=data_dict,**rec_info[['subject','expDate','expNum']])   
+        rec = recording.iloc[0]
+
+        clusInfo = format_cluster_data(rec[rec_info.probe].clusters)
+
         nametag = '%s_%s_%s_%s' % tuple(rec_info)        
         current_folder = save_path / nametag
 
@@ -175,3 +204,7 @@ def load_VE_per_cluster(dataset_name,fit_tag,unite_aud=True,interim_data_folder=
     clusInfo = pd.concat(all_dfs,axis=0)   
 
     return clusInfo
+
+
+def write_summary_data(): 
+    pass

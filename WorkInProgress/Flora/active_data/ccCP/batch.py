@@ -1,14 +1,60 @@
 # %%
 import sys
+from pathlib import Path
 import numpy as np 
 import matplotlib.pyplot as plt 
 
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from loaders import load_for_ccCP
-recordings = load_for_ccCP(recompute_data_selection=True)
+from Analysis.pyutils.loaders import call_neural_dat
 
+recordings = call_neural_dat(subject_set='AV015',
+                             dataset_type='active',
+                             spikeToInclde=True,
+                             camToInclude=False,
+                             recompute_data_selection=True,
+                             unwrap_probes= True,
+                             merge_probes=False,
+                             region_selection=None,
+                             filter_unique_shank_positions = False,
+                             analysis_folder = Path(r'D:\forebrain'))
+
+#recordings = load_for_ccCP(recompute_data_selection=True)
 
 #%%
+
+from Admin.csv_queryExp import simplify_recdat,get_subregions
+neuronNo,SCcount = [],[]
+for _,rec in recordings.iterrows():
+    ev,spk,clusInfo,_,cam = simplify_recdat(rec,probe='probe')
+    goodclusIDs = clusInfo[(clusInfo.is_good)]._av_IDs.values
+    clusInfo['Beryl'] = get_subregions(clusInfo.brainLocationAcronyms_ccf_2017.values,mode='Beryl')
+    clusInfo['is_SC'] = [('SC' in c.Beryl) for _,c in clusInfo.iterrows()]
+    
+    neuronNo.append(clusInfo.is_good.sum())
+    SCcount.append(np.sum((clusInfo.is_good & clusInfo.is_SC)))
+
+    #print(rec.expFolder,('void' ==clusInfo['Beryl']).all())
+
+recordings['neuronNo'] = neuronNo
+recordings['SCcount'] = SCcount
+# Group by 'subject' and aggregate
+result = recordings.groupby('subject').agg(
+    session_count=('subject', 'size'),  # Count the number of rows per subject
+    neuron_sum=('neuronNo', 'sum'),
+    SC_sum=('SCcount', 'sum')  #         um the 'neuronNo' values per subject
+).reset_index()
+
+unique_exp_folders = recordings.groupby('subject')['expFolder'].nunique().reset_index()
+unique_exp_folders.columns = ['subject', 'unique_expFolder_count']
+
+
+print('sessions:', result.session_count.sum(),
+      ', tot_neurons:', result.neuron_sum.sum(),
+      ', SC neurons', result.SC_sum.sum()
+      )
+
+
+ #%%
 from Analysis.neural.src.cccp import cccp,get_default_set
 
 pars = get_default_set(which='single_bin')
@@ -59,7 +105,7 @@ regions = goodClus.Beryl.values
 regions = regions[(regions!='void') & (regions!='root')]   
 
 unique_regions, counts = np.unique(regions, return_counts=True)
-thr=50
+thr=0
 kept_regions = unique_regions[counts > thr]
 indices_to_keep = np.isin(goodClus.Beryl.values, kept_regions)
 
@@ -161,7 +207,7 @@ for i_t,t in enumerate(plot_types):
 
     anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 3600)
     anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_dv.values,s=10,color='grey',alpha=0.2,unilateral=True)
-    anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
+    #anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
 
     ax[0,i_t].set_xlim([-2200,0])
     ax[0,i_t].set_ylim([-7100,-0])
@@ -179,7 +225,7 @@ for i in range(3):
     for z in range(2): 
         ax[z,i+1].set_yticklabels([])
 
-which_figure = 'ccCP_inSC'
+which_figure = 'all_nrns_once_'
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
