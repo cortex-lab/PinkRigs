@@ -1,4 +1,29 @@
 def get_params(call_data=True,call_fit=True,call_eval=True,dataset_type = 'naive'): 
+
+    """
+    Generate parameter dictionaries for data loading, model fitting, and evaluation.
+
+    Parameters:
+    call_data : bool, optional
+        Whether to generate parameters for data loading (default is True).
+    call_fit : bool, optional
+        Whether to generate parameters for model fitting (default is True).
+    call_eval : bool, optional
+        Whether to generate parameters for evaluation (default is True).
+        
+    dataset_type : str, optional
+        Type of dataset to generate parameters for. Options include 'naive', 'passive', and 'active' (default is 'naive').
+
+    Returns:
+    tuple:
+        dat_params : dict or None
+            Parameters for data loading based on the dataset type.
+        fit_params : dict or None
+            Parameters for model fitting.
+        eval_params : dict or Nonea
+            Parameters for evaluation.
+    """
+
     dat_params,fit_params,eval_params = None, None, None 
     if call_data:
         if  dataset_type=='naive':

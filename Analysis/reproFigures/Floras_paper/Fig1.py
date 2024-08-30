@@ -11,11 +11,11 @@ import time
 
 from Analysis.pyutils.batch_data import get_data_bunch
 from Analysis.pyutils.plotting import off_axes,off_topspines
-from Analysis.neural.utils.spike_dat import bombcell_sort_units
+from Admin.csv_queryExp import bombcell_sort_units
+
 dat_type = 'naive-total'
 dat_keys = get_data_bunch(dat_type)
 
-from Admin.csv_queryExp import queryCSV
 
    
 # dat_type = 'AV028_all'

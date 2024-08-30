@@ -8,26 +8,26 @@ from sklearn.metrics import roc_auc_score
 from sklearn.base import BaseEstimator,TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import GridSearchCV,train_test_split
-from sklearn.feature_selection import SelectFromModel,VarianceThreshold
+from sklearn.feature_selection import SelectFromModel,VarianceThreshold,SequentialFeatureSelector
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 
 
 
-def load_csvs():
-    '''
-    default csv loaders
+# def load_csvs():
+#     '''
+#     default csv loaders
 
-    '''
-    pass 
+#     '''
+#     pass 
 
 
-def gamma_transform(X,gamma=1):
-    X_transformed = X.copy()
-    for column_name,_ in X.items():
-        if 'vis' in column_name:
-            X_transformed[column_name]**=gamma
-    return X_transformed
+# def gamma_transform(X,gamma=1):
+#     X_transformed = X.copy()
+#     for column_name,_ in X.items():
+#         if 'vis' in column_name:
+#             X_transformed[column_name]**=gamma
+#     return X_transformed
 
 
 def get_stimDiffs(X):
@@ -531,17 +531,29 @@ class PowerTransformer(BaseEstimator, TransformerMixin):
         return self.feature_names_in_ if input_features is None else input_features
 
 
-def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False):
+def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False,neuron_selector='lasso'):
 
-    neural_transformer = Pipeline([
-        ('variance_thr',VarianceThreshold(threshold=0.001)),
-        ('lasso',SelectFromModel(LogisticRegression(
-            penalty='l1',solver='liblinear'),threshold=0.2))
-        ])
+    if neuron_selector=='lasso':
+        neural_transformer = Pipeline([
+            ('variance_thr',VarianceThreshold(threshold=0.001)),
+            ('lasso',SelectFromModel(LogisticRegression(
+                penalty='l1',solver='liblinear'),threshold=0.2))
+            ])
+    elif neuron_selector=='sfs':
+
+        neural_transformer = Pipeline([
+            ('variance_thr',VarianceThreshold(threshold=0.001)),
+            ('sfs', SequentialFeatureSelector(
+                    estimator=LogisticRegression(),
+                    n_features_to_select='auto',
+                    tol=  0.01,  
+                    direction='forward'))  # 'forward' or 'backward') 
+            ])        
 
     neural_predictors = [c for c,_ in X.items() if 'neuron' in c]
     is_neural_predictor = np.isin(X.columns,neural_predictors)
-    is_vis_predictor = np.isin(X.columns,['visL','visR'])
+
+    is_vis_predictor = np.isin(X.columns,['visL','visR','visR_opto', 'visL_opto'])
     
     combined_transformer = ColumnTransformer(
         [
@@ -570,7 +582,11 @@ def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False):
             param_grid['feature_selector__vis__power'] = np.round(np.arange(0.1,2,0.1),2)
         
         if gridCV_neur:
-            param_grid['feature_selector__neural__lasso__threshold'] = [0.01,0.05,0.1,0.2,0.3,0.5,1]
+            if neuron_selector=='lasso':
+                param_grid['feature_selector__neural__lasso__threshold'] = [0.01,0.05,0.1,0.2,0.3,0.5,1]
+            if neuron_selector=='sfs':
+                param_grid['feature_selector__neural__sfs__tol'] = [0.001,0.01,0.05,0.1,0.2]
+
 
 
         grid_search = GridSearchCV(pipeline, param_grid, cv=5,scoring='neg_log_loss')
@@ -614,6 +630,8 @@ def get_weights(model,return_dropped_preds=True):
     return all_parameters
 
 
+# 
+
 def fit_stim_vs_neur_models(trials,
                             plot_odds=False,
                             plot_odds_neural = False,
@@ -656,7 +674,8 @@ def fit_stim_vs_neur_models(trials,
                             y_train,
                             power = params['stim']['hyperparameters']['feature_selector__vis__power'], 
                             gridCV_vis=False,
-                            gridCV_neur=True
+                            gridCV_neur=True, 
+                            neuron_selector='sfs'
                             )
 
     params['all'] = get_weights(models['all'],

@@ -10,56 +10,56 @@ from Admin.csv_queryExp import Bunch,format_events
 
 def postactive(ev):  
 
-        active_session =  hasattr(ev,'timeline_choiceMoveDir')  
+        active_session = hasattr(ev, 'timeline_choiceMoveDir') 
 
-        blank_times = ev.block_stimOn[ev.is_blankTrial==1]
+        blank_times = ev.block_stimOn[ev.is_blankTrial == 1]
 
-        timepoints_blanks=xr.DataArray(blank_times[:,np.newaxis],
-                                dims=('trials','timeID'),
+        timepoints_blanks = xr.DataArray(blank_times[:, np.newaxis],
+                                dims=('trials', 'timeID'),
                                 coords={'timeID':['ontimes']})
 
 
 
         if active_session: 
-                trial_no =  40       
+                trial_no = 40       
         else: 
                 trial_no = blank_times.size
         
         azimuths_set = np.unique(ev.stim_visAzimuth)
         azimuths_set = azimuths_set[[not np.isnan(elem) for elem in azimuths_set]]
         contrast_set = np.unique(ev.stim_visContrast)
-        contrast_set = contrast_set[contrast_set>0]
+        contrast_set = contrast_set[contrast_set > 0]
         spl_set = np.unique(ev.stim_audAmplitude)
-        spl_set = spl_set[spl_set>0]
+        spl_set = spl_set[spl_set > 0]
 
         # visual
-        myarray=np.zeros((azimuths_set.size,contrast_set.size,trial_no,1))
+        myarray = np.zeros((azimuths_set.size, contrast_set.size, trial_no, 1))
 
-        for i,myazi in enumerate(azimuths_set):
-                for j,myContrast in enumerate(contrast_set):
-                        ix=np.where((ev.is_visualTrial==1) & 
-                                (ev.stim_visAzimuth==myazi) &
-                                (ev.stim_visContrast==myContrast)
-                                )[0] 
+        for i, myazi in enumerate(azimuths_set):
+                for j, myContrast in enumerate(contrast_set):
+                        ix = np.where((ev.is_visualTrial == 1) & 
+                                (ev.stim_visAzimuth == myazi) &
+                                (ev.stim_visContrast == myContrast)
+                                )[0]
                         timepoints = ev.timeline_visPeriodOn[ix]
-                        if timepoints.size!=trial_no: 
-                            timepoints = np.append(timepoints,np.empty((trial_no-timepoints.size))*np.nan)
+                        if timepoints.size != trial_no:
+                               timepoints = np.append(timepoints, np.empty((trial_no-timepoints.size))*np.nan)
    
                         try: 
-                                myarray[i,j,:,0]=timepoints
+                                myarray[i, j, :, 0]=timepoints
                         except ValueError: 
                                 print('%.2f deg azimuth, %.2f Contrast combination does not exist' % (myazi,myContrast))
 
 
 
-                timepoints_visual=xr.DataArray(myarray,
-                                dims=('azimuths','contrast','trials','timeID'),
+                timepoints_visual = xr.DataArray(myarray,
+                                dims=('azimuths', 'contrast', 'trials', 'timeID'),
                                 coords={'azimuths':azimuths_set,
                                         'contrast':contrast_set,
                                         'timeID':['ontimes']})
 
         # auditory
-        myarray=np.zeros((azimuths_set.size,spl_set.size,trial_no,1))
+        myarray = np.zeros((azimuths_set.size, spl_set.size, trial_no, 1))
         for i,myazi in enumerate(azimuths_set):
                 for j,mySPL in enumerate(spl_set):
                         ix=np.where((ev.is_auditoryTrial==1) & 
@@ -86,9 +86,9 @@ def postactive(ev):
                                 for l,mySPL in enumerate(spl_set):
                                         ix=np.where(((ev.is_coherentTrial==1) | 
                                                         (ev.is_conflictTrial==1)) & 
-                                                        (ev.stim_visAzimuth ==myaziVIS) &
-                                                        (ev.stim_audAzimuth==myaziAUD) &
-                                                        (ev.stim_audAmplitude==mySPL) &
+                                                        (ev.stim_visAzimuth == myaziVIS) &
+                                                        (ev.stim_audAzimuth == myaziAUD) &
+                                                        (ev.stim_audAmplitude == mySPL) &
                                                         (ev.stim_visContrast == myContrast)
                                                         )[0]
 

@@ -12,56 +12,49 @@ import matplotlib.pyplot as plt
 
 # my specialised functions
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Analysis.pyutils.plotting import off_axes,off_topspines,brainrender_scattermap
-from Admin.csv_queryExp import bombcell_sort_units,get_subregions
+from Analysis.pyutils.plotting import off_axes,off_topspines, brainrender_scattermap
 from Analysis.neural.utils.spike_dat import anatomy_plotter
 from kernel_utils import load_VE_per_cluster
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 
-dataset = 'postactive'
+dataset = 'active'
 fit_tag = 'additive-fit'
-clusInfo = load_VE_per_cluster(dataset,fit_tag)
-#%%
-clusInfo['bc_class'] = bombcell_sort_units(clusInfo,min_spike_num=300,min_amp=20)
-clusInfo['is_good'] =clusInfo.bc_class=='good'
+clusInfo = load_VE_per_cluster(dataset, fit_tag)
+clusInfo['is_SC'] = np.array(['SC' in r for r in clusInfo.BerylAcronym])
 
-clusInfo['Beryl'] = get_subregions(clusInfo.brainLocationAcronyms_ccf_2017,mode='Beryl')
-clusInfo['Cosmos'] = get_subregions(clusInfo.brainLocationAcronyms_ccf_2017,mode='Cosmos')
-
-clusInfo['is_SC'] = np.array(['SC' in r for r in clusInfo.Beryl])
 
 allen_pos_apdvml = clusInfo[['ap','dv','ml']].values
-allen_pos_apdvml= add_gauss_to_apdvml(allen_pos_apdvml,ml=80,ap=80,dv=0)
-clusInfo['gauss_ap'] = allen_pos_apdvml[:,0]
-clusInfo['gauss_dv'] = allen_pos_apdvml[:,1]
-clusInfo['gauss_ml'] = allen_pos_apdvml[:,2]
+allen_pos_apdvml = add_gauss_to_apdvml(allen_pos_apdvml, ml=80, ap=80, dv=0)
+clusInfo['gauss_ap'] = allen_pos_apdvml[:, 0]
+clusInfo['gauss_dv'] = allen_pos_apdvml[:, 1]
+clusInfo['gauss_ml'] = allen_pos_apdvml[:, 2]
 
 
 #%% plot the fraction of good clusters/area
 
-if dataset=='active':
-    plot_types  = ['vis','aud','aud_dir','move_kernel_dir','motionEnergy']
+if dataset == 'active':
+    plot_types = ['vis', 'aud', 'aud_dir', 'move_kernel_dir', 'motionEnergy']
 else: 
-    plot_types =  ['vis','aud','motionEnergy']
+    plot_types = ['vis', 'aud', 'motionEnergy']
 
 kernel_thr = 0.02
-for i_t,t in enumerate(plot_types):    
+for i_t, t in enumerate(plot_types):    
     n = 'is_%s' % t
-    clusInfo[n] = clusInfo['kernelVE_%s' % t]>kernel_thr
+    clusInfo[n] = clusInfo['kernelVE_%s' % t] > kernel_thr
 
 # %%
 goodClus = clusInfo[clusInfo.is_good]
-gSC = clusInfo[(clusInfo.bc_class=='good') & (clusInfo.is_SC)]
+gSC = clusInfo[(clusInfo.bombcell_class =='good') & (clusInfo.is_SC)]
 
 
 #plot_types = ['is_aud','is_vis','is_choice','is_choice_prestim']
-regions = goodClus.Beryl.values
-regions = regions[(regions!='void') & (regions!='root')]   
+regions = goodClus.BerylAcronym.values
+regions = regions[(regions !='void') & (regions !='root')]   
 
 unique_regions, counts = np.unique(regions, return_counts=True)
-thr=50
+thr = 30
 kept_regions = unique_regions[counts > thr]
-indices_to_keep = np.isin(goodClus.Beryl.values, kept_regions)
+indices_to_keep = np.isin(goodClus.BerylAcronym.values, kept_regions)
 
 goodClus = goodClus[indices_to_keep]
 nGood = goodClus.shape[0]
@@ -69,12 +62,12 @@ print('%.0f good neurons' % nGood)
 
 # make a plot of the distribution of nerons
 
-fig,ax = plt.subplots(1,1,figsize=(5,5))
+fig, ax = plt.subplots(1,1,figsize = (5,5))
                       
-tot_counts = goodClus.groupby('Beryl')['is_good'].sum()
+tot_counts = goodClus.groupby('BerylAcronym')['is_good'].sum()
 
 # Plotting
-tot_counts.plot(kind='barh', color='skyblue',ax=ax)
+tot_counts.plot(kind='barh', color='skyblue', ax=ax)
 
 
 
@@ -82,9 +75,9 @@ tot_counts.plot(kind='barh', color='skyblue',ax=ax)
 from Processing.pyhist.helpers.regions import BrainRegions
 reg = BrainRegions()
 
-all_ROIs = ['VISp','VISpm','RSPv','RSPd','RSPagl',
+all_ROIs = ['VISp', 'VISpm', 'RSPv', 'RSPd', 'RSPagl',
     'POST',
-    'SCs','SCm','PPN','MRN','IC','CUN','PRNr'
+    'SCs', 'SCm', 'PPN', 'MRN', 'IC', 'CUN', 'PRNr'
     
 ]
 
@@ -93,7 +86,7 @@ kernel_thr = 0.02
 fig,ax = plt.subplots(1,len(plot_types),figsize=(1*len(plot_types),3),sharex=True,sharey=True)
 for i_t,t in enumerate(plot_types):    
     n = 'is_%s' % t
-    fraction_good = goodClus.groupby('Beryl')[n].mean()
+    fraction_good = goodClus.groupby('BerylAcronym')[n].mean()
 
     fraction_good_ordered = pd.Series()
     # add the tested areas basically
@@ -112,7 +105,7 @@ for i_t,t in enumerate(plot_types):
     ax[i_t].set_title('%s' % t)
     ax[i_t].set_ylabel('Brain Region')
     ax[i_t].set_xlabel('Fraction')
-    ax[i_t].set_xlim([0,.55])
+    ax[i_t].set_xlim([0,.42])
 
     #ax[i_t].set_xticks(rotation=45)
     #ax[i_t].set_show()
@@ -186,7 +179,7 @@ for i,(xname,yname) in enumerate(combs):
     print(ss.spearmanr(x[isnotnan],y[isnotnan]))
     ax[i].set_title('Spearman r = %.2f' % ss.spearmanr(x[isnotnan],y[isnotnan]).correlation)
     ax[i].set_xlim([-.1,.25])
-    ax[i].set_ylim([-.07,.25])
+    ax[i].set_ylim([-.1,.25])
     ax[i].set_xlabel(xname)
     ax[i].set_ylabel(yname)
     off_topspines(ax[i])
@@ -239,7 +232,7 @@ for i_t,t in enumerate(plot_types):
 
     ax[0,i_t].set_xlim([-2200,0])
     ax[0,i_t].set_ylim([-7100,0])
-    ax[0,i_t].set_title(' %s cells in SC' % t)
+    ax[0,i_t].set_title(' %s' % t)
 
     anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
     anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=5,color='grey',alpha=0.1,unilateral=True)

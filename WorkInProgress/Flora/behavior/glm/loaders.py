@@ -3,12 +3,20 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
-from Admin.csv_queryExp import load_data,Bunch
+from Admin.csv_queryExp import load_data, Bunch
 from Analysis.pyutils.ev_dat import filter_active_trials
 
 
 def load_params(paramset='choice'):
-    if paramset=='choice':
+    """_summary_
+
+    Args:
+        paramset (str, optional): _description_. Defaults to 'choice'.
+
+    Returns:
+        _type_: _description_
+    """
+    if paramset == 'choice':
 
         timing_params = {
             'onset_time':'timeline_choiceMoveOn',
@@ -16,14 +24,14 @@ def load_params(paramset='choice'):
             'post_time':0
         }
 
-    elif paramset=='prestim':
+    elif paramset == 'prestim':
         timing_params = {
             'onset_time':'timeline_audPeriodOn',
             'pre_time':0.15,
             'post_time':0
         }
     
-    elif paramset=='poststim':
+    elif paramset == 'poststim':
         timing_params = {
             'onset_time':'timeline_audPeriodOn',
             'pre_time':0,

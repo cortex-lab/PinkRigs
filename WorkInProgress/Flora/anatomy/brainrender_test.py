@@ -40,14 +40,22 @@ scene = Scene(title="brain regions", inset=True)
 # Add brain regions
 scene.add_brain_region("SCs",alpha=0.6)
 scene.add_brain_region("SCm",alpha=0.6)
-# scene.add_brain_region("MRN",color='lightblue',alpha=0.8)
+scene.add_brain_region("MRN",color='lightblue',alpha=0.8)
 # scene.add_brain_region("PRNr",alpha=0.8)
 
+subject_list = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034']
+subject_list = ['AV007','AV009','AV013','AV015','AV021','AV023']
+
 subjects = [
-    'FT031','FT032','FT035','FT038'
+    'FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034',
+    'AV007','AV009','AV013','AV015','AV021','AV023', 
+    'FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034', 
+
+
     ]
 probes = [
-    'probe0','probe0','probe0','probe0'
+    'probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0',
+    'probe0','probe0','probe0','probe0','probe0','probe0',
     ]
 colors = [
     'red','green','blue','magenta'

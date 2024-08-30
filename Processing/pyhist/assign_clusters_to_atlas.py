@@ -139,7 +139,7 @@ def save_out_cluster_location(one_path,anatmap_paths=None):
         of the ibl_format folders of the anatmap 
     """
     # ibl_format_path
-
+    print(one_path)
     ibl_format_path = open(list(one_path.glob('*.path.*.json'))[0],)
     ibl_format_path = Path(json.load(ibl_format_path))
         
