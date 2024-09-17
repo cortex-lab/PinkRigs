@@ -502,8 +502,8 @@ lme_rms_slope = plotQuantifSummary(rms_slopeMean, rms_subj, rms_useNum, probeInf
 
 %%
 
-% dayBins = [0 2.^(1:6) inf];
-dayBins = [0 10 50 100 inf];
+dayBins = [0 2.^(1:6) inf];
+% dayBins = [0 10 50 100 inf];
 clear qm_av
 for ss = 1:numel(subjectsToInspect)
     subjectIdx = contains(subjectsAll,subjectsToInspect(ss));
@@ -517,7 +517,6 @@ for ss = 1:numel(subjectsToInspect)
         probeIdx = contains(probeSNAll,probes(pp));
         subAndProbeIdx = find(subjectIdx & probeIdx);
         recLocGood = recLocAll(subAndProbeIdx);
-        fullProbeScanSpec = cellfun(@(x) [subjectsToInspect{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
 
         recLoc = unique(recLocGood);
         for rr = 1:numel(recLoc)
@@ -530,7 +529,7 @@ for ss = 1:numel(subjectsToInspect)
     end
 end
 
-figure;
+figure('Position', [900 700   300   300]);
 hold all
 av = [];
 for ss = 1:numel(subjectsToInspect)
@@ -549,7 +548,7 @@ xlim([1,numel(dayBins)])
 set(gca,'XTick',1:numel(dayBins),'XTickLabel',num2str(dayBins'))
 % ylabel('P(track)')
 offsetAxes
-ylabel('Recorded units')
+ylabel('Recorded units per bank')
 xlabel('Days from implantation')
 
 %% BU
