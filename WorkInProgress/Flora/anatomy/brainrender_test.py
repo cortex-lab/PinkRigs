@@ -2,6 +2,7 @@
 import glob,sys,itertools
 import pandas as pd
 import numpy as np
+import random
 from pathlib import Path
 pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
 pinkRig_path = Path(pinkRig_path[0])
@@ -40,18 +41,41 @@ scene = Scene(title="brain regions", inset=True)
 # Add brain regions
 scene.add_brain_region("SCs",alpha=0.6)
 scene.add_brain_region("SCm",alpha=0.6)
-# scene.add_brain_region("MRN",color='lightblue',alpha=0.8)
+scene.add_brain_region("MRN",color='lightblue',alpha=0.8)
 # scene.add_brain_region("PRNr",alpha=0.8)
 
+subject_list = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034']
+subject_list = ['AV007','AV009','AV013','AV015','AV021','AV023']
+
 subjects = [
-    'FT031','FT032','FT035','FT038'
+    'FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034',
+    'AV007','AV009','AV013','AV015','AV021','AV023', 
+    'AV008','AV014','AV020','AV025','AV030', 
+    'AV007','AV009','AV013','AV015','AV023', 
+
+
     ]
 probes = [
-    'probe0','probe0','probe0','probe0'
+    'probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0','probe0',
+    'probe0','probe0','probe0','probe0','probe0','probe0',
+    'probe1','probe1','probe1','probe1','probe1',
+    'probe1','probe1','probe1','probe1','probe1',
+
     ]
-colors = [
-    'red','green','blue','magenta'
-    ]
+
+unique_subjects = list(set(subjects))
+
+# Generate unique hex colors for each unique subject
+subject_colors = {subject: "#{:06x}".format(random.randint(0, 0xFFFFFF)) for subject in unique_subjects}
+
+# Assign the same color to 'probe0' and 'probe1'
+probe_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+subject_colors['probe0'] = probe_color
+subject_colors['probe1'] = probe_color
+
+# Generate the final list of colors matching the length of subjects list
+colors = [subject_colors[subject] for subject in subjects]
+
 
 for s,p,c in zip(subjects,probes,colors):
     add_tracks_to_scene(scene,s,probe=p,mycolor=c)

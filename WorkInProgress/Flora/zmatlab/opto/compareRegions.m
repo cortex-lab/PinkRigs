@@ -4,16 +4,47 @@ clc; clear all; close all;
  addpath(genpath('C:\Users\Flora\Documents\Github\2023_CoenSit'));
 
 
-set_type = 'uni';  
+set_type = 'bi';  
 [sites,cortexDat] = loadCortexData(set_type,1); 
 
 % load the opto
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet',sprintf('%s_all',set_type)); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet',sprintf('%s_high',set_type)); 
 %
 sites{4} = 'SC'; 
 allDat = [cortexDat,extracted.data]; 
 
 
+%%
+
+% Desired new order for the sites
+new_order = {'SC','Frontal', 'Vis', 'Parietal'};
+
+% Initialize new data cell array
+new_data = cell(1, 4);
+% Loop through the new order and rearrange the data accordingly
+for i = 1:length(new_order)
+    % Find the index in the original 'sites' cell that matches the current site in 'new_order'
+    idx = find(strcmp(sites, new_order{i}));
+    
+    % Assign the corresponding data to the new data cell
+    new_data{i} = allDat{idx};
+end
+
+% Update the original sites and data with the new order
+sites = new_order';
+allDat = new_data;
+
+
+
+
+
+
+
+
+
+
+
+%%
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits

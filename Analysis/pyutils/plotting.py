@@ -1,14 +1,14 @@
 
+import sys,glob
+from pathlib import Path
+
 import numpy as np 
 import matplotlib.pyplot as plt
 import pandas as pd
-from pathlib import Path
-import sys,glob
 
-pinkRig_path= glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
-if len(pinkRig_path)>0:
-    pinkRig_path = Path(pinkRig_path[0])
-    sys.path.insert(0, (pinkRig_path.__str__()))
+pinkRig_path = glob.glob(r'C:\Users\*\Documents\Github\PinkRigs')
+if pinkRig_path:
+    sys.path.insert(0, Path(pinkRig_path[0]).as_posix())
     
 from Analysis.neural.utils.spike_dat import get_binned_rasters
 from Admin.csv_queryExp import load_data

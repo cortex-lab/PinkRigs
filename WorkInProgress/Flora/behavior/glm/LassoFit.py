@@ -1,10 +1,11 @@
 # %%
-
+import datetime
 # generic libs 
 import numpy as np
 import pandas as pd
+
+
 from pathlib import Path 
-import seaborn as sns 
 
 # plotting 
 import matplotlib.pyplot as plt
@@ -15,9 +16,8 @@ from predChoice_utils import fit_stim_vs_neur_models
 
 # my own util funcions
 # data read in
-savepath = Path(r'D:\LogRegression\SCm_prestim')
+savepath = Path(r'D:\LogRegression\CP_choice\formatted')
 all_files = list(savepath.glob('*.csv'))
-
 logLosses,llall,llstim,subjects,nTrials,nNeur,nNeur_used,pCorrect,initBias,kappas,betas = [],[], [],[],[],[],[],[],[],[],[]
 for idx,rec in enumerate(all_files):
     trials = pd.read_csv(rec)
@@ -26,7 +26,7 @@ for idx,rec in enumerate(all_files):
 
     results  = fit_stim_vs_neur_models(trials,
                             plot_odds=False,
-                            plot_odds_neural = True,
+                            plot_odds_neural = False,
                             plot_AUCs=False,
                             plot_neur_weights=False,
                             plot_stim_weights=False)
@@ -47,34 +47,9 @@ for idx,rec in enumerate(all_files):
     nNeur_used.append(np.sum(results['params']['all']['weights'].values!=0)-4)
     pCorrect.append(np.mean(trials.feedback==1))
     initBias.append(results['params']['stim']['bias'])
-    kappas.append(np.array(results['kappas']).reshape(-1,1))
-    betas.append(np.array(results['betas']).reshape(-1,1))
-#%%
-kappas = np.concatenate(kappas,axis=1)
-betas = np.concatenate(betas,axis=1)
+    # kappas.append(np.array(results['kappas']).reshape(-1,1))
+    # betas.append(np.array(results['betas']).reshape(-1,1))
 
-# %%
-fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
-ax[0].plot(kappas[0,:],kappas[1,:],'x',color='magenta')
-ax[0].axline([0,0],[2,2],color='k')
-ax[0].set_title('kappas')
-ax[0].set_xlabel('neg bin')
-ax[0].set_ylabel('pos bin')
-
-
-
-ax[1].plot(betas[0,:],betas[1,:],'x',color='magenta')
-ax[1].axline([-2,-2],[2,2],color='k')
-ax[1].set_title('betas')
-ax[1].set_xlabel('neg bin')
-ax[1].set_ylabel('pos bin')
-
-#%%
-plt.plot(pd.concat(logLosses).T,color='grey')
-plt.plot(pd.concat(logLosses).mean(),color='red')
-plt.axhline(0,color='k',linestyle='--')
-plt.ylabel('neglogLoss,all/neglogLoss,stim')
-# %%
 # all the recordings and mice etc.
 
 df = pd.DataFrame({
@@ -91,8 +66,42 @@ df = pd.DataFrame({
 
 })
 
+timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
+fit_result = savepath.parent / ('result_%s.csv' % timestamp)
+df.to_csv(fit_result)
+
+# %%
+
+
+#   #%%
+# kappas = np.concatenate(kappas,axis=1)
+# betas = np.concatenate(betas,axis=1)
+
+# # %%
+# fig,ax = plt.subplots(1,2,figsize=(10,5),sharex=True,sharey=True)
+# ax[0].plot(kappas[0,:],kappas[1,:],'x',color='magenta')
+# ax[0].axline([0,0],[2,2],color='k')
+# ax[0].set_title('kappas')
+# ax[0].set_xlabel('neg bin')
+# ax[0].set_ylabel('pos bin')
+
+
+
+# ax[1].plot(betas[0,:],betas[1,:],'x',color='magenta')
+# ax[1].axline([-2,-2],[2,2],color='k')
+# ax[1].set_title('betas')
+# ax[1].set_xlabel('neg bin')
+# ax[1].set_ylabel('pos bin')
+
+#%%
+plt.plot(pd.concat(logLosses).T,color='grey')
+plt.plot(pd.concat(logLosses).mean(),color='red')
+plt.axhline(0,color='k',linestyle='--')
+plt.ylabel('neglogLoss,all/neglogLoss,stim')
+# %%
 sns.relplot(data=df,x='negLL_stim',y='negLL_all',hue='subject',size='|initBias|')
 plt.axline((0,0),slope=1,color='k',linestyle='--')
+
 
 # %%
 wh = '|initBias|'
