@@ -1,13 +1,14 @@
-UMFiles = {"\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap\AV009\Probe1\IMRO_10\UnitMatch\UnitMatch.mat"};
-% UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables\AV009\19011118541\3\UnitMatch\UnitMatch.mat"};
-% UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables\AV009\19011111281\3\UnitMatch\UnitMatch.mat"};
+% UMFiles = {"\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap\AV009\Probe1\IMRO_10\UnitMatch\UnitMatch.mat"};
+% UMFiles = {"D:\MatchingUnits\Data\UnitMatch\UnitMatch.mat"};
+UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables_paper_oldAssignUIDAlgo\AV009\19011118541\3\UnitMatch\UnitMatch.mat"};
+% UMFiles = {"\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables_paper\AV009\19011118541\3\UnitMatch\UnitMatch.mat"};
 load(UMFiles{1})
 probe = csv.checkProbeUse('AV009');
 
 convertedDays = cell2mat(cellfun(@(x) datenum(x(37:46)), UMparam.KSDir, 'uni', 0)) - datenum(probe.implantDate{1});
 
 %%
-summaryFunctionalPlots(UMFiles,'Corr',1)
+% summaryFunctionalPlots(UMFiles,'Corr',1)
 
 %%
 [unitPresence, unitProbaMatch, days] = summaryMatchingPlots(UMFiles,'UID1',1,0);
@@ -35,8 +36,9 @@ axis tight
 
 UDtoUse = 'UID1';
 UIDuni = unique([MatchTable.(UDtoUse)]);
-rec = [1 5 10 15 20 25];
-%  rec = [1 5 10 15 20 25 27];
+% rec = [1 5 10 15 20 25];
+ rec = [2 5 10 15 19 25 27];
+% rec = [1 5 11 15 21 25 27];
 
 figure;
 imagesc(unitPresence{1}(rec,unitPresence{1}(1,:) == 1)')
@@ -110,30 +112,38 @@ for rr = 1:numel(rec)
     clim([0 0.07])
     if rr == 1; ylabel('ISI'); end
 end
-for cc = 1:numel(cell2plt)
-    text(xloc(unitSortIdx(cell2plt(cc)),rr), yloc(unitSortIdx(cell2plt(cc)),rr),num2str(cc))
-end
 linkaxes(s,'xy')
+if exist('cell2plt','var')
+    subplot(3, numel(rec), 1);
+    for cc = 1:numel(cell2plt)
+        text(xloc(unitSortIdx(cell2plt(cc)),rr), yloc(unitSortIdx(cell2plt(cc)),rr),num2str(cc))
+    end
+end
 
 %% Single cells
 
-cell2plt = [1 23 24];
-% cell2plt = [4 7 8];
-% cell2plt = [15 16];
+% cell2plt = [1 23 24];
+% cell2plt = [1 4 8 11];
+% cell2plt = [9 15 16];
+% cell2plt = [1 2];
+% cell2plt = [1 12 28];
+% cell2plt = [15 18 19];   
+cell2plt = [4 17 23 25];   
 
 figure('Position', [585   638   655   340]);
 % colDays = [linspace(160,24,numel(rec)); linspace(238,128,numel(rec)); linspace(157,100,numel(rec))]'/256;
 colDays = [linspace(0.7,0,numel(rec)); linspace(0.7,0,numel(rec)); linspace(0.7,0,numel(rec))]';
+clear s
 for cc = 1:numel(cell2plt)
     for rr = 1:numel(rec)
-        subplot(2, numel(cell2plt), cc) % Waveforms
+        s1(cc) = subplot(2, numel(cell2plt), cc); % Waveforms
         hold all
         w = wav(:,unitSortIdx(cell2plt(cc)),rr);
-        plot(w - nanmean(w(1:20))-0.3*max(wav(:,unitSortIdx(cell2plt(cc)),1))*rr,'color',colDays(rr,:), 'LineWidth', 2.0)
+        plot(w - nanmean(w(1:20))-20*rr,'color',colDays(rr,:), 'LineWidth', 2.0)
         if rr == numel(rec); makepretty; offsetAxes; end
         if cc == 1 && rr == 1; ylabel('Waveform'); end
 
-        subplot(2, numel(cell2plt), numel(cell2plt)+cc) % ISI
+        s2(cc) = subplot(2, numel(cell2plt), numel(cell2plt)+cc); % ISI
         hold all
         stairs(ISIbins(1:end-1)*1000, isi(:,unitSortIdx(cell2plt(cc)),rr)-0.01*rr,'color',colDays(rr,:), 'LineWidth', 2.0);
         xticks([5 50 500])
@@ -143,18 +153,23 @@ for cc = 1:numel(cell2plt)
         if rr == numel(rec); legend({num2str(convertedDays(rec)')}); set(gca,'XScale','log'); makepretty; end
     end
 end
-
+linkaxes(s1, 'xy')
+linkaxes(s2, 'xy')
 
 %% Summary
 
-subjectList = {'AV008','AV009','AV015','AV021','AV049','CB015','CB016','CB017','CB018','CB020'};
-% subjectList = {'AL031', 'AL032', 'AL036'};
+% subjectList = {'AV008','AV009','AV015','AV021','AV049','CB015','CB016','CB017','CB018','CB020'};
+% % subjectList = {'AL031', 'AL032', 'AL036'};
+% 
+% d = [];
+% for ss = 1:numel(subjectList)
+%     dtmp = dir(fullfile('\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables_paper_oldAssignUIDAlgo\,subjectList{ss},'**','UnitMatch.mat'))
+% %     dtmp = dir(fullfile('\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables\',subjectList{ss},'**','UnitMatch.mat'));
+%     % dtmp = dir(fullfile('\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap',subjectList{ss},'**','UnitMatch.mat'));
+%     d = cat(1, d, dtmp);
+% end
 
-d = [];
-for ss = 1:numel(subjectList)
-    dtmp = dir(fullfile('\\znas.cortexlab.net\Lab\Share\UNITMATCHTABLES_ENNY_CELIAN_JULIE\FullAnimal_KSChanMap',subjectList{ss},'**','UnitMatch.mat'));
-    d = cat(1, d, dtmp);
-end
+d = dir(fullfile('\\znas.cortexlab.net\Lab\Share\Celian\UnitMatch\MatchTables_paper_oldAssignUIDAlgo\','**','UnitMatch.mat'));
 
 UMFiles = cell(1,numel(d));
 clear subj
