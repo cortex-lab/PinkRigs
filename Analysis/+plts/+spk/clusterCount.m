@@ -36,6 +36,8 @@ function [clusterNum, recLocAll, chanMapAll, days, expInfoAll] = clusterCount(va
 
     %% Get the cluster count
 
+    bc_param = bc_qualityParamValuesForUnitMatch;
+
     nn = 1;
     clusterNum = [];
     recLocAll = cell(1,1);
@@ -66,7 +68,7 @@ function [clusterNum, recLocAll, chanMapAll, days, expInfoAll] = clusterCount(va
                 recPath{nn} = alignment.ephys(pp).ephysPath;
                 recLocAll{nn} = [subject '__' num2str(probeSN) '__' num2str(shankIDs) '__' num2str(botRow)];
 
-                attr = {'_av_KSLabels','_av_IDs'};
+                attr = {'_av_KSLabels','_av_IDs', '_bc_qualityMetrics'};
                 if params.getQM{1}
                     attr = cat(2,attr,{'qualityMetrics'});
                 end
@@ -77,8 +79,8 @@ function [clusterNum, recLocAll, chanMapAll, days, expInfoAll] = clusterCount(va
                 expInfoAll{nn} = csv.loadData(expInfo,dataType={sprintf('probe%d',pp-1)}, ...
                     object='clusters', ...
                     attribute=attr);
-                KSLabels = expInfoAll{nn}.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.KSLabels;
-                goodUnits = KSLabels == 2;
+                unitQuality = bc_getQualityUnitType(bc_param,expInfoAll{nn}.dataSpikes{1}.(sprintf('probe%d',pp-1)).clusters.bc_qualityMetrics);
+                goodUnits = ismember(unitQuality, [1 3]);
 
                 % Get cluster count
                 clusterNum = [clusterNum, sum(goodUnits)];
