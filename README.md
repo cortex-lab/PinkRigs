@@ -63,8 +63,6 @@ There are also other processed that are semi-automated:
 - `\Analysis\\+hist\Save_images_run_brainreg.ipynb` automatically runs brainreg. To run, open jupyter notebook in evironment where you installed brainreg. 
 
 ## Manual scripts 
-### Querying a list of experiments (queryExp)
-
 ### Running sorting manually 
 
 ### Running alignment manually 
@@ -75,7 +73,47 @@ There are also other processed that are semi-automated:
 2. Alternatively, if an experiment is worth keeping, but you have checked the errors and you are satisfied that nothing can be done (e.g. you want to keep the behavior even though the flipper wasn't working), please add "AllErrorsValidated.txt" to the experiment folder. (see \\zinu.cortexlab.net\Subjects\FT025\2021-10-06\1 for an example)
 In both cases, please write a few words to explain in the text file. In this way we can continue to keep our csv's tidy, with an accurate reflection of the current state of processing.
 
-## Useful functions
+## Running analysis (Python)
+
+### Querying experiments
+
+You can query experiments using `csv_queryExp`, e.g.:
+```
+from Admin.csv_queryExp import queryCSV
+
+exp = queryCSV(subject='AV043',expDate='2024-03-14:2024-03-24', expDef = 'multiSpaceWorld_checker_training',
+                        checkSpikes='1')
+```
+
+### Loading the data
+
+#### Spikes data
+You can load the spikes data using `load_data`, e.g.:
+```
+from Admin.csv_queryExp import load_data
+
+ephys_dict = {'spikes':'all','clusters':'all'}
+recordings = load_data(data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict},
+                        subject = ['AV043'],expDate='2024-03-14',
+                        expNum='3',
+                        checkSpikes='1',
+                        unwrap_probes=False, merge_probes=False)
+```
+Or using the output of `csv_queryExp`, e.g.:
+```
+load_data(recordings=exp.iloc[0:1], data_name_dict = {'probe0':ephys_dict,'probe1':ephys_dict,'events':{'_av_trials':'all'}})
+```
+
+#### Camera data
+You can load the cam data using `load_data`, e.g.:
+```
+cameras = ['frontCam','sideCam','eyeCam']
+cam_dict = {cam:{'camera':['times','ROIMotionEnergy']} for cam in cameras}
+cam_dict.update({'events':{'_av_trials':['table']}})
+recordings = load_data(data_name_dict=cam_dict,**kwargs,cam_hierarchy=cameras)
+```
+
+## Miscellaneous yet useful functions
 ### When planning an experiment
 #### `plt.recLocation`
 #### `+imro` package
@@ -96,6 +134,3 @@ In both cases, please write a few words to explain in the text file. In this way
 #### `plt.functionGraph`
 #### `checkOrChangePinkRigsFunc`
 Use this function to change the name of a function in the whole repo.
-
-### Performing analysis
-#### `+natim` package
