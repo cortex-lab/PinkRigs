@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 from itertools import product
 
-brain_areas = ['SCs','SCm','MRN','RSPd']
+brain_areas = ['SCs','SCm','MRN','RSPd','CP']
 paramsets = ['prestim','poststim','choice']
 import seaborn as sns 
 from statsmodels.regression.mixed_linear_model import MixedLM
@@ -18,7 +18,7 @@ def load_results(brain_area,paramset):
     set_name = '%s_%s' % (brain_area,paramset)
     savepath= Path(r'D:\LogRegression\%s' % set_name)
 
-    df_path = list(savepath.glob('result_*.csv'))
+    df_path = list(savepath.glob('result_lasso_*.csv'))
     df = pd.read_csv(df_path[-1])
     df['region'] = brain_area
     df['trial_period'] = paramset
@@ -60,6 +60,25 @@ markers = {
   "FT035": ">"   
 }
 
+colors = {
+    'AV005': '#1f77b4',
+    'AV008': '#ff7f0e',
+    'AV014': '#2ca02c',
+    'AV020': '#d62728',
+    'AV025': '#9467bd',
+    'AV030': '#8c564b',
+    'AV034': '#e377c2',
+    'FT030': '#7f7f7f',
+    'FT032': '#bcbd22',
+    'FT035': '#17becf',
+    'AV007': '#9e9e9e',
+    'AV009': '#f7b6d2',
+    'AV013': '#c5b0d5',
+    'AV015': '#c49c94',
+    'AV021': '#e5b6a8',
+    'AV023': '#f8e0a1'
+}
+
 for i_area,area in enumerate(brain_areas):
     for i_set,set in enumerate(paramsets):
         df = logLiks[(logLiks.region==area) & (logLiks.trial_period==set)]
@@ -69,9 +88,9 @@ for i_area,area in enumerate(brain_areas):
         sns.scatterplot(
             data=df,
             x='negLL_stim',y='negLL_all',
-            style='subject',s=100,
-            ax=ax[i_area,i_set],markers=markers,palette='magma_r',
-            legend=True,c='cyan',edgecolor='k'
+            hue='subject',s=50,
+            ax=ax[i_area,i_set],palette=colors,
+            legend=True,edgecolor='k'
             )
 
 
@@ -87,9 +106,9 @@ for i_area,area in enumerate(brain_areas):
         result = model.fit()
         pval = result.pvalues['condition[T.negLL_stim]']
 
-        ax[i_area,i_set].set_title('%.3f' % pval)
+        #ax[i_area,i_set].set_title('%.3f' % pval)
 
-fig.subplots_adjust(hspace=0.5, wspace=0.5)
+fig.subplots_adjust(hspace=0.2, wspace=0.2)
 
 handles, labels = ax[1, 2].get_legend_handles_labels()
 # Remove individual legends

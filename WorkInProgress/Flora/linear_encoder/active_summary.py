@@ -17,7 +17,7 @@ from Analysis.neural.utils.spike_dat import anatomy_plotter
 from kernel_utils import load_VE_per_cluster
 from Processing.pyhist.helpers.util import add_gauss_to_apdvml
 
-dataset = 'active'
+dataset = 'totAV'
 fit_tag = 'additive-fit'
 clusInfo = load_VE_per_cluster(dataset, fit_tag)
 clusInfo['is_SC'] = np.array(['SC' in r for r in clusInfo.BerylAcronym])
@@ -32,7 +32,7 @@ clusInfo['gauss_ml'] = allen_pos_apdvml[:, 2]
 
 #%% plot the fraction of good clusters/area
 
-if dataset == 'active':
+if (dataset == 'active') or (dataset=='forebrain') or (dataset=='totAV'):
     plot_types = ['vis', 'aud', 'aud_dir', 'move_kernel_dir', 'motionEnergy']
 else: 
     plot_types = ['vis', 'aud', 'motionEnergy']
@@ -75,12 +75,15 @@ tot_counts.plot(kind='barh', color='skyblue', ax=ax)
 from Processing.pyhist.helpers.regions import BrainRegions
 reg = BrainRegions()
 
-all_ROIs = ['VISp', 'VISpm', 'RSPv', 'RSPd', 'RSPagl',
-    'POST',
-    'SCs', 'SCm', 'PPN', 'MRN', 'IC', 'CUN', 'PRNr'
+# all_ROIs = ['VISp', 'VISpm', 'RSPv', 'RSPd', 'RSPagl',
+#     'POST',
+#     'SCs', 'SCm', 'PPN', 'MRN', 'IC', 'CUN', 'PRNr', 'MOs','CP'
     
-]
+# ]
 
+all_ROIs = [ 
+    'SCs','SCm','MOs','VISp'
+]
 
 kernel_thr = 0.02
 fig,ax = plt.subplots(1,len(plot_types),figsize=(1*len(plot_types),3),sharex=True,sharey=True)
@@ -105,7 +108,7 @@ for i_t,t in enumerate(plot_types):
     ax[i_t].set_title('%s' % t)
     ax[i_t].set_ylabel('Brain Region')
     ax[i_t].set_xlabel('Fraction')
-    ax[i_t].set_xlim([0,.42])
+    ax[i_t].set_xlim([0,.25])
 
     #ax[i_t].set_xticks(rotation=45)
     #ax[i_t].set_show()
@@ -114,10 +117,13 @@ which_figure = '_kernel_fracts_per_region'
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dataset + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
-plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='png',dpi=600)
 
 
-#%%
+
+from WorkInProgress.Flora.behavior.glm.plot_utils import copy_svg_to_clipboard
+copy_svg_to_clipboard(fig)
+#%%|
 
 # subselectSC only clusters
 # %%
@@ -208,17 +214,17 @@ plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=30
 # %%
 
 
+gg = goodClus[(goodClus.ap>7000) & (goodClus.dv < 3200)]
 
 
 
 
-
-fig, ax = plt.subplots(2,len(plot_types),figsize=(1.5*len(plot_types),7.5),sharex=True,gridspec_kw={'height_ratios': [3,.8] })
+fig, ax = plt.subplots(2,len(plot_types),figsize=(2.2*len(plot_types),5.5),sharex=True,gridspec_kw={'height_ratios': [3,1.5] })
 fig.patch.set_facecolor('xkcd:white')
 colors = ['magenta','lightblue','k','orange']
 for i_t,t in enumerate(plot_types):    
     n = 'is_%s' % t
-    sig = goodClus[goodClus[n]]
+    sig = gg[gg[n]]
     kernel_name = 'kernelVE_%s' % t
 
     x =np.log2(sig[kernel_name])
@@ -227,19 +233,19 @@ for i_t,t in enumerate(plot_types):
     anat = anatomy_plotter()
 
     anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 3600)
-    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_dv.values,s=5,color='grey',alpha=0.1,unilateral=True)
+    anat.plot_points(gg.gauss_ml.values, gg.gauss_dv.values,s=5,color='grey',alpha=0.1,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=dot_colors,alpha=1,edgecolors='k',unilateral=True)
 
     ax[0,i_t].set_xlim([-2200,0])
-    ax[0,i_t].set_ylim([-7100,0])
+    ax[0,i_t].set_ylim([-3100,0])
     ax[0,i_t].set_title(' %s' % t)
 
-    anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
-    anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=5,color='grey',alpha=0.1,unilateral=True)
-    anat.plot_points(sig.gauss_ml.values, sig.gauss_ap.values,s=25,color=dot_colors,alpha=1,edgecolors='k',unilateral=True)
+    # anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
+    # anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=5,color='grey',alpha=0.1,unilateral=True)
+    # anat.plot_points(sig.gauss_ml.values, sig.gauss_ap.values,s=25,color=dot_colors,alpha=1,edgecolors='k',unilateral=True)
 
-    ax[1,i_t].set_xlim([-2200,0])
-    ax[1,i_t].set_ylim([-4850,-2500])
+    # ax[1,i_t].set_xlim([-2200,0])
+    # ax[1,i_t].set_ylim([-4850,-2500])
 
 
 for i in range(len(plot_types)-1):
@@ -250,7 +256,7 @@ which_figure = '_kernels_anatomy'
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dataset + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
-plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+plt.savefig(savename,transparent=False,bbox_inches = "tight",format='png',dpi=300)
 
 
 # %%
@@ -278,7 +284,7 @@ ax.set_xlim([-2200,0])
 ax.set_ylim([-3100,-700])
 
 
-which_figure = '%s_thr%.2f_anatomy'% (kernel_name,thr)
+which_figure = '%s_thr%.2f_anatomy_nobrain'% (kernel_name,thr)
 cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = dataset + which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'

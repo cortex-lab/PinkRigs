@@ -1,10 +1,16 @@
+
+import datetime
+from pathlib import Path 
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt 
 import matplotlib.cm as cm
 import seaborn as sns
+from scipy.stats import zscore
+import itertools
 
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score,log_loss,accuracy_score,balanced_accuracy_score,f1_score
 from sklearn.base import BaseEstimator,TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import GridSearchCV,train_test_split
@@ -12,23 +18,11 @@ from sklearn.feature_selection import SelectFromModel,VarianceThreshold,Sequenti
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 
-
-
-# def load_csvs():
-#     '''
-#     default csv loaders
-
-#     '''
-#     pass 
-
-
-# def gamma_transform(X,gamma=1):
-#     X_transformed = X.copy()
-#     for column_name,_ in X.items():
-#         if 'vis' in column_name:
-#             X_transformed[column_name]**=gamma
-#     return X_transformed
-
+import warnings
+# we ignore the warning that we can't everwrite part of pd.df
+# and also it needs to remain possible that the neural model simply finds no good features, so we suppress that warning
+warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
+warnings.filterwarnings("ignore",message="No features were selected: either the data is too noisy or the selection test too strict")
 
 def get_stimDiffs(X):
     visDiff = X['visL']*-1 + X['visR']
@@ -515,7 +509,6 @@ def plot_neural_psychometric(model,X,y,cmap='coolwarm'):
 
     return kappas,betas
     
-
 class PowerTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, power=2):
         self.power = power
@@ -531,7 +524,7 @@ class PowerTransformer(BaseEstimator, TransformerMixin):
         return self.feature_names_in_ if input_features is None else input_features
 
 
-def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False,neuron_selector='lasso'):
+def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False, neuron_selector='lasso'):
 
     if neuron_selector=='lasso':
         neural_transformer = Pipeline([
@@ -552,7 +545,6 @@ def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False,neuron_selector='la
 
     neural_predictors = [c for c,_ in X.items() if 'neuron' in c]
     is_neural_predictor = np.isin(X.columns,neural_predictors)
-
     is_vis_predictor = np.isin(X.columns,['visL','visR','visR_opto', 'visL_opto'])
     
     combined_transformer = ColumnTransformer(
@@ -565,9 +557,11 @@ def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False,neuron_selector='la
         verbose_feature_names_out= False
     )
 
+    
+
     pipeline = Pipeline([
         ('feature_selector',combined_transformer),
-        ('logistic_regression',LogisticRegression())
+        ('logistic_regression',LogisticRegression(fit_intercept=False))
     ])
 
     if (not gridCV_vis) and (not gridCV_neur):
@@ -588,7 +582,6 @@ def fit_model(X,y,power=1,gridCV_vis=False,gridCV_neur=False,neuron_selector='la
                 param_grid['feature_selector__neural__sfs__tol'] = [0.001,0.01,0.05,0.1,0.2]
 
 
-
         grid_search = GridSearchCV(pipeline, param_grid, cv=5,scoring='neg_log_loss')
         grid_search.fit(X, y)
 
@@ -600,14 +593,11 @@ def get_weights(model,return_dropped_preds=True):
     Used specificalyl for the model constructed above 
     """
 
-    feature_names = model.named_steps['feature_selector'].get_feature_names_out()
-    
-
-
+    feature_names = model.named_steps['feature_selector'].get_feature_names_out()  
     weights = model.named_steps['logistic_regression'].coef_ 
     intercept =  model.named_steps['logistic_regression'].intercept_
 
-
+    assert ('bias' in feature_names) & (intercept[0]==0), 'there is a bias parameter, yet the intercept is not 0 ...'
 
     parameters = pd.DataFrame(weights,columns=feature_names)
 
@@ -622,131 +612,425 @@ def get_weights(model,return_dropped_preds=True):
     # maybe I will change later not to store all the hyperparameters
     all_parameters={
         'weights':parameters, 
-        'bias':intercept[0],
+        'intercept':intercept[0],
         'hyperparameters': model.get_params()
     }
 
     
     return all_parameters
 
+def score_model(scorer_name, y_true, y_pred, **kwargs):
+    """
+    Score a model based on the provided scorer name.
 
+    Parameters:
+    - scorer_name (str): The name of the scorer function.
+    - y_true (array-like): True labels.
+    - y_pred (array-like): Predicted labels or probabilities.
+    - **kwargs: Additional keyword arguments passed to the scorer function.
+
+    Returns:
+    - float: The score computed by the scorer function.
+    """
+    scorers = {
+        'log_loss': log_loss,
+        'accuracy': accuracy_score,
+        'f1_score': f1_score,
+        'balanced_accuracy_score': balanced_accuracy_score, 
+        'roc_auc_score': roc_auc_score
+    }
+
+    if scorer_name not in scorers:
+        raise ValueError(f"Scorer '{scorer_name}' not found. Available scorers are: {list(scorers.keys())}")
+
+    # Get the scorer function
+    scorer_func = scorers[scorer_name]
+
+    # check whether the data contains enough trials
+    # if not we will return nan
+    if np.unique(y_true).size==1:
+        score = np.nan
+    else:
+        score = scorer_func(y_true, y_pred, **kwargs)
+
+
+    return score 
 # 
 
-def fit_stim_vs_neur_models(trials,
-                            plot_odds=False,
-                            plot_odds_neural = False,
-                            plot_AUCs=False,
-                            plot_neur_weights=False,
-                            plot_stim_weights=False):
+def fit_stim_vs_neur_models(trials,neuron_selector_type='sfs'):
     '''
+    Fits models for stimulus, neural data, and both combined, returning a 
+    dictionary of models, parameters, and training/testing datasets.
+
+    Parameters: 
+    trials: DataFrame
+        Data containing predictors and target (choice).  
+
+    neuron_selector_type: str, optional
+        Type of neuron selector to use in fitting models (default is 'sfs').
+
+    Returns:
+        dict
 
     '''
+    # add a bias predictor
+    if 'bias' not in trials.columns:
+        trials['bias'] = 1
+
     stim_predictors = ['visR','visL','audR','audL']
+    bias_predictors = ['bias']
     neural_predictors = [c for c,_ in trials.items() if 'neuron' in c]
-    all_predictors =  stim_predictors + neural_predictors
 
-    # pred_list = ['visR','visL','audR','audL','neuron_142','neuron_1350','neuron_1351','neuron_1335']
+    stim_plus_bias = stim_predictors + bias_predictors
+    neur_plus_bias = neural_predictors + bias_predictors
+    all_predictors =  stim_predictors + neural_predictors + bias_predictors
 
     X = trials[all_predictors]
     y = trials['choice']
-    stratifyIDs = trials['trialtype_id']
-    
-
+    stratifyIDs = trials['trialtype_id'] 
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.5, random_state=1,shuffle=True,stratify=stratifyIDs)
+        X, y, test_size=0.33, random_state=1,shuffle=True,stratify=stratifyIDs) # maybe this is the one to save actually
 
-    # now alernative of sequential fitting
-    X_trains,X_tests,models,params = {},{},{},{}
+    # now we fit a bunch of models with subsetting the features
+    subset_names = ['bias','stim','neur','all']
+    feature_names = [bias_predictors,stim_plus_bias,neur_plus_bias,all_predictors]
 
-    X_trains['stim'],X_tests['stim'] = X_train[stim_predictors],X_test[stim_predictors]
-    X_trains['all'],X_tests['all'] = X_train[all_predictors],X_test[all_predictors]
-
-    models['stim'] = fit_model(X_trains['stim'],
-                            y_train,
-                            gridCV_vis=True,
-                            gridCV_neur=False)
-
-    params['stim'] = get_weights(models['stim'],
-                                return_dropped_preds=True)
-
-    models['all'] = fit_model(X_trains['all'],
-                            y_train,
-                            power = params['stim']['hyperparameters']['feature_selector__vis__power'], 
-                            gridCV_vis=False,
-                            gridCV_neur=True, 
-                            neuron_selector='sfs'
-                            )
-
-    params['all'] = get_weights(models['all'],
-                                return_dropped_preds=True)
+    X_train_subsets = {name:X_train[feature_set] for name,feature_set in zip(subset_names,feature_names)}
+    X_test_subsets = {name:X_test[feature_set] for name,feature_set in zip(subset_names,feature_names)}
 
 
-    # update scores
-    train_scores= {k:models[k].score(X_trains[k],y_train) for k in models.keys()}
-    test_scores= {k:models[k].score(X_tests[k],y_test) for k in models.keys()}
-    test_scores_trial_type = {k:get_scores_per_trialType(models[k],X_tests[k],y_test) for k in models.keys()}
+    # in the fitting procedure we use different, parameters, hence all hardcoded. 
+    models,params = {}, {}
+    # bias only 
+    models['bias'] = fit_model(X_train_subsets['bias'], y_train, gridCV_vis=False,gridCV_neur=False)
+    params['bias'] = get_weights(models['bias'],return_dropped_preds=True)
+
+    # stim only
+    models['stim'] = fit_model(X_train_subsets['stim'], y_train, gridCV_vis=True, gridCV_neur=False)
+    params['stim'] = get_weights(models['stim'],return_dropped_preds=True)
+
+    # neur-only 
+    models['neur'] = fit_model(X_train_subsets['neur'],y_train,gridCV_vis=False, gridCV_neur=True, neuron_selector=neuron_selector_type)
+    params['neur'] = get_weights(models['neur'], return_dropped_preds=True)
+
+    # all model, with the gamma power coming from the stim-only model
+    stim_gamma  = params['stim']['hyperparameters']['feature_selector__vis__power']
+    models['all'] = fit_model(X_train_subsets['all'],y_train, power = stim_gamma, gridCV_vis=False, gridCV_neur=True, neuron_selector=neuron_selector_type)
+    params['all'] = get_weights(models['all'],return_dropped_preds=True)
 
 
-    for k in params.keys():
-        params[k]['weights'].index =[k]
-        test_scores_trial_type[k].index = [k]
+    return {
+        'raw': trials,
+        'models': models,
+        'params': params,
+        'X_train': X_train,  # Full X_train saved once
+        'X_test': X_test, 
+        'X_train_subsets': X_train_subsets,  # Save the subsets once for easy access
+        'X_test_subsets': X_test_subsets,    # Save test subsets as well
+        'y_train': y_train,
+        'y_test': y_test
+    }
 
 
-    if plot_odds:
-        axs = Odds_hists(models,X_tests,cmap='jet')
-        # add the LogLik for each model? 
-        axs[1].set_title('LLstim:%(stim).3f, LLall: %(all).3f' % test_scores)
+
+def get_all_scores(results,
+                 scorers = [ 'log_loss','roc_auc_score'],
+                 per_trial_type=True
+                 ):
+
+    models = results['models']
+    X_trains, X_tests = results['X_train_subsets'], results['X_test_subsets']
+    y_train, y_test = results['y_train'], results['y_test']
+
+    # check dimensions of each input
+    assert len(models)==len(X_trains)==len(X_tests), (
+        'model no. does not match training set number'
+        )
+    assert X_trains['stim'].shape[0]==y_train.size, (
+        'the training set size does not match the predictable vector length'
+        )
+
+    predictions_train = {
+        k:models[k].predict(X_trains[k]) for k in models.keys()
+        }
+    predictions_test = {
+        k:models[k].predict(X_tests[k]) for k in models.keys()
+        }
+    
+    # we compute on training set to assess overfitting 
+    scores_train  = {
+        f'{scorer}_train':{
+            k:score_model(scorer,y_train,predictions_train[k]) 
+            for k in models.keys()
+            } 
+            for scorer in scorers
+        }
+
+    # total score on the test set    
+    scores_test  = {f'{scorer}_test':{
+        k:score_model(scorer,y_test,predictions_test[k]) 
+        for k in models.keys()
+        } 
+        for scorer in scorers
+    }
+    
+    if per_trial_type: 
+        visDiff = results['X_test'].visR - results['X_test'].visL
+        audDiff = results['X_test'].audR - results['X_test'].audL
+
+        trial_types = get_trial_types(visDiff, audDiff)
+        unique_trial_types = np.unique(trial_types)
+
+        # get the scores on specific trial types
+        scores_trial_type =  {
+            (f'{trial_type}_{scorer}'): {
+                k:score_model(
+                    scorer,
+                    y_test[trial_types==trial_type],
+                    predictions_test[k][trial_types==trial_type]
+                    ) 
+                    for k in models.keys()
+                }
+                for trial_type,scorer in itertools.product(unique_trial_types,scorers)
+        }
+
+        return pd.concat(
+            (pd.DataFrame(scores_train), 
+             pd.DataFrame(scores_test), 
+             pd.DataFrame(scores_trial_type)),
+            axis=1
+        )
+
+
+    return pd.concat((pd.DataFrame(scores_train),pd.DataFrame(scores_test)),axis=1)
+
+
+def session_plots(plot_odds=False,
+                    plot_odds_neural = False,
+                    plot_AUCs=False,
+                    plot_neur_weights=False,
+                    plot_stim_weights=False):
+    pass
+
+    # if plot_odds:
+    #     axs = Odds_hists(models,X_tests,cmap='jet')
+    #     # add the LogLik for each model? 
+    #     axs[1].set_title('LLstim:%(stim).3f, LLall: %(all).3f' % test_scores)
     
 
-    if plot_AUCs:
-        fig = AUCs_compare(models,X_tests,y_test)
-        #AUCs_compare(models,X_trains,y_train)
+    # if plot_AUCs:
+    #     fig = AUCs_compare(models,X_tests,y_test)
+    #     #AUCs_compare(models,X_trains,y_train)
     
-    if plot_neur_weights:
-        RLdiff = (X_train[y_train==1].mean(axis=0)
-                    -X_train[y_train==0].mean(axis=0))
-        fig,ax = plt.subplots(1,1,figsize=(5,5))
-        ax.plot(RLdiff[neural_predictors],params['all']['weights'][neural_predictors].T,'.')
-        ax.axhline(0, color='black',linewidth=0.5)
-        ax.axvline(0, color='black',linewidth=0.5)
-        ax.set_xlabel('R-L firing rate')
-        ax.set_ylabel('weights')
-        ax.set_title('neural predictor weights')
+    # if plot_neur_weights:
+    #     RLdiff = (X_train[y_train==1].mean(axis=0)
+    #                 -X_train[y_train==0].mean(axis=0))
+    #     fig,ax = plt.subplots(1,1,figsize=(5,5))
+    #     ax.plot(RLdiff[neural_predictors],params['all']['weights'][neural_predictors].T,'.')
+    #     ax.axhline(0, color='black',linewidth=0.5)
+    #     ax.axvline(0, color='black',linewidth=0.5)
+    #     ax.set_xlabel('R-L firing rate')
+    #     ax.set_ylabel('weights')
+    #     ax.set_title('neural predictor weights')
 
-    if plot_stim_weights:
+    # if plot_stim_weights:
         
         
-        sensory_terms = pd.concat((params['stim']['weights'],
-            params['all']['weights'][stim_predictors]))
+    #     sensory_terms = pd.concat((params['stim']['weights'],
+    #         params['all']['weights'][stim_predictors]))
 
-        sensory_terms_ = sensory_terms.reset_index().melt(id_vars='index')
-        sensory_terms_ = sensory_terms_.rename(columns={'index':'model','value':'weights','variable':'parameters'})
+    #     sensory_terms_ = sensory_terms.reset_index().melt(id_vars='index')
+    #     sensory_terms_ = sensory_terms_.rename(columns={'index':'model','value':'weights','variable':'parameters'})
 
-        fig,ax = plt.subplots(1,1,figsize=(5,5))
+    #     fig,ax = plt.subplots(1,1,figsize=(5,5))
 
-        sns.barplot(sensory_terms_,
-                    x='parameters',
-                    y='weights',
-                    hue = 'model',ax=ax)
+    #     sns.barplot(sensory_terms_,
+    #                 x='parameters',
+    #                 y='weights',
+    #                 hue = 'model',ax=ax)
 
-    all_out = {
-        'models':models,
-        'params':params,
-        'X_trains':X_trains,
-        'X_tests':X_tests,
-        'y_train':y_train,
-        'y_test':y_test,
-        'train_scores':train_scores,
-        'test_scores':test_scores,
-        'test_scores_per_trial_type':test_scores_trial_type
+ 
 
-    }   
+    # if plot_odds_neural:
+    #     kappas,betas = plot_neural_psychometric(models['all'],X_tests['all'],y_test)
+    #     all_out['kappas'] = kappas
+    #     all_out['betas'] = betas
+    
+def make_fake_data(trials,
+                   n_fake_neurons = 10,
+                   p_choice_neurons = 0,
+                   p_vis_neurons = 0,
+                   p_aud_neurons = 0,
+                   p_av_neurons = 0,
+                   p_v_choice_neurons = 0,
+                   p_a_choice_neurons = 0,
+                   p_av_choice_neurons = 0,
+                   noise_sd = .2):
+    
+    """ replaces neurons in the trials df. with fake neurons, 
+    for the moment only choice neurons
+    potentially also add sensory neurons with various gain etc. 
 
-    if plot_odds_neural:
-        kappas,betas = plot_neural_psychometric(models['all'],X_tests['all'],y_test)
-        all_out['kappas'] = kappas
-        all_out['betas'] = betas
+    Parameters:
+        trials: pd.df
+        n_fake_neurons: float
+            how many neurons to create
+        p_choice_neurons: float betweeen 0 and 1
+            fraction of choice neurons to crete
+        noise_sd: float
+            how much Gaussian noise to add
+
+    Returns:
+        pd.df: the new trials where neurons are replaced with fake ones
+    """    
+    n_trials = trials.shape[0]
+
+    # possible neuron options
+    n_choice = trials.choice.values
+    n_vis = trials.visDiff.values
+    n_aud = trials.audDiff.values
+    n_av  = n_vis * n_aud
+    n_v_choice = n_choice * n_vis
+    n_a_choice = n_choice * n_aud
+    n_av_choice = n_choice * n_aud * n_vis
+
+    n_random = np.random.choice([1,0],size=n_trials,p=[0.5,0.5])
+
+    # 
+    p_random_neurons = 1 - np.sum((
+        p_choice_neurons,
+        p_vis_neurons,
+        p_aud_neurons,
+        p_av_neurons,
+        p_v_choice_neurons,
+        p_a_choice_neurons,
+        p_av_choice_neurons 
+    ))
+
+    # check whether the ratios are feasible
+    assert np.sum((p_choice_neurons,
+        p_vis_neurons,
+        p_aud_neurons,
+        p_av_neurons,
+        p_v_choice_neurons,
+        p_a_choice_neurons,
+        p_av_choice_neurons,
+        p_random_neurons
+        )) ==1,'Probabilities do not sum to 1.'
+
+    # generate the neuron combinations
+    neuron_types = np.random.choice(
+        ['c','v','a','av','cv','ca','cav','r'],
+        size=n_fake_neurons,
+        p=[p_choice_neurons,
+           p_vis_neurons,
+           p_aud_neurons,
+           p_av_neurons,
+           p_v_choice_neurons,
+           p_a_choice_neurons,
+           p_av_choice_neurons,
+           p_random_neurons]
+        )
+
+    neurons={}
+    for idx,n in enumerate(neuron_types):
+        if n=='c': c_y = n_choice 
+        elif n=='v': c_y = n_vis
+        elif n=='a': c_y = n_aud
+        elif n=='av': c_y = n_av
+        elif n=='cv': c_y = n_v_choice
+        elif n=='ca': c_y = n_a_choice
+        elif n=='cav': c_y = n_av_choice        
+        elif n=='r': c_y = n_random
+
+        # I think I don't need this if I zscore
+        random_baseline_fr = np.random.uniform(1.0, 50.0) 
+        gaussian_noise = np.random.normal(loc = 0, 
+                                          scale = noise_sd, 
+                                          size = c_y.size)
+        
+        neurons[('neuron_%.0f' % idx)] =  zscore(c_y + 
+                                                 random_baseline_fr + 
+                                                 gaussian_noise)
+
+    neurons = pd.DataFrame(neurons)
+
+    # construct the new df
+    non_neuron_columns = trials.drop(columns=trials.filter(like='neuron_').columns)
+
+    fake_neurons_trials = pd.concat(
+        (non_neuron_columns,neurons),axis=1
+    )
+
+    return fake_neurons_trials
+
+def fit_parse_(rec,nametag=None,**fit_kwargs):
+    """helper fuction to fit the neurometric model and collect the key metrics of the results
+
+    Args:
+        trials (pathlib.Path): path to csv
+
+    Returns:
+        pd.df: results of fitting
+    """
+
+    if isinstance(rec, (str, Path)):
+         print('fitting', rec, '...')
+         trials = pd.read_csv(rec)  # Load trials from the CSV file
+         subject = rec.name.split('_')[0]
+
+    elif isinstance(rec, pd.DataFrame):
+        trials = rec  # Use the DataFrame directly 
+        if nametag: subject=nametag
+        else: subject = 'test'
+        
+    else:
+        raise ValueError("input must be either str,Path, or pd.df") 
+    
+    results = fit_stim_vs_neur_models(trials,**fit_kwargs)
+
+    
+    scores = get_all_scores(results)
+    scores = scores.reset_index()
+    scores.rename(columns = {'index': 'model'}, inplace=True)
+    pivoted_data = scores.set_index('model').unstack().to_frame().T
+    pivoted_data.columns = ['_'.join(col).strip() for col in pivoted_data.columns]
+
+
+    session_info = pd.DataFrame({
+    'subject': [subject],
+    'nTrials': results['X_test'].shape[0],
+    'nNeur': results['X_test'].shape[1] - 4,
+    'nNeur_used': np.sum(results['params']['all']['weights'].values != 0) - 4,
+    'pCorrect': np.mean(trials.feedback == 1),
+    '|initBias|':  results['params']['stim']['weights']['bias'].values[0]
+    })
+
+    # Concatenate with session info to create a single row per dataset
+    final_data = pd.concat([session_info, pivoted_data], axis=1)
+
+    return final_data
     
 
-    return all_out
+def batch_fit_neurometric(all_files, neuron_selector_type, savepath=None):
+    """
+    Process all records and compile neurometric data into a DataFrame.
+    """
+    fit_kwargs = {
+        'neuron_selector_type': neuron_selector_type
+    }
+
+    processed_data = [fit_parse_(rec,**fit_kwargs) for rec in all_files]
+    
+    # Create a DataFrame from the processed data
+    df = pd.concat(processed_data)
+
+    # all the recordings and mice etc.
+
+    if savepath:
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
+        fit_result = savepath.parent / ('result_%s_%s.csv' % (neuron_selector_type,timestamp))
+        df.to_csv(fit_result)
+
+    return df

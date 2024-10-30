@@ -1,6 +1,6 @@
 clc; clear all;
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',0, ...
-    'sepHemispheres',1,'sepPowers',0,'sepDiffPowers',0,'whichSet', 'uni_all'); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',0, ...
+    'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet', 'uni_all'); 
 
 
 save_fig = 0;
@@ -43,7 +43,7 @@ plot_model_pred(2) = 1;
 shouldPlot = 1; 
 
 plotfit = 1; % whether to connect the data or plot actual fits
-plotParams.plottype = 'sig'; 
+plotParams.plottype = 'log'; 
 for s=1:numel(extracted.data)    
 
     currBlock = extracted.data{s};
