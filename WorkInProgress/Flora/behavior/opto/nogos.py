@@ -38,7 +38,8 @@ contrasts = np.unique(ev.signed_contrast[~np.isnan(ev.signed_contrast)])
 
 window_size = 1
 n_trials = ev.timeline_choiceMoveDir.size
-is_nogo = np.isnan(ev.timeline_choiceMoveDir)
+#is_nogo = np.isnan(ev.timeline_choiceMoveDir)
+is_nogo = ev.response_direction==0
 
 indices = np.arange(0,n_trials-window_size)+window_size
 is_in_nogo_block = [is_nogo[t-window_size:t].sum() for t in indices]
@@ -62,13 +63,15 @@ fig,ax = plt.subplots(1,1,figsize=(5,5))
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ~ev.is_laserTrial 
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts]
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
     ax.plot(contrasts,np.log10(frac_no_go/(1-frac_no_go)),'o-',color=azimuth_colors[i])  
 
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a) 
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts] 
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
     ax.plot(contrasts,np.log10(frac_no_go/(1-frac_no_go)),'*--',color=azimuth_colors[i])  
 
@@ -84,13 +87,15 @@ laser_keep_set = (ev.laser_power==34) & (np.abs((ev.stim_laserPosition))==0) & e
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts] 
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
     ax.plot(contrasts,frac_no_go,'*--',color=azimuth_colors[i])  
 
     to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ~ev.is_laserTrial 
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts] 
     frac_no_go = np.array([np.mean(r[~np.isnan(r)]) for r in rt_per_c])
     ax.plot(contrasts,frac_no_go,'o-',color=azimuth_colors[i])  
 
@@ -99,15 +104,20 @@ ax.set_title('%s, %.0d opto trials' % (my_subject,np.sum(laser_keep_set)))
 
 # %% plot fraction of nogo 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
-laser_keep_set = (ev.laser_power==34) & (np.abs(ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+
+laser_keep_set = ((ev.laser_power==34) & 
+                    (np.abs(ev.stim_laserPosition)==0) & 
+                    ev.is_validTrial & ev.is_laserTrial & 
+                    ~is_in_nogo_block)
 
 
 d=pd.DataFrame()
 for i,a in enumerate(aud_azimuths):
     to_keep_trials = laser_keep_set & (ev.stim_audAzimuth==a)
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
-    frac_no_go = np.array([np.mean(np.isnan(r)) for r in rt_per_c])
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts] 
+    frac_no_go = np.array([np.mean((r==-1)) for r in rt_per_c])
     frac_right= np.array([np.mean((r==1)) for r in rt_per_c])
     ax.plot(contrasts,frac_no_go,'*--',color=azimuth_colors[i])  
 
@@ -120,8 +130,9 @@ for i,a in enumerate(aud_azimuths):
 
     to_keep_trials = ev.is_validTrial & (ev.stim_audAzimuth==a) & ~ev.is_laserTrial & ~is_in_nogo_block
     ev_  = Bunch({k:ev[k][to_keep_trials] for k in ev.keys()})
-    rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
-    frac_no_go = np.array([np.mean(np.isnan(r)) for r in rt_per_c])
+    #rt_per_c = [ev_.timeline_choiceMoveDir[ev_.signed_contrast==c]-1 for c in contrasts] 
+    rt_per_c = [ev_.response_direction[ev_.signed_contrast==c]-1 for c in contrasts] 
+    frac_no_go = np.array([np.mean((r==-1)) for r in rt_per_c])
     frac_right= np.array([np.mean((r==1)) for r in rt_per_c])
 
     d = d.append(pd.DataFrame({'nogo':frac_no_go,
@@ -151,7 +162,7 @@ px.scatter_ternary(d,a='nogo',b='ipsi',c='contra',color='aud_azimuths',
 
 
 # %%
-laser_keep_set = (ev.laser_power==17) & (np.abs(ev.stim_laserPosition)==1) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
+laser_keep_set = (ev.laser_power==34) & (np.abs(ev.stim_laserPosition)==0) & ev.is_validTrial & ev.is_laserTrial & ~is_in_nogo_block
 
 import ternary
 

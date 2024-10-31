@@ -51,7 +51,12 @@ function [params] = optoParams(which)
         params.reverse_opto =0;
         params.selPowers = [34];
         params.selHemispheres = [0];
-        params.includeNoGo = 3; 
+        params.includeNoGo = 3; % this means the non-block nogos are filtered
+     
+    elseif strcmp('bi_rinberg',which)
+        params.reverse_opto =0;
+        params.selPowers = [17,34];
+        params.selHemispheres = [-1,0,1];
 
     elseif strcmp('bi_alternate',which)
         params.subject  = {['AV041'];['AV047'];['AV044']};

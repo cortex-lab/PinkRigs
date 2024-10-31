@@ -1,5 +1,4 @@
 # %%
-import datetime
 # generic libs 
 import numpy as np
 import pandas as pd
@@ -12,67 +11,113 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-from predChoice_utils import fit_stim_vs_neur_models
+from predChoice_utils import make_fake_data,batch_fit_neurometric
 
 # my own util funcions
 # data read in
-savepath = Path(r'D:\LogRegression\CP_choice\formatted')
-all_files = list(savepath.glob('*.csv'))
-logLosses,llall,llstim,subjects,nTrials,nNeur,nNeur_used,pCorrect,initBias,kappas,betas = [],[], [],[],[],[],[],[],[],[],[]
-for idx,rec in enumerate(all_files):
-    trials = pd.read_csv(rec)
 
-    print(rec.name)
+from itertools import product
 
-    results  = fit_stim_vs_neur_models(trials,
-                            plot_odds=False,
-                            plot_odds_neural = False,
-                            plot_AUCs=False,
-                            plot_neur_weights=False,
-                            plot_stim_weights=False)
-    
+brain_areas = ['VISp']
+paramsets = ['choice']
 
-    stim_neur_logLoss = results['test_scores_per_trial_type']['all'].values-results['test_scores_per_trial_type']['stim'].values
+for x in product(brain_areas,paramsets):
+    region,tt = x[0],x[1]
+    savepath = Path(r'D:\LogRegression\%s_%s\formatted' % (region,tt))
+    all_files = list(savepath.glob('*.csv'))
+    df = batch_fit_neurometric(all_files,'lasso',savepath=savepath)
 
-    stim_neur_logLoss = pd.DataFrame(stim_neur_logLoss,
-                                    columns=results['test_scores_per_trial_type']['stim'].columns.values)
-    
-    logLosses.append(stim_neur_logLoss)
-
-    subjects.append(rec.name.split('_')[0])
-    llall.append(results['test_scores']['all'])
-    llstim.append(results['test_scores']['stim'])
-    nTrials.append(results['X_tests']['all'].shape[0])
-    nNeur.append(results['X_tests']['all'].shape[1]-4)
-    nNeur_used.append(np.sum(results['params']['all']['weights'].values!=0)-4)
-    pCorrect.append(np.mean(trials.feedback==1))
-    initBias.append(results['params']['stim']['bias'])
-    # kappas.append(np.array(results['kappas']).reshape(-1,1))
-    # betas.append(np.array(results['betas']).reshape(-1,1))
-
-# all the recordings and mice etc.
-
-df = pd.DataFrame({
-    'subject':subjects, 
-    'negLL_all':llall,
-    'negLL_stim':llstim,
-    'nTrials': nTrials,
-    'nNeur': nNeur,
-    'nNeur_used':nNeur_used,
-    'pCorrect':pCorrect,
-    'pIncorrect': 1-np.array(pCorrect),
-    'nIncorrect':np.array(nTrials)*(1-np.array(pCorrect)),
-    '|initBias|':np.abs(initBias),
-
-})
-
-timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
-fit_result = savepath.parent / ('result_%s.csv' % timestamp)
-df.to_csv(fit_result)
 
 # %%
 
 
+
+
+# %%
+
+import seaborn as sns 
+
+
+# Plot 1: look at the degreee of overfitting
+
+metric = 'log_loss'
+models_to_compare = ['bias','stim','neur','all']
+
+
+df_long = pd.melt(
+    df, 
+    value_vars = (
+      [f'{metric}_train_{model}' for model in models_to_compare] + 
+      [f'{metric}_test_{model}' for model in models_to_compare]  
+    ), 
+    var_name = 'model', 
+    value_name = metric
+)
+
+# Step 2: Create a new column that labels each model
+df_long['type'] = df_long['model'].apply(lambda x: 'test' if 'test' in x else 'train')
+df_long['model'] = df_long['model'].apply(lambda x: x.split('_')[-1])
+
+
+
+sns.boxenplot(data=df_long,
+            x = 'model',
+            y= metric,hue='type')
+
+#%%
+# plot 2 all x axis -- trialtype, y axis=performance, hue=model 
+import itertools
+metric = 'roc_auc_score'
+trial_types = ['blank','vis','aud','coherent','conflict']
+models_to_compare = ['all']
+
+for condition in trial_types:
+    #df[f'{condition}_roc_auc_score_neur'] -= df[f'{condition}_roc_auc_score_stim']
+    df[f'{condition}_roc_auc_score_all'] -= df[f'{condition}_roc_auc_score_stim']
+
+#%%
+
+df_long = pd.melt(
+    df, 
+    value_vars = (
+        [f'{trial_type}_{metric}_{model}' 
+        for trial_type,model in itertools.product(trial_types,models_to_compare)]
+    ), 
+    var_name = 'long_name', 
+    value_name = metric
+)
+df_long[['trial_type','model']] = df_long['long_name'].str.split('_',expand=True).iloc[:,[0,-1]]
+df_long = df_long.drop(columns='long_name')
+
+#df_long = df_long.dropna()
+
+plt.rcParams.update({'font.size': 18})
+
+fig,ax = plt.subplots(1,1,figsize=(3.7,2.6))
+sns.lineplot(data = df_long,
+            x = 'trial_type', y = metric, hue = 'model',
+            palette= {'all':'green','neur':'orange'}
+)
+ax.set_ylim([-0.1,0.3])
+ax.axhline(0,color='k',linestyle='--')
+plt.legend().remove()
+plt.xticks(ticks=[0, 1, 2, 3,4], 
+           labels=['ø','V', 'A', 'V=A', 'V≠A'],
+           rotation=0)
+plt.xlabel('')
+plt.tight_layout()
+plt.title(brain_areas[0])
+# plt.ylabel('')
+# plt.yticks([])
+
+from plot_utils import copy_svg_to_clipboard,off_axes
+off_axes(ax,'top')
+plt.show()
+copy_svg_to_clipboard(fig)
+# %%
+#import pandas as pd
+
+#df = pd.read_csv(r'D:\LogRegression\MOs_poststim\result_sfs_2024-09-05-113908.csv')
 #   #%%
 # kappas = np.concatenate(kappas,axis=1)
 # betas = np.concatenate(betas,axis=1)
@@ -94,11 +139,13 @@ df.to_csv(fit_result)
 # ax[1].set_ylabel('pos bin')
 
 #%%
+import matplotlib.pyplot as plt
 plt.plot(pd.concat(logLosses).T,color='grey')
 plt.plot(pd.concat(logLosses).mean(),color='red')
 plt.axhline(0,color='k',linestyle='--')
 plt.ylabel('neglogLoss,all/neglogLoss,stim')
 # %%
+import seaborn as sns
 sns.relplot(data=df,x='negLL_stim',y='negLL_all',hue='subject',size='|initBias|')
 plt.axline((0,0),slope=1,color='k',linestyle='--')
 

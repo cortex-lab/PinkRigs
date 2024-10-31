@@ -2,10 +2,10 @@
 %this function allows me to process and 
 clc; clear all;
 
-set_name = 'uni_all_nogo';
-extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',1,'whichSet', set_name);
-
+set_name = 'bi_high_nogo';
+extracted = loadOptoData('balanceTrials',0,'sepMice',1,'reExtract',1,'sepHemispheres',0,'whichSet', set_name);
 %
+
 basefolder = ['D:\LogRegression\opto', '\', set_name]; 
 
 if ~exist(basefolder, 'dir')
@@ -19,6 +19,7 @@ for i=1:numel(extracted.subject)
     elseif hemisphere==-1
         hemisphereID = 'left'; 
     end 
+
 
     power = extracted.power{i, 1}; 
     

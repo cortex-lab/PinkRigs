@@ -64,7 +64,9 @@ def call_neural_dat(subject_set='naive',dataset_type='naive',
     elif 'active' in subject_set:
         subject_list = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034']
     elif 'forebrain' in subject_set:
-        subject_list = ['AV007','AV009','AV013','AV015','AV021']
+        subject_list = ['AV007','AV009','AV013','AV015','AV021','AV023']
+    elif 'totAV' in subject_set: 
+        subject_list = ['FT030','FT031','FT032','FT035','AV005','AV008','AV014','AV020','AV025','AV030','AV034','AV007','AV009','AV013','AV015','AV021','AV023']
     else:
         subject_list = [subject_set]
     
@@ -139,18 +141,16 @@ def call_neural_dat(subject_set='naive',dataset_type='naive',
         recordings = recordings.iloc[n_trials>150]  
 
     # make the savepath
-
-
     elif not recompute_data_selection:
         # find the latest file related to this recording  
         datasets = list(savepath.glob(f'{subject_set}_dataset_*.csv'))
         savefile = datasets[0]
-        expList = pd.read_csv(savefile)           
+        expList = pd.read_csv(savefile)   
+        query_params.pop('subject') # each identifier will be called separetly so we don't need this anymore      
 
         recordings = [load_data(subject = rec.subject,
                                 expDate = rec.expDate,
                                 expNum = rec.expNum,
-                                cam_hierarchy = cam_hierarchy,
                                 **query_params) for _,rec in expList.iterrows()]    
         
         recordings = pd.concat(recordings)

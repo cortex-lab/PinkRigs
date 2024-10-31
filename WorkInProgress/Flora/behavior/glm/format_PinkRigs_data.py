@@ -14,16 +14,16 @@ sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs")
 from Analysis.pyutils.loaders import call_neural_dat
 
 
-my_ROI = 'MOs'
+my_ROI = 'MRN'
 paramset_name = 'choice'
 params = load_params(paramset=paramset_name)
 savepath = Path(r'D:\LogRegression\%s_%s' % (my_ROI,paramset_name))
 selected_sessions = call_neural_dat(
-                            subject_set='forebrain',
+                            subject_set='active',
                             dataset_type='active',
                              spikeToInclde=True,
                              camToInclude=False,
-                             recompute_data_selection=True,
+                             recompute_data_selection=False,
                              unwrap_probes= False,
                              merge_probes=True,
                              filter_unique_shank_positions = False,
@@ -37,12 +37,20 @@ selected_sessions = call_neural_dat(
                              )
 
 # %%
+neuronNos =[]
 for _,rec in selected_sessions.iterrows():
     ev,spk,clusInfo,_,cam = simplify_recdat(rec,probe='probe')
     goodclusIDs = clusInfo[(clusInfo.is_good)&(clusInfo.BerylAcronym==my_ROI)]._av_IDs.values
-    selected_sessions['neuronNo'] = goodclusIDs.size
+    print(
+        rec.expFolder,
+        ev.is_auditoryTrial.size,
+        goodclusIDs.size, 
+    )
+    neuronNos.append(goodclusIDs.size)
+    
+selected_sessions['neuronNo'] = neuronNos
 
-#
+# %%
 # Group by 'subject' and aggregate
 result = selected_sessions.groupby('subject').agg(
     session_count=('subject', 'size'),  # Count the number of rows per subject
@@ -87,6 +95,9 @@ for _,rec in selected_sessions.iterrows():
     X = trials[pred_list]
     y = trials['choice']
     stratifyIDs = trials['trialtype_id']
+
+
+    # we need to make sure that there is a minimum number of both choices or something...
 
     savepath = Path(savepath)
     savepath.mkdir(parents=False,exist_ok=True)

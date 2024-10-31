@@ -3,6 +3,9 @@
 from pathlib import Path 
 import pandas as pd 
 import numpy as np
+from scipy import stats
+
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
@@ -19,41 +22,7 @@ savepath.mkdir(parents=False,exist_ok=True)
 
 
 all_files = list(basepath.glob('*.csv'))
-stim_predictors = ['visR','visL','audR','audL']
-opto_slope_predictors = ['visR_opto','visL_opto','audR_opto','audL_opto']
-opto_intercept_predictor = ['opto']
-all_predictors =  stim_predictors + opto_slope_predictors + opto_intercept_predictor
 
-
-#%%
-
-def fit_opto_model(rec,gammafit=True):
-    trials = pd.read_csv(rec)
-    trials = trials[trials.choice!=-1]
-
-    X = trials[all_predictors]
-    y = trials['choice']
-    stratifyIDs = trials['trialtype_id']
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.33, random_state=1,shuffle=True,stratify=stratifyIDs)
-
-    if gammafit:
-        m = fit_model(X,y,gridCV_vis=True)
-        w = get_weights(m)
-        params = w['weights']
-        params['bias'] = w['bias']
-    else:
-        m = LogisticRegression()
-        m.fit(X_train,y_train)
-
-        params = pd.DataFrame(m.coef_,columns=all_predictors)
-        params['bias'] = m.intercept_[0]
-
-    y_pred_prob = m.predict_proba(X_test)
-    neg_log_loss = -log_loss(y_test, y_pred_prob)
-
-    return params,neg_log_loss 
 
 # %%
 params,ll = zip(*[fit_opto_model(rec,gammafit=True) for rec in all_files])
@@ -102,10 +71,14 @@ for i,(c,o) in enumerate(zip(control_var_names,opto_var_names)):
     ax[i].plot(params[c],params[o],'o',
                markeredgecolor='k',markerfacecolor='cyan',
                markersize=7)
+    
+    t_stat, p_value = stats.ttest_rel(params[c], params[o])
+
+
     ax[i].axline([-4,-4],[6,6],color='k',linestyle='--')
     ax[i].axhline(0,color='k',linestyle='--')
     ax[i].axvline(0,color='k',linestyle='--')
-    ax[i].set_title(c)
+    ax[i].set_title('%s, %.3f' % (c,p_value))
     ax[i].set_xlabel(c)
     ax[i].set_ylabel(o)
 
@@ -136,11 +109,11 @@ for i,(c,o) in enumerate(zip(control_var_names,opto_var_names)):
     dpar_name = 'delta_%s' % c
     params[dpar_name] = dpar
 
-    # md = mixedlm("%s ~ %s" % (dpar_name,plot_type),
-    #          params_,groups=params_['subject'])
-    # result = md.fit() 
-    # result.summary()
-    # pval = result.pvalues[plot_type]
+    md = mixedlm("%s ~ %s" % (dpar_name,plot_type),
+             params_,groups=params_['subject'])
+    result = md.fit() 
+    result.summary()
+    pval = result.pvalues[plot_type]
         
     ax[i].plot(params[plot_type],dpar,'o',
                markeredgecolor='k',markerfacecolor='cyan',

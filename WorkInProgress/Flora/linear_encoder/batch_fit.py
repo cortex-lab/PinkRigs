@@ -10,8 +10,9 @@ import numpy as np
 # dataset_name = 'trained-passive-cureated'
 # recordings = get_data_bunch(dataset_name) # or can be with queryCSV # or write a loader functin 
 
-ds = 'active' # load the dataset. 
-recordings = call_neural_dat(dataset=ds,
+ds = 'totAV' # load the dataset. 
+recordings = call_neural_dat(subject_set=ds,
+                            dataset_type='active',
                              spikeToInclde=True,
                              camToInclude=True,
                              recompute_data_selection=True,

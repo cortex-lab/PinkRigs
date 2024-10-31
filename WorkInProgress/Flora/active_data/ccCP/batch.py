@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, r"C:\Users\Flora\Documents\Github\PinkRigs") 
 from Analysis.pyutils.loaders import call_neural_dat
 
-recordings = call_neural_dat(subject_set='AV015',
+subjects = 'forebrain'
+savepath = Path(r'D:\ccCP\%s' % subjects)
+recordings = call_neural_dat(subject_set=subjects,
                              dataset_type='active',
                              spikeToInclde=True,
                              camToInclude=False,
@@ -15,8 +17,8 @@ recordings = call_neural_dat(subject_set='AV015',
                              unwrap_probes= True,
                              merge_probes=False,
                              region_selection=None,
-                             filter_unique_shank_positions = False,
-                             analysis_folder = Path(r'D:\forebrain'))
+                             filter_unique_shank_positions = True,
+                             analysis_folder = savepath)
 
 #recordings = load_for_ccCP(recompute_data_selection=True)
 
@@ -95,6 +97,9 @@ clusInfo['gauss_dv'] = allen_pos_apdvml[:,1]
 clusInfo['gauss_ml'] = allen_pos_apdvml[:,2]
 
 
+# save the clusInfo - 
+clusInfo.to_csv((savepath / 'ccCP_results.csv'))
+
 
 # %%
 goodClus = clusInfo[clusInfo.is_good]
@@ -116,13 +121,15 @@ print('%.0f good neurons' % nGood)
 # make a plot of the distribution of nerons
 
 
+# predifined set
 all_ROIs = ['VISp','VISpm','RSPv','RSPd','RSPagl',
     'POST',
     'SCs','SCm','PPN','MRN','IC','CUN','PRNr'
     
 ]
+# 
 
-
+all_ROIs = goodClus.Beryl.unique()
 
 fig,ax = plt.subplots(1,1,figsize=(3,5))
                       
@@ -189,7 +196,9 @@ fig.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=30
 from Analysis.neural.utils.spike_dat import anatomy_plotter
 
 gSC = goodClus[(goodClus.Beryl=='SCs') + (goodClus.Beryl=='SCm')]
-
+is_SC_recs = gSC.size>0
+gCP = goodClus[(goodClus.Beryl=='CP') + (goodClus.Beryl=='MOs')]
+is_CP_recs = gCP.size>0
 
 fig, ax = plt.subplots(2,len(plot_types),figsize=(1.5*len(plot_types),7.5),sharex=True,gridspec_kw={'height_ratios': [3,.8] })
 fig.patch.set_facecolor('xkcd:white')
@@ -205,20 +214,25 @@ for i_t,t in enumerate(plot_types):
     #dot_colors = brainrender_scattermap(x,vmin = np.m  in(x),vmax=np.max(x),n_bins=15,cmap='RdPu')
 
 
-    anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 3600)
+    anat.plot_anat_canvas(ax=ax[0,i_t],axis = 'ap',coord = 0)
     anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_dv.values,s=10,color='grey',alpha=0.2,unilateral=True)
-    #anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
-
+    anat.plot_points(sig.gauss_ml.values, sig.gauss_dv.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
+    
     ax[0,i_t].set_xlim([-2200,0])
-    ax[0,i_t].set_ylim([-7100,-0])
-    ax[0,i_t].set_title(' %s cells in SC' % t)
+    if is_SC_recs:
+        ax[0,i_t].set_ylim([-7100,-0])
+        ax[0,i_t].set_title(' %s cells in SC' % t)
+
 
     anat.plot_anat_canvas(ax=ax[1,i_t],axis = 'dv',coord = 1800)
     anat.plot_points(goodClus.gauss_ml.values, goodClus.gauss_ap.values,s=10,color='grey',alpha=0.2,unilateral=True)
     anat.plot_points(sig.gauss_ml.values, sig.gauss_ap.values,s=25,color=colors[i_t],alpha=1,edgecolors='k',unilateral=True)
-
-    ax[1,i_t].set_xlim([-2200,0])
-    ax[1,i_t].set_ylim([-4850,-2500])
+    
+    ax[1,i_t].set_xlim([-3200,0])
+    if is_SC_recs:
+        ax[1,i_t].set_ylim([-4850,-2500])
+    elif is_CP_recs:
+        ax[1,i_t].set_ylim([-1500,1500])
 
 
 for i in range(3):
@@ -230,4 +244,7 @@ cpath  = Path(r'C:\Users\Flora\Pictures\PaperDraft2024')
 im_name = which_figure + '.svg'
 savename = cpath / im_name #'outline_brain.svg'
 plt.savefig(savename,transparent=False,bbox_inches = "tight",format='svg',dpi=300)
+
+# %%
+
 # %%

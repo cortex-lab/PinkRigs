@@ -113,6 +113,11 @@ function newBlk = formatToPinkRigs(Blk)
         newBlk.is_coherentTrial = Blk.tri.trialType.coherent; 
         newBlk.is_conflictTrial = Blk.tri.trialType.conflict;
         newBlk.subjectID = Blk.tri.subjectRef; 
+
+        subjectName = cell(numel(Blk.tri.subjectRef),1);
+        [subjectName{:}] = deal(Blk.exp.subject{1, 1}); 
+
+        newBlk.subjectName = subjectName; 
         newBlk.sessionID = Blk.tri.expRef; 
         newBlk.is_laserTrial = logical(Blk.tri.inactivation.laserType);
         newBlk.hemisphere = sign(Blk.tri.inactivation.galvoPosition(:,1)); 

@@ -4,20 +4,21 @@ clc; clear all; close all;
  addpath(genpath('C:\Users\Flora\Documents\Github\2023_CoenSit'));
 
 
-set_type = 'bi';  
+set_type = 'uni';  
 [sites,cortexDat] = loadCortexData(set_type,1); 
 
 % load the opto
-extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet',sprintf('%s_high',set_type)); 
+extracted = loadOptoData('balanceTrials',0,'sepMice',0,'reExtract',1,'sepHemispheres',0,'sepPowers',0,'sepDiffPowers',0,'whichSet',sprintf('%s_all',set_type)); 
 %
 sites{4} = 'SC'; 
 allDat = [cortexDat,extracted.data]; 
 
 
+
 %%
 
 % Desired new order for the sites
-new_order = {'SC','Frontal', 'Vis', 'Parietal'};
+new_order = {'SC','Frontal', 'Vis', 'Lateral'};
 
 % Initialize new data cell array
 new_data = cell(1, 4);
@@ -37,9 +38,21 @@ allDat = new_data;
 
 
 
+ %%
+ % save out the data!
 
 
+basefolder = ['D:\LogRegression\opto', '\', 'region_comparison', '\' , set_type]; 
 
+if ~exist(basefolder, 'dir')
+    mkdir(basefolder);
+end
+%
+for i=1:numel(allDat)
+    namestring = sprintf('%s.csv',sites{i});
+    table = struct2table(allDat{i});
+    csv.writeTable(table,[basefolder,'\',namestring])
+end
 
 
 
@@ -121,6 +134,7 @@ elseif strcmp('uni',set_type)
     labels = {['bias'],['V_i_p_s_i'],['V_c_o_n_t_r_a'],['A_i_p_s_i'],['A_c_o_n_t_r_a']};
     indices = {[1],[2],[3],[5],[6]};  
 end 
+
 
 
 f=figure; 

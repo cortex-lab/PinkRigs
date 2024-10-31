@@ -63,7 +63,7 @@ def get_dvals(dataset,type='all'):
         'aL': p['a'] + p['aS'] + p['d_aL'],         
         'b': p['b'] + p['d_b'],
         'x0': p['x0']+ p['d_x0'],
-        'B': p['B'] + p['d_B'],
+       # 'B': p['B'] + p['d_B'],
         'mixture': p['pmixturecoef'] + p['d_pmixturecoef'],
         'nondectime': p['nondectime'] + p['d_nondectimeOpto']
 
@@ -74,13 +74,13 @@ def get_dvals(dataset,type='all'):
 
     return list(opto.keys()),ctrlvalues[np.newaxis,:],optovalues[np.newaxis,:]
 
-which_model = 'g_boundx0'
+which_model = 'l_d_nondectime'
 namekeys,ctrl,opto = zip(*[get_dvals(dataset,type=which_model) for dataset in datasets])
 namekeys,ctrl,opto = namekeys[0],np.concatenate(ctrl).T,np.concatenate(opto).T
 #%%
 n = len(namekeys)
 ss = False
-fig,ax = plt.subplots(1,n,figsize=(20,2),sharey=ss,sharex=ss)
+fig,ax = plt.subplots(1,n,figsize=(20,3),sharey=ss,sharex=ss)
 fig.tight_layout()
 for i,(c,o,a,t) in enumerate(zip(ctrl,opto,ax,namekeys)):
     a.plot(c,o,'o')
@@ -91,10 +91,11 @@ for i,(c,o,a,t) in enumerate(zip(ctrl,opto,ax,namekeys)):
 ax[0].set_xlabel('control')
 ax[0].set_ylabel('opto')
 fig.suptitle('Model params from model  %s' % which_model)
+plt.tight_layout()
 # %%
 
 namekeys = np.array(namekeys)
-plt.rcParams.update({'font.size': 22})
+plt.rcParams.update({'font.size': 12})
 
 fig,ax = plt.subplots(1,1,figsize=(5,5))
 my_b = np.ravel(opto[namekeys=='b',:])
