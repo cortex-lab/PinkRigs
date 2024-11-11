@@ -125,7 +125,7 @@ for ss = 1:numel(subjectsToInspect)
         subAndProbeIdx = find(subjectIdx & probeIdx);
         recLocGood = recLocAll(subAndProbeIdx);
 
-        meanRMS(ss,pp) = nanmedian(qm(ismember(recLocAll, recLocGood)));
+        meanRMS(ss,pp) = nanmedian(rmsq(ismember(recLocAll, recLocGood)));
     end
 end
 
