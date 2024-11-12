@@ -20,6 +20,8 @@ if recompute
     expInfoAll_tmp.dataSpikes = expInfoAll_add.dataSpikes;
     expInfoAll_tmp.daysSinceImplant = num2cell(expInfoAll_add.daysSinceImplant);
     expInfoAll_tmp.ephysPathProbe0 = expInfoAll_add.ephysPathProbe0;
+    expInfoAll_tmp.subject = expInfoAll_add.subject;
+    expInfoAll_tmp.expDate = expInfoAll_add.expDate;
     expInfoAll = cat(1,expInfoAll,expInfoAll_tmp);
     save('\\znas.cortexlab.net\Lab\Share\Celian\dataForPaper_ChronicImplant_stability_withQM','clusterNum', 'recLocAll', 'days', 'expInfoAll')
 else
@@ -66,7 +68,7 @@ exSubj = 'AV009';
 % exSubj = 'Wikenheiser001';
 ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
-probes = unique(probeSNAll(exSubjectIdx));
+exProbes = unique(probeSNAll(exSubjectIdx));
 colAni(ssEx,:) = [0.4157    0.2392    0.6039]; 
 
 %% Fill in table
@@ -74,19 +76,18 @@ colAni(ssEx,:) = [0.4157    0.2392    0.6039];
 T = struct();
 for ss = 1:numel(subjects)
     exSubjectIdx = contains(subjectsAll,subjects(ss));
-    probes = unique(probeSNAll(exSubjectIdx));
     T(ss).subj = subjects{ss};
-    T(ss).probe1_SN = probes{1};
-    subjProbe1Idx = contains(recLocAll, [subjects{ss} '__' probes{1} '__' ]);
+    T(ss).probe1_SN = exProbes{1};
+    subjProbe1Idx = contains(recLocAll, [subjects{ss} '__' exProbes{1} '__' ]);
     T(ss).probe1_numRec = sum(subjProbe1Idx);
     T(ss).probe1_lastDay = max(days(subjProbe1Idx));
-    T(ss).probe1_numUses = find(strcmp(probeInfo.implantedSubjects{find(cell2mat(probeInfo.serialNumber) == str2num(probes{1}))},subjects{ss}));
-    if numel(probes)>1
-        T(ss).probe2_SN = probes{2};
-        subjProbe2Idx = contains(recLocAll, [subjects{ss} '__' probes{2} '__']);
+    T(ss).probe1_numUses = find(strcmp(probeInfo.implantedSubjects{find(cell2mat(probeInfo.serialNumber) == str2num(exProbes{1}))},subjects{ss}));
+    if numel(exProbes)>1
+        T(ss).probe2_SN = exProbes{2};
+        subjProbe2Idx = contains(recLocAll, [subjects{ss} '__' exProbes{2} '__']);
         T(ss).probe2_numRec = sum(subjProbe2Idx);
         T(ss).probe2_lastDay = max(days(subjProbe2Idx));
-        T(ss).probe2_numUses = find(strcmp(probeInfo.implantedSubjects{find(cell2mat(probeInfo.serialNumber) == str2num(probes{2}))},subjects{ss}));
+        T(ss).probe2_numUses = find(strcmp(probeInfo.implantedSubjects{find(cell2mat(probeInfo.serialNumber) == str2num(exProbes{2}))},subjects{ss}));
     else
         T(ss).probe2_SN = nan;
         T(ss).probe2_numRec = nan;
@@ -125,41 +126,41 @@ plotAtlasSliceSchematics(470,[],8,[],[]) % posterior probe
 %% Plot raw traces
 
 % Some parameters
-% % AV009 fig 2
-% bankSelList = {sprintf('%s__2__0',probes{1}) sprintf('%s__2__0',probes{1}) sprintf('%s__1__2880',probes{2}) sprintf('%s__1__2880',probes{2})};
-% day2pltList = {16 88 16 88};
-% depthWinList = {[300 1500] [300 1500] [3000 4200] [3000 4200]};
-% depthWinList = {[800 900] [800 900] [3650 3750] [3650 3750]};
+% AV009 fig 2
+bankSelList = {sprintf('%s__2__0',exProbes{1}) sprintf('%s__2__0',exProbes{1}) sprintf('%s__1__2880',exProbes{2}) sprintf('%s__1__2880',exProbes{2})};
+day2pltList = {16 88 16 88};
+depthWinList = {[300 1500] [300 1500] [3000 4200] [3000 4200]};
+depthWinList = {[800 900] [800 900] [3650 3750] [3650 3750]};
 
 % % AV049
-% bankSelList = {sprintf('%s__0__0',probes{1}) sprintf('%s__0__0',probes{1}) sprintf('%s__0__0',probes{1})};
+% bankSelList = {sprintf('%s__0__0',exProbes{1}) sprintf('%s__0__0',exProbes{1}) sprintf('%s__0__0',exProbes{1})};
 % day2pltList = {5 6 14};
 % depthWinList = {[1300 2300] [1300 2300] [1300 2300]};
 
 % % Lignani001
-% bankSelList = {sprintf('%s__0__0',probes{1}) sprintf('%s__0__0',probes{1}) sprintf('%s__0__0',probes{1})};
+% bankSelList = {sprintf('%s__0__0',exProbes{1}) sprintf('%s__0__0',exProbes{1}) sprintf('%s__0__0',exProbes{1})};
 % day2pltList = {5 6 14};
 % depthWinList = {[1300 2300] [1300 2300] [1300 2300]};
 
 % % Lignani002
-% bankSelList = {sprintf('%s__0__0',probes{1}) sprintf('%s__0__0',probes{1})};
+% bankSelList = {sprintf('%s__0__0',exProbes{1}) sprintf('%s__0__0',exProbes{1})};
 % day2pltList = {7 23};
 % depthWinList = {[800 1800] [800 1800]};
 
 % % Margrie004
-% bankSelList = {sprintf('%s__0  1  2  3__0',probes{1}) sprintf('%s__0  1  2  3__0',probes{1})};
+% bankSelList = {sprintf('%s__0  1  2  3__0',exProbes{1}) sprintf('%s__0  1  2  3__0',exProbes{1})};
 % day2pltList = {1 2};
 % depthWinList = {[0 6000] [0 6000]};
 % startTime = 10*60;
 
 % % Margrie008
-% bankSelList = {sprintf('%s__0  1  2  3__0',probes{1}) sprintf('%s__0  1  2  3__0',probes{1})};
+% bankSelList = {sprintf('%s__0  1  2  3__0',exProbes{1}) sprintf('%s__0  1  2  3__0',exProbes{1})};
 % day2pltList = {29 30};
 % depthWinList = {[0 6000] [0 6000]};
 % startTime = 10*60;
 
 % Wikenheiser001
-bankSelList = {sprintf('%s__0__160',probes{1}) sprintf('%s__0__160',probes{1})};
+bankSelList = {sprintf('%s__0__160',exProbes{1}) sprintf('%s__0__160',exProbes{1})};
 day2pltList = {4 22};
 depthWinList = {[700 1700] [700 1700]};
 
@@ -273,9 +274,9 @@ set(gcf,'Renderer','painters')
 
 %% Plot depth raster for full probe
 
-for pp = 1:numel(probes)
-    % fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0
-    fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
+for pp = 1:numel(exProbes)
+    % fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' exProbes{pp} '__' x{1}], fullProbeScan, 'uni', 0
+    fullProbeScanSpec = cellfun(@(x) [subjects{ssEx} '__' exProbes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
 
     meas = cell(1,numel(fullProbeScanSpec));
     for rr = 1:numel(fullProbeScanSpec)
@@ -298,7 +299,7 @@ for pp = 1:numel(probes)
 
     fun = @(x) x.^0.5;
     colors = winter(5);
-    figure('Position', [680   282   441   685], 'Name', [subjects{ssEx} '__' probes{pp}]);
+    figure('Position', [680   282   441   685], 'Name', [subjects{ssEx} '__' exProbes{pp}]);
     for rr = 1:numel(fullProbeScanSpec)
         ax(rr) = subplot(2,4,rr);
         imagesc(1:size(meas{rr},1),depthBins{rr},fun(meas{rr}'))
@@ -703,7 +704,7 @@ xlim([1,max(days)])
 %% Summary quantif
 
 % quantVar = slopeMean;
-quantVar = unitCount;
+quantVar = cnt_valueMean; subj = cnt_subj;
 % quantVar = meanRMS;
 
 % slope

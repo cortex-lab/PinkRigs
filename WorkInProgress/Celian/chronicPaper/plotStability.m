@@ -1,7 +1,8 @@
-function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = plotStability(qm,subjectsToInspect,subjectsAll,recLocAll,days,probeSNAll,probeInfo,colAni,fullProbeScan,varType,paramplt)
+function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = plotStability(expInfoAll,subjectsToInspect,probeInfo,colAni,fullProbeScan,varType,paramplt)
     
     switch varType
         case 'count'
+            qm = expInfoAll.unitCount';
             yRng = [1 4000];
             funcProbe = @sum;
             logYScale = 1;
@@ -9,6 +10,7 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
             fdecay = @(x) 10.^(x);
             fdecay_inv = @(x) log10(x);
         case 'amp'
+            qm = expInfoAll.medAmp';
             yRng = [20 600];
             funcProbe = @nanmean;
             logYScale = 0;
@@ -16,6 +18,7 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
             fdecay = @(x) x;
             fdecay_inv = @(x) x;
         case 'rms'
+            qm = expInfoAll.medRMS';
             yRng = [1 40];
             funcProbe = @nanmean;
             logYScale = 0;
@@ -31,8 +34,8 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
     pltData = paramplt.pltData;
     pltFit = paramplt.pltFit;
 
-    subjects = unique(subjectsAll);
-    probeSNUni = unique(probeSNAll);
+    subjects = unique(expInfoAll.subject');
+    probeSNUni = unique(expInfoAll.probeSN');
     
     recLocSlope = cell(1,1);
     b = cell(1,1);
@@ -42,6 +45,7 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
     useNum = nan(numel(subjectsToInspect),2);
     fullProbeSubj = {};
     subj = {};
+    days = cell2mat(expInfoAll.daysSinceImplant');
     daysSub = unique(days);
     qmProbe = nan(numel(daysSub),2,numel(subjectsToInspect));
 
@@ -49,22 +53,22 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
     figure('Position',[600 500 220 200]);
     hold all
     for ss = 1:numel(subjectsToInspect)
-        subjectIdx = contains(subjectsAll,subjectsToInspect(ss));
-        probes = unique(probeSNAll(subjectIdx));
+        subjectIdx = contains(expInfoAll.subject',subjectsToInspect(ss));
+        probes = unique(expInfoAll.probeSN(subjectIdx)');
         colAniToInspect = colAni(ismember(subjects,subjectsToInspect(ss)),:);
         for pp = 1:numel(probes)
     
             % Check number of uses for this probe
             [~,useNum(ss,pp)] = find(contains(probeInfo.implantedSubjects{strcmp(probeSNUni,probes(pp))},subjectsToInspect{ss}));
     
-            probeIdx = contains(probeSNAll,probes(pp));
+            probeIdx = contains(expInfoAll.probeSN',probes(pp));
             subAndProbeIdx = find(subjectIdx & probeIdx);
-            recLocGood = recLocAll(subAndProbeIdx);
+            recLocGood = expInfoAll.recLocAll(subAndProbeIdx)';
             fullProbeScanSpec = cellfun(@(x) [subjectsToInspect{ss} '__' probes{pp} '__' x{1}], fullProbeScan, 'uni', 0);
     
             recLoc = unique(recLocGood);
             for rr = 1:numel(recLoc)
-                recIdx = find(strcmp(recLocAll,recLoc{rr}));
+                recIdx = find(strcmp(expInfoAll.recLocAll',recLoc{rr}));
                 if numel(unique(days(recIdx))) > 2 && max(qm(recIdx)) > 1
     
                     recLocSlope{ss,pp}{rr} = recLoc{rr};
@@ -89,9 +93,9 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
             end
     
             if strcmp(varType, 'count')
-                valueMean(ss,pp) = nanmean(qm(ismember(recLocAll, recLocGood) & days < inf)); %min(days(ismember(recLocAll, recLocGood)))+7));
+                valueMean(ss,pp) = nanmean(qm(ismember(expInfoAll.recLocAll', recLocGood) & days < inf)); %min(days(ismember(recLocAll, recLocGood)))+7));
             else
-                valueMean(ss,pp) = nanmean(qm(ismember(recLocAll, recLocGood)));
+                valueMean(ss,pp) = nanmean(qm(ismember(expInfoAll.recLocAll', recLocGood)));
             end
             slopeMean(ss,pp) = nanmean(b{ss,pp}(:,2));
             interceptMean(ss,pp) = nanmean(b{ss,pp}(:,1));
