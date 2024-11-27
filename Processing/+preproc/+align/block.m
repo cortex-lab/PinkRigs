@@ -130,6 +130,15 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
         % Timeline Ref times
         % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
         [timelineRefTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+
+        % make sure it's a nx1 vector
+        if size(blockRefTimes, 1) == 1
+            blockRefTimes = blockRefTimes';
+        end
+        % make sure it's a nx1 vector
+        if size(timelineRefTimes, 1) == 1
+            timelineRefTimes = timelineRefTimes';
+        end
         
         % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
         % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)
