@@ -96,13 +96,17 @@ for i = find(extracted.validSubjects)'
         percentTimeouts = round(mean(tDat.response_direction==0)*100);
         tDat = filterStructRows(tDat, keepIdx);
 
+        if isfield(tDat, 'block_currentBlock')
+            tDat.stim_audDiff = tDat.stim_audDiff + 360 * floor((tDat.block_currentBlock-0.5)/2);
+        end
+
         [~,~,vLabel] = unique(tDat.stim_visDiff);
         [~,~,aLabel] = unique(tDat.stim_audDiff);
         boxPlot.plotData = accumarray([aLabel, vLabel],tDat.response_direction,[],@mean)-1;
         boxPlot.trialCount = accumarray([aLabel, vLabel],~isnan(tDat.response_direction),[],@sum);
         boxPlot.plotData(boxPlot.trialCount==0) = nan;
         boxPlot.totTrials = length(tDat.stim_visDiff);
-        boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; unique(tDat.stim_audDiff)};
+        boxPlot.xyValues = {unique(tDat.stim_visDiff)*100; mod(unique(tDat.stim_audDiff)+180,360)-180};
         colorBar.colorLabel = 'Fraction of right turns';
         colorBar.colorDirection = 'normal';
         colorBar.colorYTick = {'0'; '1'};

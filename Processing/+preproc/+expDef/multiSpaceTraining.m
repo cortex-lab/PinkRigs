@@ -94,6 +94,11 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     audInitialAzimuth(audAmplitude==0) = nan;             %Change case when audAmplitude was 0 to have nan azimuth (an indication of no azimuth value)
     visInitialAzimuth(visContrast==0) = nan;              %Change case when visContrast was 0 to have nan azimuth (an indication of no azimuth value)
 
+    % Get block if switching task
+    if isfield(block.events, 'currentBlockValues')
+        noRepTrialIdx = [1 find(~diff(block.events.totalRepeatsValues))+1];
+        currentBlockValues = interp1(noRepTrialIdx, block.events.currentBlockValues, eIdx)';
+    end
 
     %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
     stimPeriodStart = e.stimPeriodOnOffTimes(e.stimPeriodOnOffValues == 1)';
@@ -675,6 +680,10 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
     ev.is_conflictTrial = is_conflictTrial;
     ev.is_validTrial = vIdx(:) & ~is_noStimTrial;
     ev.is_noStimTrial = is_noStimTrial; 
+
+    if exist('currentBlockValues', 'var')
+        ev.block_currentBlock = currentBlockValues;
+    end
 
     ev.block_trialOn = single(trialStEnTimes(:,1));
     ev.block_trialOff = single(trialStEnTimes(:,2));

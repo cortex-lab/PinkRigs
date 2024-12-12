@@ -49,7 +49,7 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             case {'imageWorld_AllInOne'; 'AVPassive_ckeckerboard_postactive';...
                     'AP_sparseNoise';'AVPassive_checkerboard_extended'}
                 alignType = 'photoDiode';
-            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'; 'multiSpaceSwitchWorld'}
+            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'; 'multiSpaceSwitchWorld'; 'multiSpaceWorld_checker_training_block'}
                 alignType = 'wheel';
             case {'spontaneousActivity'}
                 alignType = 'none';
