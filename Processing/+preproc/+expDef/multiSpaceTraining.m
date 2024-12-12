@@ -105,6 +105,7 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
                 currentBlockValues(cc) = currentBlockValues(cc-1);
             end
         end
+        currentBlockValues = currentBlockValues(eIdx);
     end
 
     %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
