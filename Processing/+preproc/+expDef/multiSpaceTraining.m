@@ -96,8 +96,16 @@ function ev = multiSpaceTraining(timeline, block, alignmentBlock)
 
     % Get block if switching task
     if isfield(block.events, 'currentBlockValues')
+        % ugly but works
         noRepTrialIdx = [1 find(~diff(block.events.totalRepeatsValues))+1];
-        currentBlockValues = interp1(noRepTrialIdx, block.events.currentBlockValues, eIdx)';
+        currentBlockValues = nan(numel(eIdx), 1);
+        currentBlockValues(noRepTrialIdx) = block.events.currentBlockValues;
+        for cc = 2:numel(currentBlockValues)
+            if isnan(currentBlockValues(cc))
+                currentBlockValues(cc) = currentBlockValues(cc-1);
+            end
+        end
+        currentBlockValues = currentBlockValues(eIdx);
     end
 
     %Get trial start/end times, stim start times, closed loop start times, feedback times, etc.
