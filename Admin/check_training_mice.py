@@ -73,7 +73,10 @@ for mname in activeMice:
         expinfo = pd.read_csv(get_csv_location(mname))
 
         # check whether the mouse is trained on the task
-        sess2check = expinfo[((expinfo['expDef']=='multiSpaceWorld_checker_training') | (expinfo['expDef']=='multiSpaceSwitchWorld')) & (expinfo['expDuration']>600)][-1:]
+        sess2check = expinfo[((expinfo['expDef']=='multiSpaceWorld_checker_training')
+                               | (expinfo['expDef']=='multiSpaceWorld_checker_training_block') 
+                               | (expinfo['expDef']=='multiSpaceSwitchWorld')) 
+                               & (expinfo['expDuration']>600)][-1:]
 
         if (sess2check.shape[0]>0):
             # take the last day for the update
@@ -84,6 +87,8 @@ for mname in activeMice:
             except:
                 expDate = datetime.datetime.strptime(expDate, '%d/%m/%Y').strftime('%Y-%m-%d') # convert it to proper format
             expNum = sess2check['expNum'].iloc[0]
+            print(mname)
+            print(expDate)
 
             # check whether they were trained recently
             previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
@@ -110,4 +115,4 @@ if len(readyMice)>0:
         send_email('\n'.join(readyMice))
 else: 
     print('no mice are fully trained')
-    #send_email('no mice are fully trained')
+    send_email('no mice are fully trained')
