@@ -196,6 +196,10 @@ yTickLabels = arrayfun(@(X) num2str(round(X*10)/10),deltaBinsVec(1:end-1),'Uni',
 
 fnames = fieldnames(popCorr_Uni);
 
+nNeur = cell2mat(cellfun(@(x) size(x,2), unitPresence, 'uni',0));
+
+group2plot = unique(groupVector(find(contains(subj,'AV009'))));
+colGroup = [0.4157    0.2392    0.6039];
 figure;
 
 % Matching proba
@@ -203,9 +207,12 @@ subplot(2,1+numel(fnames),1)
 hold on
 clear pSinceAppearance_perGroup
 for gg = 1:length(groups)
-    pSinceAppearance_perGroup(:,gg) = nanmean(pSinceAppearance(:,groupVector == groups(gg)),2);
+    gIdx = groupVector == groups(gg);
+    pSinceAppearance_perGroup(:,gg) = nansum(pSinceAppearance(:,gIdx).*nNeur(gIdx),2)./(~isnan(pSinceAppearance(:,gIdx))*nNeur(gIdx)');
     plot(pSinceAppearance_perGroup(:,gg),'color',[.5 .5 .5])
 end
+% plot(pSinceAppearance(:,find(contains(UMFiles,'AV009\19011118541\3'))),'color',colGroup)
+plot(pSinceAppearance_perGroup(:,group2plot),'color',colGroup)
 xlabel('delta Days')
 set(gca,'XTick',1:numel(deltaDaysBins)-1,'XTickLabel',yTickLabels)
 ylabel('P(track)')
@@ -231,6 +238,7 @@ for ff = 1:numel(fnames)
         popCorr_Uni_perGroup(:,gg) = nanmean(popCorr_Uni.(fnames{ff})(:,groupVector == groups(gg)),2);
         plot(popCorr_Uni_perGroup(:,gg),'color',[.5 .5 .5])
     end
+    plot(popCorr_Uni_perGroup(:,group2plot),'color',colGroup)
     h = errorbar(1:size(popCorr_Uni_perGroup,1),nanmean(popCorr_Uni_perGroup,2),nanstd(popCorr_Uni_perGroup,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
     h.LineWidth = 2;
     xlabel('delta Days')
@@ -248,6 +256,7 @@ for ff = 1:numel(fnames)
         popAUC_Uni_perGroup(:,gg) = nanmean(popAUC_Uni.(fnames{ff})(:,groupVector == groups(gg)),2);
         plot(nanmean(popAUC_Uni.(fnames{ff})(:,groupVector == groups(gg)),2),'color',[.5 .5 .5])
     end
+    plot(popAUC_Uni_perGroup(:,group2plot),'color',colGroup)
     h = errorbar(1:size(popAUC_Uni_perGroup,1),nanmean(popAUC_Uni_perGroup,2),nanstd(popAUC_Uni_perGroup,[],2)./sqrt(nonnanNr-1),'linestyle','-','color','k');
     h.LineWidth = 2;
     xlabel('delta Days')

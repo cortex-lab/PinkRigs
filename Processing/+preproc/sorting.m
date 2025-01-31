@@ -43,6 +43,9 @@ function sorting(varargin)
     %% Loop across all recordings
 
     for rec = 1:numel(recList)
+        expRefList = exp2checkList(contains(exp2checkList.ephysPathProbe0, recList{rec}) | ...
+            contains(exp2checkList.ephysPathProbe1, recList{rec}), :);
+
         %% Check if has been computed
 
         % Set paths
@@ -61,9 +64,9 @@ function sorting(varargin)
         iblformatPath = fullfile(serverKilosortPath,'ibl_format');
 
         % check if exists
-        sortingExist = ~isempty(dir(fullfile(serverKilosortPath,'spike_templates.npy')));
-        qMetricsExist = ~isempty(dir(fullfile(bombcellPath, 'templates._bc_qMetrics.parquet')));
-        iblformatExist = ~isempty(dir(fullfile(iblformatPath, 'cluster_metrics.csv')));
+        sortingExist = ~isempty(dir(fullfile(serverKilosortPath,'spike_templates.npy'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
+        qMetricsExist = ~isempty(dir(fullfile(bombcellPath, 'templates._bc_qMetrics.parquet'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
+        iblformatExist = ~isempty(dir(fullfile(iblformatPath, 'cluster_metrics.csv'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
 
         switch recompute
             % could also delete the old ones
@@ -88,7 +91,7 @@ function sorting(varargin)
                 if ~exist(tmpDataFolderRec,'dir')
                     mkdir(tmpDataFolderRec)
                 end
-                ephysRawFile = bc_manageDataCompression(ephysRawDir, tmpDataFolderRec);
+                ephysRawFile = bc.dcomp.manageDataCompression(ephysRawDir, tmpDataFolderRec);
             end
 
             if ~sortingExist
@@ -129,6 +132,7 @@ function sorting(varargin)
                             fprintf(fid,'%s\n',C{1}{kk});
                         end
                         fclose(fid);
+                        sortingExist = 1;
                     else
                         error(sprintf('Spikesorting failed %s.', resultKS))
                     end
@@ -139,26 +143,34 @@ function sorting(varargin)
                     % Save error message locally
                     mkdir(serverKilosortPath)
                     saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
+
+                    statusKS = 1;
+                end
+
+                %% Update csvs
+                if exist('exp2checkList', 'var')
+                    csv.updateRecord(expRefList);
                 end
             else
                 statusKS = 0;
+                sortingExist = 1;
             end
 
-            if ~qMetricsExist
+            if ~qMetricsExist && sortingExist == 1
                 %% Run Bombcell
                 try
                     fprintf('Running bombcell (%s)...',datestr(now));
 
                     % Which quality metric parameters to extract and thresholds
-                    param = bc_qualityParamValuesForUnitMatch(ephysMetaDir, ephysRawFile, serverKilosortPath, nan, 4);
+                    param = bc.qm.qualityParamValuesForUnitMatch(ephysMetaDir, ephysRawFile, serverKilosortPath, nan, 4);
 
                     % Load data
                     [spikeTimes_samples, spikeTemplates, ...
-                        templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc_loadEphysData(serverKilosortPath);
+                        templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc.load.loadEphysData(serverKilosortPath);
 
                     % Compute quality metrics
                     param.plotGlobal = 0;
-                    bc_runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
+                    bc.qm.runAllQualityMetrics(param, spikeTimes_samples, spikeTemplates, ...
                         templateWaveforms, templateAmplitudes,pcFeatures,pcFeatureIdx,channelPositions, bombcellPath);
 
                     statusBombcell = 0;
@@ -169,12 +181,14 @@ function sorting(varargin)
 
                     % Save error message locally
                     saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
+
+                    statusBombcell = 1;
                 end
             else
                 statusBombcell = 0;
             end
 
-            if ~iblformatExist
+            if ~iblformatExist && sortingExist == 1
                 %% Run IBL formatting
                 try
                     fprintf('Creating the ibl format (%s)...',datestr(now));
@@ -200,7 +214,7 @@ function sorting(varargin)
 
             %% Delete things
 
-            if statusKS == 0 && statusBombcell == 0 && statusIBL == 0
+            if statusKS == 0 && statusBombcell == 0 && statusIBL == 0 & exist(tmpDataFolderRec','dir')
                 % Delete the whole folder
                 rmdir(tmpDataFolderRec,'s');
             end
