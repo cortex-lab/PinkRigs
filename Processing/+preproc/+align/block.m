@@ -49,7 +49,7 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
             case {'imageWorld_AllInOne'; 'AVPassive_ckeckerboard_postactive';...
                     'AP_sparseNoise';'AVPassive_checkerboard_extended'}
                 alignType = 'photoDiode';
-            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'; 'multiSpaceSwitchWorld'}
+            case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'; 'multiSpaceSwitchWorld'; 'multiSpaceWorld_checker_training_block'}
                 alignType = 'wheel';
             case {'spontaneousActivity'}
                 alignType = 'none';
@@ -130,6 +130,15 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
         % Timeline Ref times
         % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
         [timelineRefTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
+
+        % make sure it's a nx1 vector
+        if size(blockRefTimes, 1) == 1
+            blockRefTimes = blockRefTimes';
+        end
+        % make sure it's a nx1 vector
+        if size(timelineRefTimes, 1) == 1
+            timelineRefTimes = timelineRefTimes';
+        end
         
         % Use "prc.try2alignVectors" to deal with cases where the timeline and block flip times are different lengths, or have large differences. I
         % have found this to solve all problems like this. However, I have also found it to be critical (the photodiode is just too messy otherwise)

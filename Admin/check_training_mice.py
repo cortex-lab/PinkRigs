@@ -68,37 +68,44 @@ deltaDays2Check = 7;
 # list of strings with the mice with their training stage
 readyMice = []
 for mname in activeMice:
-    expinfo = pd.read_csv(get_csv_location(mname))
+    csv_name = get_csv_location(mname)
+    if exists(csv_name):
+        expinfo = pd.read_csv(get_csv_location(mname))
 
-    # check whether the mouse is trained on the task
-    sess2check = expinfo[((expinfo['expDef']=='multiSpaceWorld_checker_training') | (expinfo['expDef']=='multiSpaceSwitchWorld')) & (expinfo['expDuration']>600)][-1:]
+        # check whether the mouse is trained on the task
+        sess2check = expinfo[((expinfo['expDef']=='multiSpaceWorld_checker_training')
+                               | (expinfo['expDef']=='multiSpaceWorld_checker_training_block') 
+                               | (expinfo['expDef']=='multiSpaceSwitchWorld')) 
+                               & (expinfo['expDuration']>600)][-1:]
 
-    if (sess2check.shape[0]>0):
-        # take the last day for the update
-        expPath = sess2check['expFolder'].iloc[0]
-        expDate = re.sub('_','-',sess2check['expDate'].iloc[0])
-        try: # date formats aren't homogeneous...
-            datetime.datetime.strptime(expDate, '%Y-%m-%d')
-        except:
-            expDate = datetime.datetime.strptime(expDate, '%d/%m/%Y').strftime('%Y-%m-%d') # convert it to proper format
-        expNum = sess2check['expNum'].iloc[0]
+        if (sess2check.shape[0]>0):
+            # take the last day for the update
+            expPath = sess2check['expFolder'].iloc[0]
+            expDate = re.sub('_','-',sess2check['expDate'].iloc[0])
+            try: # date formats aren't homogeneous...
+                datetime.datetime.strptime(expDate, '%Y-%m-%d')
+            except:
+                expDate = datetime.datetime.strptime(expDate, '%d/%m/%Y').strftime('%Y-%m-%d') # convert it to proper format
+            expNum = sess2check['expNum'].iloc[0]
+            print(mname)
+            print(expDate)
 
-        # check whether they were trained recently
-        previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
-        dateParsed = dateutil.parser.parse(expDate)
+            # check whether they were trained recently
+            previousDays = datetime.datetime.today() - datetime.timedelta(days=deltaDays2Check)
+            dateParsed = dateutil.parser.parse(expDate)
 
-        if dateParsed >= previousDays:
-            trainedthisweek=1
-            block = scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),squeeze_me=True)
+            if dateParsed >= previousDays:
+                trainedthisweek=1
+                block = scipy.io.loadmat(r'%s\%s_%s_%s_Block.mat' % (expPath,expDate,expNum,mname),squeeze_me=True)
 
-            stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage']
-            timeout = block['block']['events'].item()['selected_paramsetValues'].item()['responseWindow']      
-            wheelMovementProbability=block['block']['events'].item()['selected_paramsetValues'].item()['wheelMovementProbability']
+                stage = block['block']['events'].item()['selected_paramsetValues'].item()['trainingStage']
+                timeout = block['block']['events'].item()['selected_paramsetValues'].item()['responseWindow']      
+                wheelMovementProbability=block['block']['events'].item()['selected_paramsetValues'].item()['wheelMovementProbability']
 
-            readyMice.append('%s - Stage %.0d,timeout in %.1f s, wheel yoked in %.0d%% of trials, on day %s' % (mname,stage,timeout,wheelMovementProbability*100,expDate))
+                readyMice.append('%s - Stage %.0d,timeout in %.1f s, wheel yoked in %.0d%% of trials, on day %s' % (mname,stage,timeout,wheelMovementProbability*100,expDate))
 
-        else: 
-            trainedthisweek=0        
+            else: 
+                trainedthisweek=0        
 
     
 if len(readyMice)>0:
@@ -108,4 +115,4 @@ if len(readyMice)>0:
         send_email('\n'.join(readyMice))
 else: 
     print('no mice are fully trained')
-    #send_email('no mice are fully trained')
+    send_email('no mice are fully trained')

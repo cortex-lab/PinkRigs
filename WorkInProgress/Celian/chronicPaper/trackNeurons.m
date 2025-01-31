@@ -128,7 +128,7 @@ end
 % cell2plt = [1 2];
 % cell2plt = [1 12 28];
 % cell2plt = [15 18 19];   
-cell2plt = [4 17 23 25];   
+cell2plt = [3 17 23 25];   
 
 figure('Position', [585   638   655   340]);
 % colDays = [linspace(160,24,numel(rec)); linspace(238,128,numel(rec)); linspace(157,100,numel(rec))]'/256;

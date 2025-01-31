@@ -52,6 +52,8 @@ function [clusterNum, recLoc, chanMap, days, expInfoAll] = clusterCount_loadNonZ
         subject = sp{5};
         expDate = sp{6};
         implantDate = implantDates(contains(subjectList,subject));
+        expInfoAll{nn}.subject = subject;
+        expInfoAll{nn}.expDate = expDate;
         
         % Build tags etc
         days(nn) = datenum(expDate);

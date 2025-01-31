@@ -144,6 +144,8 @@ for mm = 1:numel(models)
                 keepIdx = respDirTest & valTrial & ~laserOn & abs(currBlock.stim_audAzimuth)~=30;
             elseif numel(unique(currBlock.stim_visContrast(abs(currBlock.stim_audAzimuth)==30)))>1
                 keepIdx = respDirTest & valTrial;
+            elseif isfield(currBlock,'block_currentBlock')
+                keepIdx = respDirTest & valTrial;
             else
                 keepIdx = respDirTest & valTrial & abs(currBlock.stim_audAzimuth)~=30;
             end
