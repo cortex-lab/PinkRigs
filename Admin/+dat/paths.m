@@ -23,7 +23,7 @@ end
 
 % Some base locations for storing data.  Listing them here means that if we
 % change server, only one variable needs changing
-server1Name = '\\zortex.cortexlab.net';
+server1Name = '\\zenneth.cortexlab.net';
 server2Name = '\\znas.cortexlab.net'; %userpath; % Usually ~/Documents/MATLAB
 basketName = '\\basket.cortexlab.net'; % for working analyses
 lugaroName = '\\lugaro.cortexlab.net'; % for tape backup
