@@ -32,9 +32,6 @@ def extract_data_PinkRigs(ks_path, ephys_path, out_path,do_raw_files=False):
             extract_rmsmap(efile.lf, out_folder=out_path)
 
 def ks_to_ibl_format(ephys_path,ks_folder='kilosort4',recompute=False):
-    # Path to KS output
-    if 'pyKS' in ks_folder: 
-        ks_folder = r'pyKS\output'
         
     print(ephys_path)
     ks_path = ephys_path / ks_folder

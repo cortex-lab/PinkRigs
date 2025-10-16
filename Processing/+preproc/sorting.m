@@ -43,13 +43,23 @@ function sorting(varargin)
     %% Loop across all recordings
 
     for rec = 1:numel(recList)
-        expRefList = exp2checkList(contains(exp2checkList.ephysPathProbe0, recList{rec}) | ...
-            contains(exp2checkList.ephysPathProbe1, recList{rec}), :);
+        if exist('exp2checkList', 'var')
+            expRefList = exp2checkList(contains(exp2checkList.ephysPathProbe0, recList{rec}) | ...
+                contains(exp2checkList.ephysPathProbe1, recList{rec}), :);
+        end
 
         %% Check if has been computed
 
         % Set paths
-        serverKilosortPath = fullfile(recList{rec},'kilosort4');
+        switch KSversion
+            case 'kilosort4'
+                KSFolder = 'kilosort4';
+            case 'pyKS-IBL'
+                KSFolder = 'pyKS';
+        end
+
+        serverKilosortPath = fullfile(recList{rec},KSFolder,'output');
+%         serverKilosortPath = fullfile(recList{rec},KSFolder);
         ephysDirPath = recList{rec};
         ephysRawDir = dir(fullfile(ephysDirPath,'*.*bin'));
         if numel(ephysRawDir)>1
@@ -64,9 +74,9 @@ function sorting(varargin)
         iblformatPath = fullfile(serverKilosortPath,'ibl_format');
 
         % check if exists
-        sortingExist = ~isempty(dir(fullfile(serverKilosortPath,'spike_templates.npy'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
-        qMetricsExist = ~isempty(dir(fullfile(bombcellPath, 'templates._bc_qMetrics.parquet'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
-        iblformatExist = ~isempty(dir(fullfile(iblformatPath, 'cluster_metrics.csv'))) | exist(fullfile(serverKilosortPath, 'Kilosort4_error.json'),'file');
+        sortingExist = ~isempty(dir(fullfile(serverKilosortPath,'spike_templates.npy'))) | exist(fullfile(serverKilosortPath, 'Kilosort_error.json'),'file');
+        qMetricsExist = ~isempty(dir(fullfile(bombcellPath, 'templates._bc_qMetrics.parquet'))) | exist(fullfile(serverKilosortPath, 'Bombcell_error.json'),'file');
+        iblformatExist = ~isempty(dir(fullfile(iblformatPath, 'cluster_metrics.csv'))) | exist(fullfile(serverKilosortPath, 'IBLformat_error.json'),'file');
 
         switch recompute
             % could also delete the old ones
@@ -83,41 +93,54 @@ function sorting(varargin)
         %% Run
 
         if ~sortingExist || ~qMetricsExist || ~iblformatExist
+            
+            tmpDataFolderRec = strrep(fullfile(tmpDataFolder, ephysRawDir.name),'.','_');
 
             if ~sortingExist || ~qMetricsExist
                 %% Detect whether data is compressed, decompress locally if necessary
 
-                tmpDataFolderRec = strrep(fullfile(tmpDataFolder, ephysRawDir.name),'.','_');
+                
                 if ~exist(tmpDataFolderRec,'dir')
                     mkdir(tmpDataFolderRec)
                 end
                 ephysRawFile = bc.dcomp.manageDataCompression(ephysRawDir, tmpDataFolderRec);
+
+                % move meta file
+                copyfile(fullfile(ephysMetaDir.folder, ephysMetaDir.name), regexprep(ephysRawFile,'\.bin','.meta'));
             end
+%             ephysRawFile = fullfile(ephysRawDir.folder, ephysRawDir.name);
 
             if ~sortingExist
                 %% Extract channel map
 
                 [channelPos, probeSN, recordingduration] = ChannelIMROConversion(fullfile(ephysMetaDir.folder, ephysMetaDir.name),1,0);
 
-                %% Run KS4
+                %% Run kilosort
                 try
                     binFile = strrep(ephysRawFile,'\','/');
                     probeFile = strrep(strrep(metaFile,'.ap.meta','_kilosortChanMap.mat'),'\','/');
                     tic
-                    if strcmp(KSversion,'kilosort4')
-                        fprintf('Running kilosort4 on %s  (%s)...', ephysRawDir.name, datestr(now))
-                        runpyKS = which("RunPyKS4_FromMatlab.py");
-                        [statusKS,resultKS] = system(['activate kilosort && ' ...
-                            'python ' runpyKS ' ' binFile ' ' probeFile ' && ' ...
-                            'conda deactivate']);
-                    else
-                        error('This version of kilosort isn''t supported yet.')
+                    switch KSversion
+                        case 'kilosort4'
+                            fprintf('Running kilosort4 on %s  (%s)...', ephysRawDir.name, datestr(now))
+                            runpyKS = which("RunPyKS4_FromMatlab.py");
+                            [statusKS,resultKS] = system(['activate kilosort && ' ...
+                                'python ' runpyKS ' ' binFile ' ' probeFile ' && ' ...
+                                'conda deactivate']);
+                        case 'pyKS-IBL'
+                            fprintf('Running pyKS-IBL on %s  (%s)...', ephysRawDir.name, datestr(now))
+                            runpyKS = which("RunPyKS-IBL_FromMatlab.py");
+                            [statusKS,resultKS] = system(['activate pyks2-ibl && ' ...
+                                'python ' runpyKS ' ' binFile(1:end-4) ' && ' ...
+                                'conda deactivate']);
+                        otherwise
+                            error('This version of kilosort isn''t supported yet.')
                     end
                     toc
 
                     if statusKS == 0
                         % Move files to server
-                        localKilosortPath = fullfile(tmpDataFolderRec, 'kilosort4');
+                        localKilosortPath = fullfile(tmpDataFolderRec, KSFolder);
                         copyfile(localKilosortPath, serverKilosortPath);
 
                         % Rename the params.py
@@ -142,7 +165,7 @@ function sorting(varargin)
 
                     % Save error message locally
                     mkdir(serverKilosortPath)
-                    saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
+                    saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort_error.json'))
 
                     statusKS = 1;
                 end
@@ -166,7 +189,7 @@ function sorting(varargin)
 
                     % Load data
                     [spikeTimes_samples, spikeTemplates, ...
-                        templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc.load.loadEphysData(serverKilosortPath);
+                        templateWaveforms, templateAmplitudes, pcFeatures, pcFeatureIdx, channelPositions] = bc.load.loadEphysData(serverKilosortPath, bombcellPath);
 
                     % Compute quality metrics
                     param.plotGlobal = 0;
@@ -180,7 +203,7 @@ function sorting(varargin)
                     warning('Couldn''t run bombcell: threw an error (%s)',msgText)
 
                     % Save error message locally
-                    saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
+                    saveErrMess(msgText,fullfile(serverKilosortPath, 'Bombcell_error.json'))
 
                     statusBombcell = 1;
                 end
@@ -194,7 +217,7 @@ function sorting(varargin)
                     fprintf('Creating the ibl format (%s)...',datestr(now));
                     checkScriptPath = which('convert_to_ibl_format_single_file.py');
                     [statusIBL,resultIBL] = system(['activate iblenv && ' ...
-                        'python ' checkScriptPath ' ' fileparts(serverKilosortPath) ' kilosort4 && ' ...
+                        'python ' checkScriptPath ' ' fileparts(fileparts(serverKilosortPath)) ' ' KSFolder '/output && ' ...
                         'conda deactivate']);
     
                     if statusIBL ~= 0
@@ -206,7 +229,7 @@ function sorting(varargin)
                     warning('Couldn''t run IBL formatting: threw an error (%s)',msgText)
 
                     % Save error message locally
-                    saveErrMess(msgText,fullfile(serverKilosortPath, 'Kilosort4_error.json'))
+                    saveErrMess(msgText,fullfile(serverKilosortPath, 'IBLformat_error.json'))
                 end
             else
                 statusIBL = 0;
@@ -214,9 +237,11 @@ function sorting(varargin)
 
             %% Delete things
 
-            if statusKS == 0 && statusBombcell == 0 && statusIBL == 0 & exist(tmpDataFolderRec','dir')
+            if statusKS == 0 && statusBombcell == 0 && statusIBL == 0 && exist(tmpDataFolderRec','dir')
                 % Delete the whole folder
-                rmdir(tmpDataFolderRec,'s');
+                try
+                    rmdir(tmpDataFolderRec,'s');
+                end
             end
         end
     end
