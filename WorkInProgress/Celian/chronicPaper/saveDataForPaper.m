@@ -1,3 +1,5 @@
+%% WILL NOT WORK EXCEPT FOR CELIAN, ONLY AS A BACKUP
+
 %% Get data
 load('\\znas.cortexlab.net\Lab\Share\Celian\dataForPaper_ChronicImplant_stability_withQM_2024-11-08');
 
@@ -30,7 +32,7 @@ for rr = 1:size(expInfoAll,1)
     clusters = expInfoAll(rr,:).dataSpikes{1}.(probeName{1}).clusters;
 
     if ~isempty(clusters.qualityMetrics)
-        %%% PROBLEM WITH SCALING FACTOR FOR 2.0 AND SPIKEGADGETS -- HACK
+        % Correct scaling factor for Npx 2.0 AND SpikeGadgets -- HACK
         if (contains(recLocAll{rr}, 'Margrie') && ~contains(recLocAll{rr}, 'Margrie002')) || contains(recLocAll{rr}, 'Wikenheiser')
             probeName = fieldnames(expInfoAll(rr,:).dataSpikes{1});
             rec = expInfoAll(rr,:).(sprintf('ephysPathP%s',probeName{1}(2:end))){1};

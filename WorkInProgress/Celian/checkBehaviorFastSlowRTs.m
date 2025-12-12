@@ -1,4 +1,4 @@
-exp = csv.queryExp(subject='GB012', expDate = 'last60', expDef ='t', checkEvents = 1, sepPlots = 1, noPlot = 1);
+exp = csv.queryExp(subject='GB012', expDate = 'last120', expDef ='t', checkEvents = 1, sepPlots = 1, noPlot = 1);
 behData = plts.behaviour.glmFit(exp, modelString = 'simpLogSplitVSplitA');
 
 %%

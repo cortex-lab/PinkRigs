@@ -108,7 +108,7 @@ function [valueMean, slopeMean, interceptMean, fullProbeSubj, subj, useNum] = pl
                 [~,daysOrd] = sort(abs(days(subAndProbeIdx(surrDaysIdx))-day), 'ascend');
                 scanIdx = cell2mat(cellfun(@(x) ismember(recLocGood(surrDaysIdx(daysOrd)),x)', fullProbeScanSpec, 'uni', 0));
                 if all(sum(scanIdx,1))
-                    [~,scanIdx]=max(scanIdx,[],1);
+                    [~,scanIdx] = max(scanIdx,[],1);
                     qmProbe(dd,pp,ss) = funcProbe(qm(subAndProbeIdx(surrDaysIdx(daysOrd(scanIdx)))));
     
                     % sanity check

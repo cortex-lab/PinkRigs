@@ -60,12 +60,13 @@ paramBC.tauR_valuesMax = 10./1000; % refractory period time (s), usually 0.0020
 % computation of spatial decay? -- would need to recompute everything
 
 % Example subject
-exSubj = 'AV009';
+% exSubj = 'AV009';
 % exSubj = 'AV049';
 % exSubj = 'Lignani001';
 % exSubj = 'Lignani002';
 % exSubj = 'Margrie008';
 % exSubj = 'Wikenheiser001';
+exSubj = 'GB012';
 ssEx = find(contains(subjects,exSubj));
 exSubjectIdx = contains(subjectsAll,subjects(ssEx));
 exProbes = unique(probeSNAll(exSubjectIdx));
