@@ -49,9 +49,15 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                         
                         %Kmeans to get thresh. Remove clusters with less
                         %than 2% of points.
-                        [clustIdx, thresh] = kmeans(chan(1:5:end),5);
+                        [clustIdx, thresh_ori] = kmeans(chan(1:5:end),5);
+                        thresh = thresh_ori;
                         thresh(arrayfun(@(x) mean(clustIdx==x)*100, unique(clustIdx))<2) = [];
                         thresh = [min(thresh) + range(thresh)*0.2;  max(thresh) - range(thresh)*0.2];
+                        if any(min(abs(thresh - thresh_ori')) < 0.1)
+                            % weird case when too close to an intermediate
+                            % level of the photodiode
+                            thresh = [min(thresh) + range(thresh)*0.25;  max(thresh) - range(thresh)*0.25];
+                        end
 
                         % Find flips based on these thresholds.
                         photoDiodeFlipOn = sort([strfind(chan'>thresh(1), [0 1]), strfind(chan'>thresh(2), [0 1])]);
@@ -128,7 +134,7 @@ function evTimes = getChanEventTime(timeline,chanName,mode)
                 laserOnPeriod = diff(evTimes');
                 laserOnPeriod = laserOnPeriod(2,:);
 
-                evTimes = evTimes(find(laserOnPeriod>0.1),:); 
+                evTimes = evTimes(laserOnPeriod>0.1,:); 
 
             case 'micSync'
                 micSyncThresh = [min(chan)+0.2*range(chan) max(chan)-0.2*range(chan)]; % these seem to work well

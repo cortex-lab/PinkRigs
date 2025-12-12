@@ -46,7 +46,7 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
     else
         % Chose it depending on expDef
         switch params.expDef{1}{1}
-            case {'imageWorld_AllInOne'; 'AVPassive_ckeckerboard_postactive';...
+            case {'imageWorld_AllInOne'; 'imageWorld_lefthemifield'; 'AVPassive_ckeckerboard_postactive';...
                     'AP_sparseNoise';'AVPassive_checkerboard_extended'}
                 alignType = 'photoDiode';
             case {'multiSpaceWorld'; 'multiSpaceWorld_checker_training'; 'multiSpaceWorld_checker'; 'multiSpaceSwitchWorld'; 'multiSpaceWorld_checker_training_block'}
@@ -126,11 +126,49 @@ function [blockRefTimes, timelineRefTimes] = block(varargin)
         % Block Ref times
         blockRefTimes = block.stimWindowUpdateTimes;
 
-
         % Timeline Ref times
         % Extract photodiode trace and get repeated values by using kmeans. Get the lower and upper thersholds from this range.
         [timelineRefTimes, photoName] = timeproc.extractBestPhotodiode(timeline, block);
 
+        if contains(params.expDef{1}, 'image')
+            % very convoluted?
+
+            intervals_real = diff(timelineRefTimes);
+            intervals_theo = diff(blockRefTimes);
+            % find outlier
+            [clusVals_real, c_real] = kmeans(intervals_real',2); % there should be only two clusters
+            [clusVals_theo, c_theo]  = kmeans(intervals_theo,2); % there should be only two clusters
+            [~,i] = max(c_theo); % put them in the same order
+            clusVals_theo = rem(clusVals_theo + i-1,2)+1;
+            [~,i] = max(c_real); % put them in the same order
+            clusVals_real = rem(clusVals_real + i-1,2)+1;
+            badIdx = [];
+            for ii = 1:2
+                clusIdx = find(clusVals_real == ii);
+                badIdx = [badIdx; clusIdx(min(abs(intervals_real(clusIdx) - intervals_theo(clusVals_theo == ii))) > 0.1)];
+                % badIdx = [badIdx; clusIdx(abs(intervals_real(clusIdx) - mean(intervals_real(clusIdx))) > 0.1)];
+            end
+            badIdx(badIdx > 200) = badIdx(badIdx > 200)+1; % usually it's the last that are messed up
+            % remove the outliers
+            timelineRefTimes(badIdx) = [];
+
+            intervals_real = diff(timelineRefTimes);
+            % remove the first it starts with longer interval
+            if intervals_real(1) > intervals_real(2) % stim length should be shorter than ITI
+                timelineRefTimes(1) = [];
+            end
+
+            if numel(blockRefTimes) == numel(timelineRefTimes) + 2
+                % missed at the beginning or end
+                c_missed(1) = corr(diff(timelineRefTimes(1:2:end))', diff(blockRefTimes(3:2:end))); % was missed at the beginning
+                c_missed(2) = corr(diff(timelineRefTimes(1:2:end))', diff(blockRefTimes(1:2:end-2))); % was missed at the end
+                [~,i] = max(c_missed); start = [3 1];
+                blockRefTimes = blockRefTimes(start(i):end);
+            end
+
+            blockRefTimes = blockRefTimes(1:numel(timelineRefTimes)); % hack
+        end
+        
         % make sure it's a nx1 vector
         if size(blockRefTimes, 1) == 1
             blockRefTimes = blockRefTimes';

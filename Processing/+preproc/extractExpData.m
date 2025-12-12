@@ -184,7 +184,7 @@ function extractExpData(varargin)
                                 case 'PyKS'
                                     KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'PyKS','output');
                                 case 'kilosort4'
-                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort4');
+                                    KSFolder = fullfile(alignment.ephys(probeNum).ephysPath,'kilosort4','output');
                             end
                             IBLFormatFolder = fullfile(KSFolder,'ibl_format');
 

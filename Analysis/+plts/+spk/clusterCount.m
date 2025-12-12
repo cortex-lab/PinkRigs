@@ -23,7 +23,7 @@ function [clusterNum, recLocAll, chanMapAll, days, expInfoAll] = clusterCount(va
 
     varargin = ['subject', {mice(contains(mice.P0_type, '2.0 - 4shank'),:).Subject}, varargin];
     varargin = ['expDate', {inf}, varargin];
-    varargin = ['expDef', {{{'s','i','n'}}}, varargin]; 
+    varargin = ['expDef', {{{'s','i','n','t','p'}}}, varargin]; 
     varargin = [varargin, 'checkSpikes', {1}]; % forced, otherwise can't process
     varargin = ['pltIndiv', 0, varargin];
     varargin = ['getQM', 0, varargin];

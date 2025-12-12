@@ -27,9 +27,19 @@ function ev = imageWorld(timeline, block, alignmentBlock)
   
     ev.imageOnsetTimes = preproc.align.event2Timeline(block.events.stimulusOnTimes(block.events.stimulusOnValues)', ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
-            
+
+    if any(ev.imageOnsetTimes < 0)
+        error('negative image onset times?')
+    end
+
     ev.imageOffsetTimes = preproc.align.event2Timeline(block.events.stimulusOnTimes(~block.events.stimulusOnValues)', ...
         alignmentBlock.originTimes,alignmentBlock.timelineTimes);
+
+    if any(ev.imageOffsetTimes > max(alignmentBlock.timelineTimes))
+        disp('image offset overshoot? delete last one?')
+%         ev.imageOnsetTimes(ev.imageOffsetTimes > max(alignmentBlock.timelineTimes)) = [];
+%         ev.imageOffsetTimes(ev.imageOffsetTimes > max(alignmentBlock.timelineTimes)) = [];
+    end
     
     %% Get image ID
     
@@ -41,3 +51,5 @@ function ev = imageWorld(timeline, block, alignmentBlock)
     ev.imageOnsetTimes = ev.imageOnsetTimes(1:trialNum);
     ev.imageOffsetTimes = ev.imageOffsetTimes(1:trialNum);
     ev.imageIDs = ev.imageIDs(1:trialNum);
+
+end
